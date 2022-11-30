@@ -28,7 +28,7 @@ import (
 var (
 	nProcSleepTime   = 15 * time.Second
 	nProcUser        = "chaosmeta_mkpcswa"
-	nProcCountOffset = 100
+	nProcCountOffset = 300
 )
 
 func GetNProcTest() []common.TestCase {

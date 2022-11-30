@@ -22,7 +22,6 @@ import (
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
 	"os/exec"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -36,10 +35,20 @@ func StartSleepRecover(sleepTime int64, uid string) error {
 }
 
 func waitProExec(stdout, stderr *bytes.Buffer) (err error) {
-	var msg, timer, wg = "", time.NewTimer(InjectCheckInterval), sync.WaitGroup{}
-	wg.Add(1)
-	go waitOutput(&wg, stdout, stderr, timer, &msg)
-	wg.Wait()
+	//var msg, timer, wg = "", time.NewTimer(InjectCheckInterval), sync.WaitGroup{}
+	//wg.Add(1)
+	//go waitOutput(&wg, stdout, stderr, timer, &msg)
+	//wg.Wait()
+
+	var msg, timer = "", time.NewTimer(InjectCheckInterval)
+	for {
+		<-timer.C
+		if stderr.String() != "" || stdout.String() != "" {
+			msg = stdout.String() + stderr.String()
+			break
+		}
+		timer.Reset(InjectCheckInterval)
+	}
 
 	log.GetLogger().Debugf(msg)
 
@@ -51,20 +60,20 @@ func waitProExec(stdout, stderr *bytes.Buffer) (err error) {
 		return nil
 	}
 
-	return fmt.Errorf("unexpected output")
+	return fmt.Errorf("unexpected output: %s", msg)
 }
 
-func waitOutput(wg *sync.WaitGroup, stdout, stderr *bytes.Buffer, timer *time.Timer, msg *string) {
-	for {
-		<-timer.C
-		if stderr.String() != "" || stdout.String() != "" {
-			*msg = stdout.String() + stderr.String()
-			wg.Done()
-			return
-		}
-		timer.Reset(InjectCheckInterval)
-	}
-}
+//func waitOutput(wg *sync.WaitGroup, stdout, stderr *bytes.Buffer, timer *time.Timer, msg *string) {
+//	for {
+//		<-timer.C
+//		if stderr.String() != "" || stdout.String() != "" {
+//			*msg = stdout.String() + stderr.String()
+//			wg.Done()
+//			return
+//		}
+//		timer.Reset(InjectCheckInterval)
+//	}
+//}
 
 func SupportCmd(cmd string) bool {
 	_, err := exec.LookPath(cmd)
@@ -90,15 +99,15 @@ func StartBashCmd(cmd string) error {
 	return exec.Command("/bin/bash", "-c", cmd).Start()
 }
 
-func StartBashCmdWithPid(cmd string) (int, error) {
-	log.GetLogger().Debugf("start cmd: %s", cmd)
-	c := exec.Command("/bin/bash", "-c", cmd)
-	if err := c.Start(); err != nil {
-		return NoPid, err
-	}
-
-	return c.Process.Pid, nil
-}
+//func StartBashCmdWithPid(cmd string) (int, error) {
+//	log.GetLogger().Debugf("start cmd: %s", cmd)
+//	c := exec.Command("/bin/bash", "-c", cmd)
+//	if err := c.Start(); err != nil {
+//		return NoPid, err
+//	}
+//
+//	return c.Process.Pid, nil
+//}
 
 func StartBashCmdAndWaitPid(cmd string) (int, error) {
 	log.GetLogger().Debugf("start cmd: %s", cmd)

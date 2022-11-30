@@ -39,37 +39,37 @@ func main() {
 	fmt.Println(tool)
 
 	var testCases []common.TestCase
-	//fmt.Println("@@@@@@@@@@@@@@@CPU BURN@@@@@@@@@@@@@@@")
-	//testCases = testcase.GetCpuBurnTest()
-	//runTestCases(tool, testCases)
-	//
-	//fmt.Println("@@@@@@@@@@@@@@@CPU LOAD@@@@@@@@@@@@@@@")
-	//testCases = testcase.GetCpuLoadTest()
-	//runTestCases(tool, testCases)
-	//
-	//fmt.Println("@@@@@@@@@@@@@@@DISK FILL@@@@@@@@@@@@@@@")
-	//testCases = testcase.GetDiskFillTest()
-	//runTestCases(tool, testCases)
-	//
-	//fmt.Println("@@@@@@@@@@@@@@@MEM FILL@@@@@@@@@@@@@@@")
-	//testCases = testcase.GetMemFillTest()
-	//runTestCases(tool, testCases)
-	//
-	//fmt.Println("@@@@@@@@@@@@@@@PROCESS STOP@@@@@@@@@@@@@@@")
-	//testCases = testcase.GetProStopTest()
-	//runTestCases(tool, testCases)
-	//
-	//fmt.Println("@@@@@@@@@@@@@@@PROCESS KILL@@@@@@@@@@@@@@@")
-	//testCases = testcase.GetProKillTest()
-	//runTestCases(tool, testCases)
+	fmt.Println("@@@@@@@@@@@@@@@CPU BURN@@@@@@@@@@@@@@@")
+	testCases = testcase.GetCpuBurnTest()
+	runTestCases(tool, testCases)
+
+	fmt.Println("@@@@@@@@@@@@@@@CPU LOAD@@@@@@@@@@@@@@@")
+	testCases = testcase.GetCpuLoadTest()
+	runTestCases(tool, testCases)
+
+	fmt.Println("@@@@@@@@@@@@@@@DISK FILL@@@@@@@@@@@@@@@")
+	testCases = testcase.GetDiskFillTest()
+	runTestCases(tool, testCases)
+
+	fmt.Println("@@@@@@@@@@@@@@@MEM FILL@@@@@@@@@@@@@@@")
+	testCases = testcase.GetMemFillTest()
+	runTestCases(tool, testCases)
+
+	fmt.Println("@@@@@@@@@@@@@@@PROCESS STOP@@@@@@@@@@@@@@@")
+	testCases = testcase.GetProStopTest()
+	runTestCases(tool, testCases)
+
+	fmt.Println("@@@@@@@@@@@@@@@PROCESS KILL@@@@@@@@@@@@@@@")
+	testCases = testcase.GetProKillTest()
+	runTestCases(tool, testCases)
 
 	fmt.Println("@@@@@@@@@@@@@@@KERNEL NPROC@@@@@@@@@@@@@@@")
 	testCases = testcase.GetNProcTest()
 	runTestCases(tool, testCases)
 
-	//fmt.Println("@@@@@@@@@@@@@@@KERNEL FD@@@@@@@@@@@@@@@")
-	//testCases = testcase.GetFdTest()
-	//runTestCases(tool, testCases)
+	fmt.Println("@@@@@@@@@@@@@@@KERNEL FD@@@@@@@@@@@@@@@")
+	testCases = testcase.GetFdTest()
+	runTestCases(tool, testCases)
 
 }
 
