@@ -37,6 +37,45 @@ func GetToolPath(tool string) string {
 	return fmt.Sprintf("%s/tools/%s", GetRunPath(), tool)
 }
 
+func MkdirP(path string) error {
+	return RunBashCmdWithoutOutput(fmt.Sprintf("mkdir -p %s", path))
+}
+
+func Chmod(path, perm string) error {
+	return RunBashCmdWithoutOutput(fmt.Sprintf("chmod %s %s", perm, path))
+}
+
+func GetPermission(path string) (string, error) {
+	info, err := os.Stat(path)
+	if err != nil {
+		return "", fmt.Errorf("get stat of path[%s] error: %s", path, err.Error())
+	}
+
+	p := info.Mode().Perm().String()
+	if len(p) != 10 {
+		return "", fmt.Errorf("perm[%s] is too short", p)
+	}
+
+	return fmt.Sprintf("%s%s%s", getPermNum(p[1:4]), getPermNum(p[4:7]), getPermNum(p[7:10])), nil
+}
+
+func getPermNum(unit string) string {
+	var v int
+	for i, c := range unit {
+		if c != '-' {
+			if i == 0 {
+				v += 4
+			} else if i == 1 {
+				v += 2
+			} else if i == 2 {
+				v += 1
+			}
+		}
+	}
+
+	return strconv.Itoa(v)
+}
+
 func CheckDir(dir string) error {
 	f, err := os.Stat(dir)
 	if err != nil {
@@ -88,7 +127,7 @@ func GetAbsPath(path string) (string, error) {
 
 func CheckPermission(permission string) error {
 	if len(permission) != 3 {
-		return fmt.Errorf("len is not 3")
+		return fmt.Errorf("len is not equal 3")
 	}
 
 	for _, unit := range permission {
@@ -150,8 +189,8 @@ func GetKernelFdStatus() (int, int, error) {
 }
 
 func CreateFdFile(dir, filePrefix string, count int) error {
-	if err := RunBashCmdWithoutOutput(fmt.Sprintf("rm -rf %s && mkdir -p %s", dir, dir)); err != nil {
-		return fmt.Errorf("initial dir error: %s", err.Error())
+	if err := MkdirP(dir); err != nil {
+		return fmt.Errorf("create dir error: %s", err.Error())
 	}
 
 	step := 5000

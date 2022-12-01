@@ -71,11 +71,36 @@ func main() {
 	testCases = testcase.GetFdTest()
 	runTestCases(tool, testCases)
 
+	fmt.Println("@@@@@@@@@@@@@@@FILE ADD@@@@@@@@@@@@@@@")
+	testCases = testcase.GetFileAddTest()
+	runTestCases(tool, testCases)
+
+	fmt.Println("@@@@@@@@@@@@@@@FILE APPEND@@@@@@@@@@@@@@@")
+	testCases = testcase.GetFileAppendTest()
+	runTestCases(tool, testCases)
+
+	fmt.Println("@@@@@@@@@@@@@@@FILE CHMOD@@@@@@@@@@@@@@@")
+	testCases = testcase.GetFileChmodTest()
+	runTestCases(tool, testCases)
+
+	fmt.Println("@@@@@@@@@@@@@@@FILE MV@@@@@@@@@@@@@@@")
+	testCases = testcase.GetFileMvTest()
+	runTestCases(tool, testCases)
+
+	fmt.Println("@@@@@@@@@@@@@@@FILE DELETE@@@@@@@@@@@@@@@")
+	testCases = testcase.GetFileDeleteTest()
+	runTestCases(tool, testCases)
 }
 
 func runTestCases(tool string, testCases []common.TestCase) {
 	for _, t := range testCases {
 		fmt.Printf("===============CASE %s==============\n", t.Name)
+		fmt.Println("***********PRE PROCESS***********")
+		if t.PreProcessor != nil {
+			if err := t.PreProcessor(); err != nil {
+				common.ExitErr(fmt.Sprintf("pre process error: %s", err.Error()))
+			}
+		}
 		fmt.Println("***********INJECT***********")
 		injectCmd := exec.Command("/bin/bash", "-c", fmt.Sprintf("%s inject %s %s %s", tool, t.Target, t.Fault, t.Args))
 		fmt.Printf("inject cmd: %s\n", injectCmd.Args)
@@ -87,6 +112,7 @@ func runTestCases(tool string, testCases []common.TestCase) {
 				fmt.Printf("exec error: %s, output: %s\n", err.Error(), string(re))
 			}
 		} else {
+			fmt.Println(string(re))
 			fmt.Println("***********CHECK***********")
 			common.UID = common.GetUid(string(re))
 			checkInfo := t.Check()
@@ -103,6 +129,12 @@ func runTestCases(tool string, testCases []common.TestCase) {
 
 			if checkInfo != nil {
 				common.ExitErr(fmt.Sprintf("check unexpected: %s", checkInfo.Error()))
+			}
+		}
+
+		if t.PostProcessor != nil {
+			if err := t.PostProcessor(); err != nil {
+				common.ExitErr(fmt.Sprintf("post process error: %s", err.Error()))
 			}
 		}
 	}

@@ -17,16 +17,16 @@
 package testcase
 
 import (
+	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
 	"github.com/ChaosMetaverse/chaosmetad/test/common"
-	"fmt"
 	"strconv"
 	"time"
 )
 
 var (
 	fdSleepTime = 2 * time.Second
-	fdOffset    = 1020
+	fdOffset    = 1200
 )
 
 func GetFdTest() []common.TestCase {

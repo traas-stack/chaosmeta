@@ -52,7 +52,7 @@ func CalculateFillKBytes(percent int, fillBytes string) (int64, error) {
 }
 
 func FillCache(fillKBytes int64, dir string, filename string) error {
-	if err := RunBashCmdWithoutOutput(fmt.Sprintf("mkdir -p %s", dir)); err != nil {
+	if err := MkdirP(dir); err != nil {
 		return fmt.Errorf("create tmpfs dir[%s] error: %s", dir, err.Error())
 	}
 

@@ -25,5 +25,8 @@ const (
 
 	FaultFileMv = "mv"
 
+	FaultFileDelete = "del"
+	BackUpDir       = "/tmp/chaosmeta_backup_file"
+
 	FaultFileChmod = "chmod"
 )

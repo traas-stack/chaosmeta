@@ -17,10 +17,12 @@
 package file
 
 import (
-	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
 	"fmt"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
 	"github.com/spf13/cobra"
+	"os"
 	"path/filepath"
 )
 
@@ -64,13 +66,18 @@ func (i *AddInjector) Validator() error {
 		return fmt.Errorf("\"path\" is empty")
 	}
 
+	var err error
+	i.Args.Path, err = filepath.Abs(i.Args.Path)
+	if err != nil {
+		return fmt.Errorf("get absolute path of path[%s] error: %s", i.Args.Path, err.Error())
+	}
+
 	isPathExist, err := utils.ExistPath(i.Args.Path)
 	if err != nil {
 		return fmt.Errorf("\"path\"[%s] check exist error: %s", i.Args.Path, err.Error())
 	}
 
 	dir := filepath.Dir(i.Args.Path)
-
 	isDirExist, err := utils.ExistPath(dir)
 	if err != nil {
 		return fmt.Errorf("check dir[%s] exist error: %s", dir, err.Error())
@@ -107,17 +114,23 @@ func (i *AddInjector) Inject() error {
 	isDirExist, _ := utils.ExistPath(dir)
 
 	if !isDirExist {
-		if err := utils.RunBashCmdWithoutOutput(fmt.Sprintf("mkdir -p %s", dir)); err != nil {
-			return fmt.Errorf("mkdir [%s] error: %s", dir, err.Error())
+		if err := utils.MkdirP(dir); err != nil {
+			return fmt.Errorf("mkdir dir[%s] error: %s", dir, err.Error())
 		}
 	}
 
-	var chmodCmd string
-	if i.Args.Permission != "" {
-		chmodCmd = fmt.Sprintf(" && chmod %s %s", i.Args.Permission, i.Args.Path)
-	}
-	if err := utils.RunBashCmdWithoutOutput(fmt.Sprintf("echo -e \"%s\" > %s %s", i.Args.Content, i.Args.Path, chmodCmd)); err != nil {
+	if err := utils.RunBashCmdWithoutOutput(fmt.Sprintf("echo -en \"%s\" > %s", i.Args.Content, i.Args.Path)); err != nil {
 		return fmt.Errorf("add content to %s error: %s", i.Args.Path, err.Error())
+	}
+
+	if i.Args.Permission != "" {
+		if err := utils.Chmod(i.Args.Path, i.Args.Permission); err != nil {
+			if err := i.Recover(); err != nil {
+				log.WithUid(i.Info.Uid).Warnf("undo error: %s", err.Error())
+			}
+
+			return fmt.Errorf("chmod file[%s] to[%s] error: %s", i.Args.Path, i.Args.Permission, err.Error())
+		}
 	}
 
 	return nil
@@ -134,7 +147,7 @@ func (i *AddInjector) Recover() error {
 	}
 
 	if isExist {
-		return utils.RunBashCmdWithoutOutput(fmt.Sprintf("rm -rf %s", i.Args.Path))
+		return os.Remove(i.Args.Path)
 	}
 
 	return nil

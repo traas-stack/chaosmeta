@@ -21,6 +21,7 @@ import (
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
 	"github.com/spf13/cobra"
+	"path/filepath"
 	"strings"
 )
 
@@ -62,7 +63,12 @@ func (i *AppendInjector) Validator() error {
 		return fmt.Errorf("\"path\" is empty")
 	}
 
-	// 存在且必需是文件才行
+	var err error
+	i.Args.Path, err = filepath.Abs(i.Args.Path)
+	if err != nil {
+		return fmt.Errorf("get absolute path of path[%s] error: %s", i.Args.Path, err.Error())
+	}
+
 	isFileExist, err := utils.ExistFile(i.Args.Path)
 	if err != nil {
 		return fmt.Errorf("\"path\"[%s] check exist error: %s", i.Args.Path, err.Error())
@@ -86,10 +92,13 @@ func getAppendFlag(uid string) string {
 func (i *AppendInjector) Inject() error {
 	content := i.Args.Content
 	flag := getAppendFlag(i.Info.Uid)
+
 	if !i.Args.Raw {
-		content = fmt.Sprintf("%s%s", strings.ReplaceAll(content, "\\n", fmt.Sprintf("%s\\n", flag)), flag)
+		content = strings.ReplaceAll(content, "\\n", "\n")
+		content = fmt.Sprintf("%s%s", strings.ReplaceAll(content, "\n", fmt.Sprintf("%s\n", flag)), flag)
 	}
 
+	content = fmt.Sprintf("\n%s", content)
 	if err := utils.RunBashCmdWithoutOutput(fmt.Sprintf("echo -e \"%s\" >> %s", content, i.Args.Path)); err != nil {
 		return fmt.Errorf("append content to %s error: %s", i.Args.Path, err.Error())
 	}

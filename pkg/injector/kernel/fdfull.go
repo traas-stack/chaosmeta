@@ -105,7 +105,7 @@ func (i *FdfullInjector) fdfill(maxFd, nowFd int) error {
 
 	fdFullDir := i.getFdFullDir()
 	if err := utils.CreateFdFile(fdFullDir, FdFullFile, step); err != nil {
-		return fmt.Errorf("create tmp file error: %s", err.Error())
+		return fmt.Errorf("create tmp file[%s] error: %s", fdFullDir, err.Error())
 	}
 
 	var timeout int64
