@@ -19,6 +19,7 @@ package log
 import (
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"sync"
 
 	"os"
 	"path/filepath"
@@ -28,6 +29,7 @@ var (
 	Level  string
 	Path   string
 	logger *logrus.Logger
+	mutex  sync.Mutex
 )
 
 const (
@@ -42,7 +44,11 @@ const (
 
 func GetLogger() *logrus.Logger {
 	if logger == nil {
-		setLogger()
+		mutex.Lock()
+		if logger == nil {
+			setLogger()
+		}
+		mutex.Unlock()
 	}
 
 	return logger
@@ -66,11 +72,11 @@ func setLogger() {
 	} else {
 		f, err := getLogPathFile()
 		if err != nil {
+			// unacceptable exception
 			panic(any(fmt.Sprintf("get logger path file error: %s", err.Error())))
 		}
 		logger.SetOutput(f)
 	}
-
 }
 
 func getLogPathFile() (*os.File, error) {
