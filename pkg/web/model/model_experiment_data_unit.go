@@ -17,23 +17,17 @@
 package model
 
 type ExperimentDataUnit struct {
-	Uid string `json:"uid"`
-
-	Target string `json:"target"`
-
-	Fault string `json:"fault"`
-
-	Args string `json:"args"`
-
-	Status string `json:"status"`
-
-	Creator string `json:"creator"`
-
-	Timeout string `json:"timeout"`
-
-	Error_ string `json:"error,omitempty"`
-
-	CreateTime string `json:"create_time,omitempty"`
-
-	UpdateTime string `json:"update_time,omitempty"`
+	Uid              string `json:"uid"`
+	Target           string `json:"target"`
+	Fault            string `json:"fault"`
+	Args             string `json:"args"`
+	Runtime          string `json:"runtime"`
+	Status           string `json:"status"`
+	Creator          string `json:"creator"`
+	Timeout          string `json:"timeout,omitempty"`
+	Error_           string `json:"error,omitempty"`
+	CreateTime       string `json:"create_time,omitempty"`
+	UpdateTime       string `json:"update_time,omitempty"`
+	ContainerId      string `json:"container_id,omitempty"`
+	ContainerRuntime string `json:"container_runtime,omitempty"`
 }

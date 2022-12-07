@@ -47,12 +47,14 @@ func ExperimentInjectPost(w http.ResponseWriter, r *http.Request) {
 			}
 			if err := i.LoadInjector(&storage.Experiment{
 				// r.Host
-				Target:  injectReq.Target,
-				Fault:   injectReq.Fault,
-				Args:    injectReq.Args,
-				Timeout: injectReq.Timeout,
-				Creator: creator,
-				Runtime: "{}",
+				Target:           injectReq.Target,
+				Fault:            injectReq.Fault,
+				Args:             injectReq.Args,
+				Timeout:          injectReq.Timeout,
+				ContainerRuntime: injectReq.ContainerRuntime,
+				ContainerId:      injectReq.ContainerId,
+				Creator:          creator,
+				Runtime:          "{}",
 			}, i.GetArgs(), i.GetRuntime()); err != nil {
 				injectRes = getExperimentInjectPostResponse(utils.BadArgsErr, fmt.Sprintf("args load error: %s", err.Error()), nil)
 			} else {
@@ -82,16 +84,7 @@ func getExperimentInjectPostResponse(code int, msg string, exp *storage.Experime
 
 	if exp != nil {
 		re.Data = &model.InjectSuccessResponseData{
-			Experiment: model.ExperimentDataUnit{
-				Uid:     exp.Uid,
-				Target:  exp.Target,
-				Fault:   exp.Fault,
-				Status:  exp.Status,
-				Error_:  exp.Error,
-				Creator: exp.Creator,
-				Timeout: exp.Timeout,
-				Args:    exp.Args,
-			},
+			Experiment: expToExperimentDataUnit(exp),
 		}
 	}
 

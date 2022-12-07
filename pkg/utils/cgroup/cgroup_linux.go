@@ -37,7 +37,11 @@ func NewCgroup(cgroupPath string, configCmdStr string) error {
 }
 
 func GetContainerCgroupPath(cr, cid, subSys string) (string, error) {
-	client, _ := crclient.GetClient(cr)
+	client, err := crclient.GetClient(cr)
+	if err != nil {
+		return "", fmt.Errorf("get cr[%s] client error: %s", cr, err.Error())
+	}
+
 	pid, err := client.GetPidById(context.Background(), cid)
 	if err != nil {
 		return "", fmt.Errorf("get pid of container[%s] error: %s", cid, err.Error())

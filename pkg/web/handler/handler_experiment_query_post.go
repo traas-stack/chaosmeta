@@ -17,11 +17,11 @@
 package handler
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/storage"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/web/model"
-	"encoding/json"
-	"fmt"
 	"net/http"
 )
 
@@ -58,19 +58,9 @@ func getExperimentQueryPostResponse(code int, msg string, exps []*storage.Experi
 	if exps != nil {
 		reList := make([]model.ExperimentDataUnit, len(exps))
 		for i, exp := range exps {
-			reList[i] = model.ExperimentDataUnit{
-				Uid:        exp.Uid,
-				Target:     exp.Target,
-				Fault:      exp.Fault,
-				Status:     exp.Status,
-				Creator:    exp.Creator,
-				Timeout:    exp.Timeout,
-				Error_:     exp.Error,
-				CreateTime: exp.CreateTime,
-				UpdateTime: exp.UpdateTime,
-				Args:       exp.Args,
-			}
+			reList[i] = expToExperimentDataUnit(exp)
 		}
+
 		re.Data = &model.ExperimentQueryResponseData{
 			Experiments: reList,
 			Total:       total,
@@ -78,4 +68,22 @@ func getExperimentQueryPostResponse(code int, msg string, exps []*storage.Experi
 	}
 
 	return re
+}
+
+func expToExperimentDataUnit(exp *storage.Experiment) model.ExperimentDataUnit {
+	return model.ExperimentDataUnit{
+		Uid:              exp.Uid,
+		Target:           exp.Target,
+		Fault:            exp.Fault,
+		Args:             exp.Args,
+		Runtime:          exp.Runtime,
+		Timeout:          exp.Timeout,
+		Status:           exp.Status,
+		Creator:          exp.Creator,
+		Error_:           exp.Error,
+		CreateTime:       exp.CreateTime,
+		UpdateTime:       exp.UpdateTime,
+		ContainerId:      exp.ContainerId,
+		ContainerRuntime: exp.ContainerRuntime,
+	}
 }
