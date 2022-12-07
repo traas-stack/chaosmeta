@@ -110,79 +110,79 @@ func TestGetBlockKbytes(t *testing.T) {
 		{
 			args:    args{valueStr: "256"},
 			want:    256,
-			want1:   "256k",
+			want1:   "256K",
 			wantErr: false,
 		},
 		{
 			args:    args{valueStr: "256k"},
 			want:    256,
-			want1:   "256k",
+			want1:   "256K",
 			wantErr: false,
 		},
 		{
 			args:    args{valueStr: "256K"},
 			want:    256,
-			want1:   "256k",
+			want1:   "256K",
 			wantErr: false,
 		},
 		{
 			args:    args{valueStr: "256kB"},
 			want:    256,
-			want1:   "256k",
+			want1:   "256K",
 			wantErr: false,
 		},
 		{
 			args:    args{valueStr: "256Kb"},
 			want:    256,
-			want1:   "256k",
+			want1:   "256K",
 			wantErr: false,
 		},
 		{
 			args:    args{valueStr: "256KB"},
 			want:    256,
-			want1:   "256k",
+			want1:   "256K",
 			wantErr: false,
 		},
 		{
 			args:    args{valueStr: "256kb"},
 			want:    256,
-			want1:   "256k",
+			want1:   "256K",
 			wantErr: false,
 		},
 		{
 			args:    args{valueStr: "256m"},
 			want:    262144,
-			want1:   "256m",
+			want1:   "256M",
 			wantErr: false,
 		},
 		{
 			args:    args{valueStr: "256M"},
 			want:    262144,
-			want1:   "256m",
+			want1:   "256M",
 			wantErr: false,
 		},
 		{
 			args:    args{valueStr: "256mB"},
 			want:    262144,
-			want1:   "256m",
+			want1:   "256M",
 			wantErr: false,
 		},
 		{
 			args:    args{valueStr: "256Mb"},
 			want:    262144,
-			want1:   "256m",
+			want1:   "256M",
 			wantErr: false,
 		},
 		{
 			args:    args{valueStr: "256MB"},
 			want:    262144,
-			want1:   "256m",
+			want1:   "256M",
 			wantErr: false,
 		},
 		{
 			args:    args{valueStr: "256mb"},
 			want:    262144,
-			want1:   "256m",
+			want1:   "256M",
 			wantErr: false,
 		},
 	}
@@ -190,14 +190,14 @@ func TestGetBlockKbytes(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, got1, err := GetBlockKbytes(tt.args.valueStr)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GetBlockKbytes() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetBlockKbytes() error = %v, wantErr %v, args = [%v]", err, tt.wantErr, tt.args)
 				return
 			}
 			if got != tt.want {
-				t.Errorf("GetBlockKbytes() got = %v, want %v", got, tt.want)
+				t.Errorf("GetBlockKbytes() got = %v, want %v, args = [%v]", got, tt.want, tt.args)
 			}
 			if got1 != tt.want1 {
-				t.Errorf("GetBlockKbytes() got1 = %v, want %v", got1, tt.want1)
+				t.Errorf("GetBlockKbytes() got1 = %v, want %v, args = [%v]", got1, tt.want1, tt.args)
 			}
 		})
 	}

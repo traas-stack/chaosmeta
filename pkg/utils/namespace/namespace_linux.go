@@ -22,15 +22,6 @@ import (
 	"os"
 )
 
-const (
-	IPC  = "ipc"
-	MNT  = "mnt"
-	NET  = "net"
-	PID  = "pid"
-	USER = "user"
-	UTS  = "uts"
-)
-
 func JoinProcNs(pid int, nsType string) error {
 	filePath := fmt.Sprintf("/proc/%d/ns/%s", pid, nsType)
 	f, err := os.Open(filePath)

@@ -18,8 +18,11 @@ package utils
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -66,4 +69,70 @@ func GetToolPath(tool string) string {
 
 func GetSleepRecoverCmd(sleepTime int64, uid string) string {
 	return fmt.Sprintf("sleep %ds; %s/%s recover %s >> %s 2>&1", sleepTime, GetRunPath(), RootName, uid, RecoverLog)
+}
+
+func GetNumArrByList(listStr string) ([]int, error) {
+	var listArr []int
+	var ifExist = make(map[int]bool)
+	strArr := strings.Split(listStr, ",")
+	for _, unitStr := range strArr {
+		unitStr = strings.TrimSpace(unitStr)
+		if strings.Index(unitStr, "-") >= 0 {
+			rangeArr := strings.Split(unitStr, "-")
+			if len(rangeArr) != 2 {
+				return nil, fmt.Errorf("core range format is error. true format: 1-3")
+			}
+
+			rangeArr[0], rangeArr[1] = strings.TrimSpace(rangeArr[0]), strings.TrimSpace(rangeArr[1])
+			sCore, err := strconv.Atoi(rangeArr[0])
+			if err != nil {
+				return nil, fmt.Errorf("core[%s] is not a num: %s", rangeArr[0], err.Error())
+			}
+
+			eCore, err := strconv.Atoi(rangeArr[1])
+			if err != nil {
+				return nil, fmt.Errorf("core[%s] is not a num: %s", rangeArr[1], err.Error())
+			}
+
+			if sCore > eCore {
+				return nil, fmt.Errorf("core range must: startIndex <= endIndex")
+			}
+
+			for i := sCore; i <= eCore; i++ {
+				if i < 0 {
+					return nil, fmt.Errorf("core[%d] is less than 0", i)
+				}
+
+				if !ifExist[i] {
+					ifExist[i] = true
+					listArr = append(listArr, i)
+				}
+			}
+		} else {
+			unitCore, err := strconv.Atoi(unitStr)
+			if err != nil {
+				return nil, fmt.Errorf("core[%s] is not a num: %s", unitStr, err.Error())
+			}
+
+			if unitCore < 0 {
+				return nil, fmt.Errorf("core[%d] is less than 0", unitCore)
+			}
+
+			if !ifExist[unitCore] {
+				ifExist[unitCore] = true
+				listArr = append(listArr, unitCore)
+			}
+		}
+	}
+
+	return listArr, nil
+}
+
+func GetNumArrByCount(count int, listArr []int) []int {
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	r.Shuffle(len(listArr), func(i, j int) {
+		listArr[i], listArr[j] = listArr[j], listArr[i]
+	})
+
+	return listArr[:count]
 }

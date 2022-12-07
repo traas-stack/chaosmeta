@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package cpu
+package utils
 
 import (
 	"reflect"
-	"runtime"
 	"testing"
 )
 
@@ -97,13 +96,6 @@ func Test_getNumArrByList(t *testing.T) {
 		},
 		{name: "err",
 			args: args{
-				listStr: "2-5,99999999",
-			},
-			want:    nil,
-			wantErr: true,
-		},
-		{name: "err",
-			args: args{
 				listStr: "2-5,s",
 			},
 			want:    nil,
@@ -126,9 +118,9 @@ func Test_getNumArrByList(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := getNumArrByList(tt.args.listStr)
+			got, err := GetNumArrByList(tt.args.listStr)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("getNumArrByList() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("getNumArrByList() error = %v, wantErr %v, args: %v", err, tt.wantErr, tt.args)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
@@ -149,9 +141,9 @@ func Test_getNumArrByCount(t *testing.T) {
 	}{
 		{
 			args: args{
-				count: runtime.NumCPU(),
+				count: 4,
 			},
-			length: runtime.NumCPU(),
+			length: 4,
 		},
 		{
 			args: args{
@@ -160,9 +152,13 @@ func Test_getNumArrByCount(t *testing.T) {
 			length: 1,
 		},
 	}
+
+	list := []int{
+		0, 1, 2, 3,
+	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := getNumArrByCount(tt.args.count); len(got) != tt.length {
+			if got := GetNumArrByCount(tt.args.count, list); len(got) != tt.length {
 				t.Errorf("getNumArrByCount() = %v, want length %v", got, tt.length)
 			}
 		})

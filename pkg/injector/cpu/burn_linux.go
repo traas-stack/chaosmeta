@@ -27,10 +27,6 @@ import (
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/process"
 	"github.com/spf13/cobra"
 	"io/ioutil"
-	"math/rand"
-	"strconv"
-	"strings"
-	"time"
 )
 
 func init() {
@@ -93,7 +89,7 @@ func (i *BurnInjector) Validator() error {
 	}
 
 	if i.Args.List != "" {
-		targetList, err := getNumArrByList(i.Args.List)
+		targetList, err := utils.GetNumArrByList(i.Args.List)
 		if err != nil {
 			return fmt.Errorf("\"list\"[%s] is not valid: %s", i.Args.List, err.Error())
 		}
@@ -131,10 +127,10 @@ func (i *BurnInjector) Validator() error {
 func (i *BurnInjector) Inject() error {
 	var coreList []int
 	if i.Args.List != "" {
-		coreList, _ = getNumArrByList(i.Args.List)
+		coreList, _ = utils.GetNumArrByList(i.Args.List)
 	} else {
 		cpuList, _ := i.getAllCpuList()
-		coreList = getNumArrByCount(i.Args.Count, cpuList)
+		coreList = utils.GetNumArrByCount(i.Args.Count, cpuList)
 	}
 
 	log.WithUid(i.Info.Uid).Debugf("burn core list: %v", coreList)
@@ -209,150 +205,10 @@ func getCpuList(path string) ([]int, error) {
 	}
 
 	cpuListStr := string(reByte)
-	cpuList, err := getNumArrByList(cpuListStr)
+	cpuList, err := utils.GetNumArrByList(cpuListStr)
 	if err != nil {
 		return nil, fmt.Errorf("format cpu list string error: %s", err.Error())
 	}
 
 	return cpuList, nil
 }
-
-func getNumArrByList(listStr string) ([]int, error) {
-	var listArr []int
-	var ifExist = make(map[int]bool)
-	strArr := strings.Split(listStr, ",")
-	for _, unitStr := range strArr {
-		unitStr = strings.TrimSpace(unitStr)
-		if strings.Index(unitStr, "-") >= 0 {
-			rangeArr := strings.Split(unitStr, "-")
-			if len(rangeArr) != 2 {
-				return nil, fmt.Errorf("core range format is error. true format: 1-3")
-			}
-
-			rangeArr[0], rangeArr[1] = strings.TrimSpace(rangeArr[0]), strings.TrimSpace(rangeArr[1])
-			sCore, err := strconv.Atoi(rangeArr[0])
-			if err != nil {
-				return nil, fmt.Errorf("core[%s] is not a num: %s", rangeArr[0], err.Error())
-			}
-
-			eCore, err := strconv.Atoi(rangeArr[1])
-			if err != nil {
-				return nil, fmt.Errorf("core[%s] is not a num: %s", rangeArr[1], err.Error())
-			}
-
-			if sCore > eCore {
-				return nil, fmt.Errorf("core range must: startIndex <= endIndex")
-			}
-
-			for i := sCore; i <= eCore; i++ {
-				if i < 0 {
-					return nil, fmt.Errorf("core[%d] is less than 0", i)
-				}
-
-				if !ifExist[i] {
-					ifExist[i] = true
-					listArr = append(listArr, i)
-				}
-			}
-		} else {
-			unitCore, err := strconv.Atoi(unitStr)
-			if err != nil {
-				return nil, fmt.Errorf("core[%s] is not a num: %s", unitStr, err.Error())
-			}
-
-			if unitCore < 0 {
-				return nil, fmt.Errorf("core[%d] is less than 0", unitCore)
-			}
-
-			if !ifExist[unitCore] {
-				ifExist[unitCore] = true
-				listArr = append(listArr, unitCore)
-			}
-		}
-	}
-
-	return listArr, nil
-}
-
-func getNumArrByCount(count int, listArr []int) []int {
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	r.Shuffle(len(listArr), func(i, j int) {
-		listArr[i], listArr[j] = listArr[j], listArr[i]
-	})
-
-	return listArr[:count]
-}
-
-//func getNumArrByList(listStr string) ([]int, error) {
-//	maxIndex := runtime.NumCPU() - 1
-//	var listArr []int
-//	var ifExist = make(map[int]bool)
-//	strArr := strings.Split(listStr, ",")
-//	for _, unitStr := range strArr {
-//		unitStr = strings.TrimSpace(unitStr)
-//
-//		if strings.Index(unitStr, "-") >= 0 {
-//			rangeArr := strings.Split(unitStr, "-")
-//			if len(rangeArr) != 2 {
-//				return nil, fmt.Errorf("core range format is error. true format: 1-3")
-//			}
-//
-//			rangeArr[0], rangeArr[1] = strings.TrimSpace(rangeArr[0]), strings.TrimSpace(rangeArr[1])
-//			sCore, err := strconv.Atoi(rangeArr[0])
-//			if err != nil {
-//				return nil, fmt.Errorf("core[%s] is not a num: %s", rangeArr[0], err.Error())
-//			}
-//
-//			eCore, err := strconv.Atoi(rangeArr[1])
-//			if err != nil {
-//				return nil, fmt.Errorf("core[%s] is not a num: %s", rangeArr[1], err.Error())
-//			}
-//
-//			if sCore > eCore {
-//				return nil, fmt.Errorf("core range must: startIndex <= endIndex")
-//			}
-//
-//			for i := sCore; i <= eCore; i++ {
-//				if i < 0 || i > maxIndex {
-//					return nil, fmt.Errorf("core[%d] is out of core num range: [%d,%d]", i, 0, maxIndex)
-//				}
-//
-//				if !ifExist[i] {
-//					ifExist[i] = true
-//					listArr = append(listArr, i)
-//				}
-//			}
-//		} else {
-//			unitCore, err := strconv.Atoi(unitStr)
-//			if err != nil {
-//				return nil, fmt.Errorf("core[%s] is not a num: %s", unitStr, err.Error())
-//			}
-//
-//			if unitCore < 0 || unitCore > maxIndex {
-//				return nil, fmt.Errorf("core[%d] is out of core num range: [%d,%d]", unitCore, 0, maxIndex)
-//			}
-//
-//			if !ifExist[unitCore] {
-//				ifExist[unitCore] = true
-//				listArr = append(listArr, unitCore)
-//			}
-//		}
-//	}
-//
-//	return listArr, nil
-//}
-//
-//func getNumArrByCount(count int) []int {
-//	total := runtime.NumCPU()
-//	var listArr = make([]int, total)
-//	for i := 0; i < total; i++ {
-//		listArr[i] = i
-//	}
-//
-//	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-//	r.Shuffle(len(listArr), func(i, j int) {
-//		listArr[i], listArr[j] = listArr[j], listArr[i]
-//	})
-//
-//	return listArr[:count]
-//}
