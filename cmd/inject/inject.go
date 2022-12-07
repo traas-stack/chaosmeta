@@ -42,6 +42,9 @@ func NewInjectCommand() *cobra.Command {
 	injectCmd.PersistentFlags().StringVarP(&args.Timeout, "timeout", "t", "", "experiment's duration（default 0, means need to stop manually）")
 	injectCmd.PersistentFlags().StringVar(&args.Creator, "creator", "", "experiment's creator（default the cmd exec user）")
 
+	injectCmd.PersistentFlags().StringVar(&args.ContainerRuntime, "container-runtime", "", "if attack a container of local host, need to provide the container runtime of target container")
+	injectCmd.PersistentFlags().StringVar(&args.ContainerId, "container-id", "", "if attack a container of local host, need to provide the container id of target container")
+
 	//var args = make([]string, 2)
 	//injectCmd.PersistentFlags().StringVarP(&args[0], "timeout", "t", "", "experiment's duration（default 0, means need to stop manually）")
 	//injectCmd.PersistentFlags().StringVar(&args[1], "creator", "", "experiment's creator（default the cmd exec user）")

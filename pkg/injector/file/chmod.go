@@ -19,7 +19,7 @@ package file
 import (
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/filesys"
 	"github.com/spf13/cobra"
 	"path/filepath"
 )
@@ -68,7 +68,7 @@ func (i *ChmodInjector) Validator() error {
 		return fmt.Errorf("get absolute path of path[%s] error: %s", i.Args.Path, err.Error())
 	}
 
-	isPathExist, err := utils.ExistFile(i.Args.Path)
+	isPathExist, err := filesys.ExistFile(i.Args.Path)
 	if err != nil {
 		return fmt.Errorf("\"path\"[%s] check exist error: %s", i.Args.Path, err.Error())
 	}
@@ -78,7 +78,7 @@ func (i *ChmodInjector) Validator() error {
 	}
 
 	if i.Args.Permission != "" {
-		if err := utils.CheckPermission(i.Args.Permission); err != nil {
+		if err := filesys.CheckPermission(i.Args.Permission); err != nil {
 			return fmt.Errorf("\"permission\" is invalid: %s", err.Error())
 		}
 	}
@@ -87,13 +87,13 @@ func (i *ChmodInjector) Validator() error {
 }
 
 func (i *ChmodInjector) Inject() error {
-	perm, err := utils.GetPermission(i.Args.Path)
+	perm, err := filesys.GetPermission(i.Args.Path)
 	if err != nil {
 		return fmt.Errorf("get perm of path[%s] error: %s", i.Args.Path, err.Error())
 	}
 
 	i.Runtime.Permission = perm
-	return utils.Chmod(i.Args.Path, i.Args.Permission)
+	return filesys.Chmod(i.Args.Path, i.Args.Permission)
 }
 
 func (i *ChmodInjector) Recover() error {
@@ -101,13 +101,13 @@ func (i *ChmodInjector) Recover() error {
 		return nil
 	}
 
-	isExist, err := utils.ExistFile(i.Args.Path)
+	isExist, err := filesys.ExistFile(i.Args.Path)
 	if err != nil {
 		return fmt.Errorf("check file[%s] exist error: %s", i.Args.Path, err.Error())
 	}
 
 	if isExist {
-		return utils.Chmod(i.Args.Path, i.Runtime.Permission)
+		return filesys.Chmod(i.Args.Path, i.Runtime.Permission)
 	}
 
 	return nil

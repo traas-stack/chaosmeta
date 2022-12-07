@@ -21,6 +21,9 @@ import (
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/filesys"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/process"
 	"github.com/spf13/cobra"
 	"os"
 )
@@ -86,7 +89,7 @@ func (i *BurnInjector) Validator() error {
 		return fmt.Errorf("\"dir\" is empty")
 	}
 
-	if err := utils.CheckDir(i.Args.Dir); err != nil {
+	if err := filesys.CheckDir(i.Args.Dir); err != nil {
 		return fmt.Errorf("\"dir\"[%s] check error: %s", i.Args.Dir, err.Error())
 	}
 
@@ -114,7 +117,7 @@ func (i *BurnInjector) Inject() error {
 
 	blockK, stdStr, _ := utils.GetBlockKbytes(i.Args.Block)
 	count := MaxBlockK / blockK
-	if _, err := utils.StartBashCmdAndWaitPid(fmt.Sprintf("%s %s %s %s %s %d %s %d",
+	if _, err := cmdexec.StartBashCmdAndWaitPid(fmt.Sprintf("%s %s %s %s %s %d %s %d",
 		utils.GetToolPath(DiskIOBurnKey), i.Info.Uid, i.getFileName(), i.Args.Mode, stdStr, count, FlagDirect, timeout)); err != nil {
 		if err := i.Recover(); err != nil {
 			log.WithUid(i.Info.Uid).Warnf("undo error: %s", err.Error())
@@ -136,19 +139,19 @@ func (i *BurnInjector) Recover() error {
 	}
 
 	processKey := fmt.Sprintf("%s %s", DiskIOBurnKey, i.Info.Uid)
-	isProExist, err := utils.ExistProcessByKey(processKey)
+	isProExist, err := process.ExistProcessByKey(processKey)
 	if err != nil {
 		return fmt.Errorf("check process exist by key[%s] error: %s", processKey, err.Error())
 	}
 
 	if isProExist {
-		if err := utils.KillProcessByKey(processKey, utils.SIGKILL); err != nil {
+		if err := process.KillProcessByKey(processKey, process.SIGKILL); err != nil {
 			return fmt.Errorf("kill process by key[%s] error: %s", processKey, err.Error())
 		}
 	}
 
 	file := i.getFileName()
-	isFileExist, err := utils.ExistPath(file)
+	isFileExist, err := filesys.ExistPath(file)
 	if err != nil {
 		return fmt.Errorf("check file[%s] exist error: %s", file, err.Error())
 	}

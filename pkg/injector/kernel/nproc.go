@@ -20,6 +20,9 @@ import (
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/process"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/user"
 	"github.com/spf13/cobra"
 	"strconv"
 	"time"
@@ -65,11 +68,11 @@ func (i *NprocInjector) Validator() error {
 		return fmt.Errorf("\"count\" must larger than 0")
 	}
 
-	if _, err := utils.LookupUser(i.Args.User); err != nil {
+	if _, err := user.LookupUser(i.Args.User); err != nil {
 		return fmt.Errorf("\"user\" is invalid: %s", err.Error())
 	}
 
-	isExist, err := utils.ExistProcessByKey(fmt.Sprintf("%s %s", FdFullKey, i.Args.User))
+	isExist, err := process.ExistProcessByKey(fmt.Sprintf("%s %s", FdFullKey, i.Args.User))
 	if err != nil {
 		return fmt.Errorf("check if running error: %s", err.Error())
 	}
@@ -87,7 +90,7 @@ func (i *NprocInjector) Inject() error {
 		timeout, _ = utils.GetTimeSecond(i.Info.Timeout)
 	}
 
-	return utils.StartBashCmdAndWaitByUser(fmt.Sprintf("%s %s %s %d %d",
+	return cmdexec.StartBashCmdAndWaitByUser(fmt.Sprintf("%s %s %s %d %d",
 		utils.GetToolPath(NprocKey), i.Args.User, i.Args.User, i.Args.Count, timeout), i.Args.User)
 }
 
@@ -101,7 +104,7 @@ func (i *NprocInjector) Recover() error {
 	}
 
 	grepKey := fmt.Sprintf("%s %s", NprocKey, i.Args.User)
-	pid, err := utils.GetPidByKeyWithoutRunUser(grepKey)
+	pid, err := process.GetPidByKeyWithoutRunUser(grepKey)
 	if err != nil {
 		return fmt.Errorf("get pid from key[%s] error: %s", grepKey, err.Error())
 	}
@@ -109,13 +112,13 @@ func (i *NprocInjector) Recover() error {
 	time.Sleep(1 * time.Second)
 
 	processKey := strconv.Itoa(pid)
-	exist, err := utils.ExistProcessByKey(processKey)
+	exist, err := process.ExistProcessByKey(processKey)
 	if err != nil {
 		return fmt.Errorf("check process exist by key[%d] error: %s", pid, err.Error())
 	}
 
 	if exist {
-		return utils.KillProcessByKey(processKey, utils.SIGKILL)
+		return process.KillProcessByKey(processKey, process.SIGKILL)
 	}
 
 	return nil

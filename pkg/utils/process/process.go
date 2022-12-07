@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-package utils
+package process
 
 import (
-	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
 	"fmt"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
 	"github.com/shirou/gopsutil/process"
 	"os"
 	"strconv"
@@ -39,7 +41,7 @@ func ExistPid(pid int) (bool, error) {
 }
 
 func ExistProcessByKey(key string) (bool, error) {
-	reByte, err := RunBashCmdWithOutput(fmt.Sprintf("ps -ef | grep '%s' | grep -v grep | grep -v '%s inject' | grep -v '%s recover' | wc -l", key, RootName, RootName))
+	reByte, err := cmdexec.RunBashCmdWithOutput(fmt.Sprintf("ps -ef | grep '%s' | grep -v grep | grep -v '%s inject' | grep -v '%s recover' | wc -l", key, utils.RootName, utils.RootName))
 	if err != nil {
 		return false, fmt.Errorf("cmd exec error: %s", err.Error())
 	}
@@ -78,11 +80,11 @@ func KillPidWithSignal(pid int, signal int) error {
 }
 
 func KillProcessByKey(key string, signal int) error {
-	return RunBashCmdWithoutOutput(fmt.Sprintf("ps -ef | grep '%s' | grep -v grep | grep -v '%s inject' | grep -v '%s recover' | awk '{print $2}' | xargs kill -%d", key, RootName, RootName, signal))
+	return cmdexec.RunBashCmdWithoutOutput(fmt.Sprintf("ps -ef | grep '%s' | grep -v grep | grep -v '%s inject' | grep -v '%s recover' | awk '{print $2}' | xargs kill -%d", key, utils.RootName, utils.RootName, signal))
 }
 
 func GetPidListByKey(key string) ([]int, error) {
-	reByte, err := RunBashCmdWithOutput(fmt.Sprintf("ps -ef | grep '%s' | grep -v grep | grep -v '%s inject' | grep -v '%s recover' | awk '{print $2}'", key, RootName, RootName))
+	reByte, err := cmdexec.RunBashCmdWithOutput(fmt.Sprintf("ps -ef | grep '%s' | grep -v grep | grep -v '%s inject' | grep -v '%s recover' | awk '{print $2}'", key, utils.RootName, utils.RootName))
 	if err != nil {
 		return nil, fmt.Errorf("get process list error: %s", err.Error())
 	}
@@ -157,15 +159,15 @@ func GetPidListByListStrAndKey(pidListStr, key string) (pidList []int, err error
 }
 
 func GetPidByKeyWithoutRunUser(key string) (int, error) {
-	reByte, err := RunBashCmdWithOutput(fmt.Sprintf("ps -ef | grep '%s' | grep -v grep | grep -v runuser | awk '{print $2}'", key))
+	reByte, err := cmdexec.RunBashCmdWithOutput(fmt.Sprintf("ps -ef | grep '%s' | grep -v grep | grep -v runuser | awk '{print $2}'", key))
 	if err != nil {
-		return NoPid, fmt.Errorf("grep process error: %s", err.Error())
+		return utils.NoPid, fmt.Errorf("grep process error: %s", err.Error())
 	}
 
 	pidStr := strings.TrimSpace(string(reByte))
 	pid, err := strconv.Atoi(pidStr)
 	if err != nil {
-		return NoPid, fmt.Errorf("\"%s\" change to int error: %s", pidStr, err.Error())
+		return utils.NoPid, fmt.Errorf("\"%s\" change to int error: %s", pidStr, err.Error())
 	}
 
 	return pid, nil
@@ -174,7 +176,7 @@ func GetPidByKeyWithoutRunUser(key string) (int, error) {
 func WaitDefunctProcess() {
 	logger := log.GetLogger()
 
-	reByte, err := RunBashCmdWithOutput(fmt.Sprintf("ps -ef | grep '%d' | grep '%s' | grep -v grep | awk '{print $2}'", os.Getpid(), "defunct"))
+	reByte, err := cmdexec.RunBashCmdWithOutput(fmt.Sprintf("ps -ef | grep '%d' | grep '%s' | grep -v grep | awk '{print $2}'", os.Getpid(), "defunct"))
 	if err != nil {
 		logger.Warnf("get defunct process error: %s", err.Error())
 		return

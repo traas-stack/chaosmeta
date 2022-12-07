@@ -17,9 +17,9 @@
 package testcase
 
 import (
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
-	"github.com/ChaosMetaverse/chaosmetad/test/common"
 	"fmt"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/filesys"
+	"github.com/ChaosMetaverse/chaosmetad/test/common"
 	"github.com/shirou/gopsutil/mem"
 	"strconv"
 	"time"
@@ -217,7 +217,7 @@ func checkMemPer(targetPer int, fillDir string, recover bool, mode string) error
 		return nil
 	}
 
-	exist, err := utils.ExistPath(fillDir)
+	exist, err := filesys.ExistPath(fillDir)
 	if err != nil {
 		return fmt.Errorf("check file[%s] exist error: %s", err.Error())
 	}
@@ -259,7 +259,7 @@ func checkMemByteKb(targetByte int, fillDir string, recover bool, mode string) e
 		return nil
 	}
 
-	exist, err := utils.ExistPath(fillDir)
+	exist, err := filesys.ExistPath(fillDir)
 	if err != nil {
 		return fmt.Errorf("check file[%s] exist error: %s", err.Error())
 	}

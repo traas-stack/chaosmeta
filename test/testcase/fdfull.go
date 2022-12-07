@@ -18,7 +18,7 @@ package testcase
 
 import (
 	"fmt"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/filesys"
 	"github.com/ChaosMetaverse/chaosmetad/test/common"
 	"strconv"
 	"time"
@@ -30,7 +30,7 @@ var (
 )
 
 func GetFdTest() []common.TestCase {
-	nowFd, maxFd, err := utils.GetKernelFdStatus()
+	nowFd, maxFd, err := filesys.GetKernelFdStatus()
 	if err != nil {
 		panic(any(fmt.Sprintf("get kernel max fd count error: %s", err.Error())))
 	}
@@ -97,7 +97,7 @@ func GetFdTest() []common.TestCase {
 
 func checkFd(targetNow, targetMax int) error {
 	time.Sleep(fdSleepTime)
-	nowFd, maxFd, err := utils.GetKernelFdStatus()
+	nowFd, maxFd, err := filesys.GetKernelFdStatus()
 	if err != nil {
 		return fmt.Errorf("get kernel max fd count error: %s", err.Error())
 	}

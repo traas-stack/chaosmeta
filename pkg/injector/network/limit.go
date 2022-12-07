@@ -21,6 +21,8 @@ import (
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/net"
 	"github.com/spf13/cobra"
 )
 
@@ -64,7 +66,7 @@ func (i *LimitInjector) SetDefault() {
 	}
 
 	if i.Args.Mode == "" {
-		i.Args.Mode = utils.ModeNormal
+		i.Args.Mode = net.ModeNormal
 	}
 }
 
@@ -73,7 +75,7 @@ func (i *LimitInjector) SetOption(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&i.Args.Rate, "rate", "r", "", "limit rate, means how fast per second, support unit: \"bit、kbit、mbit、gbit、tbit\"(default bit)")
 
 	cmd.Flags().StringVarP(&i.Args.Direction, "direction", "d", "", fmt.Sprintf("flow direction to inject, support: %s（default %s）", DirectionOut, DirectionOut))
-	cmd.Flags().StringVarP(&i.Args.Mode, "mode", "m", "", fmt.Sprintf("inject mode, support: %s（default）、%s(means white list mode)", utils.ModeNormal, utils.ModeExclude))
+	cmd.Flags().StringVarP(&i.Args.Mode, "mode", "m", "", fmt.Sprintf("inject mode, support: %s（default）、%s(means white list mode)", net.ModeNormal, net.ModeExclude))
 	cmd.Flags().BoolVarP(&i.Args.Force, "force", "f", false, "force will overwrite the network rule if old rule exist")
 
 	cmd.Flags().StringVarP(&i.Args.Interface, "interface", "i", "", "filter condition: network interface. eg: lo")
@@ -86,7 +88,7 @@ func (i *LimitInjector) SetOption(cmd *cobra.Command) {
 
 // Validator Only one tc network failure can be executed at the same time
 func (i *LimitInjector) Validator() error {
-	if !utils.SupportCmd("tc") {
+	if !cmdexec.SupportCmd("tc") {
 		return fmt.Errorf("not support command \"tc\"")
 	}
 
@@ -94,7 +96,7 @@ func (i *LimitInjector) Validator() error {
 		return fmt.Errorf("\"interface\" is empty")
 	}
 
-	if !utils.ExistInterface(i.Args.Interface) {
+	if !net.ExistInterface(i.Args.Interface) {
 		return fmt.Errorf("\"interface\"[%s] is not exist", i.Args.Interface)
 	}
 
@@ -110,36 +112,36 @@ func (i *LimitInjector) Validator() error {
 		return fmt.Errorf("\"direction\" only support: %s", DirectionOut)
 	}
 
-	if i.Args.Mode != utils.ModeNormal && i.Args.Mode != utils.ModeExclude {
-		return fmt.Errorf("\"mode\" is not support: %s, only support: %s, %s", i.Args.Mode, utils.ModeNormal, utils.ModeExclude)
+	if i.Args.Mode != net.ModeNormal && i.Args.Mode != net.ModeExclude {
+		return fmt.Errorf("\"mode\" is not support: %s, only support: %s, %s", i.Args.Mode, net.ModeNormal, net.ModeExclude)
 	}
 
 	if i.Args.SrcIp != "" {
-		if _, err := utils.GetValidIPList(i.Args.SrcIp, true); err != nil {
+		if _, err := net.GetValidIPList(i.Args.SrcIp, true); err != nil {
 			return fmt.Errorf("\"src-ip\"[%s] is invalid: %s", i.Args.SrcIp, err.Error())
 		}
 
 	}
 
 	if i.Args.DstIp != "" {
-		if _, err := utils.GetValidIPList(i.Args.DstIp, true); err != nil {
+		if _, err := net.GetValidIPList(i.Args.DstIp, true); err != nil {
 			return fmt.Errorf("\"dst-ip\"[%s] is invalid: %s", i.Args.DstIp, err.Error())
 		}
 	}
 
 	if i.Args.SrcPort != "" {
-		if _, err := utils.GetValidPortList(i.Args.SrcPort); err != nil {
+		if _, err := net.GetValidPortList(i.Args.SrcPort); err != nil {
 			return fmt.Errorf("\"src-port\"[%s] is invalid: %s", i.Args.SrcPort, err.Error())
 		}
 	}
 
 	if i.Args.DstPort != "" {
-		if _, err := utils.GetValidPortList(i.Args.DstPort); err != nil {
+		if _, err := net.GetValidPortList(i.Args.DstPort); err != nil {
 			return fmt.Errorf("\"dst-port\"[%s] is invalid: %s", i.Args.DstPort, err.Error())
 		}
 	}
 
-	exist, err := utils.ExistTCRootQdisc(i.Args.Interface)
+	exist, err := net.ExistTCRootQdisc(i.Args.Interface)
 	if err != nil {
 		return fmt.Errorf("check tc rule error: %s", err.Error())
 	}
@@ -153,24 +155,24 @@ func (i *LimitInjector) Validator() error {
 
 func (i *LimitInjector) Inject() error {
 	if i.Args.Force {
-		exist, _ := utils.ExistTCRootQdisc(i.Args.Interface)
+		exist, _ := net.ExistTCRootQdisc(i.Args.Interface)
 		if exist {
-			if err := utils.ClearTcRule(i.Args.Interface); err != nil {
+			if err := net.ClearTcRule(i.Args.Interface); err != nil {
 				return fmt.Errorf("reset tc rule for %s error: %s", i.Args.Interface, err.Error())
 			}
 		}
 	}
 
-	if err := utils.AddHTBQdisc(i.Args.Interface); err != nil {
+	if err := net.AddHTBQdisc(i.Args.Interface); err != nil {
 		return fmt.Errorf("add htb qdisc for %s error: %s", i.Args.Interface, err.Error())
 	}
 
-	if err := utils.AddLimitClass(i.Args.Interface, i.Args.Rate, i.Args.Mode); err != nil {
+	if err := net.AddLimitClass(i.Args.Interface, i.Args.Rate, i.Args.Mode); err != nil {
 		return i.getErrWithUndo(fmt.Sprintf("add limit class for %s error: %s", i.Args.Interface, err.Error()))
 	}
 
 	if i.Args.SrcIp != "" || i.Args.DstIp != "" || i.Args.SrcPort != "" || i.Args.DstPort != "" {
-		if err := utils.AddFilter(i.Args.Interface, "1:2", i.Args.SrcIp, i.Args.DstIp, i.Args.SrcPort, i.Args.DstPort); err != nil {
+		if err := net.AddFilter(i.Args.Interface, "1:2", i.Args.SrcIp, i.Args.DstIp, i.Args.SrcPort, i.Args.DstPort); err != nil {
 			return i.getErrWithUndo(fmt.Sprintf("add filter for %s error: %s", i.Args.Interface, err.Error()))
 		}
 	}
@@ -192,13 +194,13 @@ func (i *LimitInjector) Recover() error {
 		return nil
 	}
 
-	isTcExist, err := utils.ExistTCRootQdisc(i.Args.Interface)
+	isTcExist, err := net.ExistTCRootQdisc(i.Args.Interface)
 	if err != nil {
 		return fmt.Errorf("check tc rule exist error: %s", err.Error())
 	}
 
 	if isTcExist {
-		return utils.ClearTcRule(i.Args.Interface)
+		return net.ClearTcRule(i.Args.Interface)
 	}
 
 	return nil

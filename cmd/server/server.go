@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/process"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/web"
 	"net/http"
 	"os"
@@ -37,10 +38,10 @@ func watchSignal() {
 		switch s {
 		case syscall.SIGCHLD:
 			log.GetLogger().Debugf("receive signal of children process")
-			utils.WaitDefunctProcess()
+			process.WaitDefunctProcess()
 		default:
 			// TODO: The atomicity of the task needs to be guaranteed, and the program can really exit without the task in the processing flow
-			// TODO: Exiting the server will cause the tasks in progress to also be exited
+			// TODO: Exiting the server with 'ctrl-c' will cause the tasks in progress to also be exited(but not exited with 'kill' and 'normal terminate')
 			utils.SolveErr(utils.NoErr, "server exit")
 		}
 	}

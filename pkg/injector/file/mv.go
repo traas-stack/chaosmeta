@@ -19,7 +19,7 @@ package file
 import (
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/filesys"
 	"github.com/spf13/cobra"
 	"os"
 	"path/filepath"
@@ -67,7 +67,7 @@ func (i *MvInjector) Validator() error {
 		return fmt.Errorf("get absolute path of src[%s] error: %s", i.Args.Src, err.Error())
 	}
 
-	isPathExist, err := utils.ExistFile(i.Args.Src)
+	isPathExist, err := filesys.ExistFile(i.Args.Src)
 	if err != nil {
 		return fmt.Errorf("\"src\"[%s] check exist error: %s", i.Args.Src, err.Error())
 	}
@@ -85,7 +85,7 @@ func (i *MvInjector) Validator() error {
 		return fmt.Errorf("get absolute path of dst[%s] error: %s", i.Args.Dst, err.Error())
 	}
 
-	isPathExist, err = utils.ExistPath(i.Args.Dst)
+	isPathExist, err = filesys.ExistPath(i.Args.Dst)
 	if err != nil {
 		return fmt.Errorf("\"dst\"[%s] check exist error: %s", i.Args.Dst, err.Error())
 	}
@@ -107,7 +107,7 @@ func (i *MvInjector) Recover() error {
 		return nil
 	}
 
-	isExist, err := utils.ExistPath(i.Args.Src)
+	isExist, err := filesys.ExistPath(i.Args.Src)
 	if err != nil {
 		return fmt.Errorf("check src[%s] exist error: %s", i.Args.Src, err.Error())
 	}

@@ -14,32 +14,30 @@
  * limitations under the License.
  */
 
-package utils
+package cmdexec
 
 import (
 	"bytes"
+	"context"
 	"fmt"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/crclient"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
 	"os/exec"
 	"strings"
 	"time"
 )
 
 const (
-	RecoverLog          = "/tmp/chaosmetad_recover.log" //TODO: Need to add log cleanup strategy
 	InjectCheckInterval = time.Millisecond * 200
+	execnsKey           = "chaosmeta_execns"
 )
 
 func StartSleepRecover(sleepTime int64, uid string) error {
-	return StartBashCmd(fmt.Sprintf("sleep %ds; %s/%s recover %s >> %s 2>&1", sleepTime, GetRunPath(), RootName, uid, RecoverLog))
+	return StartBashCmd(utils.GetSleepRecoverCmd(sleepTime, uid))
 }
 
 func waitProExec(stdout, stderr *bytes.Buffer) (err error) {
-	//var msg, timer, wg = "", time.NewTimer(InjectCheckInterval), sync.WaitGroup{}
-	//wg.Add(1)
-	//go waitOutput(&wg, stdout, stderr, timer, &msg)
-	//wg.Wait()
-
 	var msg, timer = "", time.NewTimer(InjectCheckInterval)
 	for {
 		<-timer.C
@@ -62,18 +60,6 @@ func waitProExec(stdout, stderr *bytes.Buffer) (err error) {
 
 	return fmt.Errorf("unexpected output: %s", msg)
 }
-
-//func waitOutput(wg *sync.WaitGroup, stdout, stderr *bytes.Buffer, timer *time.Timer, msg *string) {
-//	for {
-//		<-timer.C
-//		if stderr.String() != "" || stdout.String() != "" {
-//			*msg = stdout.String() + stderr.String()
-//			wg.Done()
-//			return
-//		}
-//		timer.Reset(InjectCheckInterval)
-//	}
-//}
 
 func SupportCmd(cmd string) bool {
 	_, err := exec.LookPath(cmd)
@@ -99,15 +85,20 @@ func StartBashCmd(cmd string) error {
 	return exec.Command("/bin/bash", "-c", cmd).Start()
 }
 
-//func StartBashCmdWithPid(cmd string) (int, error) {
-//	log.GetLogger().Debugf("start cmd: %s", cmd)
-//	c := exec.Command("/bin/bash", "-c", cmd)
-//	if err := c.Start(); err != nil {
-//		return NoPid, err
-//	}
-//
-//	return c.Process.Pid, nil
-//}
+func ExecContainer(cmd, cr, containerId, namespaces string) (int, error) {
+	client, err := crclient.GetClient(cr)
+	if err != nil {
+		return utils.NoPid, fmt.Errorf("get cr[%s] client error: %s", cr, err.Error())
+	}
+
+	ctx := context.Background()
+	targetPid, err := client.GetPidById(ctx, containerId)
+	if err != nil {
+		return utils.NoPid, fmt.Errorf("get pid of container[%s]'s init process error: %s", containerId, err.Error())
+	}
+
+	return StartBashCmdAndWaitPid(fmt.Sprintf("%s %d %s %s", utils.GetToolPath(execnsKey), targetPid, namespaces, cmd))
+}
 
 func StartBashCmdAndWaitPid(cmd string) (int, error) {
 	log.GetLogger().Debugf("start cmd: %s", cmd)
@@ -117,7 +108,7 @@ func StartBashCmdAndWaitPid(cmd string) (int, error) {
 	c.Stdout, c.Stderr = &stdout, &stderr
 
 	if err := c.Start(); err != nil {
-		return NoPid, fmt.Errorf("cmd start error: %s", err.Error())
+		return utils.NoPid, fmt.Errorf("cmd start error: %s", err.Error())
 	}
 
 	if err := waitProExec(&stdout, &stderr); err != nil {

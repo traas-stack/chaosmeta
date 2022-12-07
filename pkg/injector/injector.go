@@ -19,9 +19,12 @@ package injector
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/crclient"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/storage"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/user"
 	"github.com/spf13/cobra"
 	"runtime/debug"
 	"strings"
@@ -50,13 +53,18 @@ type BaseInjector struct {
 }
 
 type BaseInfo struct {
+	// 实验基础信息
 	Uid     string `json:"uid"`
-	Target  string `json:"target"`
-	Fault   string `json:"fault"`
 	Creator string `json:"creator"`
+	// 实验状态信息
 	Status  string `json:"status"`
 	Error   string `json:"error"`
 	Timeout string `json:"timeout"`
+	// 基础实验配置信息
+	Target           string `json:"target"`
+	Fault            string `json:"fault"`
+	ContainerId      string `json:"container_id"`
+	ContainerRuntime string `json:"container_runtime"`
 }
 
 func (i *BaseInjector) GetArgs() interface{} {
@@ -89,12 +97,22 @@ func (i *BaseInjector) SetCommonArgs(info *BaseInfo) {
 	if info.Timeout != "" {
 		i.Info.Timeout = info.Timeout
 	}
+
+	if info.ContainerRuntime != "" {
+		i.Info.ContainerRuntime = info.ContainerRuntime
+	}
+
+	if info.ContainerId != "" {
+		i.Info.ContainerId = info.ContainerId
+	}
 }
 
 func (i *BaseInjector) SetOption(cmd *cobra.Command) {
 	//cmd.Flags().StringVarP(&i.Info.Timeout, "timeout", "t", "", "experiment's duration（default need to stop manually）")
 	//cmd.Flags().StringVar(&i.Info.Creator, "creator", "", "experiment's creator（default the cmd exec user）")
 }
+
+//func (i *BaseInjector) SetCRConfig() {}
 
 func (i *BaseInjector) Inject() error {
 	//i.Info.Status = core.StatusSuccess
@@ -111,7 +129,7 @@ func (i *BaseInjector) Recover() error {
 
 func (i *BaseInjector) SetDefault() {
 	if i.Info.Creator == "" {
-		i.Info.Creator = utils.GetUser()
+		i.Info.Creator = user.GetUser()
 	}
 
 	if i.Info.Uid == "" {
@@ -121,11 +139,25 @@ func (i *BaseInjector) SetDefault() {
 	if i.Info.Status == "" {
 		i.Info.Status = utils.StatusCreated
 	}
+
+	if i.Info.ContainerId != "" && i.Info.ContainerRuntime == "" {
+		i.Info.ContainerRuntime = crclient.CrDocker
+	}
 }
 
 func (i *BaseInjector) Validator() error {
 	if i.Info.Timeout == "" {
 		return nil
+	}
+
+	if i.Info.ContainerRuntime != "" {
+		if i.Info.ContainerId == "" {
+			return fmt.Errorf("\"container-id\" is empty")
+		}
+
+		if _, err := crclient.GetClient(i.Info.ContainerRuntime); err != nil {
+			return fmt.Errorf("create container runtime client[%s] error: %s", i.Info.ContainerRuntime, err.Error())
+		}
 	}
 
 	if _, err := utils.GetTimeSecond(i.Info.Timeout); err != nil {
@@ -136,7 +168,7 @@ func (i *BaseInjector) Validator() error {
 }
 
 func (i *BaseInjector) DelayRecover(timeout int64) error {
-	return utils.StartSleepRecover(timeout, i.Info.Uid)
+	return cmdexec.StartSleepRecover(timeout, i.Info.Uid)
 }
 
 func (i *BaseInjector) LoadInjector(exp *storage.Experiment, argsVar, rVar interface{}) error {
@@ -155,6 +187,8 @@ func (i *BaseInjector) LoadInjector(exp *storage.Experiment, argsVar, rVar inter
 	i.Info.Error = exp.Error
 	i.Info.Creator = exp.Creator
 	i.Info.Timeout = exp.Timeout
+	i.Info.ContainerRuntime = exp.ContainerRuntime
+	i.Info.ContainerId = exp.ContainerId
 
 	return nil
 }
@@ -170,15 +204,17 @@ func (i *BaseInjector) OptionToExp(args, r interface{}) (*storage.Experiment, er
 	}
 
 	exp := &storage.Experiment{
-		Uid:     i.Info.Uid,
-		Target:  i.Info.Target,
-		Fault:   i.Info.Fault,
-		Status:  i.Info.Status,
-		Creator: i.Info.Creator,
-		Timeout: i.Info.Timeout,
-		Error:   i.Info.Error,
-		Args:    string(argsByte),
-		Runtime: string(runtimeByte),
+		Uid:              i.Info.Uid,
+		Target:           i.Info.Target,
+		Fault:            i.Info.Fault,
+		Status:           i.Info.Status,
+		Creator:          i.Info.Creator,
+		Timeout:          i.Info.Timeout,
+		Error:            i.Info.Error,
+		Args:             string(argsByte),
+		Runtime:          string(runtimeByte),
+		ContainerRuntime: i.Info.ContainerRuntime,
+		ContainerId:      i.Info.ContainerId,
 	}
 
 	return exp, nil
@@ -222,14 +258,13 @@ func ProcessInject(i IInjector) (code int, msg string) {
 			log.WithUid(exp.Uid).Warnf("update status[%s] for experiment[%s] error: %s", utils.StatusError, exp.Uid, errMsg)
 		}
 
-		// 内部自行undo
 		return utils.InjectErr, errMsg
 	}
 
 	exp, _ = i.OptionToExp(i.GetArgs(), i.GetRuntime())
 	exp.Status = utils.StatusSuccess
 	if err := db.Update(exp); err != nil {
-		// update 失败，会丢失runtime，所以必须回滚
+		// update fails, runtime will be lost, so it must roll back
 		if err := i.Recover(); err != nil {
 			log.WithUid(exp.Uid).Warnf("recover error: %s", err.Error())
 		}

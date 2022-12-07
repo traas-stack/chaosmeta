@@ -14,35 +14,23 @@
  * limitations under the License.
  */
 
-package utils
+package filesys
 
 import (
 	"fmt"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 )
 
-func GetRunPath() string {
-	path, err := filepath.Abs(filepath.Dir(os.Args[0]))
-	if err != nil {
-		SolveErr(SystemErr, err.Error())
-	}
-
-	return path
-}
-
-func GetToolPath(tool string) string {
-	return fmt.Sprintf("%s/tools/%s", GetRunPath(), tool)
-}
-
 func MkdirP(path string) error {
-	return RunBashCmdWithoutOutput(fmt.Sprintf("mkdir -p %s", path))
+	return cmdexec.RunBashCmdWithoutOutput(fmt.Sprintf("mkdir -p %s", path))
 }
 
 func Chmod(path, perm string) error {
-	return RunBashCmdWithoutOutput(fmt.Sprintf("chmod %s %s", perm, path))
+	return cmdexec.RunBashCmdWithoutOutput(fmt.Sprintf("chmod %s %s", perm, path))
 }
 
 func GetPermission(path string) (string, error) {
@@ -140,7 +128,7 @@ func CheckPermission(permission string) error {
 }
 
 func HasFileLineByKey(key string, file string) (bool, error) {
-	re, err := RunBashCmdWithOutput(fmt.Sprintf("grep \"%s\" %s | wc -l", key, file))
+	re, err := cmdexec.RunBashCmdWithOutput(fmt.Sprintf("grep \"%s\" %s | wc -l", key, file))
 	if err != nil {
 		return false, err
 	}
@@ -149,7 +137,7 @@ func HasFileLineByKey(key string, file string) (bool, error) {
 }
 
 func GetProMaxFd() (int, error) {
-	re, err := RunBashCmdWithOutput("ulimit -n")
+	re, err := cmdexec.RunBashCmdWithOutput("ulimit -n")
 	if err != nil {
 		return -1, fmt.Errorf("cmd exec error: %s", err.Error())
 	}
@@ -164,7 +152,7 @@ func GetProMaxFd() (int, error) {
 }
 
 func GetKernelFdStatus() (int, int, error) {
-	re, err := RunBashCmdWithOutput("cat /proc/sys/fs/file-nr | awk '{print $1,$3}'")
+	re, err := cmdexec.RunBashCmdWithOutput("cat /proc/sys/fs/file-nr | awk '{print $1,$3}'")
 	if err != nil {
 		return -1, -1, fmt.Errorf("cmd exec error: %s", err.Error())
 	}
@@ -200,7 +188,7 @@ func CreateFdFile(dir, filePrefix string, count int) error {
 
 	start, end := 0, step
 	for end <= count {
-		if err := RunBashCmdWithoutOutput(fmt.Sprintf("cd %s && touch %s{%d..%d}", dir, filePrefix, start, end-1)); err != nil {
+		if err := cmdexec.RunBashCmdWithoutOutput(fmt.Sprintf("cd %s && touch %s{%d..%d}", dir, filePrefix, start, end-1)); err != nil {
 			return fmt.Errorf("touch file from[%d] to[%d] error: %s", start, end, err.Error())
 		}
 		start += step

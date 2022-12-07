@@ -25,8 +25,6 @@ import (
 	"time"
 )
 
-// TODO Currently limited to "cpu.cfs_period_us" 100000us
-
 var nowTargetPercent, worktime, sleeptime int
 
 // uid core percent timeout
@@ -77,7 +75,8 @@ func burnCpu() {
 
 func adjustPercent(core, maxPercent int) {
 	for {
-		p, err := cpu.Percent(3*time.Second, true)
+		// TODO: Need to change the implementation of "cpu.Percent" to only get the cpu usage rate of this container. Consider using "docker.CgroupCPU" to achieve
+		p, err := cpu.Percent(2*time.Second, true)
 		if err != nil {
 			common.ExitWithErr(fmt.Sprintf("check cpu usage error: %s", err.Error()))
 		}

@@ -19,7 +19,7 @@ package testcase
 import (
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector/cpu"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
 	"github.com/ChaosMetaverse/chaosmetad/test/common"
 	"runtime"
 	"strconv"
@@ -79,7 +79,7 @@ func GetCpuLoadTest() []common.TestCase {
 
 func checkProcessCountByKey(key string, count int) error {
 	time.Sleep(cpuLoadSleepTime)
-	re, err := utils.RunBashCmdWithOutput(fmt.Sprintf("ps -ef | grep %s | grep -v grep | wc -l", key))
+	re, err := cmdexec.RunBashCmdWithOutput(fmt.Sprintf("ps -ef | grep %s | grep -v grep | wc -l", key))
 	if err != nil {
 		return fmt.Errorf("cmd run error: %s", err.Error())
 	}

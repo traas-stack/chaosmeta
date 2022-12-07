@@ -19,7 +19,7 @@ package file
 import (
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/filesys"
 	"github.com/spf13/cobra"
 	"os"
 	"path/filepath"
@@ -65,7 +65,7 @@ func (i *DeleteInjector) Validator() error {
 		return fmt.Errorf("get absolute path of path[%s] error: %s", i.Args.Path, err.Error())
 	}
 
-	isPathExist, err := utils.ExistFile(i.Args.Path)
+	isPathExist, err := filesys.ExistFile(i.Args.Path)
 	if err != nil {
 		return fmt.Errorf("\"path\"[%s] check exist error: %s", i.Args.Path, err.Error())
 	}
@@ -83,7 +83,7 @@ func (i *DeleteInjector) getBackupDir() string {
 
 func (i *DeleteInjector) Inject() error {
 	backupDir := i.getBackupDir()
-	if err := utils.MkdirP(backupDir); err != nil {
+	if err := filesys.MkdirP(backupDir); err != nil {
 		return fmt.Errorf("create backup dir[%s] error: %s", backupDir, err.Error())
 	}
 
@@ -96,7 +96,7 @@ func (i *DeleteInjector) Recover() error {
 	}
 	backupDir := i.getBackupDir()
 
-	isExist, err := utils.ExistPath(i.Args.Path)
+	isExist, err := filesys.ExistPath(i.Args.Path)
 	if err != nil {
 		return fmt.Errorf("check path[%s] exist error: %s", i.Args.Path, err.Error())
 	}

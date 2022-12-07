@@ -18,7 +18,8 @@ package testcase
 
 import (
 	"fmt"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/filesys"
 	"github.com/ChaosMetaverse/chaosmetad/test/common"
 	"os"
 	"strconv"
@@ -43,7 +44,7 @@ func GetFileMvTest() []common.TestCase {
 			Args:  "-s tempdir",
 			Error: true,
 			PreProcessor: func() error {
-				return utils.RunBashCmdWithoutOutput("mkdir tempdir")
+				return cmdexec.RunBashCmdWithoutOutput("mkdir tempdir")
 			},
 			PostProcessor: func() error {
 				return os.Remove("tempdir")
@@ -53,7 +54,7 @@ func GetFileMvTest() []common.TestCase {
 			Args:  fmt.Sprintf("-s %s", fileMvSrcFileName),
 			Error: true,
 			PreProcessor: func() error {
-				return utils.RunBashCmdWithoutOutput(fmt.Sprintf("touch %s", fileMvSrcFileName))
+				return cmdexec.RunBashCmdWithoutOutput(fmt.Sprintf("touch %s", fileMvSrcFileName))
 			},
 			PostProcessor: func() error {
 				return os.Remove(fileMvSrcFileName)
@@ -62,7 +63,7 @@ func GetFileMvTest() []common.TestCase {
 		{
 			Args: fmt.Sprintf("-s %s -d %s", fileMvSrcFileName, fileMvDstFileName),
 			PreProcessor: func() error {
-				return utils.RunBashCmdWithoutOutput(fmt.Sprintf("touch %s", fileMvSrcFileName))
+				return cmdexec.RunBashCmdWithoutOutput(fmt.Sprintf("touch %s", fileMvSrcFileName))
 			},
 			PostProcessor: func() error {
 				return os.Remove(fileMvSrcFileName)
@@ -91,7 +92,7 @@ func GetFileMvTest() []common.TestCase {
 }
 
 func checkMv(src, dst string) error {
-	exist, err := utils.ExistFile(dst)
+	exist, err := filesys.ExistFile(dst)
 	if err != nil {
 		return fmt.Errorf("check file[%s] exist error: %s", dst, err.Error())
 	}
@@ -100,7 +101,7 @@ func checkMv(src, dst string) error {
 		return fmt.Errorf("dst file[%s] is not exist", dst)
 	}
 
-	exist, err = utils.ExistFile(src)
+	exist, err = filesys.ExistFile(src)
 	if err != nil {
 		return fmt.Errorf("check file[%s] exist error: %s", src, err.Error())
 	}

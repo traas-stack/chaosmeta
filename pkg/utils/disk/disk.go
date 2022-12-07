@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package utils
+package disk
 
 import (
 	"fmt"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
 	"strings"
 )
 
@@ -42,7 +43,7 @@ func GetDevList(devStr string) ([]string, error) {
 }
 
 func existDev(devNum string) (bool, error) {
-	reByte, err := RunBashCmdWithOutput(fmt.Sprintf("lsblk -a | grep disk | awk '{print $2}' | grep \"%s\" | wc -l", devNum))
+	reByte, err := cmdexec.RunBashCmdWithOutput(fmt.Sprintf("lsblk -a | grep disk | awk '{print $2}' | grep \"%s\" | wc -l", devNum))
 	if err != nil {
 		return false, err
 	}
@@ -62,12 +63,12 @@ func RunFillDisk(size int64, file string) error {
 		size /= 1024
 	}
 
-	if SupportCmd("fallocate") {
-		return RunBashCmdWithoutOutput(fmt.Sprintf("fallocate -l %d%s %s", size, unit, file))
+	if cmdexec.SupportCmd("fallocate") {
+		return cmdexec.RunBashCmdWithoutOutput(fmt.Sprintf("fallocate -l %d%s %s", size, unit, file))
 	}
 
-	if SupportCmd("dd") {
-		return RunBashCmdWithoutOutput(fmt.Sprintf("dd if=/dev/zero of=%s bs=1%s count=%d iflag=fullblock", file, unit, size))
+	if cmdexec.SupportCmd("dd") {
+		return cmdexec.RunBashCmdWithoutOutput(fmt.Sprintf("dd if=/dev/zero of=%s bs=1%s count=%d iflag=fullblock", file, unit, size))
 	}
 
 	return fmt.Errorf("not support \"fallocate\" and \"dd\"")

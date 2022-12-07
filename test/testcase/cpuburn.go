@@ -19,7 +19,7 @@ package testcase
 import (
 	"fmt"
 	cpu2 "github.com/ChaosMetaverse/chaosmetad/pkg/injector/cpu"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/process"
 	"github.com/ChaosMetaverse/chaosmetad/test/common"
 	"github.com/shirou/gopsutil/cpu"
 	"runtime"
@@ -227,7 +227,7 @@ func ifCpuUsageFit(coreMap map[int]bool, percent int) error {
 		nowPer := int(unitP)
 		if coreMap[i] {
 			if nowPer < percent-cpuUsageOffset || nowPer > percent+cpuUsageOffset {
-				return fmt.Errorf("target core[%d] is not fit, target[> %d], now[%f]", i, percent, unitP)
+				return fmt.Errorf("target core[%d] is not fit, target[%d], now[%f]", i, percent, unitP)
 			}
 		}
 	}
@@ -236,7 +236,7 @@ func ifCpuUsageFit(coreMap map[int]bool, percent int) error {
 }
 
 func ifCpuBurnRecover() error {
-	isExist, err := utils.ExistProcessByKey(cpu2.CpuBurnKey)
+	isExist, err := process.ExistProcessByKey(cpu2.CpuBurnKey)
 	if err != nil {
 		return fmt.Errorf("check process exist error: %s", err.Error())
 	}

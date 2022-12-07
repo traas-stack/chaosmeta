@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-package utils
+package net
 
 import (
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
 	"net"
 	"strconv"
 	"strings"
@@ -34,7 +36,6 @@ const (
 	ProtocolTCP6 = "tcp6"
 	ProtocolUDP  = "udp"
 	ProtocolUDP6 = "udp6"
-	NoPid        = -1
 )
 
 func ExistInterface(name string) bool {
@@ -99,7 +100,7 @@ func GetValidPortList(portStr string) ([]string, error) {
 			return nil, fmt.Errorf("%d port mask should in [0,%d]", mask, PortBit)
 		}
 
-		re[i] = fmt.Sprintf("%s%s%s", portArr[0], PortSplit, getPortMask(mask))
+		re[i] = fmt.Sprintf("%s%s%s", portArr[0], utils.PortSplit, getPortMask(mask))
 	}
 
 	return re, nil
@@ -120,7 +121,7 @@ func getPortMask(mask int) string {
 }
 
 func ClearTcRule(netInterface string) error {
-	return RunBashCmdWithoutOutput(GetClearTcRuleCmd(netInterface))
+	return cmdexec.RunBashCmdWithoutOutput(GetClearTcRuleCmd(netInterface))
 }
 
 func GetClearTcRuleCmd(netInterface string) string {
@@ -135,7 +136,7 @@ func AddNetemQdisc(netInterface, parent, fault string, args string) error {
 	}
 
 	cmd := fmt.Sprintf("tc qdisc add dev %s %s netem %s %s", netInterface, parent, fault, args)
-	if err := RunBashCmdWithoutOutput(cmd); err != nil {
+	if err := cmdexec.RunBashCmdWithoutOutput(cmd); err != nil {
 		return err
 	}
 
@@ -150,7 +151,7 @@ func AddPrioQdisc(netInterface, parent, name string) error {
 	}
 
 	cmd := fmt.Sprintf("tc qdisc add dev %s %s handle %s prio bands 4", netInterface, parent, name)
-	if err := RunBashCmdWithoutOutput(cmd); err != nil {
+	if err := cmdexec.RunBashCmdWithoutOutput(cmd); err != nil {
 		return err
 	}
 
@@ -162,7 +163,7 @@ func AddHTBQdisc(netInterface string) error {
 	cmdStr := fmt.Sprintf("tc qdisc add dev %s root handle 1: htb default 1", netInterface)
 	log.GetLogger().Debugf("add htb qdisc cmd: %s", cmdStr)
 
-	if err := RunBashCmdWithoutOutput(cmdStr); err != nil {
+	if err := cmdexec.RunBashCmdWithoutOutput(cmdStr); err != nil {
 		return err
 	}
 
@@ -178,7 +179,7 @@ func AddLimitClass(netInterface string, rate string, mode string) error {
 	cmdStr := fmt.Sprintf("tc class add dev %s parent 1: classid 1:%d htb rate %s", netInterface, subNum, rate)
 	log.GetLogger().Debugf("add class cmd: %s", cmdStr)
 
-	if err := RunBashCmdWithoutOutput(cmdStr); err != nil {
+	if err := cmdexec.RunBashCmdWithoutOutput(cmdStr); err != nil {
 		return err
 	}
 
@@ -192,7 +193,7 @@ func AddFilter(netInterface, target, srcIpListStr, dstIpListStr, srcPortListStr,
 	}
 
 	log.GetLogger().Debugf("add filter cmd: %s", cmd)
-	if err := RunBashCmdWithoutOutput(cmd); err != nil {
+	if err := cmdexec.RunBashCmdWithoutOutput(cmd); err != nil {
 		return fmt.Errorf("run cmd error: %s", err.Error())
 	}
 
@@ -229,12 +230,12 @@ func getAddFilterCmd(netInterface, target, srcIpListStr, dstIpListStr, srcPortLi
 			}
 
 			if spLen > 0 {
-				portArr := strings.Split(srcPortList[sp], PortSplit)
+				portArr := strings.Split(srcPortList[sp], utils.PortSplit)
 				args += fmt.Sprintf("match ip sport %s %s ", portArr[0], portArr[1])
 			}
 
 			if dpLen > 0 {
-				portArr := strings.Split(dstPortList[dp], PortSplit)
+				portArr := strings.Split(dstPortList[dp], utils.PortSplit)
 				args += fmt.Sprintf("match ip dport %s %s ", portArr[0], portArr[1])
 			}
 
@@ -262,7 +263,7 @@ func getAddFilterCmd(netInterface, target, srcIpListStr, dstIpListStr, srcPortLi
 	}
 
 	log.GetLogger().Debugf("filter rule count: %d", len(ruleArr))
-	tcFilterStr = strings.Join(ruleArr, CmdSplit)
+	tcFilterStr = strings.Join(ruleArr, utils.CmdSplit)
 	return
 }
 
@@ -303,7 +304,7 @@ func getStrList(srcIpListStr, dstIpListStr, srcPortListStr, dstPortListStr strin
 }
 
 func ExistTCRootQdisc(netInterface string) (bool, error) {
-	out, err := RunBashCmdWithOutput(fmt.Sprintf("tc qdisc ls dev %s | grep -w \"1: root\" | grep -v grep | wc -l", netInterface))
+	out, err := cmdexec.RunBashCmdWithOutput(fmt.Sprintf("tc qdisc ls dev %s | grep -w \"1: root\" | grep -v grep | wc -l", netInterface))
 	if err != nil {
 		return false, err
 	}
@@ -315,7 +316,6 @@ func ExistTCRootQdisc(netInterface string) (bool, error) {
 	return true, nil
 }
 
-// GetPidByPort
 func GetPidByPort(port int, proto string) (int, error) {
 	var cmd string
 	if proto == ProtocolTCP || proto == ProtocolTCP6 {
@@ -323,23 +323,23 @@ func GetPidByPort(port int, proto string) (int, error) {
 	} else if proto == ProtocolUDP || proto == ProtocolUDP6 {
 		cmd = fmt.Sprintf("netstat -anpu | grep -w %s | awk '{print $4,$6}' | grep -w %d | grep :%d | awk '{print $2}' | awk -F'/' '{print $1}'", proto, port, port)
 	} else {
-		return NoPid, fmt.Errorf("protocol not support: %s、%s、%s、%s", ProtocolTCP, ProtocolUDP, ProtocolTCP6, ProtocolUDP6)
+		return utils.NoPid, fmt.Errorf("protocol not support: %s、%s、%s、%s", ProtocolTCP, ProtocolUDP, ProtocolTCP6, ProtocolUDP6)
 	}
 
 	log.GetLogger().Debugf("get pid by port cmd: %s", cmd)
-	out, err := RunBashCmdWithOutput(cmd)
+	out, err := cmdexec.RunBashCmdWithOutput(cmd)
 	if err != nil {
-		return NoPid, fmt.Errorf("cmd exec error: %s", err.Error())
+		return utils.NoPid, fmt.Errorf("cmd exec error: %s", err.Error())
 	}
 
 	pidStr := strings.TrimSpace(string(out))
 	if pidStr == "" {
-		return NoPid, nil
+		return utils.NoPid, nil
 	}
 
 	pid, err := strconv.Atoi(pidStr)
 	if err != nil {
-		return NoPid, fmt.Errorf("pid[%s] to int error: %s", pidStr, err.Error())
+		return utils.NoPid, fmt.Errorf("pid[%s] to int error: %s", pidStr, err.Error())
 	}
 
 	return pid, nil

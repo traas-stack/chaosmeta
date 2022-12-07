@@ -18,7 +18,8 @@ package testcase
 
 import (
 	"fmt"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/process"
 	"github.com/ChaosMetaverse/chaosmetad/test/common"
 	"strconv"
 	"time"
@@ -31,12 +32,12 @@ var (
 )
 
 func startDaemonCmd(cmd string) (int, error) {
-	err := utils.RunBashCmdWithoutOutput(cmd + "&")
+	err := cmdexec.RunBashCmdWithoutOutput(cmd + "&")
 	if err != nil {
 		return -1, fmt.Errorf("start simple process error: %s", err.Error())
 	}
 
-	pid, err := utils.GetPidByKeyWithoutRunUser(cmd)
+	pid, err := process.GetPidByKeyWithoutRunUser(cmd)
 	if err != nil {
 		return -1, fmt.Errorf("get pid by key error: %s", err.Error())
 	}
@@ -78,7 +79,7 @@ func GetProKillTest() []common.TestCase {
 			Check: func() error {
 				time.Sleep(proKillSleepTime)
 				fmt.Printf("target pid: %d\n", proKillPid)
-				proExist, err := utils.ExistPid(proKillPid)
+				proExist, err := process.ExistPid(proKillPid)
 				if err != nil {
 					return fmt.Errorf("check pid[%d] exist error: %s", proKillPid, err.Error())
 				}
@@ -132,7 +133,7 @@ func GetProKillTest() []common.TestCase {
 func checkProExistByKey(key string, expected bool) error {
 	fmt.Printf("expected exist status: %v\n", expected)
 	time.Sleep(proKillSleepTime)
-	exist, err := utils.ExistProcessByKey(key)
+	exist, err := process.ExistProcessByKey(key)
 	if err != nil {
 		return fmt.Errorf("check process exist by key[%s] error: %s", key, err.Error())
 	}

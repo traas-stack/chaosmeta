@@ -25,6 +25,7 @@ import (
 )
 
 const (
+	CrLocal      = "local"
 	CrDocker     = "docker"
 	CrContainerd = "containerd"
 
@@ -40,14 +41,12 @@ type Client interface {
 }
 
 func GetClient(cr string) (Client, error) {
-	logger := log.GetLogger()
-	logger.Info(cr)
+	log.GetLogger().Debugf("create %s client", cr)
+
 	switch cr {
 	case CrDocker:
-		logger.Info("create docker client")
 		return docker.GetClient(defaultDockerSocket)
 	case CrContainerd:
-		logger.Info("create containerd client")
 		return nil, fmt.Errorf("to be supported")
 	default:
 		return nil, fmt.Errorf("not support container runtime: %s", cr)

@@ -20,6 +20,9 @@ import (
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/net"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/process"
 	"github.com/spf13/cobra"
 )
 
@@ -56,7 +59,7 @@ func (i *OccupyInjector) SetDefault() {
 	i.BaseInjector.SetDefault()
 
 	if i.Args.Protocol == "" {
-		i.Args.Protocol = utils.ProtocolTCP
+		i.Args.Protocol = net.ProtocolTCP
 	}
 }
 
@@ -65,7 +68,7 @@ func (i *OccupyInjector) SetOption(cmd *cobra.Command) {
 	cmd.Flags().IntVarP(&i.Args.Port, "port", "p", 0, "target port")
 	cmd.Flags().StringVarP(&i.Args.Protocol, "protocol", "P", "",
 		fmt.Sprintf("target protocol, support: %s、%s、%s、%s（default %s）",
-			utils.ProtocolTCP, utils.ProtocolUDP, utils.ProtocolTCP6, utils.ProtocolUDP6, utils.ProtocolTCP))
+			net.ProtocolTCP, net.ProtocolUDP, net.ProtocolTCP6, net.ProtocolUDP6, net.ProtocolTCP))
 	cmd.Flags().BoolVarP(&i.Args.Force, "force", "f", false, "if kill the process which occupied target port")
 	cmd.Flags().StringVarP(&i.Args.RecoverCmd, "recover-cmd", "r", "", "execute in recover stage")
 }
@@ -75,7 +78,7 @@ func (i *OccupyInjector) Validator() error {
 		return fmt.Errorf("\"port\" must larger than 0")
 	}
 
-	if i.Args.Protocol != utils.ProtocolTCP && i.Args.Protocol != utils.ProtocolUDP && i.Args.Protocol != utils.ProtocolTCP6 && i.Args.Protocol != utils.ProtocolUDP6 {
+	if i.Args.Protocol != net.ProtocolTCP && i.Args.Protocol != net.ProtocolUDP && i.Args.Protocol != net.ProtocolTCP6 && i.Args.Protocol != net.ProtocolUDP6 {
 		return fmt.Errorf("\"protocol\" is not support %s", i.Args.Protocol)
 	}
 
@@ -83,14 +86,14 @@ func (i *OccupyInjector) Validator() error {
 }
 
 func (i *OccupyInjector) Inject() error {
-	pid, err := utils.GetPidByPort(i.Args.Port, i.Args.Protocol)
+	pid, err := net.GetPidByPort(i.Args.Port, i.Args.Protocol)
 	if err != nil {
 		return fmt.Errorf("get pid by port[%d] error: %s", i.Args.Port, err.Error())
 	}
 
 	if pid != utils.NoPid {
 		if i.Args.Force {
-			if err := utils.KillPidWithSignal(pid, utils.SIGKILL); err != nil {
+			if err := process.KillPidWithSignal(pid, process.SIGKILL); err != nil {
 				return fmt.Errorf("kill occupied process[%d] error: %s", pid, err.Error())
 			}
 		} else {
@@ -103,7 +106,7 @@ func (i *OccupyInjector) Inject() error {
 		timeout, err = utils.GetTimeSecond(i.Info.Timeout)
 	}
 
-	rePid, err := utils.StartBashCmdAndWaitPid(fmt.Sprintf("%s %s %d %s %d", utils.GetToolPath(OccupyKey), i.Info.Uid, i.Args.Port, i.Args.Protocol, timeout))
+	rePid, err := cmdexec.StartBashCmdAndWaitPid(fmt.Sprintf("%s %s %d %s %d", utils.GetToolPath(OccupyKey), i.Info.Uid, i.Args.Port, i.Args.Protocol, timeout))
 	if err != nil {
 		return fmt.Errorf("start cmd error: %s", err.Error())
 	}
@@ -125,19 +128,19 @@ func (i *OccupyInjector) Recover() error {
 		return nil
 	}
 
-	isProExist, err := utils.ExistPid(i.Runtime.Pid)
+	isProExist, err := process.ExistPid(i.Runtime.Pid)
 	if err != nil {
 		return fmt.Errorf("check pid[%d] exist error: %s", i.Runtime.Pid, err.Error())
 	}
 
 	if isProExist {
-		if err := utils.KillPidWithSignal(i.Runtime.Pid, utils.SIGKILL); err != nil {
+		if err := process.KillPidWithSignal(i.Runtime.Pid, process.SIGKILL); err != nil {
 			return fmt.Errorf("kill process[%d] error: %s", i.Runtime.Pid, err.Error())
 		}
 	}
 
 	if i.Args.RecoverCmd != "" {
-		return utils.StartBashCmd(i.Args.RecoverCmd)
+		return cmdexec.StartBashCmd(i.Args.RecoverCmd)
 	}
 
 	return nil

@@ -67,7 +67,8 @@ func printExp(exps []*storage.Experiment, total int64, ifAll bool) {
 		for _, exp := range exps {
 			var aData []interface{}
 			if ifAll {
-				aData = []interface{}{exp.Uid, exp.Status, exp.Target, exp.Fault, exp.Args, exp.Creator, exp.Runtime, exp.Timeout, exp.Error, exp.CreateTime, exp.UpdateTime}
+				aData = []interface{}{exp.Uid, exp.Status, exp.Target, exp.Fault, exp.Args, exp.Creator, exp.Runtime,
+					exp.ContainerId, exp.ContainerRuntime, exp.Timeout, exp.Error, exp.CreateTime, exp.UpdateTime}
 			} else {
 				aData = []interface{}{exp.Uid, exp.Status, exp.Target, exp.Fault, exp.Args}
 			}
@@ -77,7 +78,8 @@ func printExp(exps []*storage.Experiment, total int64, ifAll bool) {
 
 		t := gotabulate.Create(data)
 		if ifAll {
-			t.SetHeaders([]string{"UID", "STATUS", "TARGET", "FAULT", "ARGS", "CREATOR", "RUNTIME", "TIMEOUT", "ERROR", "CREATE_TIME", "UPDATE_TIME"})
+			t.SetHeaders([]string{"UID", "STATUS", "TARGET", "FAULT", "ARGS", "CREATOR", "RUNTIME",
+				"CONTAINER_ID", "CONTAINER_RUNTIME", "TIMEOUT", "ERROR", "CREATE_TIME", "UPDATE_TIME"})
 		} else {
 			t.SetHeaders([]string{"UID", "STATUS", "TARGET", "FAULT", "ARGS"})
 		}

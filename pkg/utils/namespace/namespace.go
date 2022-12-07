@@ -14,35 +14,29 @@
  * limitations under the License.
  */
 
-package utils
+package namespace
 
 import (
 	"fmt"
-	"os/user"
+	"golang.org/x/sys/unix"
+	"os"
 )
 
 const (
-	UserDefault = "unknown"
-	UserRoot    = "root"
+	IPC  = "ipc"
+	MNT  = "mnt"
+	NET  = "net"
+	PID  = "pid"
+	USER = "user"
+	UTS  = "uts"
 )
 
-func GetUser() string {
-	u, err := user.Current()
+func JoinProcNs(pid int, nsType string) error {
+	filePath := fmt.Sprintf("/proc/%d/ns/%s", pid, nsType)
+	f, err := os.Open(filePath)
 	if err != nil {
-		return UserDefault
+		return fmt.Errorf("open ns file[%s] error: %s", filePath, err.Error())
 	}
 
-	return u.Username
-}
-
-func LookupUser(u string) (*user.User, error) {
-	if u == "" {
-		return nil, fmt.Errorf("user is empty")
-	}
-
-	if u == UserRoot {
-		return nil, fmt.Errorf("not support user: %s", UserRoot)
-	}
-
-	return user.Lookup(u)
+	return unix.Setns(int(f.Fd()), 0)
 }

@@ -17,10 +17,14 @@
 package mem
 
 import (
+	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
-	"fmt"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/filesys"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/memory"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/process"
 	"github.com/spf13/cobra"
 	"runtime"
 )
@@ -93,16 +97,16 @@ func (i *FillInjector) Validator() error {
 	}
 
 	if i.Args.Mode == ModeCache {
-		if !utils.SupportCmd("fallocate") && !utils.SupportCmd("dd") {
+		if !cmdexec.SupportCmd("fallocate") && !cmdexec.SupportCmd("dd") {
 			return fmt.Errorf("not support cmd \"fallocate\" and \"dd\", can not fill cache")
 		}
 
-		if !utils.SupportCmd("mount") {
+		if !cmdexec.SupportCmd("mount") {
 			return fmt.Errorf("not support cmd \"mount\", can not fill cache")
 		}
 
 		fillDir := getFillDir(i.Info.Uid)
-		isExist, err := utils.ExistPath(fillDir)
+		isExist, err := filesys.ExistPath(fillDir)
 		if err != nil {
 			return fmt.Errorf("check tmpfs[%s] exist error: %s", fillDir, err.Error())
 		}
@@ -121,7 +125,7 @@ func getFillDir(uid string) string {
 
 func (i *FillInjector) Inject() error {
 
-	fillKBytes, err := utils.CalculateFillKBytes(i.Args.Percent, i.Args.Bytes)
+	fillKBytes, err := memory.CalculateFillKBytes(i.Args.Percent, i.Args.Bytes)
 	if err != nil {
 		return err
 	}
@@ -135,14 +139,14 @@ func (i *FillInjector) Inject() error {
 
 	// 获取命令并执行
 	if i.Args.Mode == ModeRam {
-		pid, err := utils.FillRam(MemFillKey, fillKBytes, i.Info.Uid, timeout)
+		pid, err := memory.FillRam(MemFillKey, fillKBytes, i.Info.Uid, timeout)
 		if err != nil {
 			return fmt.Errorf("fill ram error: %s", err.Error())
 		}
 
 		i.Runtime.Pid = pid
 	} else {
-		if err := utils.FillCache(fillKBytes, getFillDir(i.Info.Uid), TmpFsFile); err != nil {
+		if err := memory.FillCache(fillKBytes, getFillDir(i.Info.Uid), TmpFsFile); err != nil {
 			return fmt.Errorf("fill cache error: %s", err.Error())
 		}
 	}
@@ -158,13 +162,13 @@ func (i *FillInjector) Recover() error {
 	if i.Args.Mode == ModeCache {
 		fillDir := getFillDir(i.Info.Uid)
 
-		isDirExist, err := utils.ExistPath(fillDir)
+		isDirExist, err := filesys.ExistPath(fillDir)
 		if err != nil {
 			return fmt.Errorf("check tmpfs[%s] exist error: %s", fillDir, err.Error())
 		}
 
 		if isDirExist {
-			return utils.UndoTmpfs(fillDir)
+			return memory.UndoTmpfs(fillDir)
 		}
 
 		return nil
@@ -173,13 +177,13 @@ func (i *FillInjector) Recover() error {
 			return nil
 		}
 
-		isPidExist, err := utils.ExistPid(i.Runtime.Pid)
+		isPidExist, err := process.ExistPid(i.Runtime.Pid)
 		if err != nil {
 			return fmt.Errorf("check pid[%d] exist error: %s", i.Runtime.Pid, err.Error())
 		}
 
 		if isPidExist {
-			return utils.KillPidWithSignal(i.Runtime.Pid, utils.SIGKILL)
+			return process.KillPidWithSignal(i.Runtime.Pid, process.SIGKILL)
 		}
 
 		return nil

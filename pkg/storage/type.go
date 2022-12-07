@@ -17,15 +17,17 @@
 package storage
 
 type Experiment struct {
-	Uid        string `gorm:"primary_key" json:"uid"`
-	Target     string `gorm:"index:target" json:"target"`
-	Fault      string `gorm:"index:fault" json:"fault"`
-	Args       string `json:"args"`
-	Runtime    string `json:"runtime"`
-	Timeout    string `json:"timeout"`
-	Status     string `gorm:"index:status" json:"status"`
-	Creator    string `gorm:"index:creator" json:"creator"`
-	Error      string `json:"error"`
-	CreateTime string `json:"create_time"`
-	UpdateTime string `json:"update_time"`
+	Uid              string `gorm:"primary_key" json:"uid"`
+	Target           string `gorm:"index:target" json:"target"`
+	Fault            string `gorm:"index:fault" json:"fault"`
+	Args             string `json:"args"`
+	Runtime          string `json:"runtime"`
+	Timeout          string `json:"timeout"`
+	Status           string `gorm:"index:status" json:"status"`
+	Creator          string `gorm:"index:creator" json:"creator"`
+	Error            string `json:"error"`
+	CreateTime       string `json:"create_time"`
+	UpdateTime       string `json:"update_time"`
+	ContainerId      string `json:"container_id"`
+	ContainerRuntime string `json:"container_runtime"`
 }

@@ -19,6 +19,8 @@ package testcase
 import (
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/filesys"
 	"github.com/ChaosMetaverse/chaosmetad/test/common"
 	"io/ioutil"
 	"os"
@@ -45,7 +47,7 @@ func GetFileAddTest() []common.TestCase {
 			Args:  "-p tempdir",
 			Error: true,
 			PreProcessor: func() error {
-				return utils.RunBashCmdWithoutOutput("mkdir tempdir")
+				return cmdexec.RunBashCmdWithoutOutput("mkdir tempdir")
 			},
 			PostProcessor: func() error {
 				return os.Remove("tempdir")
@@ -53,7 +55,7 @@ func GetFileAddTest() []common.TestCase {
 		},
 		{
 			PreProcessor: func() error {
-				return utils.RunBashCmdWithoutOutput("touch ./tempfile")
+				return cmdexec.RunBashCmdWithoutOutput("touch ./tempfile")
 			},
 			Args:  "-p tempfile/temp.log",
 			Error: true,
@@ -103,7 +105,7 @@ func GetFileAddTest() []common.TestCase {
 }
 
 func checkFileAdd(fileName, addPerm, addContent string) error {
-	exist, err := utils.ExistFile(fileName)
+	exist, err := filesys.ExistFile(fileName)
 	if err != nil {
 		return fmt.Errorf("check file[%s] exist error: %s", fileName, err.Error())
 	}
@@ -112,7 +114,7 @@ func checkFileAdd(fileName, addPerm, addContent string) error {
 		return fmt.Errorf("add file[%s] failed: not exist", fileName)
 	}
 
-	perm, err := utils.GetPermission(fileName)
+	perm, err := filesys.GetPermission(fileName)
 	if err != nil {
 		return fmt.Errorf("get perm of file[%s] error: %s", fileName, err.Error())
 	}
@@ -135,7 +137,7 @@ func checkFileAdd(fileName, addPerm, addContent string) error {
 
 func checkFileNotExist(file string) error {
 	fileName := fmt.Sprintf("%s/%s", utils.GetRunPath(), file)
-	exist, err := utils.ExistFile(fileName)
+	exist, err := filesys.ExistFile(fileName)
 	if err != nil {
 		return fmt.Errorf("check file[%s] exist error: %s", fileName, err.Error())
 	}

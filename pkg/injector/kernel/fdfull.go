@@ -21,6 +21,9 @@ import (
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/filesys"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/process"
 	"github.com/spf13/cobra"
 	"os"
 )
@@ -75,7 +78,7 @@ func (i *FdfullInjector) Validator() error {
 		return fmt.Errorf("\"count\" must larger than 0")
 	}
 
-	nowFd, maxFd, err := utils.GetKernelFdStatus()
+	nowFd, maxFd, err := filesys.GetKernelFdStatus()
 	if err != nil {
 		return fmt.Errorf("get kernel max fd count error: %s", err.Error())
 	}
@@ -92,7 +95,7 @@ func (i *FdfullInjector) getFdFullDir() string {
 }
 
 func (i *FdfullInjector) fdfill(maxFd, nowFd int) error {
-	proFd, err := utils.GetProMaxFd()
+	proFd, err := filesys.GetProMaxFd()
 	if err != nil {
 		return fmt.Errorf("get process max fd count error: %s", err.Error())
 	}
@@ -104,7 +107,7 @@ func (i *FdfullInjector) fdfill(maxFd, nowFd int) error {
 	step := proFd - 10
 
 	fdFullDir := i.getFdFullDir()
-	if err := utils.CreateFdFile(fdFullDir, FdFullFile, step); err != nil {
+	if err := filesys.CreateFdFile(fdFullDir, FdFullFile, step); err != nil {
 		return fmt.Errorf("create tmp file[%s] error: %s", fdFullDir, err.Error())
 	}
 
@@ -121,7 +124,7 @@ func (i *FdfullInjector) fdfill(maxFd, nowFd int) error {
 		//	return fmt.Errorf("start fd full error: %s", err.Error())
 		//}
 
-		if err := utils.StartBashCmd(fmt.Sprintf("%s %s %s %s %d %d %d",
+		if err := cmdexec.StartBashCmd(fmt.Sprintf("%s %s %s %s %d %d %d",
 			utils.GetToolPath(FdFullKey), i.Info.Uid, fdFullDir, FdFullFile, 0, step, timeout)); err != nil {
 			return fmt.Errorf("start fd full error: %s", err.Error())
 		}
@@ -133,11 +136,11 @@ func (i *FdfullInjector) fdfill(maxFd, nowFd int) error {
 }
 
 func changeFileMax(fileMax int) error {
-	return utils.RunBashCmdWithoutOutput(fmt.Sprintf("echo %d > %s", fileMax, FileMaxPath))
+	return cmdexec.RunBashCmdWithoutOutput(fmt.Sprintf("echo %d > %s", fileMax, FileMaxPath))
 }
 
 func (i *FdfullInjector) Inject() error {
-	nowFd, maxFd, _ := utils.GetKernelFdStatus()
+	nowFd, maxFd, _ := filesys.GetKernelFdStatus()
 	if i.Args.Mode == ModeFdFill {
 		if err := i.fdfill(maxFd, nowFd); err != nil {
 			return i.getErrWithUndo(err.Error())
@@ -177,18 +180,18 @@ func (i *FdfullInjector) Recover() error {
 
 	if i.Args.Mode == ModeFdFill {
 		processKey, fdFullDir := getFdfullKey(i.Info.Uid), i.getFdFullDir()
-		isProExist, err := utils.ExistProcessByKey(processKey)
+		isProExist, err := process.ExistProcessByKey(processKey)
 		if err != nil {
 			return fmt.Errorf("check process exist by key[%s] error: %s", processKey, err.Error())
 		}
 
 		if isProExist {
-			if err := utils.KillProcessByKey(processKey, utils.SIGKILL); err != nil {
+			if err := process.KillProcessByKey(processKey, process.SIGKILL); err != nil {
 				log.WithUid(i.Info.Uid).Warnf("kill process by key[%s] error: %s", processKey, err.Error())
 			}
 		}
 
-		isDirExist, err := utils.ExistPath(fdFullDir)
+		isDirExist, err := filesys.ExistPath(fdFullDir)
 		if err != nil {
 			return fmt.Errorf("check dir[%s] exist error: %s", fdFullDir, err.Error())
 		}
@@ -199,7 +202,7 @@ func (i *FdfullInjector) Recover() error {
 
 		return nil
 	} else {
-		_, maxFd, err := utils.GetKernelFdStatus()
+		_, maxFd, err := filesys.GetKernelFdStatus()
 		if err != nil {
 			return fmt.Errorf("get kernel max fd count error: %s", err.Error())
 		}

@@ -18,7 +18,7 @@ package testcase
 
 import (
 	"fmt"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	process2 "github.com/ChaosMetaverse/chaosmetad/pkg/utils/process"
 	"github.com/ChaosMetaverse/chaosmetad/test/common"
 	"github.com/shirou/gopsutil/process"
 	"strconv"
@@ -32,7 +32,7 @@ var (
 )
 
 func GetProStopTest() []common.TestCase {
-	utils.KillProcessByKey(proStopCmd, utils.SIGKILL)
+	process2.KillProcessByKey(proStopCmd, process2.SIGKILL)
 
 	var err error
 	proStopPid, err = startDaemonCmd(proStopCmd)
@@ -105,7 +105,7 @@ func checkProStatusByKey(key string, expectedStatus string, expectedCount int) e
 	time.Sleep(proStopSleepTime)
 	fmt.Printf("key: %s, expected status: %s, expected count: %d\n", key, expectedStatus, expectedCount)
 
-	pidList, err := utils.GetPidListByKey(key)
+	pidList, err := process2.GetPidListByKey(key)
 	if err != nil {
 		return fmt.Errorf("get pid list by key[%s] error: %s", key, err.Error())
 	}

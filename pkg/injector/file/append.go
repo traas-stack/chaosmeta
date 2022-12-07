@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/filesys"
 	"github.com/spf13/cobra"
 	"path/filepath"
 	"strings"
@@ -69,7 +71,7 @@ func (i *AppendInjector) Validator() error {
 		return fmt.Errorf("get absolute path of path[%s] error: %s", i.Args.Path, err.Error())
 	}
 
-	isFileExist, err := utils.ExistFile(i.Args.Path)
+	isFileExist, err := filesys.ExistFile(i.Args.Path)
 	if err != nil {
 		return fmt.Errorf("\"path\"[%s] check exist error: %s", i.Args.Path, err.Error())
 	}
@@ -99,7 +101,7 @@ func (i *AppendInjector) Inject() error {
 	}
 
 	content = fmt.Sprintf("\n%s", content)
-	if err := utils.RunBashCmdWithoutOutput(fmt.Sprintf("echo -e \"%s\" >> %s", content, i.Args.Path)); err != nil {
+	if err := cmdexec.RunBashCmdWithoutOutput(fmt.Sprintf("echo -e \"%s\" >> %s", content, i.Args.Path)); err != nil {
 		return fmt.Errorf("append content to %s error: %s", i.Args.Path, err.Error())
 	}
 
@@ -115,7 +117,7 @@ func (i *AppendInjector) Recover() error {
 		return nil
 	}
 
-	fileExist, err := utils.ExistFile(i.Args.Path)
+	fileExist, err := filesys.ExistFile(i.Args.Path)
 	if err != nil {
 		return fmt.Errorf("check file[%s] exist error: %s", i.Args.Path, err.Error())
 	}
@@ -125,13 +127,13 @@ func (i *AppendInjector) Recover() error {
 	}
 
 	flag := getAppendFlag(i.Info.Uid)
-	isExist, err := utils.HasFileLineByKey(flag, i.Args.Path)
+	isExist, err := filesys.HasFileLineByKey(flag, i.Args.Path)
 	if err != nil {
 		return fmt.Errorf("check file[%s] line exist key[%s] error: %s", i.Args.Path, flag, err.Error())
 	}
 
 	if isExist {
-		return utils.RunBashCmdWithoutOutput(fmt.Sprintf("sed -i '/%s/d' %s", getAppendFlag(i.Info.Uid), i.Args.Path))
+		return cmdexec.RunBashCmdWithoutOutput(fmt.Sprintf("sed -i '/%s/d' %s", getAppendFlag(i.Info.Uid), i.Args.Path))
 	}
 
 	return nil

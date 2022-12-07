@@ -19,7 +19,8 @@ package process
 import (
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/process"
 	"github.com/spf13/cobra"
 )
 
@@ -55,7 +56,7 @@ func (i *KillInjector) SetDefault() {
 	i.BaseInjector.SetDefault()
 
 	if i.Args.Signal == 0 {
-		i.Args.Signal = utils.SIGKILL
+		i.Args.Signal = process.SIGKILL
 	}
 }
 
@@ -64,7 +65,7 @@ func (i *KillInjector) SetOption(cmd *cobra.Command) {
 
 	cmd.Flags().IntVarP(&i.Args.Pid, "pid", "p", 0, "target process's pid")
 	cmd.Flags().StringVarP(&i.Args.Key, "key", "k", "", "the key used to grep to get target process, the effect is equivalent to \"ps -ef | grep [key]\". if \"pid\" provided, \"key\" will be ignored")
-	cmd.Flags().IntVarP(&i.Args.Signal, "signal", "s", 0, fmt.Sprintf("send target signal to the target process（default %d）", utils.SIGKILL))
+	cmd.Flags().IntVarP(&i.Args.Signal, "signal", "s", 0, fmt.Sprintf("send target signal to the target process（default %d）", process.SIGKILL))
 	cmd.Flags().StringVarP(&i.Args.RecoverCmd, "recover-cmd", "r", "", "the cmd which execute in the recover stage")
 }
 
@@ -82,7 +83,7 @@ func (i *KillInjector) Validator() error {
 	}
 
 	if i.Args.Pid > 0 {
-		exist, err := utils.ExistPid(i.Args.Pid)
+		exist, err := process.ExistPid(i.Args.Pid)
 		if err != nil {
 			return fmt.Errorf("check pid[%d] exist error: %s", i.Args.Pid, err.Error())
 		}
@@ -91,7 +92,7 @@ func (i *KillInjector) Validator() error {
 			return fmt.Errorf("pid[%d] not exist", i.Args.Pid)
 		}
 	} else {
-		exist, err := utils.ExistProcessByKey(i.Args.Key)
+		exist, err := process.ExistProcessByKey(i.Args.Key)
 		if err != nil {
 			return fmt.Errorf("check pid by key[%s] error: %s", i.Args.Key, err.Error())
 		}
@@ -106,11 +107,11 @@ func (i *KillInjector) Validator() error {
 
 func (i *KillInjector) Inject() error {
 	if i.Args.Pid > 0 {
-		if err := utils.KillPidWithSignal(i.Args.Pid, i.Args.Signal); err != nil {
+		if err := process.KillPidWithSignal(i.Args.Pid, i.Args.Signal); err != nil {
 			return err
 		}
 	} else {
-		if err := utils.KillProcessByKey(i.Args.Key, i.Args.Signal); err != nil {
+		if err := process.KillProcessByKey(i.Args.Key, i.Args.Signal); err != nil {
 			return err
 		}
 	}
@@ -127,5 +128,5 @@ func (i *KillInjector) Recover() error {
 		return nil
 	}
 
-	return utils.StartBashCmd(i.Args.RecoverCmd)
+	return cmdexec.StartBashCmd(i.Args.RecoverCmd)
 }

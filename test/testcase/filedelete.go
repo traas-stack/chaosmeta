@@ -19,7 +19,8 @@ package testcase
 import (
 	"fmt"
 	file2 "github.com/ChaosMetaverse/chaosmetad/pkg/injector/file"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/filesys"
 	"github.com/ChaosMetaverse/chaosmetad/test/common"
 	"os"
 	"strconv"
@@ -43,7 +44,7 @@ func GetFileDeleteTest() []common.TestCase {
 			Args:  "-p tempdir",
 			Error: true,
 			PreProcessor: func() error {
-				return utils.RunBashCmdWithoutOutput("mkdir tempdir")
+				return cmdexec.RunBashCmdWithoutOutput("mkdir tempdir")
 			},
 			PostProcessor: func() error {
 				return os.Remove("tempdir")
@@ -52,7 +53,7 @@ func GetFileDeleteTest() []common.TestCase {
 		{
 			Args: fmt.Sprintf("-p %s", fileDeleteFileName),
 			PreProcessor: func() error {
-				return utils.RunBashCmdWithoutOutput(fmt.Sprintf("touch %s", fileDeleteFileName))
+				return cmdexec.RunBashCmdWithoutOutput(fmt.Sprintf("touch %s", fileDeleteFileName))
 			},
 			PostProcessor: func() error {
 				return os.Remove(fileDeleteFileName)
@@ -81,7 +82,7 @@ func GetFileDeleteTest() []common.TestCase {
 }
 
 func checkDelete(file string, ifExist bool) error {
-	exist, err := utils.ExistFile(file)
+	exist, err := filesys.ExistFile(file)
 	if err != nil {
 		return fmt.Errorf("check file[%s] exist error: %s", file, err.Error())
 	}
@@ -91,7 +92,7 @@ func checkDelete(file string, ifExist bool) error {
 	}
 
 	backupFile := fmt.Sprintf("%s%s/%s", file2.BackUpDir, common.UID, file)
-	exist, err = utils.ExistFile(backupFile)
+	exist, err = filesys.ExistFile(backupFile)
 	if err != nil {
 		return fmt.Errorf("check file[%s] exist error: %s", backupFile, err.Error())
 	}

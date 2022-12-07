@@ -43,6 +43,8 @@ FD_FULL="chaosmeta_fd"
 NPROC="chaosmeta_nproc"
 NET_OCCUPY="chaosmeta_occupy"
 
+TOOL_EXECNS="chaosmeta_execns"
+
 # file path
 CI_DIR=$(
   cd $(dirname $0)
@@ -80,5 +82,6 @@ CGO_ENABLED=1 GOOS=${OS_NAME} GOARCH=${ARCH_NAME} ${GO_TOOL} build -o ${PACKAGE_
 CGO_ENABLED=1 GOOS=${OS_NAME} GOARCH=${ARCH_NAME} ${GO_TOOL} build -o ${PACKAGE_DIR}/${OS_NAME}/tools/${NET_OCCUPY} ${PROJECT_DIR}/tools/${NET_OCCUPY}.go
 CGO_ENABLED=1 GOOS=${OS_NAME} GOARCH=${ARCH_NAME} ${GO_TOOL} build -o ${PACKAGE_DIR}/${OS_NAME}/tools/${FD_FULL} ${PROJECT_DIR}/tools/${FD_FULL}.go
 CGO_ENABLED=1 GOOS=${OS_NAME} GOARCH=${ARCH_NAME} ${GO_TOOL} build -o ${PACKAGE_DIR}/${OS_NAME}/tools/${NPROC} ${PROJECT_DIR}/tools/${NPROC}.go
+CGO_ENABLED=1 GOOS=${OS_NAME} GOARCH=${ARCH_NAME} ${GO_TOOL} build -o ${PACKAGE_DIR}/${OS_NAME}/tools/${TOOL_EXECNS} ${PROJECT_DIR}/tools/${TOOL_EXECNS}.go
 
 cp -R ${PACKAGE_DIR}/${OS_NAME}/tools ${OUTPUT_DIR}/

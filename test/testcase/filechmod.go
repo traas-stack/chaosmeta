@@ -19,6 +19,8 @@ package testcase
 import (
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/filesys"
 	"github.com/ChaosMetaverse/chaosmetad/test/common"
 	"os"
 	"strconv"
@@ -44,7 +46,7 @@ func GetFileChmodTest() []common.TestCase {
 			Args:  fmt.Sprintf("-p tempdir -P %s", fileChmodPerm),
 			Error: true,
 			PreProcessor: func() error {
-				return utils.RunBashCmdWithoutOutput("mkdir tempdir")
+				return cmdexec.RunBashCmdWithoutOutput("mkdir tempdir")
 			},
 			PostProcessor: func() error {
 				return os.Remove("tempdir")
@@ -54,7 +56,7 @@ func GetFileChmodTest() []common.TestCase {
 			Args:  fmt.Sprintf("-p %s -P %s", fileChmodFileName, "799"),
 			Error: true,
 			PreProcessor: func() error {
-				return utils.RunBashCmdWithoutOutput(fmt.Sprintf("touch %s", fileChmodFileName))
+				return cmdexec.RunBashCmdWithoutOutput(fmt.Sprintf("touch %s", fileChmodFileName))
 			},
 			PostProcessor: func() error {
 				return os.Remove(fileChmodFileName)
@@ -64,7 +66,7 @@ func GetFileChmodTest() []common.TestCase {
 			Args:  fmt.Sprintf("-p %s -P %s", fileChmodFileName, "reg34t"),
 			Error: true,
 			PreProcessor: func() error {
-				return utils.RunBashCmdWithoutOutput(fmt.Sprintf("touch %s", fileChmodFileName))
+				return cmdexec.RunBashCmdWithoutOutput(fmt.Sprintf("touch %s", fileChmodFileName))
 			},
 			PostProcessor: func() error {
 				return os.Remove(fileChmodFileName)
@@ -73,12 +75,12 @@ func GetFileChmodTest() []common.TestCase {
 		{
 			Args: fmt.Sprintf("-p %s -P %s", fileChmodFileName, fileChmodPerm),
 			PreProcessor: func() error {
-				if err := utils.RunBashCmdWithoutOutput(fmt.Sprintf("touch %s", fileChmodFileName)); err != nil {
+				if err := cmdexec.RunBashCmdWithoutOutput(fmt.Sprintf("touch %s", fileChmodFileName)); err != nil {
 					return err
 				}
 
 				var err error
-				fileChmodOldPerm, err = utils.GetPermission(fileChmodFileName)
+				fileChmodOldPerm, err = filesys.GetPermission(fileChmodFileName)
 				if err != nil {
 					return err
 				}
@@ -113,7 +115,7 @@ func GetFileChmodTest() []common.TestCase {
 }
 
 func checkPerm(fileName, targetPerm string) error {
-	perm, err := utils.GetPermission(fileName)
+	perm, err := filesys.GetPermission(fileName)
 	if err != nil {
 		return fmt.Errorf("get perm error: %s", err.Error())
 	}

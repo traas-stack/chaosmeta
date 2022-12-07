@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/process"
 	"github.com/spf13/cobra"
 	"runtime"
 )
@@ -73,7 +75,7 @@ func (i *LoadInjector) Validator() error {
 }
 
 func (i *LoadInjector) Inject() error {
-	return utils.StartBashCmd(fmt.Sprintf("%s %s %d", utils.GetToolPath(CpuLoadKey), i.Info.Uid, i.Args.Count))
+	return cmdexec.StartBashCmd(fmt.Sprintf("%s %s %d", utils.GetToolPath(CpuLoadKey), i.Info.Uid, i.Args.Count))
 }
 
 func (i *LoadInjector) Recover() error {
@@ -82,13 +84,13 @@ func (i *LoadInjector) Recover() error {
 	}
 
 	processKey := fmt.Sprintf("%s %s", CpuLoadKey, i.Info.Uid)
-	isExist, err := utils.ExistProcessByKey(processKey)
+	isExist, err := process.ExistProcessByKey(processKey)
 	if err != nil {
 		return fmt.Errorf("check process exist by key[%s] error: %s", processKey, err.Error())
 	}
 
 	if isExist {
-		if err := utils.KillProcessByKey(processKey, utils.SIGKILL); err != nil {
+		if err := process.KillProcessByKey(processKey, process.SIGKILL); err != nil {
 			return fmt.Errorf("kill process by key[%s] error: %s", processKey, err.Error())
 		}
 	}

@@ -18,7 +18,7 @@ package testcase
 
 import (
 	"fmt"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/filesys"
 	"github.com/ChaosMetaverse/chaosmetad/test/common"
 	"github.com/shirou/gopsutil/disk"
 	"math"
@@ -224,7 +224,7 @@ func checkDiskFillPer(dir, file string, targetPer int, recover bool) error {
 		return fmt.Errorf("usage is unexpected: %d", now)
 	}
 
-	exist, err := utils.ExistPath(file)
+	exist, err := filesys.ExistPath(file)
 	if err != nil {
 		return fmt.Errorf("check file exsit error: %s", err.Error())
 	}
@@ -259,7 +259,7 @@ func checkDiskFillByte(dir, file string, targetByte int, recover bool) error {
 		return fmt.Errorf("usage is unexpected: %d", now)
 	}
 
-	exist, err := utils.ExistPath(file)
+	exist, err := filesys.ExistPath(file)
 	if err != nil {
 		return fmt.Errorf("check file exsit error: %s", err.Error())
 	}

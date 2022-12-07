@@ -14,15 +14,35 @@
  * limitations under the License.
  */
 
-package utils
+package user
 
 import (
 	"fmt"
-	"time"
+	"os/user"
 )
 
-func NewUid() string {
-	t := time.Now()
-	timeStr := t.Format("20060102150405")
-	return fmt.Sprintf("%s%04d", timeStr, t.Nanosecond()/1000%100000%10000)
+const (
+	UserDefault = "unknown"
+	UserRoot    = "root"
+)
+
+func GetUser() string {
+	u, err := user.Current()
+	if err != nil {
+		return UserDefault
+	}
+
+	return u.Username
+}
+
+func LookupUser(u string) (*user.User, error) {
+	if u == "" {
+		return nil, fmt.Errorf("user is empty")
+	}
+
+	if u == UserRoot {
+		return nil, fmt.Errorf("not support user: %s", UserRoot)
+	}
+
+	return user.Lookup(u)
 }

@@ -17,10 +17,13 @@
 package disk
 
 import (
+	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
-	"fmt"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
+	disk2 "github.com/ChaosMetaverse/chaosmetad/pkg/utils/disk"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/filesys"
 	"github.com/shirou/gopsutil/disk"
 	"github.com/spf13/cobra"
 	"os"
@@ -74,11 +77,11 @@ func (i *FillInjector) Validator() error {
 		return fmt.Errorf("\"dir\" is empty")
 	}
 
-	if err := utils.CheckDir(i.Args.Dir); err != nil {
+	if err := filesys.CheckDir(i.Args.Dir); err != nil {
 		return fmt.Errorf("\"dir\"[%s] check error: %s", i.Args.Dir, err.Error())
 	}
 
-	path, err := utils.GetAbsPath(i.Args.Dir)
+	path, err := filesys.GetAbsPath(i.Args.Dir)
 	if err != nil {
 		return fmt.Errorf("\"dir\"[%s] get absolute path error: %s", i.Args.Dir, err.Error())
 	}
@@ -100,7 +103,7 @@ func (i *FillInjector) Validator() error {
 		return fmt.Errorf("calculate fill bytes error: %s", err.Error())
 	}
 
-	if !utils.SupportCmd("fallocate") && !utils.SupportCmd("dd") {
+	if !cmdexec.SupportCmd("fallocate") && !cmdexec.SupportCmd("dd") {
 		return fmt.Errorf("not support cmd \"fallocate\" and \"dd\", can not fill disk")
 	}
 
@@ -115,7 +118,7 @@ func (i *FillInjector) Inject() error {
 	fillFile := fmt.Sprintf("%s/%s", i.Args.Dir, getFillFileName(i.Info.Uid))
 	bytesKb, _ := getFillKBytes(i.Args.Dir, i.Args.Percent, i.Args.Bytes)
 
-	if err := utils.RunFillDisk(bytesKb, fillFile); err != nil {
+	if err := disk2.RunFillDisk(bytesKb, fillFile); err != nil {
 		if err := os.Remove(fillFile); err != nil {
 			log.WithUid(i.Info.Uid).Warnf("run failed and delete fill file error: %s", err.Error())
 		}
@@ -131,7 +134,7 @@ func (i *FillInjector) Recover() error {
 	}
 
 	fillFile := fmt.Sprintf("%s/%s", i.Args.Dir, getFillFileName(i.Info.Uid))
-	isExist, err := utils.ExistPath(fillFile)
+	isExist, err := filesys.ExistPath(fillFile)
 	if err != nil {
 		return fmt.Errorf("check file[%s] exist error: %s", fillFile, err.Error())
 	}

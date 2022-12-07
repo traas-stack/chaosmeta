@@ -43,53 +43,53 @@ func main() {
 	testCases = testcase.GetCpuBurnTest()
 	runTestCases(tool, testCases)
 
-	fmt.Println("@@@@@@@@@@@@@@@CPU LOAD@@@@@@@@@@@@@@@")
-	testCases = testcase.GetCpuLoadTest()
-	runTestCases(tool, testCases)
-
-	fmt.Println("@@@@@@@@@@@@@@@DISK FILL@@@@@@@@@@@@@@@")
-	testCases = testcase.GetDiskFillTest()
-	runTestCases(tool, testCases)
-
-	fmt.Println("@@@@@@@@@@@@@@@MEM FILL@@@@@@@@@@@@@@@")
-	testCases = testcase.GetMemFillTest()
-	runTestCases(tool, testCases)
-
-	fmt.Println("@@@@@@@@@@@@@@@PROCESS STOP@@@@@@@@@@@@@@@")
-	testCases = testcase.GetProStopTest()
-	runTestCases(tool, testCases)
-
-	fmt.Println("@@@@@@@@@@@@@@@PROCESS KILL@@@@@@@@@@@@@@@")
-	testCases = testcase.GetProKillTest()
-	runTestCases(tool, testCases)
-
-	fmt.Println("@@@@@@@@@@@@@@@KERNEL NPROC@@@@@@@@@@@@@@@")
-	testCases = testcase.GetNProcTest()
-	runTestCases(tool, testCases)
-
-	fmt.Println("@@@@@@@@@@@@@@@KERNEL FD@@@@@@@@@@@@@@@")
-	testCases = testcase.GetFdTest()
-	runTestCases(tool, testCases)
-
-	fmt.Println("@@@@@@@@@@@@@@@FILE ADD@@@@@@@@@@@@@@@")
-	testCases = testcase.GetFileAddTest()
-	runTestCases(tool, testCases)
-
-	fmt.Println("@@@@@@@@@@@@@@@FILE APPEND@@@@@@@@@@@@@@@")
-	testCases = testcase.GetFileAppendTest()
-	runTestCases(tool, testCases)
-
-	fmt.Println("@@@@@@@@@@@@@@@FILE CHMOD@@@@@@@@@@@@@@@")
-	testCases = testcase.GetFileChmodTest()
-	runTestCases(tool, testCases)
-
-	fmt.Println("@@@@@@@@@@@@@@@FILE MV@@@@@@@@@@@@@@@")
-	testCases = testcase.GetFileMvTest()
-	runTestCases(tool, testCases)
-
-	fmt.Println("@@@@@@@@@@@@@@@FILE DELETE@@@@@@@@@@@@@@@")
-	testCases = testcase.GetFileDeleteTest()
-	runTestCases(tool, testCases)
+	//fmt.Println("@@@@@@@@@@@@@@@CPU LOAD@@@@@@@@@@@@@@@")
+	//testCases = testcase.GetCpuLoadTest()
+	//runTestCases(tool, testCases)
+	//
+	//fmt.Println("@@@@@@@@@@@@@@@DISK FILL@@@@@@@@@@@@@@@")
+	//testCases = testcase.GetDiskFillTest()
+	//runTestCases(tool, testCases)
+	//
+	//fmt.Println("@@@@@@@@@@@@@@@MEM FILL@@@@@@@@@@@@@@@")
+	//testCases = testcase.GetMemFillTest()
+	//runTestCases(tool, testCases)
+	//
+	//fmt.Println("@@@@@@@@@@@@@@@PROCESS STOP@@@@@@@@@@@@@@@")
+	//testCases = testcase.GetProStopTest()
+	//runTestCases(tool, testCases)
+	//
+	//fmt.Println("@@@@@@@@@@@@@@@PROCESS KILL@@@@@@@@@@@@@@@")
+	//testCases = testcase.GetProKillTest()
+	//runTestCases(tool, testCases)
+	//
+	//fmt.Println("@@@@@@@@@@@@@@@KERNEL NPROC@@@@@@@@@@@@@@@")
+	//testCases = testcase.GetNProcTest()
+	//runTestCases(tool, testCases)
+	//
+	//fmt.Println("@@@@@@@@@@@@@@@KERNEL FD@@@@@@@@@@@@@@@")
+	//testCases = testcase.GetFdTest()
+	//runTestCases(tool, testCases)
+	//
+	//fmt.Println("@@@@@@@@@@@@@@@FILE ADD@@@@@@@@@@@@@@@")
+	//testCases = testcase.GetFileAddTest()
+	//runTestCases(tool, testCases)
+	//
+	//fmt.Println("@@@@@@@@@@@@@@@FILE APPEND@@@@@@@@@@@@@@@")
+	//testCases = testcase.GetFileAppendTest()
+	//runTestCases(tool, testCases)
+	//
+	//fmt.Println("@@@@@@@@@@@@@@@FILE CHMOD@@@@@@@@@@@@@@@")
+	//testCases = testcase.GetFileChmodTest()
+	//runTestCases(tool, testCases)
+	//
+	//fmt.Println("@@@@@@@@@@@@@@@FILE MV@@@@@@@@@@@@@@@")
+	//testCases = testcase.GetFileMvTest()
+	//runTestCases(tool, testCases)
+	//
+	//fmt.Println("@@@@@@@@@@@@@@@FILE DELETE@@@@@@@@@@@@@@@")
+	//testCases = testcase.GetFileDeleteTest()
+	//runTestCases(tool, testCases)
 }
 
 func runTestCases(tool string, testCases []common.TestCase) {

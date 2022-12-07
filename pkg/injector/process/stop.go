@@ -19,7 +19,7 @@ package process
 import (
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/process"
 	"github.com/spf13/cobra"
 )
 
@@ -66,7 +66,7 @@ func (i *StopInjector) Validator() error {
 	}
 
 	if i.Args.Pid > 0 {
-		exist, err := utils.ExistPid(i.Args.Pid)
+		exist, err := process.ExistPid(i.Args.Pid)
 		if err != nil {
 			return fmt.Errorf("check pid[%d] exist error: %s", i.Args.Pid, err.Error())
 		}
@@ -75,7 +75,7 @@ func (i *StopInjector) Validator() error {
 			return fmt.Errorf("pid[%d] not exist", i.Args.Pid)
 		}
 	} else {
-		exist, err := utils.ExistProcessByKey(i.Args.Key)
+		exist, err := process.ExistProcessByKey(i.Args.Key)
 		if err != nil {
 			return fmt.Errorf("check pid by key[%s] error: %s", i.Args.Key, err.Error())
 		}
@@ -90,11 +90,11 @@ func (i *StopInjector) Validator() error {
 
 func (i *StopInjector) Inject() error {
 	if i.Args.Pid > 0 {
-		if err := utils.KillPidWithSignal(i.Args.Pid, utils.SIGSTOP); err != nil {
+		if err := process.KillPidWithSignal(i.Args.Pid, process.SIGSTOP); err != nil {
 			return err
 		}
 	} else {
-		if err := utils.KillProcessByKey(i.Args.Key, utils.SIGSTOP); err != nil {
+		if err := process.KillProcessByKey(i.Args.Key, process.SIGSTOP); err != nil {
 			return err
 		}
 	}
@@ -108,11 +108,11 @@ func (i *StopInjector) Recover() error {
 	}
 
 	if i.Args.Pid > 0 {
-		if err := utils.KillPidWithSignal(i.Args.Pid, utils.SIGCONT); err != nil {
+		if err := process.KillPidWithSignal(i.Args.Pid, process.SIGCONT); err != nil {
 			return err
 		}
 	} else {
-		if err := utils.KillProcessByKey(i.Args.Key, utils.SIGCONT); err != nil {
+		if err := process.KillProcessByKey(i.Args.Key, process.SIGCONT); err != nil {
 			return err
 		}
 	}

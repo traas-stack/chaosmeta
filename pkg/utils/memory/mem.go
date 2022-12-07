@@ -14,11 +14,15 @@
  * limitations under the License.
  */
 
-package utils
+package memory
 
 import (
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/disk"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/filesys"
 	"github.com/shirou/gopsutil/mem"
 )
 
@@ -40,7 +44,7 @@ func CalculateFillKBytes(percent int, fillBytes string) (int64, error) {
 
 		fillKBytes = int64((float64(percent) - usedPercent) / 100 * (float64(v.Total) / 1024))
 	} else {
-		fillKBytes, _ = GetKBytes(fillBytes)
+		fillKBytes, _ = utils.GetKBytes(fillBytes)
 	}
 
 	// prevent overflow
@@ -52,17 +56,17 @@ func CalculateFillKBytes(percent int, fillBytes string) (int64, error) {
 }
 
 func FillCache(fillKBytes int64, dir string, filename string) error {
-	if err := MkdirP(dir); err != nil {
+	if err := filesys.MkdirP(dir); err != nil {
 		return fmt.Errorf("create tmpfs dir[%s] error: %s", dir, err.Error())
 	}
 
 	file := fmt.Sprintf("%s/%s", dir, filename)
 
-	if err := RunBashCmdWithoutOutput(fmt.Sprintf("mount -t tmpfs tmpfs %s -o size=%dk", dir, fillKBytes)); err != nil {
+	if err := cmdexec.RunBashCmdWithoutOutput(fmt.Sprintf("mount -t tmpfs tmpfs %s -o size=%dk", dir, fillKBytes)); err != nil {
 		return fmt.Errorf("mount tmpfs[%s] error: %s", dir, err.Error())
 	}
 
-	if err := RunFillDisk(fillKBytes, file); err != nil {
+	if err := disk.RunFillDisk(fillKBytes, file); err != nil {
 		UndoTmpfs(dir)
 		return fmt.Errorf("fill file[%s] error: %s", file, err.Error())
 	}
@@ -73,11 +77,11 @@ func FillCache(fillKBytes int64, dir string, filename string) error {
 func UndoTmpfs(dir string) error {
 	logger := log.GetLogger()
 
-	if err := RunBashCmdWithoutOutput(fmt.Sprintf("umount %s", dir)); err != nil {
+	if err := cmdexec.RunBashCmdWithoutOutput(fmt.Sprintf("umount %s", dir)); err != nil {
 		logger.Warnf("umount %s error: %s", dir, err.Error())
 	}
 
-	if err := RunBashCmdWithoutOutput(fmt.Sprintf("rm -rf %s", dir)); err != nil {
+	if err := cmdexec.RunBashCmdWithoutOutput(fmt.Sprintf("rm -rf %s", dir)); err != nil {
 		logger.Warnf("rm %s error: %s", dir, err.Error())
 		return fmt.Errorf("rm %s error: %s", dir, err.Error())
 	}
@@ -86,5 +90,5 @@ func UndoTmpfs(dir string) error {
 }
 
 func FillRam(memFillKey string, fillKBytes int64, uid string, timeout int64) (int, error) {
-	return StartBashCmdAndWaitPid(fmt.Sprintf("%s %s %d %dkb %d", GetToolPath(memFillKey), uid, -999, fillKBytes, timeout))
+	return cmdexec.StartBashCmdAndWaitPid(fmt.Sprintf("%s %s %d %dkb %d", utils.GetToolPath(memFillKey), uid, -999, fillKBytes, timeout))
 }

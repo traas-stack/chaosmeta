@@ -20,7 +20,8 @@ import (
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/filesys"
 	"github.com/spf13/cobra"
 	"os"
 	"path/filepath"
@@ -72,19 +73,19 @@ func (i *AddInjector) Validator() error {
 		return fmt.Errorf("get absolute path of path[%s] error: %s", i.Args.Path, err.Error())
 	}
 
-	isPathExist, err := utils.ExistPath(i.Args.Path)
+	isPathExist, err := filesys.ExistPath(i.Args.Path)
 	if err != nil {
 		return fmt.Errorf("\"path\"[%s] check exist error: %s", i.Args.Path, err.Error())
 	}
 
 	dir := filepath.Dir(i.Args.Path)
-	isDirExist, err := utils.ExistPath(dir)
+	isDirExist, err := filesys.ExistPath(dir)
 	if err != nil {
 		return fmt.Errorf("check dir[%s] exist error: %s", dir, err.Error())
 	}
 
 	if isPathExist {
-		isFile, _ := utils.ExistFile(i.Args.Path)
+		isFile, _ := filesys.ExistFile(i.Args.Path)
 		if !isFile {
 			return fmt.Errorf("\"path\"[%s] is an existed dir", i.Args.Path)
 		}
@@ -101,7 +102,7 @@ func (i *AddInjector) Validator() error {
 	}
 
 	if i.Args.Permission != "" {
-		if err := utils.CheckPermission(i.Args.Permission); err != nil {
+		if err := filesys.CheckPermission(i.Args.Permission); err != nil {
 			return fmt.Errorf("\"permission\" is invalid: %s", err.Error())
 		}
 	}
@@ -111,20 +112,20 @@ func (i *AddInjector) Validator() error {
 
 func (i *AddInjector) Inject() error {
 	dir := filepath.Dir(i.Args.Path)
-	isDirExist, _ := utils.ExistPath(dir)
+	isDirExist, _ := filesys.ExistPath(dir)
 
 	if !isDirExist {
-		if err := utils.MkdirP(dir); err != nil {
+		if err := filesys.MkdirP(dir); err != nil {
 			return fmt.Errorf("mkdir dir[%s] error: %s", dir, err.Error())
 		}
 	}
 
-	if err := utils.RunBashCmdWithoutOutput(fmt.Sprintf("echo -en \"%s\" > %s", i.Args.Content, i.Args.Path)); err != nil {
+	if err := cmdexec.RunBashCmdWithoutOutput(fmt.Sprintf("echo -en \"%s\" > %s", i.Args.Content, i.Args.Path)); err != nil {
 		return fmt.Errorf("add content to %s error: %s", i.Args.Path, err.Error())
 	}
 
 	if i.Args.Permission != "" {
-		if err := utils.Chmod(i.Args.Path, i.Args.Permission); err != nil {
+		if err := filesys.Chmod(i.Args.Path, i.Args.Permission); err != nil {
 			if err := i.Recover(); err != nil {
 				log.WithUid(i.Info.Uid).Warnf("undo error: %s", err.Error())
 			}
@@ -141,7 +142,7 @@ func (i *AddInjector) Recover() error {
 		return nil
 	}
 
-	isExist, err := utils.ExistPath(i.Args.Path)
+	isExist, err := filesys.ExistPath(i.Args.Path)
 	if err != nil {
 		return fmt.Errorf("check file[%s] exist error: %s", i.Args.Path, err.Error())
 	}

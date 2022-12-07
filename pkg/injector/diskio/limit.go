@@ -21,6 +21,10 @@ import (
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cgroup"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/disk"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/filesys"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/process"
 	"github.com/spf13/cobra"
 	"strings"
 )
@@ -72,17 +76,17 @@ func (i *LimitInjector) SetOption(cmd *cobra.Command) {
 }
 
 func (i *LimitInjector) Validator() error {
-	pidList, err := utils.GetPidListByListStrAndKey(i.Args.PidList, i.Args.Key)
+	pidList, err := process.GetPidListByListStrAndKey(i.Args.PidList, i.Args.Key)
 	if err != nil {
 		return fmt.Errorf("\"pid-list\" or \"key\" is invalid: %s", err.Error())
 	}
 
-	if err := utils.CheckPidListCgroup(pidList); err != nil {
+	if err := cgroup.CheckPidListBlkioCgroup(pidList); err != nil {
 		return fmt.Errorf("check cgroup of %v error: %s", pidList, err.Error())
 	}
 
 	i.Args.DevList = strings.TrimSpace(i.Args.DevList)
-	if _, err := utils.GetDevList(i.Args.DevList); err != nil {
+	if _, err := disk.GetDevList(i.Args.DevList); err != nil {
 		return fmt.Errorf("\"dev-list\"[%s] is invalid: %s", i.Args.DevList, err.Error())
 	}
 
@@ -107,26 +111,26 @@ func (i *LimitInjector) Validator() error {
 
 func (i *LimitInjector) Inject() error {
 	logger := log.GetLogger()
-	pidList, err := utils.GetPidListByListStrAndKey(i.Args.PidList, i.Args.Key)
+	pidList, err := process.GetPidListByListStrAndKey(i.Args.PidList, i.Args.Key)
 	if err != nil {
 		return err
 	}
 
-	i.Runtime.OldCgroupMap, err = utils.GetPidListCurCgroup(pidList)
+	i.Runtime.OldCgroupMap, err = cgroup.GetPidListCurCgroup(pidList, cgroup.BLKIO)
 	if err != nil {
 		return fmt.Errorf("get old path error: %s", err.Error())
 	}
 	logger.Debugf("old cgroup path: %v", i.Runtime.OldCgroupMap)
 
-	devList, _ := utils.GetDevList(i.Args.DevList)
+	devList, _ := disk.GetDevList(i.Args.DevList)
 	// 先new cgroup
-	blkioPath := utils.GetBlkioCPath(i.Info.Uid)
-	if err := utils.NewCgroup(blkioPath, utils.GetBlkioConfig(devList, i.Args.ReadBytes, i.Args.WriteBytes, i.Args.ReadIO, i.Args.WriteIO, blkioPath)); err != nil {
-		return fmt.Errorf("create cgroup[%s] error: %s", utils.BlkioCgroupName, err.Error())
+	blkioPath := cgroup.GetBlkioCPath(i.Info.Uid)
+	if err := cgroup.NewCgroup(blkioPath, cgroup.GetBlkioConfig(devList, i.Args.ReadBytes, i.Args.WriteBytes, i.Args.ReadIO, i.Args.WriteIO, blkioPath)); err != nil {
+		return fmt.Errorf("create cgroup[%s] error: %s", cgroup.BlkioCgroupName, err.Error())
 	}
 
 	// 然后加进程
-	if err := utils.MovePidListToCgroup(pidList, blkioPath); err != nil {
+	if err := cgroup.MovePidListToCgroup(pidList, blkioPath); err != nil {
 		// need to undo, use recover?
 		if err := i.Recover(); err != nil {
 			logger.Warnf("undo error: %s", err.Error())
@@ -144,8 +148,8 @@ func (i *LimitInjector) Recover() error {
 	}
 	logger := log.GetLogger()
 
-	cgroupPath := utils.GetBlkioCPath(i.Info.Uid)
-	isCgroupExist, err := utils.ExistPath(cgroupPath)
+	cgroupPath := cgroup.GetBlkioCPath(i.Info.Uid)
+	isCgroupExist, err := filesys.ExistPath(cgroupPath)
 	if err != nil {
 		return fmt.Errorf("check cgroup[%s] exist error: %s", cgroupPath, err.Error())
 	}
@@ -154,7 +158,7 @@ func (i *LimitInjector) Recover() error {
 		return nil
 	}
 
-	pidList, err := utils.GetPidStrListByCgroup(cgroupPath)
+	pidList, err := cgroup.GetPidStrListByCgroup(cgroupPath)
 	if err != nil {
 		return fmt.Errorf("fail to get pid from cgroup[%s]: %s", cgroupPath, err.Error())
 	}
@@ -167,12 +171,12 @@ func (i *LimitInjector) Recover() error {
 			oldPath = TmpCgroup
 		}
 
-		if err := utils.MoveToCgroup(pid, fmt.Sprintf("%s%s", utils.BlkioPath, oldPath)); err != nil {
+		if err := cgroup.MoveTaskToCgroup(pid, fmt.Sprintf("%s/%s%s", cgroup.RootPath, cgroup.BLKIO, oldPath)); err != nil {
 			return fmt.Errorf("recover pid[%d] error: %s", pid, err.Error())
 		}
 	}
 
-	if err := utils.RemoveCgroup(cgroupPath); err != nil {
+	if err := cgroup.RemoveCgroup(cgroupPath); err != nil {
 		return fmt.Errorf("remove cgroup[%s] error: %s", cgroupPath, err.Error())
 	}
 
