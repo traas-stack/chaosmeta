@@ -171,12 +171,13 @@ func getFillKBytes(dir string, percent int, bytes string) (int64, error) {
 		return -1, fmt.Errorf("space not enough, fill: %dKB, free: %dKB", fillKBytes, freeKb)
 	}
 
-	// fix bug: 如果是数据库文件所在磁盘，填充满后会导致无法数据库，暂时腾出1k空间解决
+	// fix bug: If it is the disk where the database file is located, the database cannot be read when it is full.
+	// so temporarily free up 10k space to solve the problem
 	if fillKBytes == freeKb {
 		fillKBytes -= 10
 	}
 
-	// 防止溢出情况
+	// prevent overflow
 	if fillKBytes <= 0 {
 		return -1, fmt.Errorf("fill bytes[%dKB]must larget than 0", fillKBytes)
 	}

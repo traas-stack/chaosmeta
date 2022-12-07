@@ -56,19 +56,6 @@ func (i *BurnInjector) GetRuntime() interface{} {
 	return &i.Runtime
 }
 
-//func (i *BurnInjector) SetDefault() {
-//	i.BaseInjector.SetDefault()
-//
-//	cpuList, err := i.getAllCpuList()
-//	if err != nil {
-//		panic(any(fmt.Sprintf("get available cpu list error: %s", err.Error())))
-//	}
-//
-//	if i.Args.List == "" && (i.Args.Count == 0 || i.Args.Count > len(cpuList)) {
-//		i.Args.Count = len(cpuList)
-//	}
-//}
-
 func (i *BurnInjector) SetOption(cmd *cobra.Command) {
 	// i.BaseInjector.SetOption(cmd)
 
@@ -83,7 +70,7 @@ func (i *BurnInjector) Validator() error {
 		return fmt.Errorf("\"percent\"[%d] must be in (0,100]", i.Args.Percent)
 	}
 
-	cpuList, err := i.getAllCpuList()
+	cpuList, err := getAllCpuList(i.Info.ContainerRuntime, i.Info.ContainerId)
 	if err != nil {
 		return fmt.Errorf("get all available cpu list error: %s", err.Error())
 	}
@@ -129,7 +116,7 @@ func (i *BurnInjector) Inject() error {
 	if i.Args.List != "" {
 		coreList, _ = utils.GetNumArrByList(i.Args.List)
 	} else {
-		cpuList, _ := i.getAllCpuList()
+		cpuList, _ := getAllCpuList(i.Info.ContainerRuntime, i.Info.ContainerId)
 		coreList = utils.GetNumArrByCount(i.Args.Count, cpuList)
 	}
 
@@ -185,12 +172,12 @@ func (i *BurnInjector) DelayRecover(timeout int64) error {
 	return nil
 }
 
-func (i *BurnInjector) getAllCpuList() (cpuList []int, err error) {
+func getAllCpuList(cr, cId string) (cpuList []int, err error) {
 	var cpusetPath = "/"
-	if i.Info.ContainerRuntime != "" {
-		cpusetPath, err = cgroup.GetContainerCgroupPath(i.Info.ContainerRuntime, i.Info.ContainerId, cgroup.CPUSET)
+	if cr != "" {
+		cpusetPath, err = cgroup.GetContainerCgroupPath(cr, cId, cgroup.CPUSET)
 		if err != nil {
-			return nil, fmt.Errorf("get cgroup[%s] path of container[%s] error: %s", cgroup.CPUSET, i.Info.ContainerId, err.Error())
+			return nil, fmt.Errorf("get cgroup[%s] path of container[%s] error: %s", cgroup.CPUSET, cId, err.Error())
 		}
 	}
 
