@@ -17,34 +17,42 @@
 package handler
 
 import (
+	"context"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/errutil"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/web/model"
 	"github.com/gorilla/mux"
 	"net/http"
 )
 
+// TODO: Consider whether to add "TraceId" args
+
 func ExperimentUidRecoverPost(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 
-	var recoverRes *model.CommonResponse
+	var (
+		recoverRes *model.CommonResponse
+		ctx        = utils.GetCtxWithTraceId(context.Background(), "")
+	)
 
 	vars := mux.Vars(r)
 	uid := vars["uid"]
 	if uid == "" {
-		recoverRes = getCommonResponse(utils.BadArgsErr, "uid is empty")
+		recoverRes = getCommonResponse(ctx, errutil.BadArgsErr, "uid is empty")
 	} else {
-		code, msg := injector.ProcessRecover(uid)
-		recoverRes = getCommonResponse(code, msg)
+		code, msg := injector.ProcessRecover(ctx, uid)
+		recoverRes = getCommonResponse(ctx, code, msg)
 	}
 
-	WriteResponse(w, recoverRes)
+	WriteResponse(ctx, w, recoverRes)
 }
 
-func getCommonResponse(code int, msg string) *model.CommonResponse {
+func getCommonResponse(ctx context.Context, code int, msg string) *model.CommonResponse {
 	return &model.CommonResponse{
 		Code:    code,
 		Message: msg,
+		TraceId: utils.GetTraceId(ctx),
 	}
 }

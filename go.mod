@@ -6,6 +6,7 @@ require (
 	github.com/bndr/gotabulate v1.1.2
 	github.com/containerd/cgroups v1.0.4
 	github.com/docker/docker v20.10.21+incompatible
+	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/sirupsen/logrus v1.9.0

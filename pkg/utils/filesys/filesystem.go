@@ -17,6 +17,7 @@
 package filesys
 
 import (
+	"context"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
 	"os"
@@ -25,12 +26,12 @@ import (
 	"strings"
 )
 
-func MkdirP(path string) error {
-	return cmdexec.RunBashCmdWithoutOutput(fmt.Sprintf("mkdir -p %s", path))
+func MkdirP(ctx context.Context, path string) error {
+	return cmdexec.RunBashCmdWithoutOutput(ctx, fmt.Sprintf("mkdir -p %s", path))
 }
 
-func Chmod(path, perm string) error {
-	return cmdexec.RunBashCmdWithoutOutput(fmt.Sprintf("chmod %s %s", perm, path))
+func Chmod(ctx context.Context, path, perm string) error {
+	return cmdexec.RunBashCmdWithoutOutput(ctx, fmt.Sprintf("chmod %s %s", perm, path))
 }
 
 func GetPermission(path string) (string, error) {
@@ -127,8 +128,8 @@ func CheckPermission(permission string) error {
 	return nil
 }
 
-func HasFileLineByKey(key string, file string) (bool, error) {
-	re, err := cmdexec.RunBashCmdWithOutput(fmt.Sprintf("grep \"%s\" %s | wc -l", key, file))
+func HasFileLineByKey(ctx context.Context, key string, file string) (bool, error) {
+	re, err := cmdexec.RunBashCmdWithOutput(ctx, fmt.Sprintf("grep \"%s\" %s | wc -l", key, file))
 	if err != nil {
 		return false, err
 	}
@@ -136,8 +137,8 @@ func HasFileLineByKey(key string, file string) (bool, error) {
 	return strings.TrimSpace(string(re)) != "0", nil
 }
 
-func GetProMaxFd() (int, error) {
-	re, err := cmdexec.RunBashCmdWithOutput("ulimit -n")
+func GetProMaxFd(ctx context.Context) (int, error) {
+	re, err := cmdexec.RunBashCmdWithOutput(ctx, "ulimit -n")
 	if err != nil {
 		return -1, fmt.Errorf("cmd exec error: %s", err.Error())
 	}
@@ -151,8 +152,8 @@ func GetProMaxFd() (int, error) {
 	return unitMax, nil
 }
 
-func GetKernelFdStatus() (int, int, error) {
-	re, err := cmdexec.RunBashCmdWithOutput("cat /proc/sys/fs/file-nr | awk '{print $1,$3}'")
+func GetKernelFdStatus(ctx context.Context) (int, int, error) {
+	re, err := cmdexec.RunBashCmdWithOutput(ctx, "cat /proc/sys/fs/file-nr | awk '{print $1,$3}'")
 	if err != nil {
 		return -1, -1, fmt.Errorf("cmd exec error: %s", err.Error())
 	}
@@ -176,8 +177,8 @@ func GetKernelFdStatus() (int, int, error) {
 	return nowFd, maxFd, nil
 }
 
-func CreateFdFile(dir, filePrefix string, count int) error {
-	if err := MkdirP(dir); err != nil {
+func CreateFdFile(ctx context.Context, dir, filePrefix string, count int) error {
+	if err := MkdirP(ctx, dir); err != nil {
 		return fmt.Errorf("create dir error: %s", err.Error())
 	}
 
@@ -188,7 +189,7 @@ func CreateFdFile(dir, filePrefix string, count int) error {
 
 	start, end := 0, step
 	for end <= count {
-		if err := cmdexec.RunBashCmdWithoutOutput(fmt.Sprintf("cd %s && touch %s{%d..%d}", dir, filePrefix, start, end-1)); err != nil {
+		if err := cmdexec.RunBashCmdWithoutOutput(ctx, fmt.Sprintf("cd %s && touch %s{%d..%d}", dir, filePrefix, start, end-1)); err != nil {
 			return fmt.Errorf("touch file from[%d] to[%d] error: %s", start, end, err.Error())
 		}
 		start += step

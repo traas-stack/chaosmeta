@@ -17,6 +17,7 @@
 package cpu
 
 import (
+	"context"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
@@ -65,12 +66,12 @@ func (i *BurnInjector) SetOption(cmd *cobra.Command) {
 }
 
 // Validator list 优先级大于 count
-func (i *BurnInjector) Validator() error {
+func (i *BurnInjector) Validator(ctx context.Context) error {
 	if i.Args.Percent <= 0 || i.Args.Percent > 100 {
 		return fmt.Errorf("\"percent\"[%d] must be in (0,100]", i.Args.Percent)
 	}
 
-	cpuList, err := getAllCpuList(i.Info.ContainerRuntime, i.Info.ContainerId)
+	cpuList, err := getAllCpuList(ctx, i.Info.ContainerRuntime, i.Info.ContainerId)
 	if err != nil {
 		return fmt.Errorf("get all available cpu list error: %s", err.Error())
 	}
@@ -108,19 +109,21 @@ func (i *BurnInjector) Validator() error {
 		return fmt.Errorf("not support cmd \"taskset\"")
 	}
 
-	return i.BaseInjector.Validator()
+	return i.BaseInjector.Validator(ctx)
 }
 
-func (i *BurnInjector) Inject() error {
+func (i *BurnInjector) Inject(ctx context.Context) error {
+	logger := log.GetLogger(ctx)
+
 	var coreList []int
 	if i.Args.List != "" {
 		coreList, _ = utils.GetNumArrByList(i.Args.List)
 	} else {
-		cpuList, _ := getAllCpuList(i.Info.ContainerRuntime, i.Info.ContainerId)
+		cpuList, _ := getAllCpuList(ctx, i.Info.ContainerRuntime, i.Info.ContainerId)
 		coreList = utils.GetNumArrByCount(i.Args.Count, cpuList)
 	}
 
-	log.WithUid(i.Info.Uid).Debugf("burn core list: %v", coreList)
+	logger.Debugf("burn core list: %v", coreList)
 
 	var timeout int64
 	if i.Info.Timeout != "" {
@@ -132,14 +135,14 @@ func (i *BurnInjector) Inject() error {
 		cmd := fmt.Sprintf("taskset -c %d %s %s %d %d %d", coreList[c], utils.GetToolPath(CpuBurnKey), i.Info.Uid, coreList[c], i.Args.Percent, timeout)
 
 		if i.Info.ContainerRuntime != "" {
-			_, err = cmdexec.ExecContainer(cmd, i.Info.ContainerRuntime, i.Info.ContainerId, namespace.PID)
+			_, err = cmdexec.ExecContainer(ctx, cmd, i.Info.ContainerRuntime, i.Info.ContainerId, namespace.PID)
 		} else {
-			_, err = cmdexec.StartBashCmdAndWaitPid(cmd)
+			_, err = cmdexec.StartBashCmdAndWaitPid(ctx, cmd)
 		}
 
 		if err != nil {
-			if err := i.Recover(); err != nil {
-				log.WithUid(i.Info.Uid).Warnf("undo error: %s", err.Error())
+			if err := i.Recover(ctx); err != nil {
+				logger.Warnf("undo error: %s", err.Error())
 			}
 			return fmt.Errorf("burn cpu of core[%d] error: %s", coreList[c], err.Error())
 		}
@@ -148,19 +151,19 @@ func (i *BurnInjector) Inject() error {
 	return nil
 }
 
-func (i *BurnInjector) Recover() error {
-	if i.BaseInjector.Recover() == nil {
+func (i *BurnInjector) Recover(ctx context.Context) error {
+	if i.BaseInjector.Recover(ctx) == nil {
 		return nil
 	}
 
 	processKey := fmt.Sprintf("%s %s", CpuBurnKey, i.Info.Uid)
-	isProExist, err := process.ExistProcessByKey(processKey)
+	isProExist, err := process.ExistProcessByKey(ctx, processKey)
 	if err != nil {
 		return fmt.Errorf("check process exist by key[%s] error: %s", processKey, err.Error())
 	}
 
 	if isProExist {
-		if err := process.KillProcessByKey(processKey, process.SIGKILL); err != nil {
+		if err := process.KillProcessByKey(ctx, processKey, process.SIGKILL); err != nil {
 			return fmt.Errorf("kill process by key[%s] error: %s", processKey, err.Error())
 		}
 	}
@@ -168,14 +171,14 @@ func (i *BurnInjector) Recover() error {
 	return nil
 }
 
-func (i *BurnInjector) DelayRecover(timeout int64) error {
+func (i *BurnInjector) DelayRecover(ctx context.Context, timeout int64) error {
 	return nil
 }
 
-func getAllCpuList(cr, cId string) (cpuList []int, err error) {
+func getAllCpuList(ctx context.Context, cr, cId string) (cpuList []int, err error) {
 	var cpusetPath = "/"
 	if cr != "" {
-		cpusetPath, err = cgroup.GetContainerCgroupPath(cr, cId, cgroup.CPUSET)
+		cpusetPath, err = cgroup.GetContainerCgroupPath(ctx, cr, cId, cgroup.CPUSET)
 		if err != nil {
 			return nil, fmt.Errorf("get cgroup[%s] path of container[%s] error: %s", cgroup.CPUSET, cId, err.Error())
 		}

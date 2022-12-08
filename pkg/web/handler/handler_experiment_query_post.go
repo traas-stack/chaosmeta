@@ -17,10 +17,12 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/storage"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/errutil"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/web/model"
 	"net/http"
 )
@@ -29,31 +31,37 @@ func ExperimentQueryPost(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 
-	var queryReq = &model.ExperimentQueryRequest{}
-	var queryRes *model.ExperimentQueryResponse
+	var (
+		ctx  = context.Background()
+		queryReq = &model.ExperimentQueryRequest{}
+		queryRes *model.ExperimentQueryResponse
+	)
 
 	if err := json.NewDecoder(r.Body).Decode(queryReq); err != nil {
-		queryRes = getExperimentQueryPostResponse(utils.BadArgsErr, fmt.Sprintf("req body format error: %s", err.Error()), nil, 0)
+		queryRes = getExperimentQueryPostResponse(ctx, errutil.BadArgsErr, fmt.Sprintf("req body format error: %s", err.Error()), nil, 0)
 	} else {
+		ctx = utils.GetCtxWithTraceId(ctx, queryReq.TraceId)
 		db, dbErr := storage.GetExperimentStore()
 		if dbErr != nil {
-			queryRes = getExperimentQueryPostResponse(utils.DBErr, fmt.Sprintf("get db error: %s", dbErr.Error()), nil, 0)
+			queryRes = getExperimentQueryPostResponse(ctx, errutil.DBErr, fmt.Sprintf("get db error: %s", dbErr.Error()), nil, 0)
 		} else {
-			exps, total, qErr := db.QueryByOption(queryReq.Uid, queryReq.Status, queryReq.Target, queryReq.Fault, queryReq.Creator, uint(queryReq.Offset), uint(queryReq.Limit))
+			exps, total, qErr := db.QueryByOption(queryReq.Uid, queryReq.Status, queryReq.Target, queryReq.Fault,
+				queryReq.Creator, queryReq.ContainerRuntime, queryReq.ContainerId, uint(queryReq.Offset), uint(queryReq.Limit))
 			if qErr != nil {
-				queryRes = getExperimentQueryPostResponse(utils.DBErr, fmt.Sprintf("db query error: %s", qErr.Error()), nil, 0)
+				queryRes = getExperimentQueryPostResponse(ctx, errutil.DBErr, fmt.Sprintf("db query error: %s", qErr.Error()), nil, 0)
 			}
-			queryRes = getExperimentQueryPostResponse(utils.NoErr, "success", exps, total)
+			queryRes = getExperimentQueryPostResponse(ctx, errutil.NoErr, "success", exps, total)
 		}
 	}
 
-	WriteResponse(w, queryRes)
+	WriteResponse(ctx, w, queryRes)
 }
 
-func getExperimentQueryPostResponse(code int, msg string, exps []*storage.Experiment, total int64) *model.ExperimentQueryResponse {
+func getExperimentQueryPostResponse(ctx context.Context, code int, msg string, exps []*storage.Experiment, total int64) *model.ExperimentQueryResponse {
 	var re = &model.ExperimentQueryResponse{
 		Code:    code,
 		Message: msg,
+		TraceId: utils.GetTraceId(ctx),
 	}
 	if exps != nil {
 		reList := make([]model.ExperimentDataUnit, len(exps))

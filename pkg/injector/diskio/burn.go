@@ -17,6 +17,7 @@
 package diskio
 
 import (
+	"context"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
@@ -84,7 +85,7 @@ func (i *BurnInjector) getFileName() string {
 	return fmt.Sprintf("%s/%s_%s", i.Args.Dir, DiskIOBurnFile, i.Info.Uid)
 }
 
-func (i *BurnInjector) Validator() error {
+func (i *BurnInjector) Validator(ctx context.Context) error {
 	if i.Args.Dir == "" {
 		return fmt.Errorf("\"dir\" is empty")
 	}
@@ -106,10 +107,11 @@ func (i *BurnInjector) Validator() error {
 		return fmt.Errorf("\"block\"[%s] value must be in (0, 1G]", i.Args.Block)
 	}
 
-	return i.BaseInjector.Validator()
+	return i.BaseInjector.Validator(ctx)
 }
 
-func (i *BurnInjector) Inject() error {
+func (i *BurnInjector) Inject(ctx context.Context) error {
+	logger := log.GetLogger(ctx)
 	var timeout int64
 	if i.Info.Timeout != "" {
 		timeout, _ = utils.GetTimeSecond(i.Info.Timeout)
@@ -117,10 +119,10 @@ func (i *BurnInjector) Inject() error {
 
 	blockK, stdStr, _ := utils.GetBlockKbytes(i.Args.Block)
 	count := MaxBlockK / blockK
-	if _, err := cmdexec.StartBashCmdAndWaitPid(fmt.Sprintf("%s %s %s %s %s %d %s %d",
+	if _, err := cmdexec.StartBashCmdAndWaitPid(ctx, fmt.Sprintf("%s %s %s %s %s %d %s %d",
 		utils.GetToolPath(DiskIOBurnKey), i.Info.Uid, i.getFileName(), i.Args.Mode, stdStr, count, FlagDirect, timeout)); err != nil {
-		if err := i.Recover(); err != nil {
-			log.WithUid(i.Info.Uid).Warnf("undo error: %s", err.Error())
+		if err := i.Recover(ctx); err != nil {
+			logger.Warnf("undo error: %s", err.Error())
 		}
 
 		return err
@@ -129,23 +131,23 @@ func (i *BurnInjector) Inject() error {
 	return nil
 }
 
-func (i *BurnInjector) DelayRecover(timeout int64) error {
+func (i *BurnInjector) DelayRecover(ctx context.Context, timeout int64) error {
 	return nil
 }
 
-func (i *BurnInjector) Recover() error {
-	if i.BaseInjector.Recover() == nil {
+func (i *BurnInjector) Recover(ctx context.Context) error {
+	if i.BaseInjector.Recover(ctx) == nil {
 		return nil
 	}
 
 	processKey := fmt.Sprintf("%s %s", DiskIOBurnKey, i.Info.Uid)
-	isProExist, err := process.ExistProcessByKey(processKey)
+	isProExist, err := process.ExistProcessByKey(ctx, processKey)
 	if err != nil {
 		return fmt.Errorf("check process exist by key[%s] error: %s", processKey, err.Error())
 	}
 
 	if isProExist {
-		if err := process.KillProcessByKey(processKey, process.SIGKILL); err != nil {
+		if err := process.KillProcessByKey(ctx, processKey, process.SIGKILL); err != nil {
 			return fmt.Errorf("kill process by key[%s] error: %s", processKey, err.Error())
 		}
 	}

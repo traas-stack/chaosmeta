@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package utils
+package errutil
 
 import (
+	"context"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
 	"os"
 )
@@ -24,7 +25,6 @@ import (
 const (
 	NoErr = iota
 	BadArgsErr
-	SystemErr
 	DBErr
 	InjectErr
 	InternalErr
@@ -32,11 +32,11 @@ const (
 	UnknownErr
 )
 
-func SolveErr(code int, msg string) {
+func SolveErr(ctx context.Context, code int, msg string) {
 	if code == NoErr {
-		log.GetLogger().Debug(msg)
+		log.GetLogger(ctx).Debug(msg)
 		os.Exit(NoErr)
 	}
-	log.GetLogger().Error(msg)
+	log.GetLogger(ctx).Error(msg)
 	os.Exit(code)
 }

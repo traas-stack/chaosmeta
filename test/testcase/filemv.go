@@ -17,6 +17,7 @@
 package testcase
 
 import (
+	"context"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/filesys"
@@ -31,6 +32,7 @@ var (
 )
 
 func GetFileMvTest() []common.TestCase {
+	ctx := context.Background()
 	var tempCaseList = []common.TestCase{
 		{
 			Args:  "awvgv",
@@ -44,7 +46,7 @@ func GetFileMvTest() []common.TestCase {
 			Args:  "-s tempdir",
 			Error: true,
 			PreProcessor: func() error {
-				return cmdexec.RunBashCmdWithoutOutput("mkdir tempdir")
+				return cmdexec.RunBashCmdWithoutOutput(ctx, "mkdir tempdir")
 			},
 			PostProcessor: func() error {
 				return os.Remove("tempdir")
@@ -54,7 +56,7 @@ func GetFileMvTest() []common.TestCase {
 			Args:  fmt.Sprintf("-s %s", fileMvSrcFileName),
 			Error: true,
 			PreProcessor: func() error {
-				return cmdexec.RunBashCmdWithoutOutput(fmt.Sprintf("touch %s", fileMvSrcFileName))
+				return cmdexec.RunBashCmdWithoutOutput(ctx, fmt.Sprintf("touch %s", fileMvSrcFileName))
 			},
 			PostProcessor: func() error {
 				return os.Remove(fileMvSrcFileName)
@@ -63,7 +65,7 @@ func GetFileMvTest() []common.TestCase {
 		{
 			Args: fmt.Sprintf("-s %s -d %s", fileMvSrcFileName, fileMvDstFileName),
 			PreProcessor: func() error {
-				return cmdexec.RunBashCmdWithoutOutput(fmt.Sprintf("touch %s", fileMvSrcFileName))
+				return cmdexec.RunBashCmdWithoutOutput(ctx, fmt.Sprintf("touch %s", fileMvSrcFileName))
 			},
 			PostProcessor: func() error {
 				return os.Remove(fileMvSrcFileName)

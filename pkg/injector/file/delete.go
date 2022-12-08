@@ -17,6 +17,7 @@
 package file
 
 import (
+	"context"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/filesys"
@@ -54,7 +55,7 @@ func (i *DeleteInjector) SetOption(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&i.Args.Path, "path", "p", "", "file path, include dir and file name")
 }
 
-func (i *DeleteInjector) Validator() error {
+func (i *DeleteInjector) Validator(ctx context.Context) error {
 	if i.Args.Path == "" {
 		return fmt.Errorf("\"path\" is empty")
 	}
@@ -74,24 +75,24 @@ func (i *DeleteInjector) Validator() error {
 		return fmt.Errorf("\"path\"[%s] is not an existed file", i.Args.Path)
 	}
 
-	return i.BaseInjector.Validator()
+	return i.BaseInjector.Validator(ctx)
 }
 
 func (i *DeleteInjector) getBackupDir() string {
 	return fmt.Sprintf("%s%s", BackUpDir, i.Info.Uid)
 }
 
-func (i *DeleteInjector) Inject() error {
+func (i *DeleteInjector) Inject(ctx context.Context) error {
 	backupDir := i.getBackupDir()
-	if err := filesys.MkdirP(backupDir); err != nil {
+	if err := filesys.MkdirP(ctx, backupDir); err != nil {
 		return fmt.Errorf("create backup dir[%s] error: %s", backupDir, err.Error())
 	}
 
 	return os.Rename(i.Args.Path, fmt.Sprintf("%s/%s", backupDir, filepath.Base(i.Args.Path)))
 }
 
-func (i *DeleteInjector) Recover() error {
-	if i.BaseInjector.Recover() == nil {
+func (i *DeleteInjector) Recover(ctx context.Context) error {
+	if i.BaseInjector.Recover(ctx) == nil {
 		return nil
 	}
 	backupDir := i.getBackupDir()

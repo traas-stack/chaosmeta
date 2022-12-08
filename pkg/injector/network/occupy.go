@@ -17,6 +17,7 @@
 package network
 
 import (
+	"context"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
@@ -73,7 +74,7 @@ func (i *OccupyInjector) SetOption(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&i.Args.RecoverCmd, "recover-cmd", "r", "", "execute in recover stage")
 }
 
-func (i *OccupyInjector) Validator() error {
+func (i *OccupyInjector) Validator(ctx context.Context) error {
 	if i.Args.Port <= 0 {
 		return fmt.Errorf("\"port\" must larger than 0")
 	}
@@ -82,11 +83,11 @@ func (i *OccupyInjector) Validator() error {
 		return fmt.Errorf("\"protocol\" is not support %s", i.Args.Protocol)
 	}
 
-	return i.BaseInjector.Validator()
+	return i.BaseInjector.Validator(ctx)
 }
 
-func (i *OccupyInjector) Inject() error {
-	pid, err := net.GetPidByPort(i.Args.Port, i.Args.Protocol)
+func (i *OccupyInjector) Inject(ctx context.Context) error {
+	pid, err := net.GetPidByPort(ctx, i.Args.Port, i.Args.Protocol)
 	if err != nil {
 		return fmt.Errorf("get pid by port[%d] error: %s", i.Args.Port, err.Error())
 	}
@@ -106,7 +107,7 @@ func (i *OccupyInjector) Inject() error {
 		timeout, err = utils.GetTimeSecond(i.Info.Timeout)
 	}
 
-	rePid, err := cmdexec.StartBashCmdAndWaitPid(fmt.Sprintf("%s %s %d %s %d", utils.GetToolPath(OccupyKey), i.Info.Uid, i.Args.Port, i.Args.Protocol, timeout))
+	rePid, err := cmdexec.StartBashCmdAndWaitPid(ctx, fmt.Sprintf("%s %s %d %s %d", utils.GetToolPath(OccupyKey), i.Info.Uid, i.Args.Port, i.Args.Protocol, timeout))
 	if err != nil {
 		return fmt.Errorf("start cmd error: %s", err.Error())
 	}
@@ -115,12 +116,12 @@ func (i *OccupyInjector) Inject() error {
 	return nil
 }
 
-func (i *OccupyInjector) DelayRecover(timeout int64) error {
+func (i *OccupyInjector) DelayRecover(ctx context.Context, timeout int64) error {
 	return nil
 }
 
-func (i *OccupyInjector) Recover() error {
-	if i.BaseInjector.Recover() == nil {
+func (i *OccupyInjector) Recover(ctx context.Context) error {
+	if i.BaseInjector.Recover(ctx) == nil {
 		return nil
 	}
 
@@ -140,7 +141,7 @@ func (i *OccupyInjector) Recover() error {
 	}
 
 	if i.Args.RecoverCmd != "" {
-		return cmdexec.StartBashCmd(i.Args.RecoverCmd)
+		return cmdexec.StartBashCmd(ctx, i.Args.RecoverCmd)
 	}
 
 	return nil

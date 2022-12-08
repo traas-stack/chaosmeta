@@ -17,13 +17,14 @@
 package version
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
 )
 
-func PrintVersion() {
+func PrintVersion(ctx context.Context) {
 	reBytes, _ := json.Marshal(GetVersion())
-	log.GetLogger().Infof(string(reBytes))
+	log.GetLogger(ctx).Infof(string(reBytes))
 }
 
 func GetVersion() Info {

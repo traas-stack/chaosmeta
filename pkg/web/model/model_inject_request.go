@@ -24,4 +24,5 @@ type InjectRequest struct {
 	Args             string `json:"args"`
 	ContainerId      string `json:"container_id"`
 	ContainerRuntime string `json:"container_runtime"`
+	TraceId          string `json:"trace_id"`
 }

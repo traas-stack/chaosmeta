@@ -17,6 +17,7 @@
 package testcase
 
 import (
+	"context"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
@@ -34,6 +35,7 @@ var (
 )
 
 func GetFileAddTest() []common.TestCase {
+	ctx := context.Background()
 	var tempCaseList = []common.TestCase{
 		{
 			Args:  "awvgv",
@@ -47,7 +49,7 @@ func GetFileAddTest() []common.TestCase {
 			Args:  "-p tempdir",
 			Error: true,
 			PreProcessor: func() error {
-				return cmdexec.RunBashCmdWithoutOutput("mkdir tempdir")
+				return cmdexec.RunBashCmdWithoutOutput(ctx, "mkdir tempdir")
 			},
 			PostProcessor: func() error {
 				return os.Remove("tempdir")
@@ -55,7 +57,7 @@ func GetFileAddTest() []common.TestCase {
 		},
 		{
 			PreProcessor: func() error {
-				return cmdexec.RunBashCmdWithoutOutput("touch ./tempfile")
+				return cmdexec.RunBashCmdWithoutOutput(ctx, "touch ./tempfile")
 			},
 			Args:  "-p tempfile/temp.log",
 			Error: true,

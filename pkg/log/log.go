@@ -17,7 +17,9 @@
 package log
 
 import (
+	"context"
 	"fmt"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
 	"github.com/sirupsen/logrus"
 	"sync"
 
@@ -42,7 +44,7 @@ const (
 	FileName   = "chaosmetad"
 )
 
-func GetLogger() *logrus.Logger {
+func GetLogger(ctx context.Context) *logrus.Entry {
 	if logger == nil {
 		mutex.Lock()
 		if logger == nil {
@@ -51,14 +53,25 @@ func GetLogger() *logrus.Logger {
 		mutex.Unlock()
 	}
 
-	return logger
+	traceId := utils.GetTraceId(ctx)
+	if traceId != "" {
+		return logger.WithFields(logrus.Fields{utils.CtxTraceId: traceId})
+	}
+
+	return logger.WithFields(logrus.Fields{})
 }
 
-func WithUid(uid string) *logrus.Entry {
-	return GetLogger().WithFields(logrus.Fields{
-		"uid": uid,
-	})
-}
+//func WithUid(uid string) *logrus.Entry {
+//	return GetLogger().WithFields(logrus.Fields{
+//		"uid": uid,
+//	})
+//}
+
+//func WithTraceId(ctx context.Context) *logrus.Entry {
+//	return GetLogger().WithFields(logrus.Fields{
+//		utils.CtxTraceId: utils.GetTraceId(ctx),
+//	})
+//}
 
 func setLogger() {
 	logger = logrus.New()

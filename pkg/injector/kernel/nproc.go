@@ -17,6 +17,7 @@
 package kernel
 
 import (
+	"context"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
@@ -63,7 +64,7 @@ func (i *NprocInjector) SetOption(cmd *cobra.Command) {
 	cmd.Flags().IntVarP(&i.Args.Count, "count", "c", 0, "count of proc to add（default 0, means add to nproc）, you can check nproc by \"ulimit -u\"")
 }
 
-func (i *NprocInjector) Validator() error {
+func (i *NprocInjector) Validator(ctx context.Context) error {
 	if i.Args.Count < 0 {
 		return fmt.Errorf("\"count\" must larger than 0")
 	}
@@ -72,7 +73,7 @@ func (i *NprocInjector) Validator() error {
 		return fmt.Errorf("\"user\" is invalid: %s", err.Error())
 	}
 
-	isExist, err := process.ExistProcessByKey(fmt.Sprintf("%s %s", FdFullKey, i.Args.User))
+	isExist, err := process.ExistProcessByKey(ctx, fmt.Sprintf("%s %s", FdFullKey, i.Args.User))
 	if err != nil {
 		return fmt.Errorf("check if running error: %s", err.Error())
 	}
@@ -81,30 +82,30 @@ func (i *NprocInjector) Validator() error {
 		return fmt.Errorf("nproc experiment of user[%s] is running, please recover first", i.Args.User)
 	}
 
-	return i.BaseInjector.Validator()
+	return i.BaseInjector.Validator(ctx)
 }
 
-func (i *NprocInjector) Inject() error {
+func (i *NprocInjector) Inject(ctx context.Context) error {
 	var timeout int64
 	if i.Info.Timeout != "" {
 		timeout, _ = utils.GetTimeSecond(i.Info.Timeout)
 	}
 
-	return cmdexec.StartBashCmdAndWaitByUser(fmt.Sprintf("%s %s %s %d %d",
+	return cmdexec.StartBashCmdAndWaitByUser(ctx, fmt.Sprintf("%s %s %s %d %d",
 		utils.GetToolPath(NprocKey), i.Args.User, i.Args.User, i.Args.Count, timeout), i.Args.User)
 }
 
-func (i *NprocInjector) DelayRecover(timeout int64) error {
+func (i *NprocInjector) DelayRecover(ctx context.Context, timeout int64) error {
 	return nil
 }
 
-func (i *NprocInjector) Recover() error {
-	if i.BaseInjector.Recover() == nil {
+func (i *NprocInjector) Recover(ctx context.Context) error {
+	if i.BaseInjector.Recover(ctx) == nil {
 		return nil
 	}
 
 	grepKey := fmt.Sprintf("%s %s", NprocKey, i.Args.User)
-	pid, err := process.GetPidByKeyWithoutRunUser(grepKey)
+	pid, err := process.GetPidByKeyWithoutRunUser(ctx, grepKey)
 	if err != nil {
 		return fmt.Errorf("get pid from key[%s] error: %s", grepKey, err.Error())
 	}
@@ -112,13 +113,13 @@ func (i *NprocInjector) Recover() error {
 	time.Sleep(1 * time.Second)
 
 	processKey := strconv.Itoa(pid)
-	exist, err := process.ExistProcessByKey(processKey)
+	exist, err := process.ExistProcessByKey(ctx, processKey)
 	if err != nil {
 		return fmt.Errorf("check process exist by key[%d] error: %s", pid, err.Error())
 	}
 
 	if exist {
-		return process.KillProcessByKey(processKey, process.SIGKILL)
+		return process.KillProcessByKey(ctx, processKey, process.SIGKILL)
 	}
 
 	return nil

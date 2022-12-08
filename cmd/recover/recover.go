@@ -17,9 +17,11 @@
 package recover
 
 import (
+	"context"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/errutil"
 	"github.com/spf13/cobra"
 )
 
@@ -29,12 +31,13 @@ func NewRecoverCommand() *cobra.Command {
 		Short: "experiment recover command",
 		Long:  "experiment recover command, usage: recover [uid]",
 		Run: func(cmd *cobra.Command, args []string) {
+			ctx := utils.GetCtxWithTraceId(context.Background(), utils.TraceId)
 			if len(args) != 1 {
-				utils.SolveErr(utils.BadArgsErr, fmt.Sprintf("please add target experiment's uid, eg: recover [uid]"))
+				errutil.SolveErr(ctx, errutil.BadArgsErr, fmt.Sprintf("please add target experiment's uid, eg: recover [uid]"))
 			}
 
-			code, msg := injector.ProcessRecover(args[0])
-			utils.SolveErr(code, msg)
+			code, msg := injector.ProcessRecover(ctx, args[0])
+			errutil.SolveErr(ctx, code, msg)
 		},
 	}
 

@@ -42,11 +42,8 @@ func GetUid(output string) string {
 		uidArr := strings.Split(line, "uid:")
 		if len(uidArr) == 2 {
 			uid := strings.TrimSpace(uidArr[1])
-			if uid[len(uid)-1:] == "\"" {
-				uid = uid[:len(uid)-1]
-			}
-
-			return uid
+			tArr := strings.Split(uid, "\"")
+			return tArr[0]
 		}
 	}
 

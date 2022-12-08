@@ -17,17 +17,14 @@
 package model
 
 type ExperimentQueryRequest struct {
-	Uid string `json:"uid,omitempty"`
-
-	Status string `json:"status,omitempty"`
-
-	Target string `json:"target,omitempty"`
-
-	Fault string `json:"fault,omitempty"`
-
-	Creator string `json:"creator,omitempty"`
-
-	Offset int32 `json:"offset,omitempty"`
-
-	Limit int32 `json:"limit,omitempty"`
+	Uid              string `json:"uid,omitempty"`
+	Status           string `json:"status,omitempty"`
+	Target           string `json:"target,omitempty"`
+	Fault            string `json:"fault,omitempty"`
+	Creator          string `json:"creator,omitempty"`
+	ContainerId      string `json:"container_id,omitempty"`
+	ContainerRuntime string `json:"container_runtime,omitempty"`
+	Offset           int32  `json:"offset,omitempty"`
+	Limit            int32  `json:"limit,omitempty"`
+	TraceId          string `json:"trace_id,omitempty"`
 }

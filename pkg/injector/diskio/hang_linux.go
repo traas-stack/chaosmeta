@@ -17,6 +17,7 @@
 package diskio
 
 import (
+	"context"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
@@ -76,18 +77,18 @@ func (i *HangInjector) SetOption(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&i.Args.Mode, "mode", "m", "", fmt.Sprintf("target IO mode to hang, support: %s、%s、%s（default %s）", ModeAll, ModeRead, ModeWrite, ModeAll))
 }
 
-func (i *HangInjector) Validator() error {
-	pidList, err := process.GetPidListByListStrAndKey(i.Args.PidList, i.Args.Key)
+func (i *HangInjector) Validator(ctx context.Context) error {
+	pidList, err := process.GetPidListByListStrAndKey(ctx, i.Args.PidList, i.Args.Key)
 	if err != nil {
 		return fmt.Errorf("\"pid-list\" or \"key\" is invalid: %s", err.Error())
 	}
 
-	if err := cgroup.CheckPidListBlkioCgroup(pidList); err != nil {
+	if err := cgroup.CheckPidListBlkioCgroup(ctx, pidList); err != nil {
 		return fmt.Errorf("check cgroup of %v error: %s", pidList, err.Error())
 	}
 
 	i.Args.DevList = strings.TrimSpace(i.Args.DevList)
-	if _, err := disk.GetDevList(i.Args.DevList); err != nil {
+	if _, err := disk.GetDevList(ctx, i.Args.DevList); err != nil {
 		return fmt.Errorf("\"dev-list\"[%s] is invalid: %s", i.Args.DevList, err.Error())
 	}
 
@@ -95,22 +96,24 @@ func (i *HangInjector) Validator() error {
 		return fmt.Errorf("\"mode\" is not support: %s", i.Args.Mode)
 	}
 
-	return i.BaseInjector.Validator()
+	return i.BaseInjector.Validator(ctx)
 }
 
-func (i *HangInjector) Inject() error {
-	pidList, err := process.GetPidListByListStrAndKey(i.Args.PidList, i.Args.Key)
+func (i *HangInjector) Inject(ctx context.Context) error {
+	logger := log.GetLogger(ctx)
+
+	pidList, err := process.GetPidListByListStrAndKey(ctx, i.Args.PidList, i.Args.Key)
 	if err != nil {
 		return err
 	}
 
-	i.Runtime.OldCgroupMap, err = cgroup.GetPidListCurCgroup(pidList, cgroup.BLKIO)
+	i.Runtime.OldCgroupMap, err = cgroup.GetPidListCurCgroup(ctx, pidList, cgroup.BLKIO)
 	if err != nil {
 		return fmt.Errorf("get old path error: %s", err.Error())
 	}
-	log.WithUid(i.Info.Uid).Debugf("old cgroup path: %v", i.Runtime.OldCgroupMap)
+	logger.Debugf("old cgroup path: %v", i.Runtime.OldCgroupMap)
 
-	devList, _ := disk.GetDevList(i.Args.DevList)
+	devList, _ := disk.GetDevList(ctx, i.Args.DevList)
 
 	rByte, wByte := HangBytes, HangBytes
 	if i.Args.Mode == ModeRead {
@@ -119,17 +122,14 @@ func (i *HangInjector) Inject() error {
 		rByte = ""
 	}
 
-	// 先new cgroup
 	blkioPath := cgroup.GetBlkioCPath(i.Info.Uid)
-	if err := cgroup.NewCgroup(blkioPath, cgroup.GetBlkioConfig(devList, rByte, wByte, 0, 0, blkioPath)); err != nil {
+	if err := cgroup.NewCgroup(ctx, blkioPath, cgroup.GetBlkioConfig(ctx, devList, rByte, wByte, 0, 0, blkioPath)); err != nil {
 		return fmt.Errorf("create cgroup[%s] error: %s", blkioPath, err.Error())
 	}
 
-	// 然后加进程
-	if err := cgroup.MovePidListToCgroup(pidList, blkioPath); err != nil {
-		// need to undo, use recover?
-		if err := i.Recover(); err != nil {
-			log.WithUid(i.Info.Uid).Warnf("undo error: %s", err.Error())
+	if err := cgroup.MovePidListToCgroup(ctx, pidList, blkioPath); err != nil {
+		if err := i.Recover(ctx); err != nil {
+			logger.Warnf("undo error: %s", err.Error())
 		}
 
 		return fmt.Errorf("move pid list to cgroup[%s] error: %s", blkioPath, err.Error())
@@ -138,11 +138,12 @@ func (i *HangInjector) Inject() error {
 	return nil
 }
 
-func (i *HangInjector) Recover() error {
-	if i.BaseInjector.Recover() == nil {
+func (i *HangInjector) Recover(ctx context.Context) error {
+	if i.BaseInjector.Recover(ctx) == nil {
 		return nil
 	}
 
+	logger := log.GetLogger(ctx)
 	cgroupPath := cgroup.GetBlkioCPath(i.Info.Uid)
 	isCgroupExist, err := filesys.ExistPath(cgroupPath)
 	if err != nil {
@@ -153,7 +154,7 @@ func (i *HangInjector) Recover() error {
 		return nil
 	}
 
-	pidList, err := cgroup.GetPidStrListByCgroup(cgroupPath)
+	pidList, err := cgroup.GetPidStrListByCgroup(ctx, cgroupPath)
 	if err != nil {
 		return fmt.Errorf("fail to get pid from cgroup[%s]: %s", cgroupPath, err.Error())
 	}
@@ -162,16 +163,16 @@ func (i *HangInjector) Recover() error {
 		oldPath, ok := i.Runtime.OldCgroupMap[pid]
 		// 目标进程产生的子进程可能会遇到这种情况
 		if !ok {
-			log.WithUid(i.Info.Uid).Warnf("fail to get pid[%d]'s old cgroup path, move to \"%s\" instead", pid, TmpCgroup)
+			logger.Warnf("fail to get pid[%d]'s old cgroup path, move to \"%s\" instead", pid, TmpCgroup)
 			oldPath = TmpCgroup
 		}
 
-		if err := cgroup.MoveTaskToCgroup(pid, fmt.Sprintf("%s/%s%s", cgroup.RootPath, cgroup.BLKIO, oldPath)); err != nil {
+		if err := cgroup.MoveTaskToCgroup(ctx, pid, fmt.Sprintf("%s/%s%s", cgroup.RootPath, cgroup.BLKIO, oldPath)); err != nil {
 			return fmt.Errorf("recover pid[%d] error: %s", pid, err.Error())
 		}
 	}
 
-	if err := cgroup.RemoveCgroup(cgroupPath); err != nil {
+	if err := cgroup.RemoveCgroup(ctx, cgroupPath); err != nil {
 		return fmt.Errorf("remove cgroup[%s] error: %s", cgroupPath, err.Error())
 	}
 

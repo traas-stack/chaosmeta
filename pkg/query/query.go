@@ -17,50 +17,53 @@
 package query
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/storage"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/errutil"
 	"github.com/bndr/gotabulate"
 )
 
 type OptionExpQuery struct {
-	Uid     string `json:"uid,omitempty"`
-	Status  string `json:"status,omitempty"`
-	Target  string `json:"target,omitempty"`
-	Fault   string `json:"fault,omitempty"`
-	Creator string `json:"creator,omitempty"`
-	Offset  uint   `json:"offset"`
-	Limit   uint   `json:"limit"`
+	Uid              string `json:"uid,omitempty"`
+	Status           string `json:"status,omitempty"`
+	Target           string `json:"target,omitempty"`
+	Fault            string `json:"fault,omitempty"`
+	Creator          string `json:"creator,omitempty"`
+	ContainerId      string `json:"container_id,omitempty"`
+	ContainerRuntime string `json:"container_runtime,omitempty"`
+	Offset           uint   `json:"offset"`
+	Limit            uint   `json:"limit"`
 }
 
-func GetExpByOption(o *OptionExpQuery, ifAll bool) {
+func PrintExpByOption(ctx context.Context, o *OptionExpQuery, ifAll bool) {
 	if o == nil {
-		utils.SolveErr(utils.BadArgsErr, fmt.Sprintf("option is empty"))
+		errutil.SolveErr(ctx, errutil.BadArgsErr, fmt.Sprintf("option is empty"))
 	}
 
 	temp, err := json.Marshal(o)
 	if err != nil {
-		utils.SolveErr(utils.BadArgsErr, err.Error())
+		errutil.SolveErr(ctx, errutil.BadArgsErr, err.Error())
 	}
 
-	log.GetLogger().Infof("query args: %s", string(temp))
+	log.GetLogger(ctx).Infof("query args: %s", string(temp))
 
 	db, dbErr := storage.GetExperimentStore()
 	if dbErr != nil {
-		utils.SolveErr(utils.DBErr, dbErr.Error())
+		errutil.SolveErr(ctx, errutil.DBErr, dbErr.Error())
 	}
-	exps, total, queryErr := db.QueryByOption(o.Uid, o.Status, o.Target, o.Fault, o.Creator, o.Offset, o.Limit)
+	exps, total, queryErr := db.QueryByOption(o.Uid, o.Status, o.Target, o.Fault, o.Creator, o.ContainerRuntime, o.ContainerId, o.Offset, o.Limit)
 	if queryErr != nil {
-		utils.SolveErr(utils.DBErr, queryErr.Error())
+		errutil.SolveErr(ctx, errutil.DBErr, queryErr.Error())
 	}
 
-	printExp(exps, total, ifAll)
+	printExp(ctx, exps, total, ifAll)
 }
 
-func printExp(exps []*storage.Experiment, total int64, ifAll bool) {
-	logger := log.GetLogger()
+func printExp(ctx context.Context, exps []*storage.Experiment, total int64, ifAll bool) {
+	logger := log.GetLogger(ctx)
 	var formatData string
 	if len(exps) != 0 {
 		var data [][]interface{}

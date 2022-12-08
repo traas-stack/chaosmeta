@@ -25,6 +25,7 @@ import (
 	"github.com/ChaosMetaverse/chaosmetad/cmd/version"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/errutil"
 	"github.com/spf13/cobra"
 	"os"
 )
@@ -38,6 +39,7 @@ var rootCmd = &cobra.Command{
 func initRootCmd() {
 	rootCmd.PersistentFlags().StringVar(&log.Level, "log-level", "info", "value support: debug, info, warn, error")
 	rootCmd.PersistentFlags().StringVar(&log.Path, "log-path", "", "log file's path, its dir mush exist, eg: /tmp/chaosmetad.log, /tmp")
+	rootCmd.PersistentFlags().StringVar(&utils.TraceId, "trace-id", "", "trace id")
 
 	rootCmd.AddCommand(inject.NewInjectCommand())
 	rootCmd.AddCommand(query.NewQueryCommand())
@@ -51,6 +53,6 @@ func main() {
 
 	err := rootCmd.Execute()
 	if err != nil {
-		os.Exit(utils.InternalErr)
+		os.Exit(errutil.InternalErr)
 	}
 }

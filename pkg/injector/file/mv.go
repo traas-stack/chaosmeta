@@ -17,6 +17,7 @@
 package file
 
 import (
+	"context"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/filesys"
@@ -56,7 +57,7 @@ func (i *MvInjector) SetOption(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&i.Args.Dst, "dst", "d", "", "destination file path, include dir and file name")
 }
 
-func (i *MvInjector) Validator() error {
+func (i *MvInjector) Validator(ctx context.Context) error {
 	if i.Args.Src == "" {
 		return fmt.Errorf("\"src\" is empty")
 	}
@@ -94,16 +95,16 @@ func (i *MvInjector) Validator() error {
 		return fmt.Errorf("\"dst\"[%s] is existed", i.Args.Dst)
 	}
 
-	return i.BaseInjector.Validator()
+	return i.BaseInjector.Validator(ctx)
 }
 
 // Inject TODO: Consider whether to add a backup operation, copy first and then move
-func (i *MvInjector) Inject() error {
+func (i *MvInjector) Inject(ctx context.Context) error {
 	return os.Rename(i.Args.Src, i.Args.Dst)
 }
 
-func (i *MvInjector) Recover() error {
-	if i.BaseInjector.Recover() == nil {
+func (i *MvInjector) Recover(ctx context.Context) error {
+	if i.BaseInjector.Recover(ctx) == nil {
 		return nil
 	}
 

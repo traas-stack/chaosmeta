@@ -17,9 +17,9 @@
 package storage
 
 import (
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
 	"errors"
 	"fmt"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
 	"gorm.io/gorm"
 	"time"
 )
@@ -114,7 +114,7 @@ func (e *experimentStore) GetByUid(uid string) (*Experiment, error) {
 	return exp, nil
 }
 
-func (e *experimentStore) QueryByOption(uid, status, target, fault, creator string, offset, limit uint) ([]*Experiment, int64, error) {
+func (e *experimentStore) QueryByOption(uid, status, target, fault, creator, cr, cId string, offset, limit uint) ([]*Experiment, int64, error) {
 	var exps []*Experiment
 	db := e.db.Model(Experiment{})
 
@@ -136,6 +136,14 @@ func (e *experimentStore) QueryByOption(uid, status, target, fault, creator stri
 
 	if fault != "" {
 		db = db.Where("fault = ?", fault)
+	}
+
+	if cr != "" {
+		db = db.Where("container_runtime = ?", cr)
+	}
+
+	if cId != "" {
+		db = db.Where("container_id = ?", cId)
 	}
 
 	var total int64

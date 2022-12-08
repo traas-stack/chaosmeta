@@ -17,6 +17,7 @@
 package injector
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/crclient"
@@ -24,6 +25,7 @@ import (
 	"github.com/ChaosMetaverse/chaosmetad/pkg/storage"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/errutil"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/user"
 	"github.com/spf13/cobra"
 	"runtime/debug"
@@ -34,16 +36,16 @@ type IInjector interface {
 	SetCommonArgs(info *BaseInfo)
 	OptionToExp(args, r interface{}) (*storage.Experiment, error)
 	LoadInjector(exp *storage.Experiment, argsVar, rVar interface{}) error
-	DelayRecover(timeout int64) error
+	DelayRecover(ctx context.Context, timeout int64) error
 
 	GetArgs() interface{}
 	GetRuntime() interface{}
 
 	SetOption(cmd *cobra.Command)
 	SetDefault()
-	Validator() error
-	Inject() error
-	Recover() error
+	Validator(ctx context.Context) error
+	Inject(ctx context.Context) error
+	Recover(ctx context.Context) error
 }
 
 /*=======================================Base Injector===================================================*/
@@ -114,12 +116,12 @@ func (i *BaseInjector) SetOption(cmd *cobra.Command) {
 
 //func (i *BaseInjector) SetCRConfig() {}
 
-func (i *BaseInjector) Inject() error {
+func (i *BaseInjector) Inject(ctx context.Context) error {
 	//i.Info.Status = core.StatusSuccess
 	return fmt.Errorf("not implemented")
 }
 
-func (i *BaseInjector) Recover() error {
+func (i *BaseInjector) Recover(ctx context.Context) error {
 	if i.Info.Status == utils.StatusDestroyed || i.Info.Status == utils.StatusError {
 		return nil
 	}
@@ -145,7 +147,7 @@ func (i *BaseInjector) SetDefault() {
 	}
 }
 
-func (i *BaseInjector) Validator() error {
+func (i *BaseInjector) Validator(ctx context.Context) error {
 	if i.Info.Timeout == "" {
 		return nil
 	}
@@ -155,7 +157,7 @@ func (i *BaseInjector) Validator() error {
 			return fmt.Errorf("\"container-id\" is empty")
 		}
 
-		if _, err := crclient.GetClient(i.Info.ContainerRuntime); err != nil {
+		if _, err := crclient.GetClient(ctx, i.Info.ContainerRuntime); err != nil {
 			return fmt.Errorf("create container runtime client[%s] error: %s", i.Info.ContainerRuntime, err.Error())
 		}
 	}
@@ -167,8 +169,8 @@ func (i *BaseInjector) Validator() error {
 	return nil
 }
 
-func (i *BaseInjector) DelayRecover(timeout int64) error {
-	return cmdexec.StartSleepRecover(timeout, i.Info.Uid)
+func (i *BaseInjector) DelayRecover(ctx context.Context, timeout int64) error {
+	return cmdexec.StartSleepRecover(ctx, timeout, i.Info.Uid)
 }
 
 func (i *BaseInjector) LoadInjector(exp *storage.Experiment, argsVar, rVar interface{}) error {
@@ -222,107 +224,111 @@ func (i *BaseInjector) OptionToExp(args, r interface{}) (*storage.Experiment, er
 
 /*=======================================Main Process===================================================*/
 
-func ProcessInject(i IInjector) (code int, msg string) {
+func ProcessInject(ctx context.Context, i IInjector) (code int, msg string) {
+	logger := log.GetLogger(ctx)
 	defer func() {
 		if err := recover(); err != any(nil) {
-			log.GetLogger().Debug(string(debug.Stack()))
-			code, msg = utils.UnknownErr, fmt.Sprintf("ProcessInject Exception: %v", err)
+			logger.Debug(string(debug.Stack()))
+			code, msg = errutil.UnknownErr, fmt.Sprintf("ProcessInject Exception: %v", err)
 		}
 	}()
 
 	i.SetDefault()
 
-	if err := i.Validator(); err != nil {
-		return utils.BadArgsErr, fmt.Sprintf("args error: %s", err.Error())
+	if err := i.Validator(ctx); err != nil {
+		return errutil.BadArgsErr, fmt.Sprintf("args error: %s", err.Error())
 	}
 
 	db, err := storage.GetExperimentStore()
 	if err != nil {
-		return utils.DBErr, fmt.Sprintf("connect db error: %s", err.Error())
+		return errutil.DBErr, fmt.Sprintf("connect db error: %s", err.Error())
 	}
 
 	exp, err := i.OptionToExp(i.GetArgs(), i.GetRuntime())
 	if err != nil {
-		return utils.BadArgsErr, fmt.Sprintf("create experiment error: %s", err.Error())
+		return errutil.BadArgsErr, fmt.Sprintf("create experiment error: %s", err.Error())
 	}
 
 	if err := db.Insert(exp); err != nil {
-		return utils.DBErr, fmt.Sprintf("insert new experiment error: %s", err.Error())
+		return errutil.DBErr, fmt.Sprintf("insert new experiment error: %s", err.Error())
 	}
 
-	log.GetLogger().Infof("uid: %s", exp.Uid)
-	log.WithUid(exp.Uid).Infof("args: %s", exp.Args)
-	if err := i.Inject(); err != nil {
+	logger.Infof("uid: %s", exp.Uid)
+	logger.Infof("args: %s", exp.Args)
+
+	if err := i.Inject(ctx); err != nil {
 		errMsg := fmt.Sprintf("inject error: %s", err.Error())
 		if err := db.UpdateStatusAndErr(exp.Uid, utils.StatusError, errMsg); err != nil {
-			log.WithUid(exp.Uid).Warnf("update status[%s] for experiment[%s] error: %s", utils.StatusError, exp.Uid, errMsg)
+			logger.Warnf("update status[%s] for experiment[%s] error: %s", utils.StatusError, exp.Uid, errMsg)
 		}
 
-		return utils.InjectErr, errMsg
+		return errutil.InjectErr, errMsg
 	}
 
 	exp, _ = i.OptionToExp(i.GetArgs(), i.GetRuntime())
 	exp.Status = utils.StatusSuccess
 	if err := db.Update(exp); err != nil {
 		// update fails, runtime will be lost, so it must roll back
-		if err := i.Recover(); err != nil {
-			log.WithUid(exp.Uid).Warnf("recover error: %s", err.Error())
+		if err := i.Recover(ctx); err != nil {
+			logger.Warnf("recover error: %s", err.Error())
 		}
-		return utils.DBErr, fmt.Sprintf("update status[%s] for experiment[%s] error: %s", exp.Status, exp.Uid, err.Error())
+		return errutil.DBErr, fmt.Sprintf("update status[%s] for experiment[%s] error: %s", exp.Status, exp.Uid, err.Error())
 	}
 
-	log.WithUid(exp.Uid).Info("inject success")
+	logger.Info("inject success")
 
 	if exp.Timeout != "" {
 		timeSecond, _ := utils.GetTimeSecond(exp.Timeout)
-		if err := i.DelayRecover(timeSecond); err != nil {
-			log.WithUid(exp.Uid).Warnf("inject success but auto delay recover cmd exec error: %s, please execute [chaosmetad recover -u %s] manually to recover", err.Error(), exp.Uid)
+		if err := i.DelayRecover(ctx, timeSecond); err != nil {
+			logger.Warnf("inject success but auto delay recover cmd exec error: %s, please execute [chaosmetad recover -u %s] manually to recover", err.Error(), exp.Uid)
 		}
 	}
 
-	return utils.NoErr, "success"
+	return errutil.NoErr, "success"
 }
 
-func ProcessRecover(uid string) (code int, msg string) {
+func ProcessRecover(ctx context.Context, uid string) (code int, msg string) {
+	logger := log.GetLogger(ctx)
+
 	defer func() {
 		if err := recover(); err != any(nil) {
-			log.WithUid(uid).Debug(string(debug.Stack()))
-			code, msg = utils.UnknownErr, fmt.Sprintf("ProcessRecover Exception: %v", err)
+			logger.Debug(string(debug.Stack()))
+			code, msg = errutil.UnknownErr, fmt.Sprintf("ProcessRecover Exception: %v", err)
 		}
 	}()
 
-	log.WithUid(uid).Debugf("uid: %s", uid)
+	logger.Debugf("uid: %s", uid)
 
 	db, err := storage.GetExperimentStore()
 	if err != nil {
-		return utils.DBErr, fmt.Sprintf("connect db error: %s", err.Error())
+		return errutil.DBErr, fmt.Sprintf("connect db error: %s", err.Error())
 	}
 
 	exp, err := db.GetByUid(uid)
 	if err != nil {
-		return utils.DBErr, fmt.Sprintf("query experiment by uid[%s] error: %s", uid, err.Error())
+		return errutil.DBErr, fmt.Sprintf("query experiment by uid[%s] error: %s", uid, err.Error())
 	}
 
 	i, err := NewInjector(exp.Target, exp.Fault)
 	if err != nil {
-		return utils.InternalErr, fmt.Sprintf("find injector by target[%s] and fault[%s] error: %s", exp.Target, exp.Fault, err.Error())
+		return errutil.InternalErr, fmt.Sprintf("find injector by target[%s] and fault[%s] error: %s", exp.Target, exp.Fault, err.Error())
 	}
 
 	if err := i.LoadInjector(exp, i.GetArgs(), i.GetRuntime()); err != nil {
-		return utils.InternalErr, fmt.Sprintf("load experiment to injector error: %s", err.Error())
+		return errutil.InternalErr, fmt.Sprintf("load experiment to injector error: %s", err.Error())
 	}
 
-	if err := i.Recover(); err != nil {
-		return utils.RecoverErr, fmt.Sprintf("recover error: %s", err.Error())
+	if err := i.Recover(ctx); err != nil {
+		return errutil.RecoverErr, fmt.Sprintf("recover error: %s", err.Error())
 	}
 
-	log.WithUid(uid).Info("recover success")
+	logger.Info("recover success")
 
 	if err := db.UpdateStatus(uid, utils.StatusDestroyed); err != nil {
-		log.WithUid(uid).Warnf("update status[%s] for experiment[%s] error: %s", utils.StatusDestroyed, uid, err.Error())
+		logger.Warnf("update status[%s] for experiment[%s] error: %s", utils.StatusDestroyed, uid, err.Error())
 	}
 
-	return utils.NoErr, "success"
+	return errutil.NoErr, "success"
 }
 
 /*=======================================Command Constructor===================================================*/
@@ -347,13 +353,14 @@ func NewCmdByTargetAndFault(target, fault string, infoArgs *BaseInfo) *cobra.Com
 		Use:   fault,
 		Short: fmt.Sprintf("create %s experiment for %s", fault, target),
 		Run: func(cmd *cobra.Command, args []string) {
+			ctx := utils.GetCtxWithTraceId(context.Background(), utils.TraceId)
 			if len(args) != 0 {
-				utils.SolveErr(utils.BadArgsErr, fmt.Sprintf("unknown args: %s, please add -h to get more info", args))
+				errutil.SolveErr(ctx, errutil.BadArgsErr, fmt.Sprintf("unknown args: %s, please add -h to get more info", args))
 			}
 
 			i.SetCommonArgs(infoArgs)
-			code, msg := ProcessInject(i)
-			utils.SolveErr(code, msg)
+			code, msg := ProcessInject(ctx, i)
+			errutil.SolveErr(ctx, code, msg)
 		},
 	}
 

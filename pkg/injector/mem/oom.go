@@ -17,6 +17,7 @@
 package mem
 
 import (
+	"context"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
@@ -71,7 +72,7 @@ func (i *OOMInjector) SetOption(cmd *cobra.Command) {
 	}
 }
 
-func (i *OOMInjector) Validator() error {
+func (i *OOMInjector) Validator(ctx context.Context) error {
 	if i.Args.Mode != ModeCache && i.Args.Mode != ModeRam {
 		return fmt.Errorf("\"mode\" is not support: %s, only support: %s、%s", i.Args.Mode, ModeCache, ModeRam)
 	}
@@ -96,21 +97,21 @@ func (i *OOMInjector) Validator() error {
 		}
 	}
 
-	return i.BaseInjector.Validator()
+	return i.BaseInjector.Validator(ctx)
 }
 
 func getOOMDir(uid string) string {
 	return fmt.Sprintf("%s%s", OOMDir, uid)
 }
 
-func (i *OOMInjector) Inject() error {
-
-	fillKBytes, err := memory.CalculateFillKBytes(PercentOOM, "")
+func (i *OOMInjector) Inject(ctx context.Context) error {
+	logger := log.GetLogger(ctx)
+	fillKBytes, err := memory.CalculateFillKBytes(ctx, PercentOOM, "")
 	if err != nil {
 		return err
 	}
 
-	log.WithUid(i.Info.Uid).Debugf("need to fill mem: %dKB", fillKBytes)
+	logger.Debugf("need to fill mem: %dKB", fillKBytes)
 
 	var timeout int64
 	if i.Info.Timeout != "" {
@@ -119,14 +120,14 @@ func (i *OOMInjector) Inject() error {
 
 	// 获取命令并执行
 	if i.Args.Mode == ModeRam {
-		pid, err := memory.FillRam(MemFillKey, fillKBytes, i.Info.Uid, timeout)
+		pid, err := memory.FillRam(ctx, MemFillKey, fillKBytes, i.Info.Uid, timeout)
 		if err != nil {
 			return fmt.Errorf("fill ram error: %s", err.Error())
 		}
 
 		i.Runtime.Pid = pid
 	} else {
-		if err := memory.FillCache(fillKBytes, getOOMDir(i.Info.Uid), TmpFsFile); err != nil {
+		if err := memory.FillCache(ctx, fillKBytes, getOOMDir(i.Info.Uid), TmpFsFile); err != nil {
 			return fmt.Errorf("fill cache error: %s", err.Error())
 		}
 	}
@@ -134,8 +135,8 @@ func (i *OOMInjector) Inject() error {
 	return nil
 }
 
-func (i *OOMInjector) Recover() error {
-	if i.BaseInjector.Recover() == nil {
+func (i *OOMInjector) Recover(ctx context.Context) error {
+	if i.BaseInjector.Recover(ctx) == nil {
 		return nil
 	}
 
@@ -148,7 +149,7 @@ func (i *OOMInjector) Recover() error {
 		}
 
 		if isDirExist {
-			return memory.UndoTmpfs(fillDir)
+			return memory.UndoTmpfs(ctx, fillDir)
 		}
 
 		return nil

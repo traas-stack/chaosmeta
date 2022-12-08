@@ -16,7 +16,10 @@
 
 package cgroup
 
-import "testing"
+import (
+	"context"
+	"testing"
+)
 
 func TestGetBlkioConfig(t *testing.T) {
 	type args struct {
@@ -34,11 +37,11 @@ func TestGetBlkioConfig(t *testing.T) {
 	}{
 		{
 			args: args{
-				devList: []string{"8:0", "8:1"},
-				rBytes: "200kb",
-				wBytes: "500KB",
-				rIO: 5,
-				wIO: 6,
+				devList:    []string{"8:0", "8:1"},
+				rBytes:     "200kb",
+				wBytes:     "500KB",
+				rIO:        5,
+				wIO:        6,
 				cgroupPath: "/etc/sys/fs/cgroup/cpu/chaosmetad_1241q52",
 			},
 			want: "echo 8:0 204800 > /etc/sys/fs/cgroup/cpu/chaosmetad_1241q52/blkio.throttle.read_bps_device &&" +
@@ -52,8 +55,9 @@ func TestGetBlkioConfig(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		ctx := context.Background()
 		t.Run(tt.name, func(t *testing.T) {
-			if got := GetBlkioConfig(tt.args.devList, tt.args.rBytes, tt.args.wBytes, tt.args.rIO, tt.args.wIO, tt.args.cgroupPath); got != tt.want {
+			if got := GetBlkioConfig(ctx, tt.args.devList, tt.args.rBytes, tt.args.wBytes, tt.args.rIO, tt.args.wIO, tt.args.cgroupPath); got != tt.want {
 				t.Errorf("GetBlkioConfig() = %v, want %v", got, tt.want)
 			}
 		})

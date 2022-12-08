@@ -17,6 +17,7 @@
 package testcase
 
 import (
+	"context"
 	"fmt"
 	file2 "github.com/ChaosMetaverse/chaosmetad/pkg/injector/file"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
@@ -31,6 +32,7 @@ var (
 )
 
 func GetFileDeleteTest() []common.TestCase {
+	ctx := context.Background()
 	var tempCaseList = []common.TestCase{
 		{
 			Args:  "awvgv",
@@ -44,7 +46,7 @@ func GetFileDeleteTest() []common.TestCase {
 			Args:  "-p tempdir",
 			Error: true,
 			PreProcessor: func() error {
-				return cmdexec.RunBashCmdWithoutOutput("mkdir tempdir")
+				return cmdexec.RunBashCmdWithoutOutput(ctx, "mkdir tempdir")
 			},
 			PostProcessor: func() error {
 				return os.Remove("tempdir")
@@ -53,7 +55,7 @@ func GetFileDeleteTest() []common.TestCase {
 		{
 			Args: fmt.Sprintf("-p %s", fileDeleteFileName),
 			PreProcessor: func() error {
-				return cmdexec.RunBashCmdWithoutOutput(fmt.Sprintf("touch %s", fileDeleteFileName))
+				return cmdexec.RunBashCmdWithoutOutput(ctx, fmt.Sprintf("touch %s", fileDeleteFileName))
 			},
 			PostProcessor: func() error {
 				return os.Remove(fileDeleteFileName)

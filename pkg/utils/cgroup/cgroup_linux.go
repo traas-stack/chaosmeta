@@ -28,16 +28,16 @@ import (
 	"strings"
 )
 
-func NewCgroup(cgroupPath string, configCmdStr string) error {
-	if err := cmdexec.RunBashCmdWithoutOutput(fmt.Sprintf("mkdir %s%s%s", cgroupPath, utils.CmdSplit, configCmdStr)); err != nil {
+func NewCgroup(ctx context.Context, cgroupPath string, configCmdStr string) error {
+	if err := cmdexec.RunBashCmdWithoutOutput(ctx, fmt.Sprintf("mkdir %s%s%s", cgroupPath, utils.CmdSplit, configCmdStr)); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func GetContainerCgroupPath(cr, cid, subSys string) (string, error) {
-	client, err := crclient.GetClient(cr)
+func GetContainerCgroupPath(ctx context.Context, cr, cid, subSys string) (string, error) {
+	client, err := crclient.GetClient(ctx, cr)
 	if err != nil {
 		return "", fmt.Errorf("get cr[%s] client error: %s", cr, err.Error())
 	}
@@ -47,7 +47,7 @@ func GetContainerCgroupPath(cr, cid, subSys string) (string, error) {
 		return "", fmt.Errorf("get pid of container[%s] error: %s", cid, err.Error())
 	}
 
-	cPath, err := GetpidCurCgroup(pid, subSys)
+	cPath, err := GetpidCurCgroup(ctx, pid, subSys)
 	if err != nil {
 		return "", fmt.Errorf("get cgroup[%s] path of process[%d] error: %s", subSys, pid, err.Error())
 	}
@@ -59,9 +59,9 @@ func GetBlkioCPath(uid string) string {
 	return fmt.Sprintf("%s/%s/%s_%s", RootPath, BLKIO, BlkioCgroupName, uid)
 }
 
-func CheckPidListBlkioCgroup(pidList []int) error {
+func CheckPidListBlkioCgroup(ctx context.Context, pidList []int) error {
 	for _, unitP := range pidList {
-		oldPath, err := GetpidCurCgroup(unitP, BLKIO)
+		oldPath, err := GetpidCurCgroup(ctx, unitP, BLKIO)
 		if err != nil {
 			return fmt.Errorf("get old cgroup path of process[%d] error: %s", unitP, err.Error())
 		}
@@ -74,10 +74,10 @@ func CheckPidListBlkioCgroup(pidList []int) error {
 	return nil
 }
 
-func GetPidListCurCgroup(pidList []int, subSys string) (map[int]string, error) {
+func GetPidListCurCgroup(ctx context.Context, pidList []int, subSys string) (map[int]string, error) {
 	var re = make(map[int]string)
 	for _, unitP := range pidList {
-		oldPath, err := GetpidCurCgroup(unitP, subSys)
+		oldPath, err := GetpidCurCgroup(ctx, unitP, subSys)
 		if err != nil {
 			return nil, fmt.Errorf("get old cgroup path of process[%d] error: %s", unitP, err.Error())
 		}
@@ -87,8 +87,8 @@ func GetPidListCurCgroup(pidList []int, subSys string) (map[int]string, error) {
 	return re, nil
 }
 
-func GetpidCurCgroup(pid int, subSys string) (string, error) {
-	reByte, err := cmdexec.RunBashCmdWithOutput(fmt.Sprintf("cat /proc/%d/cgroup | grep -w %s", pid, subSys))
+func GetpidCurCgroup(ctx context.Context, pid int, subSys string) (string, error) {
+	reByte, err := cmdexec.RunBashCmdWithOutput(ctx, fmt.Sprintf("cat /proc/%d/cgroup | grep -w %s", pid, subSys))
 	if err != nil {
 		return "", fmt.Errorf("run cmd error: %s", err.Error())
 	}
@@ -102,9 +102,9 @@ func GetpidCurCgroup(pid int, subSys string) (string, error) {
 	return sArr[2], nil
 }
 
-func MovePidListToCgroup(pidList []int, cgroupPath string) error {
+func MovePidListToCgroup(ctx context.Context, pidList []int, cgroupPath string) error {
 	for _, unit := range pidList {
-		if err := MoveTaskToCgroup(unit, cgroupPath); err != nil {
+		if err := MoveTaskToCgroup(ctx, unit, cgroupPath); err != nil {
 			return fmt.Errorf("move pid[%d] to cgroup[%s] error: %s", unit, cgroupPath, err.Error())
 		}
 	}
@@ -112,8 +112,8 @@ func MovePidListToCgroup(pidList []int, cgroupPath string) error {
 	return nil
 }
 
-func MoveTaskToCgroup(pid int, cgroupPath string) error {
-	if err := cmdexec.RunBashCmdWithoutOutput(fmt.Sprintf("echo %d > %s/tasks", pid, cgroupPath)); err != nil {
+func MoveTaskToCgroup(ctx context.Context, pid int, cgroupPath string) error {
+	if err := cmdexec.RunBashCmdWithoutOutput(ctx, fmt.Sprintf("echo %d > %s/tasks", pid, cgroupPath)); err != nil {
 		return err
 	}
 
@@ -128,8 +128,8 @@ func MoveTaskToCgroup(pid int, cgroupPath string) error {
 //	return nil
 //}
 
-func GetPidStrListByCgroup(cgroupPath string) ([]int, error) {
-	reByte, err := cmdexec.RunBashCmdWithOutput(fmt.Sprintf("cat %s/tasks", cgroupPath))
+func GetPidStrListByCgroup(ctx context.Context, cgroupPath string) ([]int, error) {
+	reByte, err := cmdexec.RunBashCmdWithOutput(ctx, fmt.Sprintf("cat %s/tasks", cgroupPath))
 	if err != nil {
 		return nil, fmt.Errorf("run cmd error: %s", err.Error())
 	}
@@ -152,8 +152,8 @@ func GetPidStrListByCgroup(cgroupPath string) ([]int, error) {
 	return pidList, nil
 }
 
-func RemoveCgroup(cgroupPath string) error {
-	if err := cmdexec.RunBashCmdWithoutOutput(fmt.Sprintf("rmdir %s", cgroupPath)); err != nil {
+func RemoveCgroup(ctx context.Context, cgroupPath string) error {
+	if err := cmdexec.RunBashCmdWithoutOutput(ctx, fmt.Sprintf("rmdir %s", cgroupPath)); err != nil {
 		return fmt.Errorf("cmd exec error: %s", err.Error())
 	}
 

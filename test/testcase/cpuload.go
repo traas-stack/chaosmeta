@@ -17,6 +17,7 @@
 package testcase
 
 import (
+	"context"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector/cpu"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
@@ -30,6 +31,7 @@ import (
 var cpuLoadSleepTime = 2 * time.Second
 
 func GetCpuLoadTest() []common.TestCase {
+	ctx := context.Background()
 	var tempCaseList = []common.TestCase{
 		{
 			Args:  "greogh3wg",
@@ -42,25 +44,25 @@ func GetCpuLoadTest() []common.TestCase {
 		{
 			Args: "-c 0",
 			Check: func() error {
-				return checkProcessCountByKey(cpu.CpuLoadKey, runtime.NumCPU()*4+1)
+				return checkProcessCountByKey(ctx, cpu.CpuLoadKey, runtime.NumCPU()*4+1)
 			},
 		},
 		{
 			Args: "",
 			Check: func() error {
-				return checkProcessCountByKey(cpu.CpuLoadKey, runtime.NumCPU()*4+1)
+				return checkProcessCountByKey(ctx, cpu.CpuLoadKey, runtime.NumCPU()*4+1)
 			},
 		},
 		{
 			Args: "-c 5",
 			Check: func() error {
-				return checkProcessCountByKey(cpu.CpuLoadKey, 6)
+				return checkProcessCountByKey(ctx, cpu.CpuLoadKey, 6)
 			},
 		},
 		{
 			Args: "-c 100",
 			Check: func() error {
-				return checkProcessCountByKey(cpu.CpuLoadKey, 101)
+				return checkProcessCountByKey(ctx, cpu.CpuLoadKey, 101)
 			},
 		},
 	}
@@ -70,16 +72,16 @@ func GetCpuLoadTest() []common.TestCase {
 		tempCaseList[i].Fault = "load"
 		tempCaseList[i].Name = fmt.Sprintf("%s-%s-%s", tempCaseList[i].Target, tempCaseList[i].Fault, strconv.Itoa(i))
 		tempCaseList[i].CheckRecover = func() error {
-			return checkProcessCountByKey(cpu.CpuLoadKey, 0)
+			return checkProcessCountByKey(ctx, cpu.CpuLoadKey, 0)
 		}
 	}
 
 	return tempCaseList
 }
 
-func checkProcessCountByKey(key string, count int) error {
+func checkProcessCountByKey(ctx context.Context, key string, count int) error {
 	time.Sleep(cpuLoadSleepTime)
-	re, err := cmdexec.RunBashCmdWithOutput(fmt.Sprintf("ps -ef | grep %s | grep -v grep | wc -l", key))
+	re, err := cmdexec.RunBashCmdWithOutput(ctx, fmt.Sprintf("ps -ef | grep %s | grep -v grep | wc -l", key))
 	if err != nil {
 		return fmt.Errorf("cmd run error: %s", err.Error())
 	}

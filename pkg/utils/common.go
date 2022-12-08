@@ -17,7 +17,9 @@
 package utils
 
 import (
+	"context"
 	"fmt"
+	"github.com/google/uuid"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -38,10 +40,17 @@ const (
 	RecoverLog = "/tmp/chaosmetad_recover.log" //TODO: Need to add log cleanup strategy
 )
 
+// TraceId for command line
+var TraceId string
+
 // os
 const (
 	DARWIN = "darwin"
 	LINUX  = "linux"
+)
+
+const (
+	CtxTraceId = "TraceId"
 )
 
 // task status
@@ -58,6 +67,10 @@ func NewUid() string {
 	return fmt.Sprintf("%s%04d", timeStr, t.Nanosecond()/1000%100000%10000)
 }
 
+func NewUuid() string {
+	return uuid.New().String()
+}
+
 func GetRunPath() string {
 	path, _ := filepath.Abs(filepath.Dir(os.Args[0]))
 	return path
@@ -69,6 +82,22 @@ func GetToolPath(tool string) string {
 
 func GetSleepRecoverCmd(sleepTime int64, uid string) string {
 	return fmt.Sprintf("sleep %ds; %s/%s recover %s >> %s 2>&1", sleepTime, GetRunPath(), RootName, uid, RecoverLog)
+}
+
+func GetTraceId(ctx context.Context) string {
+	if ctx.Value(CtxTraceId) == nil {
+		return ""
+	}
+
+	return ctx.Value(CtxTraceId).(string)
+}
+
+func GetCtxWithTraceId(ctx context.Context, traceId string) context.Context {
+	if traceId == "" {
+		traceId = NewUuid()
+	}
+
+	return context.WithValue(ctx, CtxTraceId, traceId)
 }
 
 func GetNumArrByList(listStr string) ([]int, error) {

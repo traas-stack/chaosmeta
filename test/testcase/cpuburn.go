@@ -17,6 +17,7 @@
 package testcase
 
 import (
+	"context"
 	"fmt"
 	cpu2 "github.com/ChaosMetaverse/chaosmetad/pkg/injector/cpu"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/process"
@@ -236,7 +237,7 @@ func ifCpuUsageFit(coreMap map[int]bool, percent int) error {
 }
 
 func ifCpuBurnRecover() error {
-	isExist, err := process.ExistProcessByKey(cpu2.CpuBurnKey)
+	isExist, err := process.ExistProcessByKey(context.Background(), cpu2.CpuBurnKey)
 	if err != nil {
 		return fmt.Errorf("check process exist error: %s", err.Error())
 	}

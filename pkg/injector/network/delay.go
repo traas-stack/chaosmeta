@@ -17,6 +17,7 @@
 package network
 
 import (
+	"context"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
@@ -89,7 +90,7 @@ func (i *DelayInjector) SetOption(cmd *cobra.Command) {
 }
 
 // Validator Only one tc network failure can be executed at the same time
-func (i *DelayInjector) Validator() error {
+func (i *DelayInjector) Validator(ctx context.Context) error {
 	if !cmdexec.SupportCmd("tc") {
 		return fmt.Errorf("not support command \"tc\"")
 	}
@@ -149,7 +150,7 @@ func (i *DelayInjector) Validator() error {
 		}
 	}
 
-	exist, err := net.ExistTCRootQdisc(i.Args.Interface)
+	exist, err := net.ExistTCRootQdisc(ctx, i.Args.Interface)
 	if err != nil {
 		return fmt.Errorf("check tc rule error: %s", err.Error())
 	}
@@ -158,14 +159,14 @@ func (i *DelayInjector) Validator() error {
 		return fmt.Errorf("has other tc root rule, if want to force to execute, please provide [-f] or [--force] args")
 	}
 
-	return i.BaseInjector.Validator()
+	return i.BaseInjector.Validator(ctx)
 }
 
-func (i *DelayInjector) Inject() error {
+func (i *DelayInjector) Inject(ctx context.Context) error {
 	if i.Args.Force {
-		exist, _ := net.ExistTCRootQdisc(i.Args.Interface)
+		exist, _ := net.ExistTCRootQdisc(ctx, i.Args.Interface)
 		if exist {
-			if err := net.ClearTcRule(i.Args.Interface); err != nil {
+			if err := net.ClearTcRule(ctx, i.Args.Interface); err != nil {
 				return fmt.Errorf("reset tc rule for %s error: %s", i.Args.Interface, err.Error())
 			}
 		}
@@ -175,55 +176,55 @@ func (i *DelayInjector) Inject() error {
 
 	// 网卡粒度
 	if i.Args.SrcIp == "" && i.Args.DstIp == "" && i.Args.SrcPort == "" && i.Args.DstPort == "" {
-		return net.AddNetemQdisc(i.Args.Interface, "", FaultDelay, faultArgs)
+		return net.AddNetemQdisc(ctx, i.Args.Interface, "", FaultDelay, faultArgs)
 	}
 
-	if err := net.AddPrioQdisc(i.Args.Interface, "", "1:"); err != nil {
+	if err := net.AddPrioQdisc(ctx, i.Args.Interface, "", "1:"); err != nil {
 		return fmt.Errorf("add root prio qdisc for %s error: %s", i.Args.Interface, err.Error())
 	}
 
 	if i.Args.Mode == net.ModeNormal {
 		parent := "1:4"
-		if err := net.AddNetemQdisc(i.Args.Interface, parent, FaultDelay, faultArgs); err != nil {
-			return i.getErrWithUndo(fmt.Sprintf("add parent %s netem qdisc for %s error: %s", parent, i.Args.Interface, err.Error()))
+		if err := net.AddNetemQdisc(ctx, i.Args.Interface, parent, FaultDelay, faultArgs); err != nil {
+			return i.getErrWithUndo(ctx, fmt.Sprintf("add parent %s netem qdisc for %s error: %s", parent, i.Args.Interface, err.Error()))
 		}
 	} else {
 		for subIndex := 1; subIndex < 4; subIndex++ {
 			parent := fmt.Sprintf("1:%d", subIndex)
-			if err := net.AddNetemQdisc(i.Args.Interface, parent, FaultDelay, faultArgs); err != nil {
-				return i.getErrWithUndo(fmt.Sprintf("add parent %s netem qdisc for %s error: %s", parent, i.Args.Interface, err.Error()))
+			if err := net.AddNetemQdisc(ctx, i.Args.Interface, parent, FaultDelay, faultArgs); err != nil {
+				return i.getErrWithUndo(ctx, fmt.Sprintf("add parent %s netem qdisc for %s error: %s", parent, i.Args.Interface, err.Error()))
 			}
 		}
 	}
 
-	if err := net.AddFilter(i.Args.Interface, "1:4", i.Args.SrcIp, i.Args.DstIp, i.Args.SrcPort, i.Args.DstPort); err != nil {
-		return i.getErrWithUndo(fmt.Sprintf("add filter for %s error: %s", i.Args.Interface, err.Error()))
+	if err := net.AddFilter(ctx, i.Args.Interface, "1:4", i.Args.SrcIp, i.Args.DstIp, i.Args.SrcPort, i.Args.DstPort); err != nil {
+		return i.getErrWithUndo(ctx, fmt.Sprintf("add filter for %s error: %s", i.Args.Interface, err.Error()))
 	}
 
 	return nil
 }
 
-func (i *DelayInjector) getErrWithUndo(errMsg string) error {
+func (i *DelayInjector) getErrWithUndo(ctx context.Context, errMsg string) error {
 
-	if err := i.Recover(); err != nil {
-		log.WithUid(i.Info.Uid).Warnf("undo tc rule error: %s", err.Error())
+	if err := i.Recover(ctx); err != nil {
+		log.GetLogger(ctx).Warnf("undo tc rule error: %s", err.Error())
 	}
 
 	return fmt.Errorf(errMsg)
 }
 
-func (i *DelayInjector) Recover() error {
-	if i.BaseInjector.Recover() == nil {
+func (i *DelayInjector) Recover(ctx context.Context) error {
+	if i.BaseInjector.Recover(ctx) == nil {
 		return nil
 	}
 
-	isTcExist, err := net.ExistTCRootQdisc(i.Args.Interface)
+	isTcExist, err := net.ExistTCRootQdisc(ctx, i.Args.Interface)
 	if err != nil {
 		return fmt.Errorf("check tc rule exist error: %s", err.Error())
 	}
 
 	if isTcExist {
-		return net.ClearTcRule(i.Args.Interface)
+		return net.ClearTcRule(ctx, i.Args.Interface)
 	}
 
 	return nil

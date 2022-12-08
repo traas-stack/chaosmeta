@@ -17,6 +17,7 @@
 package file
 
 import (
+	"context"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
@@ -62,7 +63,7 @@ func (i *AddInjector) SetOption(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&i.Args.Force, "force", "f", false, "if target dir not exist, will create. if target file exist, will overwrite")
 }
 
-func (i *AddInjector) Validator() error {
+func (i *AddInjector) Validator(ctx context.Context) error {
 	if i.Args.Path == "" {
 		return fmt.Errorf("\"path\" is empty")
 	}
@@ -107,27 +108,29 @@ func (i *AddInjector) Validator() error {
 		}
 	}
 
-	return i.BaseInjector.Validator()
+	return i.BaseInjector.Validator(ctx)
 }
 
-func (i *AddInjector) Inject() error {
+func (i *AddInjector) Inject(ctx context.Context) error {
+	logger := log.GetLogger(ctx)
+
 	dir := filepath.Dir(i.Args.Path)
 	isDirExist, _ := filesys.ExistPath(dir)
 
 	if !isDirExist {
-		if err := filesys.MkdirP(dir); err != nil {
+		if err := filesys.MkdirP(ctx, dir); err != nil {
 			return fmt.Errorf("mkdir dir[%s] error: %s", dir, err.Error())
 		}
 	}
 
-	if err := cmdexec.RunBashCmdWithoutOutput(fmt.Sprintf("echo -en \"%s\" > %s", i.Args.Content, i.Args.Path)); err != nil {
+	if err := cmdexec.RunBashCmdWithoutOutput(ctx, fmt.Sprintf("echo -en \"%s\" > %s", i.Args.Content, i.Args.Path)); err != nil {
 		return fmt.Errorf("add content to %s error: %s", i.Args.Path, err.Error())
 	}
 
 	if i.Args.Permission != "" {
-		if err := filesys.Chmod(i.Args.Path, i.Args.Permission); err != nil {
-			if err := i.Recover(); err != nil {
-				log.WithUid(i.Info.Uid).Warnf("undo error: %s", err.Error())
+		if err := filesys.Chmod(ctx, i.Args.Path, i.Args.Permission); err != nil {
+			if err := i.Recover(ctx); err != nil {
+				logger.Warnf("undo error: %s", err.Error())
 			}
 
 			return fmt.Errorf("chmod file[%s] to[%s] error: %s", i.Args.Path, i.Args.Permission, err.Error())
@@ -137,8 +140,8 @@ func (i *AddInjector) Inject() error {
 	return nil
 }
 
-func (i *AddInjector) Recover() error {
-	if i.BaseInjector.Recover() == nil {
+func (i *AddInjector) Recover(ctx context.Context) error {
+	if i.BaseInjector.Recover(ctx) == nil {
 		return nil
 	}
 

@@ -17,6 +17,7 @@
 package file
 
 import (
+	"context"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/filesys"
@@ -57,7 +58,7 @@ func (i *ChmodInjector) SetOption(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&i.Args.Permission, "permission", "P", "", "file's permission, compose format: three number in [0,7], example: 777")
 }
 
-func (i *ChmodInjector) Validator() error {
+func (i *ChmodInjector) Validator(ctx context.Context) error {
 	if i.Args.Path == "" {
 		return fmt.Errorf("\"path\" is empty")
 	}
@@ -83,21 +84,21 @@ func (i *ChmodInjector) Validator() error {
 		}
 	}
 
-	return i.BaseInjector.Validator()
+	return i.BaseInjector.Validator(ctx)
 }
 
-func (i *ChmodInjector) Inject() error {
+func (i *ChmodInjector) Inject(ctx context.Context) error {
 	perm, err := filesys.GetPermission(i.Args.Path)
 	if err != nil {
 		return fmt.Errorf("get perm of path[%s] error: %s", i.Args.Path, err.Error())
 	}
 
 	i.Runtime.Permission = perm
-	return filesys.Chmod(i.Args.Path, i.Args.Permission)
+	return filesys.Chmod(ctx, i.Args.Path, i.Args.Permission)
 }
 
-func (i *ChmodInjector) Recover() error {
-	if i.BaseInjector.Recover() == nil {
+func (i *ChmodInjector) Recover(ctx context.Context) error {
+	if i.BaseInjector.Recover(ctx) == nil {
 		return nil
 	}
 
@@ -107,7 +108,7 @@ func (i *ChmodInjector) Recover() error {
 	}
 
 	if isExist {
-		return filesys.Chmod(i.Args.Path, i.Runtime.Permission)
+		return filesys.Chmod(ctx, i.Args.Path, i.Runtime.Permission)
 	}
 
 	return nil

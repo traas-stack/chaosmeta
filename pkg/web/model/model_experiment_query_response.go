@@ -17,9 +17,8 @@
 package model
 
 type ExperimentQueryResponse struct {
-	Code int `json:"code"`
-
-	Message string `json:"message"`
-
-	Data *ExperimentQueryResponseData `json:"data,omitempty"`
+	Code    int                          `json:"code"`
+	Message string                       `json:"message"`
+	Data    *ExperimentQueryResponseData `json:"data,omitempty"`
+	TraceId string                       `json:"trace_id,omitempty"`
 }

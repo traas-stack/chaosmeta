@@ -17,12 +17,13 @@
 package cgroup
 
 import (
+	"context"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
 )
 
-func GetBlkioConfig(devList []string, rBytes, wBytes string, rIO, wIO int64, cgroupPath string) string {
+func GetBlkioConfig(ctx context.Context, devList []string, rBytes, wBytes string, rIO, wIO int64, cgroupPath string) string {
 	var re = ""
 	if rBytes != "" {
 		b, _ := utils.GetBytes(rBytes)
@@ -42,7 +43,7 @@ func GetBlkioConfig(devList []string, rBytes, wBytes string, rIO, wIO int64, cgr
 		re += getThrottleDeviceCmdStr(devList, wIO, fmt.Sprintf("%s/%s", cgroupPath, WriteIOFile))
 	}
 
-	log.GetLogger().Debugf("blkio config: %s", re)
+	log.GetLogger(ctx).Debugf("blkio config: %s", re)
 	return re[:len(re)-len(utils.CmdSplit)]
 }
 

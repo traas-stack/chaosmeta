@@ -17,11 +17,13 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/storage"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/errutil"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/web/model"
 	"net/http"
 )
@@ -30,23 +32,26 @@ func ExperimentInjectPost(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 
-	var injectReq = &model.InjectRequest{}
-	var injectRes *model.InjectResponse
+	var (
+		ctx   = context.Background()
+		injectReq = &model.InjectRequest{}
+		injectRes *model.InjectResponse
+	)
 
 	if err := json.NewDecoder(r.Body).Decode(injectReq); err != nil {
-		injectRes = getExperimentInjectPostResponse(utils.BadArgsErr, fmt.Sprintf("req body format error: %s", err.Error()), nil)
+		injectRes = getExperimentInjectPostResponse(ctx, errutil.BadArgsErr, fmt.Sprintf("req body format error: %s", err.Error()), nil)
 	} else {
+		ctx = utils.GetCtxWithTraceId(ctx, injectReq.TraceId)
 		i, err := injector.NewInjector(injectReq.Target, injectReq.Fault)
 		if err != nil {
-			injectRes = getExperimentInjectPostResponse(utils.BadArgsErr, fmt.Sprintf("get injector error: %s", err.Error()), nil)
+			injectRes = getExperimentInjectPostResponse(ctx, errutil.BadArgsErr, fmt.Sprintf("get injector error: %s", err.Error()), nil)
 		} else {
-			// load args
 			creator := injectReq.Creator
 			if creator == "" {
 				creator = r.Host
 			}
+
 			if err := i.LoadInjector(&storage.Experiment{
-				// r.Host
 				Target:           injectReq.Target,
 				Fault:            injectReq.Fault,
 				Args:             injectReq.Args,
@@ -56,30 +61,31 @@ func ExperimentInjectPost(w http.ResponseWriter, r *http.Request) {
 				Creator:          creator,
 				Runtime:          "{}",
 			}, i.GetArgs(), i.GetRuntime()); err != nil {
-				injectRes = getExperimentInjectPostResponse(utils.BadArgsErr, fmt.Sprintf("args load error: %s", err.Error()), nil)
+				injectRes = getExperimentInjectPostResponse(ctx, errutil.BadArgsErr, fmt.Sprintf("args load error: %s", err.Error()), nil)
 			} else {
-				code, msg := injector.ProcessInject(i)
-				if code == utils.NoErr {
+				code, msg := injector.ProcessInject(ctx, i)
+				if code == errutil.NoErr {
 					exp, err := i.OptionToExp(i.GetArgs(), i.GetRuntime())
 					if err != nil {
-						injectRes = getExperimentInjectPostResponse(utils.NoErr, fmt.Sprintf("inject success but get exp info error: %s", err.Error()), nil)
+						injectRes = getExperimentInjectPostResponse(ctx, errutil.NoErr, fmt.Sprintf("inject success but get exp info error: %s", err.Error()), nil)
 					} else {
-						injectRes = getExperimentInjectPostResponse(utils.NoErr, "success", exp)
+						injectRes = getExperimentInjectPostResponse(ctx, errutil.NoErr, "success", exp)
 					}
 				} else {
-					injectRes = getExperimentInjectPostResponse(utils.InjectErr, fmt.Sprintf("injector error: %s", msg), nil)
+					injectRes = getExperimentInjectPostResponse(ctx, errutil.InjectErr, fmt.Sprintf("injector error: %s", msg), nil)
 				}
 			}
 		}
 	}
 
-	WriteResponse(w, injectRes)
+	WriteResponse(ctx, w, injectRes)
 }
 
-func getExperimentInjectPostResponse(code int, msg string, exp *storage.Experiment) *model.InjectResponse {
+func getExperimentInjectPostResponse(ctx context.Context, code int, msg string, exp *storage.Experiment) *model.InjectResponse {
 	var re = &model.InjectResponse{
 		Code:    code,
 		Message: msg,
+		TraceId: utils.GetTraceId(ctx),
 	}
 
 	if exp != nil {

@@ -17,6 +17,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cgroup"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
@@ -53,7 +54,7 @@ func main() {
 		}
 	}
 
-	if _, err := cmdexec.StartBashCmdAndWaitPid(strings.Join(cmdStr, " ")); err != nil {
+	if _, err := cmdexec.StartBashCmdAndWaitPid(context.Background(), strings.Join(cmdStr, " ")); err != nil {
 		common.ExitWithErr(fmt.Sprintf("start process error: %s", err.Error()))
 	}
 

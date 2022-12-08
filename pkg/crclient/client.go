@@ -40,12 +40,12 @@ type Client interface {
 	RestartContainerById(ctx context.Context, containerID string, timeout *time.Duration) error
 }
 
-func GetClient(cr string) (Client, error) {
-	log.GetLogger().Debugf("create %s client", cr)
+func GetClient(ctx context.Context, cr string) (Client, error) {
+	log.GetLogger(ctx).Debugf("create %s client", cr)
 
 	switch cr {
 	case CrDocker:
-		return docker.GetClient(defaultDockerSocket)
+		return docker.GetClient(ctx, defaultDockerSocket)
 	case CrContainerd:
 		return nil, fmt.Errorf("to be supported")
 	default:

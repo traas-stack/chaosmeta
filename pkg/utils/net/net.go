@@ -17,6 +17,7 @@
 package net
 
 import (
+	"context"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
@@ -120,15 +121,15 @@ func getPortMask(mask int) string {
 	return fmt.Sprintf("0x%x", maskValue)
 }
 
-func ClearTcRule(netInterface string) error {
-	return cmdexec.RunBashCmdWithoutOutput(GetClearTcRuleCmd(netInterface))
+func ClearTcRule(ctx context.Context, netInterface string) error {
+	return cmdexec.RunBashCmdWithoutOutput(ctx, GetClearTcRuleCmd(netInterface))
 }
 
 func GetClearTcRuleCmd(netInterface string) string {
 	return fmt.Sprintf("tc qdisc del dev %s root", netInterface)
 }
 
-func AddNetemQdisc(netInterface, parent, fault string, args string) error {
+func AddNetemQdisc(ctx context.Context, netInterface, parent, fault string, args string) error {
 	if parent == "" {
 		parent = "root handle 1:"
 	} else {
@@ -136,14 +137,14 @@ func AddNetemQdisc(netInterface, parent, fault string, args string) error {
 	}
 
 	cmd := fmt.Sprintf("tc qdisc add dev %s %s netem %s %s", netInterface, parent, fault, args)
-	if err := cmdexec.RunBashCmdWithoutOutput(cmd); err != nil {
+	if err := cmdexec.RunBashCmdWithoutOutput(ctx, cmd); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func AddPrioQdisc(netInterface, parent, name string) error {
+func AddPrioQdisc(ctx context.Context, netInterface, parent, name string) error {
 	if parent == "" {
 		parent = "root"
 	} else {
@@ -151,7 +152,7 @@ func AddPrioQdisc(netInterface, parent, name string) error {
 	}
 
 	cmd := fmt.Sprintf("tc qdisc add dev %s %s handle %s prio bands 4", netInterface, parent, name)
-	if err := cmdexec.RunBashCmdWithoutOutput(cmd); err != nil {
+	if err := cmdexec.RunBashCmdWithoutOutput(ctx, cmd); err != nil {
 		return err
 	}
 
@@ -159,48 +160,48 @@ func AddPrioQdisc(netInterface, parent, name string) error {
 }
 
 // AddHTBQdisc default 1:1
-func AddHTBQdisc(netInterface string) error {
+func AddHTBQdisc(ctx context.Context, netInterface string) error {
 	cmdStr := fmt.Sprintf("tc qdisc add dev %s root handle 1: htb default 1", netInterface)
-	log.GetLogger().Debugf("add htb qdisc cmd: %s", cmdStr)
+	log.GetLogger(ctx).Debugf("add htb qdisc cmd: %s", cmdStr)
 
-	if err := cmdexec.RunBashCmdWithoutOutput(cmdStr); err != nil {
+	if err := cmdexec.RunBashCmdWithoutOutput(ctx, cmdStr); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func AddLimitClass(netInterface string, rate string, mode string) error {
+func AddLimitClass(ctx context.Context, netInterface string, rate string, mode string) error {
 	subNum := 1
 	if mode == ModeNormal {
 		subNum = 2
 	}
 
 	cmdStr := fmt.Sprintf("tc class add dev %s parent 1: classid 1:%d htb rate %s", netInterface, subNum, rate)
-	log.GetLogger().Debugf("add class cmd: %s", cmdStr)
+	log.GetLogger(ctx).Debugf("add class cmd: %s", cmdStr)
 
-	if err := cmdexec.RunBashCmdWithoutOutput(cmdStr); err != nil {
+	if err := cmdexec.RunBashCmdWithoutOutput(ctx, cmdStr); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func AddFilter(netInterface, target, srcIpListStr, dstIpListStr, srcPortListStr, dstPortListStr string) error {
-	cmd, err := getAddFilterCmd(netInterface, target, srcIpListStr, dstIpListStr, srcPortListStr, dstPortListStr)
+func AddFilter(ctx context.Context, netInterface, target, srcIpListStr, dstIpListStr, srcPortListStr, dstPortListStr string) error {
+	cmd, err := getAddFilterCmd(ctx, netInterface, target, srcIpListStr, dstIpListStr, srcPortListStr, dstPortListStr)
 	if err != nil {
 		return fmt.Errorf("get filter cmd error: %s", err.Error())
 	}
 
-	log.GetLogger().Debugf("add filter cmd: %s", cmd)
-	if err := cmdexec.RunBashCmdWithoutOutput(cmd); err != nil {
+	log.GetLogger(ctx).Debugf("add filter cmd: %s", cmd)
+	if err := cmdexec.RunBashCmdWithoutOutput(ctx, cmd); err != nil {
 		return fmt.Errorf("run cmd error: %s", err.Error())
 	}
 
 	return nil
 }
 
-func getAddFilterCmd(netInterface, target, srcIpListStr, dstIpListStr, srcPortListStr, dstPortListStr string) (tcFilterStr string, err error) {
+func getAddFilterCmd(ctx context.Context, netInterface, target, srcIpListStr, dstIpListStr, srcPortListStr, dstPortListStr string) (tcFilterStr string, err error) {
 	srcIpList, dstIpList, srcPortList, dstPortList, err := getStrList(srcIpListStr, dstIpListStr, srcPortListStr, dstPortListStr)
 	if err != nil {
 		return
@@ -262,7 +263,7 @@ func getAddFilterCmd(netInterface, target, srcIpListStr, dstIpListStr, srcPortLi
 		}
 	}
 
-	log.GetLogger().Debugf("filter rule count: %d", len(ruleArr))
+	log.GetLogger(ctx).Debugf("filter rule count: %d", len(ruleArr))
 	tcFilterStr = strings.Join(ruleArr, utils.CmdSplit)
 	return
 }
@@ -303,8 +304,8 @@ func getStrList(srcIpListStr, dstIpListStr, srcPortListStr, dstPortListStr strin
 	return
 }
 
-func ExistTCRootQdisc(netInterface string) (bool, error) {
-	out, err := cmdexec.RunBashCmdWithOutput(fmt.Sprintf("tc qdisc ls dev %s | grep -w \"1: root\" | grep -v grep | wc -l", netInterface))
+func ExistTCRootQdisc(ctx context.Context, netInterface string) (bool, error) {
+	out, err := cmdexec.RunBashCmdWithOutput(ctx, fmt.Sprintf("tc qdisc ls dev %s | grep -w \"1: root\" | grep -v grep | wc -l", netInterface))
 	if err != nil {
 		return false, err
 	}
@@ -316,7 +317,7 @@ func ExistTCRootQdisc(netInterface string) (bool, error) {
 	return true, nil
 }
 
-func GetPidByPort(port int, proto string) (int, error) {
+func GetPidByPort(ctx context.Context, port int, proto string) (int, error) {
 	var cmd string
 	if proto == ProtocolTCP || proto == ProtocolTCP6 {
 		cmd = fmt.Sprintf("netstat -anpt | grep -w %s | awk '{print $4,$7}' | grep -w %d | grep :%d | awk '{print $2}' | awk -F'/' '{print $1}'", proto, port, port)
@@ -326,8 +327,8 @@ func GetPidByPort(port int, proto string) (int, error) {
 		return utils.NoPid, fmt.Errorf("protocol not support: %s、%s、%s、%s", ProtocolTCP, ProtocolUDP, ProtocolTCP6, ProtocolUDP6)
 	}
 
-	log.GetLogger().Debugf("get pid by port cmd: %s", cmd)
-	out, err := cmdexec.RunBashCmdWithOutput(cmd)
+	log.GetLogger(ctx).Debugf("get pid by port cmd: %s", cmd)
+	out, err := cmdexec.RunBashCmdWithOutput(ctx, cmd)
 	if err != nil {
 		return utils.NoPid, fmt.Errorf("cmd exec error: %s", err.Error())
 	}

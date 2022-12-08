@@ -17,6 +17,8 @@
 package version
 
 import (
+	"context"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/version"
 	"github.com/spf13/cobra"
 )
@@ -26,7 +28,7 @@ func NewVersionCommand() *cobra.Command {
 		Use:   "version",
 		Short: "description of version",
 		Run: func(cmd *cobra.Command, args []string) {
-			version.PrintVersion()
+			version.PrintVersion(utils.GetCtxWithTraceId(context.Background(), utils.TraceId))
 		},
 	}
 }

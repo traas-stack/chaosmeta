@@ -17,9 +17,11 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/errutil"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/process"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/web"
 	"net/http"
@@ -30,19 +32,20 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func watchSignal() {
+func watchSignal(ctx context.Context) {
+	logger := log.GetLogger(ctx)
 	c := make(chan os.Signal)
 	signal.Notify(c, syscall.SIGCHLD, syscall.SIGHUP, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
 
 	for s := range c {
 		switch s {
 		case syscall.SIGCHLD:
-			log.GetLogger().Debugf("receive signal of children process")
-			process.WaitDefunctProcess()
+			logger.Debugf("receive signal of children process")
+			process.WaitDefunctProcess(ctx)
 		default:
 			// TODO: The atomicity of the task needs to be guaranteed, and the program can really exit without the task in the processing flow
 			// TODO: Exiting the server with 'ctrl-c' will cause the tasks in progress to also be exited(but not exited with 'kill' and 'normal terminate')
-			utils.SolveErr(utils.NoErr, "server exit")
+			errutil.SolveErr(ctx, errutil.NoErr, "server exit")
 		}
 	}
 }
@@ -56,12 +59,13 @@ func NewServerCommand() *cobra.Command {
 		Use:   "server",
 		Short: "start up daemon service",
 		Run: func(cmd *cobra.Command, args []string) {
-			go watchSignal()
+			ctx := utils.GetCtxWithTraceId(context.Background(), "system")
+			go watchSignal(ctx)
 
 			//if cert != "" && key != "" {
 			//	startHTTPSServer(addr, port, isPprof, cert, key)
 			//} else {
-			startHTTPService(addr, port, isPprof)
+			startHTTPService(ctx, addr, port, isPprof)
 			//}
 		},
 	}
@@ -78,10 +82,10 @@ func NewServerCommand() *cobra.Command {
 	return cmd
 }
 
-func startHTTPService(addr string, port string, isPprof bool) {
-	logger := log.GetLogger()
+func startHTTPService(ctx context.Context, addr string, port string, isPprof bool) {
+	logger := log.GetLogger(ctx)
 	logger.Infof("HTTP Service Listen on %s:%s, pprof: %t", addr, port, isPprof)
-	router := web.NewRouter(isPprof)
+	router := web.NewRouter(ctx, isPprof)
 
 	if err := http.ListenAndServe(fmt.Sprintf("%s:%s", addr, port), router); err != nil {
 		logger.Fatalf("start http service fail: %s", err.Error())

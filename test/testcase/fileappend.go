@@ -17,6 +17,7 @@
 package testcase
 
 import (
+	"context"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
@@ -34,6 +35,7 @@ var (
 )
 
 func GetFileAppendTest() []common.TestCase {
+	ctx := context.Background()
 	var tempCaseList = []common.TestCase{
 		{
 			Args:  "awvgv",
@@ -47,7 +49,7 @@ func GetFileAppendTest() []common.TestCase {
 			Args:  fmt.Sprintf("-p tempdir -c \"%s\"", fileAppendContent),
 			Error: true,
 			PreProcessor: func() error {
-				return cmdexec.RunBashCmdWithoutOutput("mkdir tempdir")
+				return cmdexec.RunBashCmdWithoutOutput(ctx, "mkdir tempdir")
 			},
 			PostProcessor: func() error {
 				return os.Remove("tempdir")
@@ -56,7 +58,7 @@ func GetFileAppendTest() []common.TestCase {
 		{
 			Args: fmt.Sprintf("-p %s -c \"%s\"", fileAppendFileName, fileAppendContent),
 			PreProcessor: func() error {
-				return cmdexec.RunBashCmdWithoutOutput(fmt.Sprintf("echo -en \"%s\" > %s", fileInitContent, fileAppendFileName))
+				return cmdexec.RunBashCmdWithoutOutput(ctx, fmt.Sprintf("echo -en \"%s\" > %s", fileInitContent, fileAppendFileName))
 			},
 			Check: func() error {
 				return checkAppend(fmt.Sprintf("%s/%s", utils.GetRunPath(), fileAppendFileName), 3, 4, true)
@@ -71,7 +73,7 @@ func GetFileAppendTest() []common.TestCase {
 		{
 			Args: fmt.Sprintf("-p %s -c \"%s\" -r", fileAppendFileName, fileAppendContent),
 			PreProcessor: func() error {
-				return cmdexec.RunBashCmdWithoutOutput(fmt.Sprintf("echo -en \"%s\" > %s", fileInitContent, fileAppendFileName))
+				return cmdexec.RunBashCmdWithoutOutput(ctx, fmt.Sprintf("echo -en \"%s\" > %s", fileInitContent, fileAppendFileName))
 			},
 			Check: func() error {
 				return checkAppend(fmt.Sprintf("%s/%s", utils.GetRunPath(), fileAppendFileName), 3, 4, false)

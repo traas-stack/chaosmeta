@@ -17,7 +17,9 @@
 package query
 
 import (
+	"context"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/query"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -29,7 +31,7 @@ func NewQueryCommand() *cobra.Command {
 		Use:   "query",
 		Short: "experiment query command",
 		Run: func(cmd *cobra.Command, args []string) {
-			query.GetExpByOption(optionQuery, ifAll)
+			query.PrintExpByOption(utils.GetCtxWithTraceId(context.Background(), utils.TraceId), optionQuery, ifAll)
 		},
 	}
 

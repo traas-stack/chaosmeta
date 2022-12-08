@@ -33,11 +33,11 @@ const (
 	execnsKey           = "chaosmeta_execns"
 )
 
-func StartSleepRecover(sleepTime int64, uid string) error {
-	return StartBashCmd(utils.GetSleepRecoverCmd(sleepTime, uid))
+func StartSleepRecover(ctx context.Context, sleepTime int64, uid string) error {
+	return StartBashCmd(ctx, utils.GetSleepRecoverCmd(sleepTime, uid))
 }
 
-func waitProExec(stdout, stderr *bytes.Buffer) (err error) {
+func waitProExec(ctx context.Context, stdout, stderr *bytes.Buffer) (err error) {
 	var msg, timer = "", time.NewTimer(InjectCheckInterval)
 	for {
 		<-timer.C
@@ -48,7 +48,7 @@ func waitProExec(stdout, stderr *bytes.Buffer) (err error) {
 		timer.Reset(InjectCheckInterval)
 	}
 
-	log.GetLogger().Debugf(msg)
+	log.GetLogger(ctx).Debugf(msg)
 
 	if strings.Index(msg, "error") >= 0 {
 		return fmt.Errorf("inject error: %s", msg)
@@ -70,38 +70,37 @@ func SupportCmd(cmd string) bool {
 	return true
 }
 
-func RunBashCmdWithOutput(cmd string) ([]byte, error) {
-	log.GetLogger().Debugf("run cmd with output: %s", cmd)
+func RunBashCmdWithOutput(ctx context.Context, cmd string) ([]byte, error) {
+	log.GetLogger(ctx).Debugf("run cmd with output: %s", cmd)
 	return exec.Command("/bin/bash", "-c", cmd).CombinedOutput()
 }
 
-func RunBashCmdWithoutOutput(cmd string) error {
-	log.GetLogger().Debugf("run cmd: %s", cmd)
+func RunBashCmdWithoutOutput(ctx context.Context, cmd string) error {
+	log.GetLogger(ctx).Debugf("run cmd: %s", cmd)
 	return exec.Command("/bin/bash", "-c", cmd).Run()
 }
 
-func StartBashCmd(cmd string) error {
-	log.GetLogger().Debugf("start cmd: %s", cmd)
+func StartBashCmd(ctx context.Context, cmd string) error {
+	log.GetLogger(ctx).Debugf("start cmd: %s", cmd)
 	return exec.Command("/bin/bash", "-c", cmd).Start()
 }
 
-func ExecContainer(cmd, cr, containerId, namespaces string) (int, error) {
-	client, err := crclient.GetClient(cr)
+func ExecContainer(ctx context.Context, cmd, cr, containerId, namespaces string) (int, error) {
+	client, err := crclient.GetClient(ctx, cr)
 	if err != nil {
 		return utils.NoPid, fmt.Errorf("get cr[%s] client error: %s", cr, err.Error())
 	}
 
-	ctx := context.Background()
 	targetPid, err := client.GetPidById(ctx, containerId)
 	if err != nil {
 		return utils.NoPid, fmt.Errorf("get pid of container[%s]'s init process error: %s", containerId, err.Error())
 	}
 
-	return StartBashCmdAndWaitPid(fmt.Sprintf("%s %d %s %s", utils.GetToolPath(execnsKey), targetPid, namespaces, cmd))
+	return StartBashCmdAndWaitPid(ctx, fmt.Sprintf("%s %d %s %s", utils.GetToolPath(execnsKey), targetPid, namespaces, cmd))
 }
 
-func StartBashCmdAndWaitPid(cmd string) (int, error) {
-	log.GetLogger().Debugf("start cmd: %s", cmd)
+func StartBashCmdAndWaitPid(ctx context.Context, cmd string) (int, error) {
+	log.GetLogger(ctx).Debugf("start cmd: %s", cmd)
 
 	c := exec.Command("/bin/bash", "-c", cmd)
 	var stdout, stderr bytes.Buffer
@@ -111,15 +110,15 @@ func StartBashCmdAndWaitPid(cmd string) (int, error) {
 		return utils.NoPid, fmt.Errorf("cmd start error: %s", err.Error())
 	}
 
-	if err := waitProExec(&stdout, &stderr); err != nil {
+	if err := waitProExec(ctx, &stdout, &stderr); err != nil {
 		return c.Process.Pid, fmt.Errorf("wait process exec error: %s", err.Error())
 	}
 
 	return c.Process.Pid, nil
 }
 
-func StartBashCmdAndWaitByUser(cmd, user string) error {
-	log.GetLogger().Debugf("user: %s, start cmd: %s", user, cmd)
+func StartBashCmdAndWaitByUser(ctx context.Context, cmd, user string) error {
+	log.GetLogger(ctx).Debugf("user: %s, start cmd: %s", user, cmd)
 
 	c := exec.Command("runuser", "-l", user, "-c", cmd)
 	var stdout, stderr bytes.Buffer
@@ -129,7 +128,7 @@ func StartBashCmdAndWaitByUser(cmd, user string) error {
 		return fmt.Errorf("cmd start error: %s", err.Error())
 	}
 
-	if err := waitProExec(&stdout, &stderr); err != nil {
+	if err := waitProExec(ctx, &stdout, &stderr); err != nil {
 		return fmt.Errorf("wait process exec error: %s", err.Error())
 	}
 

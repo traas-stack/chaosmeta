@@ -17,6 +17,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
 	"net/http"
@@ -27,8 +28,8 @@ func StatusGet(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func WriteResponse(w http.ResponseWriter, res interface{}) {
-	logger := log.GetLogger()
+func WriteResponse(ctx context.Context, w http.ResponseWriter, res interface{}) {
+	logger := log.GetLogger(ctx)
 	resBytes, err := json.Marshal(res)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

@@ -17,6 +17,7 @@
 package cpu
 
 import (
+	"context"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
@@ -66,31 +67,31 @@ func (i *LoadInjector) SetOption(cmd *cobra.Command) {
 	cmd.Flags().IntVarP(&i.Args.Count, "count", "c", 0, "cpu load value（default 0, mean: cpu core num * 4）")
 }
 
-func (i *LoadInjector) Validator() error {
+func (i *LoadInjector) Validator(ctx context.Context) error {
 	if i.Args.Count < 0 {
 		return fmt.Errorf("\"count\"[%d] can not less than 0", i.Args.Count)
 	}
 
-	return i.BaseInjector.Validator()
+	return i.BaseInjector.Validator(ctx)
 }
 
-func (i *LoadInjector) Inject() error {
-	return cmdexec.StartBashCmd(fmt.Sprintf("%s %s %d", utils.GetToolPath(CpuLoadKey), i.Info.Uid, i.Args.Count))
+func (i *LoadInjector) Inject(ctx context.Context) error {
+	return cmdexec.StartBashCmd(ctx, fmt.Sprintf("%s %s %d", utils.GetToolPath(CpuLoadKey), i.Info.Uid, i.Args.Count))
 }
 
-func (i *LoadInjector) Recover() error {
-	if i.BaseInjector.Recover() == nil {
+func (i *LoadInjector) Recover(ctx context.Context) error {
+	if i.BaseInjector.Recover(ctx) == nil {
 		return nil
 	}
 
 	processKey := fmt.Sprintf("%s %s", CpuLoadKey, i.Info.Uid)
-	isExist, err := process.ExistProcessByKey(processKey)
+	isExist, err := process.ExistProcessByKey(ctx, processKey)
 	if err != nil {
 		return fmt.Errorf("check process exist by key[%s] error: %s", processKey, err.Error())
 	}
 
 	if isExist {
-		if err := process.KillProcessByKey(processKey, process.SIGKILL); err != nil {
+		if err := process.KillProcessByKey(ctx, processKey, process.SIGKILL); err != nil {
 			return fmt.Errorf("kill process by key[%s] error: %s", processKey, err.Error())
 		}
 	}

@@ -17,19 +17,20 @@
 package disk
 
 import (
+	"context"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
 	"strings"
 )
 
-func GetDevList(devStr string) ([]string, error) {
+func GetDevList(ctx context.Context, devStr string) ([]string, error) {
 	if devStr == "" {
 		return nil, fmt.Errorf("args dev-list is empty")
 	}
 
 	devStrList := strings.Split(devStr, ",")
 	for _, unit := range devStrList {
-		isExist, err := existDev(unit)
+		isExist, err := existDev(ctx, unit)
 		if err != nil {
 			return nil, fmt.Errorf("check dev[%s] exist error: %s", unit, err.Error())
 		}
@@ -42,8 +43,8 @@ func GetDevList(devStr string) ([]string, error) {
 	return devStrList, nil
 }
 
-func existDev(devNum string) (bool, error) {
-	reByte, err := cmdexec.RunBashCmdWithOutput(fmt.Sprintf("lsblk -a | grep disk | awk '{print $2}' | grep \"%s\" | wc -l", devNum))
+func existDev(ctx context.Context, devNum string) (bool, error) {
+	reByte, err := cmdexec.RunBashCmdWithOutput(ctx, fmt.Sprintf("lsblk -a | grep disk | awk '{print $2}' | grep \"%s\" | wc -l", devNum))
 	if err != nil {
 		return false, err
 	}
@@ -55,7 +56,7 @@ func existDev(devNum string) (bool, error) {
 	return false, nil
 }
 
-func RunFillDisk(size int64, file string) error {
+func RunFillDisk(ctx context.Context, size int64, file string) error {
 	unit := "K"
 	// 100M以上使用M单位
 	if size/1024 >= 100 {
@@ -64,11 +65,11 @@ func RunFillDisk(size int64, file string) error {
 	}
 
 	if cmdexec.SupportCmd("fallocate") {
-		return cmdexec.RunBashCmdWithoutOutput(fmt.Sprintf("fallocate -l %d%s %s", size, unit, file))
+		return cmdexec.RunBashCmdWithoutOutput(ctx, fmt.Sprintf("fallocate -l %d%s %s", size, unit, file))
 	}
 
 	if cmdexec.SupportCmd("dd") {
-		return cmdexec.RunBashCmdWithoutOutput(fmt.Sprintf("dd if=/dev/zero of=%s bs=1%s count=%d iflag=fullblock", file, unit, size))
+		return cmdexec.RunBashCmdWithoutOutput(ctx, fmt.Sprintf("dd if=/dev/zero of=%s bs=1%s count=%d iflag=fullblock", file, unit, size))
 	}
 
 	return fmt.Errorf("not support \"fallocate\" and \"dd\"")

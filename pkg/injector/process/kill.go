@@ -17,6 +17,7 @@
 package process
 
 import (
+	"context"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
@@ -69,7 +70,7 @@ func (i *KillInjector) SetOption(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&i.Args.RecoverCmd, "recover-cmd", "r", "", "the cmd which execute in the recover stage")
 }
 
-func (i *KillInjector) Validator() error {
+func (i *KillInjector) Validator(ctx context.Context) error {
 	if i.Args.Pid < 0 {
 		return fmt.Errorf("\"pid\" can not less than 0")
 	}
@@ -92,7 +93,7 @@ func (i *KillInjector) Validator() error {
 			return fmt.Errorf("pid[%d] not exist", i.Args.Pid)
 		}
 	} else {
-		exist, err := process.ExistProcessByKey(i.Args.Key)
+		exist, err := process.ExistProcessByKey(ctx, i.Args.Key)
 		if err != nil {
 			return fmt.Errorf("check pid by key[%s] error: %s", i.Args.Key, err.Error())
 		}
@@ -102,16 +103,16 @@ func (i *KillInjector) Validator() error {
 		}
 	}
 
-	return i.BaseInjector.Validator()
+	return i.BaseInjector.Validator(ctx)
 }
 
-func (i *KillInjector) Inject() error {
+func (i *KillInjector) Inject(ctx context.Context) error {
 	if i.Args.Pid > 0 {
 		if err := process.KillPidWithSignal(i.Args.Pid, i.Args.Signal); err != nil {
 			return err
 		}
 	} else {
-		if err := process.KillProcessByKey(i.Args.Key, i.Args.Signal); err != nil {
+		if err := process.KillProcessByKey(ctx, i.Args.Key, i.Args.Signal); err != nil {
 			return err
 		}
 	}
@@ -119,8 +120,8 @@ func (i *KillInjector) Inject() error {
 	return nil
 }
 
-func (i *KillInjector) Recover() error {
-	if i.BaseInjector.Recover() == nil {
+func (i *KillInjector) Recover(ctx context.Context) error {
+	if i.BaseInjector.Recover(ctx) == nil {
 		return nil
 	}
 
@@ -128,5 +129,5 @@ func (i *KillInjector) Recover() error {
 		return nil
 	}
 
-	return cmdexec.StartBashCmd(i.Args.RecoverCmd)
+	return cmdexec.StartBashCmd(ctx, i.Args.RecoverCmd)
 }

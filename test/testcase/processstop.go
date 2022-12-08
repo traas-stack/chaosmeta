@@ -17,6 +17,7 @@
 package testcase
 
 import (
+	"context"
 	"fmt"
 	process2 "github.com/ChaosMetaverse/chaosmetad/pkg/utils/process"
 	"github.com/ChaosMetaverse/chaosmetad/test/common"
@@ -32,10 +33,11 @@ var (
 )
 
 func GetProStopTest() []common.TestCase {
-	process2.KillProcessByKey(proStopCmd, process2.SIGKILL)
+	ctx := context.Background()
+	process2.KillProcessByKey(ctx, proStopCmd, process2.SIGKILL)
 
 	var err error
-	proStopPid, err = startDaemonCmd(proStopCmd)
+	proStopPid, err = startDaemonCmd(ctx, proStopCmd)
 	if err != nil {
 		panic(any(fmt.Sprintf("start test process error: %s", err.Error())))
 	}
@@ -69,8 +71,8 @@ func GetProStopTest() []common.TestCase {
 				return checkProStatusByPid(proStopPid, "T")
 			},
 			CheckRecover: func() error {
-				startDaemonCmd(proStopCmd)
-				startDaemonCmd(proStopCmd)
+				startDaemonCmd(ctx, proStopCmd)
+				startDaemonCmd(ctx, proStopCmd)
 				return checkProStatusByPid(proStopPid, "S")
 			},
 		},
@@ -79,10 +81,10 @@ func GetProStopTest() []common.TestCase {
 			Error: false,
 			Check: func() error {
 
-				return checkProStatusByKey(proStopCmd, "T", 3)
+				return checkProStatusByKey(ctx, proStopCmd, "T", 3)
 			},
 			CheckRecover: func() error {
-				return checkProStatusByKey(proStopCmd, "S", 3)
+				return checkProStatusByKey(ctx, proStopCmd, "S", 3)
 			},
 		},
 	}
@@ -101,11 +103,11 @@ func GetProStopTest() []common.TestCase {
 	return tempCaseList
 }
 
-func checkProStatusByKey(key string, expectedStatus string, expectedCount int) error {
+func checkProStatusByKey(ctx context.Context, key string, expectedStatus string, expectedCount int) error {
 	time.Sleep(proStopSleepTime)
 	fmt.Printf("key: %s, expected status: %s, expected count: %d\n", key, expectedStatus, expectedCount)
 
-	pidList, err := process2.GetPidListByKey(key)
+	pidList, err := process2.GetPidListByKey(ctx, key)
 	if err != nil {
 		return fmt.Errorf("get pid list by key[%s] error: %s", key, err.Error())
 	}

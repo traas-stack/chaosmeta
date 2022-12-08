@@ -17,6 +17,7 @@
 package testcase
 
 import (
+	"context"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/process"
@@ -31,13 +32,13 @@ var (
 	proKillPid       int
 )
 
-func startDaemonCmd(cmd string) (int, error) {
-	err := cmdexec.RunBashCmdWithoutOutput(cmd + "&")
+func startDaemonCmd(ctx context.Context, cmd string) (int, error) {
+	err := cmdexec.RunBashCmdWithoutOutput(ctx, cmd+"&")
 	if err != nil {
 		return -1, fmt.Errorf("start simple process error: %s", err.Error())
 	}
 
-	pid, err := process.GetPidByKeyWithoutRunUser(cmd)
+	pid, err := process.GetPidByKeyWithoutRunUser(ctx, cmd)
 	if err != nil {
 		return -1, fmt.Errorf("get pid by key error: %s", err.Error())
 	}
@@ -46,8 +47,9 @@ func startDaemonCmd(cmd string) (int, error) {
 }
 
 func GetProKillTest() []common.TestCase {
+	ctx := context.Background()
 	var err error
-	proKillPid, err = startDaemonCmd(proKillCmd)
+	proKillPid, err = startDaemonCmd(ctx, proKillCmd)
 	if err != nil {
 		panic(any(fmt.Sprintf("start test process error: %s", err.Error())))
 	}
@@ -91,27 +93,27 @@ func GetProKillTest() []common.TestCase {
 				return nil
 			},
 			CheckRecover: func() error {
-				return checkProExistByKey(proKillCmd, true)
+				return checkProExistByKey(ctx, proKillCmd, true)
 			},
 		},
 		{
 			Args:  fmt.Sprintf("-k '%s' -r '%s'", proKillCmd, proKillCmd),
 			Error: false,
 			Check: func() error {
-				return checkProExistByKey(proKillCmd, false)
+				return checkProExistByKey(ctx, proKillCmd, false)
 			},
 			CheckRecover: func() error {
-				return checkProExistByKey(proKillCmd, true)
+				return checkProExistByKey(ctx, proKillCmd, true)
 			},
 		},
 		{
 			Args:  fmt.Sprintf("-k '%s' -r '%s'", proKillCmd, "chaosfalsed"),
 			Error: false,
 			Check: func() error {
-				return checkProExistByKey(proKillCmd, false)
+				return checkProExistByKey(ctx, proKillCmd, false)
 			},
 			CheckRecover: func() error {
-				return checkProExistByKey(proKillCmd, false)
+				return checkProExistByKey(ctx, proKillCmd, false)
 			},
 		},
 	}
@@ -130,10 +132,10 @@ func GetProKillTest() []common.TestCase {
 	return tempCaseList
 }
 
-func checkProExistByKey(key string, expected bool) error {
+func checkProExistByKey(ctx context.Context, key string, expected bool) error {
 	fmt.Printf("expected exist status: %v\n", expected)
 	time.Sleep(proKillSleepTime)
-	exist, err := process.ExistProcessByKey(key)
+	exist, err := process.ExistProcessByKey(ctx, key)
 	if err != nil {
 		return fmt.Errorf("check process exist by key[%s] error: %s", key, err.Error())
 	}

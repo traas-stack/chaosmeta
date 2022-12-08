@@ -17,6 +17,7 @@
 package web
 
 import (
+	"context"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/web/handler"
 	"net/http"
@@ -35,7 +36,7 @@ type Route struct {
 
 type Routes []Route
 
-func NewRouter(isPprof bool) *mux.Router {
+func NewRouter(ctx context.Context, isPprof bool) *mux.Router {
 	router := mux.NewRouter().StrictSlash(true)
 
 	if isPprof {
@@ -45,7 +46,7 @@ func NewRouter(isPprof bool) *mux.Router {
 	for _, route := range routes {
 		var handler http.Handler
 		handler = route.HandlerFunc
-		handler = Logger(handler, route.Name)
+		handler = Logger(ctx, handler, route.Name)
 
 		router.
 			Methods(route.Method).

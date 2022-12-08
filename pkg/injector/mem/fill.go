@@ -17,6 +17,7 @@
 package mem
 
 import (
+	"context"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
@@ -77,7 +78,7 @@ func (i *FillInjector) SetOption(cmd *cobra.Command) {
 }
 
 // Validator percent > bytes
-func (i *FillInjector) Validator() error {
+func (i *FillInjector) Validator(ctx context.Context) error {
 	if i.Args.Percent == 0 && i.Args.Bytes == "" {
 		return fmt.Errorf("must provide \"percent\" or \"bytes\"")
 	}
@@ -116,21 +117,21 @@ func (i *FillInjector) Validator() error {
 		}
 	}
 
-	return i.BaseInjector.Validator()
+	return i.BaseInjector.Validator(ctx)
 }
 
 func getFillDir(uid string) string {
 	return fmt.Sprintf("%s%s", FillDir, uid)
 }
 
-func (i *FillInjector) Inject() error {
-
-	fillKBytes, err := memory.CalculateFillKBytes(i.Args.Percent, i.Args.Bytes)
+func (i *FillInjector) Inject(ctx context.Context) error {
+	logger := log.GetLogger(ctx)
+	fillKBytes, err := memory.CalculateFillKBytes(ctx, i.Args.Percent, i.Args.Bytes)
 	if err != nil {
 		return err
 	}
 
-	log.WithUid(i.Info.Uid).Debugf("need to fill mem: %dKB", fillKBytes)
+	logger.Debugf("need to fill mem: %dKB", fillKBytes)
 
 	var timeout int64
 	if i.Info.Timeout != "" {
@@ -139,14 +140,14 @@ func (i *FillInjector) Inject() error {
 
 	// 获取命令并执行
 	if i.Args.Mode == ModeRam {
-		pid, err := memory.FillRam(MemFillKey, fillKBytes, i.Info.Uid, timeout)
+		pid, err := memory.FillRam(ctx, MemFillKey, fillKBytes, i.Info.Uid, timeout)
 		if err != nil {
 			return fmt.Errorf("fill ram error: %s", err.Error())
 		}
 
 		i.Runtime.Pid = pid
 	} else {
-		if err := memory.FillCache(fillKBytes, getFillDir(i.Info.Uid), TmpFsFile); err != nil {
+		if err := memory.FillCache(ctx, fillKBytes, getFillDir(i.Info.Uid), TmpFsFile); err != nil {
 			return fmt.Errorf("fill cache error: %s", err.Error())
 		}
 	}
@@ -154,8 +155,8 @@ func (i *FillInjector) Inject() error {
 	return nil
 }
 
-func (i *FillInjector) Recover() error {
-	if i.BaseInjector.Recover() == nil {
+func (i *FillInjector) Recover(ctx context.Context) error {
+	if i.BaseInjector.Recover(ctx) == nil {
 		return nil
 	}
 
@@ -168,7 +169,7 @@ func (i *FillInjector) Recover() error {
 		}
 
 		if isDirExist {
-			return memory.UndoTmpfs(fillDir)
+			return memory.UndoTmpfs(ctx, fillDir)
 		}
 
 		return nil

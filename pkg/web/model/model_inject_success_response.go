@@ -17,9 +17,8 @@
 package model
 
 type InjectResponse struct {
-	Code int `json:"code"`
-
-	Message string `json:"message"`
-
-	Data *InjectSuccessResponseData `json:"data,omitempty"`
+	Code    int                        `json:"code"`
+	Message string                     `json:"message"`
+	Data    *InjectSuccessResponseData `json:"data,omitempty"`
+	TraceId string                     `json:"trace_id,omitempty"`
 }

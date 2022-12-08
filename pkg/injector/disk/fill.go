@@ -17,6 +17,7 @@
 package disk
 
 import (
+	"context"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
@@ -72,7 +73,7 @@ func (i *FillInjector) SetOption(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&i.Args.Dir, "dir", "d", "", "disk fill target dir")
 }
 
-func (i *FillInjector) Validator() error {
+func (i *FillInjector) Validator(ctx context.Context) error {
 	if i.Args.Dir == "" {
 		return fmt.Errorf("\"dir\" is empty")
 	}
@@ -107,20 +108,21 @@ func (i *FillInjector) Validator() error {
 		return fmt.Errorf("not support cmd \"fallocate\" and \"dd\", can not fill disk")
 	}
 
-	return i.BaseInjector.Validator()
+	return i.BaseInjector.Validator(ctx)
 }
 
 func getFillFileName(uid string) string {
 	return fmt.Sprintf("%s%s.dat", FillFileName, uid)
 }
 
-func (i *FillInjector) Inject() error {
+func (i *FillInjector) Inject(ctx context.Context) error {
+	logger := log.GetLogger(ctx)
 	fillFile := fmt.Sprintf("%s/%s", i.Args.Dir, getFillFileName(i.Info.Uid))
 	bytesKb, _ := getFillKBytes(i.Args.Dir, i.Args.Percent, i.Args.Bytes)
 
-	if err := disk2.RunFillDisk(bytesKb, fillFile); err != nil {
+	if err := disk2.RunFillDisk(ctx, bytesKb, fillFile); err != nil {
 		if err := os.Remove(fillFile); err != nil {
-			log.WithUid(i.Info.Uid).Warnf("run failed and delete fill file error: %s", err.Error())
+			logger.Warnf("run failed and delete fill file error: %s", err.Error())
 		}
 		return err
 	}
@@ -128,8 +130,8 @@ func (i *FillInjector) Inject() error {
 	return nil
 }
 
-func (i *FillInjector) Recover() error {
-	if i.BaseInjector.Recover() == nil {
+func (i *FillInjector) Recover(ctx context.Context) error {
+	if i.BaseInjector.Recover(ctx) == nil {
 		return nil
 	}
 

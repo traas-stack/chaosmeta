@@ -17,6 +17,7 @@
 package kernel
 
 import (
+	"context"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
@@ -69,7 +70,7 @@ func (i *FdfullInjector) SetOption(cmd *cobra.Command) {
 	cmd.Flags().IntVarP(&i.Args.Count, "count", "c", 0, fmt.Sprintf("count of fd to fill, args of \"%s\" mode（default 0, means add to max）, you can check by \"cat %s\"", ModeFdFill, FileNrPath))
 }
 
-func (i *FdfullInjector) Validator() error {
+func (i *FdfullInjector) Validator(ctx context.Context) error {
 	if i.Args.Mode != ModeFdFill && i.Args.Mode != ModeFileMax {
 		return fmt.Errorf(fmt.Sprintf("\"mode\" not support: %s, only support: %s, %s", i.Args.Mode, ModeFdFill, ModeFileMax))
 	}
@@ -78,7 +79,7 @@ func (i *FdfullInjector) Validator() error {
 		return fmt.Errorf("\"count\" must larger than 0")
 	}
 
-	nowFd, maxFd, err := filesys.GetKernelFdStatus()
+	nowFd, maxFd, err := filesys.GetKernelFdStatus(ctx)
 	if err != nil {
 		return fmt.Errorf("get kernel max fd count error: %s", err.Error())
 	}
@@ -87,15 +88,15 @@ func (i *FdfullInjector) Validator() error {
 		return fmt.Errorf("now fd[%d] is larger than max fd[%d], no need to inject", nowFd, maxFd)
 	}
 
-	return i.BaseInjector.Validator()
+	return i.BaseInjector.Validator(ctx)
 }
 
 func (i *FdfullInjector) getFdFullDir() string {
 	return fmt.Sprintf("%s%s", FdFullDir, i.Info.Uid)
 }
 
-func (i *FdfullInjector) fdfill(maxFd, nowFd int) error {
-	proFd, err := filesys.GetProMaxFd()
+func (i *FdfullInjector) fdfill(ctx context.Context, maxFd, nowFd int) error {
+	proFd, err := filesys.GetProMaxFd(ctx)
 	if err != nil {
 		return fmt.Errorf("get process max fd count error: %s", err.Error())
 	}
@@ -107,7 +108,7 @@ func (i *FdfullInjector) fdfill(maxFd, nowFd int) error {
 	step := proFd - 10
 
 	fdFullDir := i.getFdFullDir()
-	if err := filesys.CreateFdFile(fdFullDir, FdFullFile, step); err != nil {
+	if err := filesys.CreateFdFile(ctx, fdFullDir, FdFullFile, step); err != nil {
 		return fmt.Errorf("create tmp file[%s] error: %s", fdFullDir, err.Error())
 	}
 
@@ -119,12 +120,7 @@ func (i *FdfullInjector) fdfill(maxFd, nowFd int) error {
 	proCount := i.Args.Count/step + 1
 
 	for proCount > 0 {
-		//if _, err := utils.StartBashCmdAndWaitPid(fmt.Sprintf("%s %s %s %s %d %d %d",
-		//	utils.GetToolPath(FdFullKey), i.Info.Uid, fdFullDir, FdFullFile, 0, step, timeout)); err != nil {
-		//	return fmt.Errorf("start fd full error: %s", err.Error())
-		//}
-
-		if err := cmdexec.StartBashCmd(fmt.Sprintf("%s %s %s %s %d %d %d",
+		if err := cmdexec.StartBashCmd(ctx, fmt.Sprintf("%s %s %s %s %d %d %d",
 			utils.GetToolPath(FdFullKey), i.Info.Uid, fdFullDir, FdFullFile, 0, step, timeout)); err != nil {
 			return fmt.Errorf("start fd full error: %s", err.Error())
 		}
@@ -135,15 +131,15 @@ func (i *FdfullInjector) fdfill(maxFd, nowFd int) error {
 	return nil
 }
 
-func changeFileMax(fileMax int) error {
-	return cmdexec.RunBashCmdWithoutOutput(fmt.Sprintf("echo %d > %s", fileMax, FileMaxPath))
+func changeFileMax(ctx context.Context, fileMax int) error {
+	return cmdexec.RunBashCmdWithoutOutput(ctx, fmt.Sprintf("echo %d > %s", fileMax, FileMaxPath))
 }
 
-func (i *FdfullInjector) Inject() error {
-	nowFd, maxFd, _ := filesys.GetKernelFdStatus()
+func (i *FdfullInjector) Inject(ctx context.Context) error {
+	nowFd, maxFd, _ := filesys.GetKernelFdStatus(ctx)
 	if i.Args.Mode == ModeFdFill {
-		if err := i.fdfill(maxFd, nowFd); err != nil {
-			return i.getErrWithUndo(err.Error())
+		if err := i.fdfill(ctx, maxFd, nowFd); err != nil {
+			return i.getErrWithUndo(ctx, err.Error())
 		}
 	} else {
 		targetFileMax := nowFd - 2000
@@ -151,8 +147,8 @@ func (i *FdfullInjector) Inject() error {
 			targetFileMax = 3
 		}
 
-		if err := changeFileMax(targetFileMax); err != nil {
-			return i.getErrWithUndo(err.Error())
+		if err := changeFileMax(ctx, targetFileMax); err != nil {
+			return i.getErrWithUndo(ctx, err.Error())
 		}
 
 		i.Runtime.FileMax = maxFd
@@ -161,9 +157,9 @@ func (i *FdfullInjector) Inject() error {
 	return nil
 }
 
-func (i *FdfullInjector) getErrWithUndo(msg string) error {
-	if err := i.Recover(); err != nil {
-		log.GetLogger().Warnf("undo error: %s", err.Error())
+func (i *FdfullInjector) getErrWithUndo(ctx context.Context, msg string) error {
+	if err := i.Recover(ctx); err != nil {
+		log.GetLogger(ctx).Warnf("undo error: %s", err.Error())
 	}
 
 	return fmt.Errorf(msg)
@@ -173,21 +169,22 @@ func getFdfullKey(uid string) string {
 	return fmt.Sprintf("%s %s", FdFullKey, uid)
 }
 
-func (i *FdfullInjector) Recover() error {
-	if i.BaseInjector.Recover() == nil {
+func (i *FdfullInjector) Recover(ctx context.Context) error {
+	if i.BaseInjector.Recover(ctx) == nil {
 		return nil
 	}
 
+	logger := log.GetLogger(ctx)
 	if i.Args.Mode == ModeFdFill {
 		processKey, fdFullDir := getFdfullKey(i.Info.Uid), i.getFdFullDir()
-		isProExist, err := process.ExistProcessByKey(processKey)
+		isProExist, err := process.ExistProcessByKey(ctx, processKey)
 		if err != nil {
 			return fmt.Errorf("check process exist by key[%s] error: %s", processKey, err.Error())
 		}
 
 		if isProExist {
-			if err := process.KillProcessByKey(processKey, process.SIGKILL); err != nil {
-				log.WithUid(i.Info.Uid).Warnf("kill process by key[%s] error: %s", processKey, err.Error())
+			if err := process.KillProcessByKey(ctx, processKey, process.SIGKILL); err != nil {
+				logger.Warnf("kill process by key[%s] error: %s", processKey, err.Error())
 			}
 		}
 
@@ -202,13 +199,13 @@ func (i *FdfullInjector) Recover() error {
 
 		return nil
 	} else {
-		_, maxFd, err := filesys.GetKernelFdStatus()
+		_, maxFd, err := filesys.GetKernelFdStatus(ctx)
 		if err != nil {
 			return fmt.Errorf("get kernel max fd count error: %s", err.Error())
 		}
 
 		if i.Runtime.FileMax != maxFd {
-			return changeFileMax(i.Runtime.FileMax)
+			return changeFileMax(ctx, i.Runtime.FileMax)
 
 		}
 	}

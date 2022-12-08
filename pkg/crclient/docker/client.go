@@ -34,7 +34,7 @@ var (
 	mutex          sync.Mutex
 )
 
-func GetClient(host string) (d *Client, err error) {
+func GetClient(ctx context.Context, host string) (d *Client, err error) {
 	defer func() {
 		if e := recover(); e != any(nil) {
 			// catch exception from create client

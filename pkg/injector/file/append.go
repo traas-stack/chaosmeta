@@ -17,6 +17,7 @@
 package file
 
 import (
+	"context"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
@@ -60,7 +61,7 @@ func (i *AppendInjector) SetOption(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&i.Args.Raw, "raw", "r", false, "if raw content, raw content can not recover")
 }
 
-func (i *AppendInjector) Validator() error {
+func (i *AppendInjector) Validator(ctx context.Context) error {
 	if i.Args.Path == "" {
 		return fmt.Errorf("\"path\" is empty")
 	}
@@ -84,14 +85,14 @@ func (i *AppendInjector) Validator() error {
 		return fmt.Errorf("\"content\" is empty")
 	}
 
-	return i.BaseInjector.Validator()
+	return i.BaseInjector.Validator(ctx)
 }
 
 func getAppendFlag(uid string) string {
 	return fmt.Sprintf(" %s-%s", utils.RootName, uid)
 }
 
-func (i *AppendInjector) Inject() error {
+func (i *AppendInjector) Inject(ctx context.Context) error {
 	content := i.Args.Content
 	flag := getAppendFlag(i.Info.Uid)
 
@@ -101,15 +102,15 @@ func (i *AppendInjector) Inject() error {
 	}
 
 	content = fmt.Sprintf("\n%s", content)
-	if err := cmdexec.RunBashCmdWithoutOutput(fmt.Sprintf("echo -e \"%s\" >> %s", content, i.Args.Path)); err != nil {
+	if err := cmdexec.RunBashCmdWithoutOutput(ctx, fmt.Sprintf("echo -e \"%s\" >> %s", content, i.Args.Path)); err != nil {
 		return fmt.Errorf("append content to %s error: %s", i.Args.Path, err.Error())
 	}
 
 	return nil
 }
 
-func (i *AppendInjector) Recover() error {
-	if i.BaseInjector.Recover() == nil {
+func (i *AppendInjector) Recover(ctx context.Context) error {
+	if i.BaseInjector.Recover(ctx) == nil {
 		return nil
 	}
 
@@ -127,13 +128,13 @@ func (i *AppendInjector) Recover() error {
 	}
 
 	flag := getAppendFlag(i.Info.Uid)
-	isExist, err := filesys.HasFileLineByKey(flag, i.Args.Path)
+	isExist, err := filesys.HasFileLineByKey(ctx, flag, i.Args.Path)
 	if err != nil {
 		return fmt.Errorf("check file[%s] line exist key[%s] error: %s", i.Args.Path, flag, err.Error())
 	}
 
 	if isExist {
-		return cmdexec.RunBashCmdWithoutOutput(fmt.Sprintf("sed -i '/%s/d' %s", getAppendFlag(i.Info.Uid), i.Args.Path))
+		return cmdexec.RunBashCmdWithoutOutput(ctx, fmt.Sprintf("sed -i '/%s/d' %s", getAppendFlag(i.Info.Uid), i.Args.Path))
 	}
 
 	return nil

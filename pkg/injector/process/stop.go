@@ -17,6 +17,7 @@
 package process
 
 import (
+	"context"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/process"
@@ -56,7 +57,7 @@ func (i *StopInjector) SetOption(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&i.Args.Key, "key", "k", "", "the key used to grep to get target process, the effect is equivalent to \"ps -ef | grep [key]\". if \"pid\" provided, \"key\" will be ignored")
 }
 
-func (i *StopInjector) Validator() error {
+func (i *StopInjector) Validator(ctx context.Context) error {
 	if i.Args.Pid < 0 {
 		return fmt.Errorf("\"pid\" can not less than 0")
 	}
@@ -75,7 +76,7 @@ func (i *StopInjector) Validator() error {
 			return fmt.Errorf("pid[%d] not exist", i.Args.Pid)
 		}
 	} else {
-		exist, err := process.ExistProcessByKey(i.Args.Key)
+		exist, err := process.ExistProcessByKey(ctx, i.Args.Key)
 		if err != nil {
 			return fmt.Errorf("check pid by key[%s] error: %s", i.Args.Key, err.Error())
 		}
@@ -85,16 +86,16 @@ func (i *StopInjector) Validator() error {
 		}
 	}
 
-	return i.BaseInjector.Validator()
+	return i.BaseInjector.Validator(ctx)
 }
 
-func (i *StopInjector) Inject() error {
+func (i *StopInjector) Inject(ctx context.Context) error {
 	if i.Args.Pid > 0 {
 		if err := process.KillPidWithSignal(i.Args.Pid, process.SIGSTOP); err != nil {
 			return err
 		}
 	} else {
-		if err := process.KillProcessByKey(i.Args.Key, process.SIGSTOP); err != nil {
+		if err := process.KillProcessByKey(ctx, i.Args.Key, process.SIGSTOP); err != nil {
 			return err
 		}
 	}
@@ -102,8 +103,8 @@ func (i *StopInjector) Inject() error {
 	return nil
 }
 
-func (i *StopInjector) Recover() error {
-	if i.BaseInjector.Recover() == nil {
+func (i *StopInjector) Recover(ctx context.Context) error {
+	if i.BaseInjector.Recover(ctx) == nil {
 		return nil
 	}
 
@@ -112,7 +113,7 @@ func (i *StopInjector) Recover() error {
 			return err
 		}
 	} else {
-		if err := process.KillProcessByKey(i.Args.Key, process.SIGCONT); err != nil {
+		if err := process.KillProcessByKey(ctx, i.Args.Key, process.SIGCONT); err != nil {
 			return err
 		}
 	}
