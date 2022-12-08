@@ -50,7 +50,12 @@ func main() {
 		common.ExitWithErr(fmt.Sprintf("timeout[%s] is not a num: %s", timeoutStr, err.Error()))
 	}
 
-	go adjustPercent(core, percent)
+	if percent < 100 {
+		go adjustPercent(core, percent)
+	} else {
+		nowTargetPercent = 100
+	}
+
 	go burnCpu()
 
 	fmt.Println("[success]inject success")
@@ -59,6 +64,11 @@ func main() {
 }
 
 func burnCpu() {
+	if nowTargetPercent == 100 {
+		for {
+		}
+	}
+
 	var starttime, endtime int64
 	for {
 		worktime, sleeptime = nowTargetPercent, 100-nowTargetPercent
