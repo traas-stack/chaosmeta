@@ -20,11 +20,12 @@ import (
 	"context"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/namespace"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/process"
 	"github.com/spf13/cobra"
-	"runtime"
 )
 
 // Register
@@ -53,13 +54,13 @@ func (i *LoadInjector) GetRuntime() interface{} {
 	return &i.Runtime
 }
 
-func (i *LoadInjector) SetDefault() {
-	i.BaseInjector.SetDefault()
-
-	if i.Args.Count == 0 {
-		i.Args.Count = runtime.NumCPU() * 4
-	}
-}
+//func (i *LoadInjector) SetDefault() {
+//	i.BaseInjector.SetDefault()
+//
+//	if i.Args.Count == 0 {
+//		i.Args.Count = runtime.NumCPU() * 4
+//	}
+//}
 
 func (i *LoadInjector) SetOption(cmd *cobra.Command) {
 	// i.BaseInjector.SetOption(cmd)
@@ -68,6 +69,15 @@ func (i *LoadInjector) SetOption(cmd *cobra.Command) {
 }
 
 func (i *LoadInjector) Validator(ctx context.Context) error {
+	cpuList, err := getAllCpuList(ctx, i.Info.ContainerRuntime, i.Info.ContainerId)
+	if err != nil {
+		return fmt.Errorf("get all available cpu list error: %s", err.Error())
+	}
+
+	if i.Args.Count == 0 {
+		i.Args.Count = len(cpuList) * 4
+	}
+
 	if i.Args.Count < 0 {
 		return fmt.Errorf("\"count\"[%d] can not less than 0", i.Args.Count)
 	}
@@ -76,7 +86,21 @@ func (i *LoadInjector) Validator(ctx context.Context) error {
 }
 
 func (i *LoadInjector) Inject(ctx context.Context) error {
-	return cmdexec.StartBashCmd(ctx, fmt.Sprintf("%s %s %d", utils.GetToolPath(CpuLoadKey), i.Info.Uid, i.Args.Count))
+	cmd := fmt.Sprintf("%s %s %d", utils.GetToolPath(CpuLoadKey), i.Info.Uid, i.Args.Count)
+	var err error
+	if i.Info.ContainerRuntime != "" {
+		_, err = cmdexec.ExecContainer(ctx, cmd, i.Info.ContainerRuntime, i.Info.ContainerId, namespace.PID, cmdexec.ExecNormal)
+	} else {
+		err = cmdexec.StartBashCmd(ctx, cmd)
+	}
+
+	if err != nil {
+		if err := i.Recover(ctx); err != nil {
+			log.GetLogger(ctx).Warnf("undo error: %s", err.Error())
+		}
+	}
+
+	return err
 }
 
 func (i *LoadInjector) Recover(ctx context.Context) error {

@@ -135,7 +135,7 @@ func (i *BurnInjector) Inject(ctx context.Context) error {
 		cmd := fmt.Sprintf("taskset -c %d %s %s %d %d %d", coreList[c], utils.GetToolPath(CpuBurnKey), i.Info.Uid, coreList[c], i.Args.Percent, timeout)
 
 		if i.Info.ContainerRuntime != "" {
-			_, err = cmdexec.ExecContainer(ctx, cmd, i.Info.ContainerRuntime, i.Info.ContainerId, namespace.PID)
+			_, err = cmdexec.ExecContainer(ctx, cmd, i.Info.ContainerRuntime, i.Info.ContainerId, namespace.PID, cmdexec.ExecWait)
 		} else {
 			_, err = cmdexec.StartBashCmdAndWaitPid(ctx, cmd)
 		}

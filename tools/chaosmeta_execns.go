@@ -28,14 +28,14 @@ import (
 	"strings"
 )
 
-// [containerPid] [namespaces] [cmd]
+// [containerPid] [namespaces] [method] [cmd]
 func main() {
 	args := os.Args
 
 	if len(args) < 4 {
 		common.ExitWithErr("must provide args: [containerPid] [namespaces] [cmd]")
 	}
-	pidStr, nsStr, cmdStr := args[1], args[2], args[3:]
+	pidStr, nsStr, method, cmdStr := args[1], args[2], args[3], args[4:]
 	cPid, err := strconv.Atoi(pidStr)
 	if err != nil {
 		common.ExitWithErr("pid is not an integer")
@@ -54,8 +54,14 @@ func main() {
 		}
 	}
 
-	if _, err := cmdexec.StartBashCmdAndWaitPid(context.Background(), strings.Join(cmdStr, " ")); err != nil {
-		common.ExitWithErr(fmt.Sprintf("start process error: %s", err.Error()))
+	if method == cmdexec.ExecWait {
+		if _, err := cmdexec.StartBashCmdAndWaitPid(context.Background(), strings.Join(cmdStr, " ")); err != nil {
+			common.ExitWithErr(fmt.Sprintf("start and wait process error: %s", err.Error()))
+		}
+	} else {
+		if err := cmdexec.StartBashCmd(context.Background(), strings.Join(cmdStr, " ")); err != nil {
+			common.ExitWithErr(fmt.Sprintf("start process error: %s", err.Error()))
+		}
 	}
 
 	fmt.Println("[success]inject success")

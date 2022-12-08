@@ -33,6 +33,11 @@ const (
 	execnsKey           = "chaosmeta_execns"
 )
 
+const (
+	ExecWait   = "wait"
+	ExecNormal = "normal"
+)
+
 func StartSleepRecover(ctx context.Context, sleepTime int64, uid string) error {
 	return StartBashCmd(ctx, utils.GetSleepRecoverCmd(sleepTime, uid))
 }
@@ -85,7 +90,7 @@ func StartBashCmd(ctx context.Context, cmd string) error {
 	return exec.Command("/bin/bash", "-c", cmd).Start()
 }
 
-func ExecContainer(ctx context.Context, cmd, cr, containerId, namespaces string) (int, error) {
+func ExecContainer(ctx context.Context, cmd, cr, containerId, namespaces, method string) (int, error) {
 	client, err := crclient.GetClient(ctx, cr)
 	if err != nil {
 		return utils.NoPid, fmt.Errorf("get cr[%s] client error: %s", cr, err.Error())
@@ -96,7 +101,7 @@ func ExecContainer(ctx context.Context, cmd, cr, containerId, namespaces string)
 		return utils.NoPid, fmt.Errorf("get pid of container[%s]'s init process error: %s", containerId, err.Error())
 	}
 
-	return StartBashCmdAndWaitPid(ctx, fmt.Sprintf("%s %d %s %s", utils.GetToolPath(execnsKey), targetPid, namespaces, cmd))
+	return StartBashCmdAndWaitPid(ctx, fmt.Sprintf("%s %d %s %s %s", utils.GetToolPath(execnsKey), targetPid, namespaces, method, cmd))
 }
 
 func StartBashCmdAndWaitPid(ctx context.Context, cmd string) (int, error) {
