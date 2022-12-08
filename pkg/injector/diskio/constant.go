@@ -20,7 +20,7 @@ const (
 	TargetDiskIO = "diskio"
 
 	FaultDiskIOBurn  = "burn"
-	DefaultBlockSize = "1M"
+	DefaultBlockSize = "10M"
 	DefaultDir       = "/tmp"
 	DiskIOBurnKey    = "chaosmeta_diskburn"
 	DiskIOBurnFile   = "chaosmeta_diskburn"
