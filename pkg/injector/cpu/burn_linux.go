@@ -104,7 +104,7 @@ func (i *BurnInjector) Validator(ctx context.Context) error {
 			}
 
 			if !exist {
-				return fmt.Errorf("core[%d] is not available", core)
+				return fmt.Errorf("\"core\"[%d] is not available", core)
 			}
 		}
 	} else {
@@ -168,19 +168,7 @@ func (i *BurnInjector) Recover(ctx context.Context) error {
 		return nil
 	}
 
-	processKey := fmt.Sprintf("%s %s", CpuBurnKey, i.Info.Uid)
-	isProExist, err := process.ExistProcessByKey(ctx, processKey)
-	if err != nil {
-		return fmt.Errorf("check process exist by key[%s] error: %s", processKey, err.Error())
-	}
-
-	if isProExist {
-		if err := process.KillProcessByKey(ctx, processKey, process.SIGKILL); err != nil {
-			return fmt.Errorf("kill process by key[%s] error: %s", processKey, err.Error())
-		}
-	}
-
-	return nil
+	return process.CheckExistAndKillByKey(ctx, fmt.Sprintf("%s %s", CpuBurnKey, i.Info.Uid))
 }
 
 func (i *BurnInjector) DelayRecover(ctx context.Context, timeout int64) error {

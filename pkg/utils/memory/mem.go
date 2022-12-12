@@ -90,6 +90,6 @@ func UndoTmpfs(ctx context.Context, dir string) error {
 	return nil
 }
 
-func FillRam(ctx context.Context, memFillKey string, fillKBytes int64, uid string, timeout int64) (int, error) {
-	return cmdexec.StartBashCmdAndWaitPid(ctx, fmt.Sprintf("%s %s %d %dkb %d", utils.GetToolPath(memFillKey), uid, -999, fillKBytes, timeout))
-}
+//func FillRam(ctx context.Context, memFillKey string, fillKBytes int64, uid string, timeout int64) (int, error) {
+//	return cmdexec.StartBashCmdAndWaitPid(ctx, fmt.Sprintf("%s %s %d %dkb %d", utils.GetToolPath(memFillKey), uid, -999, fillKBytes, timeout))
+//}

@@ -47,7 +47,7 @@ type FillArgs struct {
 }
 
 type FillRuntime struct {
-	Pid int `json:"pid,omitempty"`
+	//Pid int `json:"pid,omitempty"`
 }
 
 func (i *FillInjector) GetArgs() interface{} {
@@ -106,15 +106,15 @@ func (i *FillInjector) Validator(ctx context.Context) error {
 			return fmt.Errorf("not support cmd \"mount\", can not fill cache")
 		}
 
-		fillDir := getFillDir(i.Info.Uid)
-		isExist, err := filesys.ExistPath(fillDir)
-		if err != nil {
-			return fmt.Errorf("check tmpfs[%s] exist error: %s", fillDir, err.Error())
-		}
-
-		if isExist {
-			return fmt.Errorf("tmpfs[%s] exist, if another cache_fill experiment is running, please recover first", fillDir)
-		}
+		//fillDir := getFillDir(i.Info.Uid)
+		//isExist, err := filesys.ExistPath(fillDir)
+		//if err != nil {
+		//	return fmt.Errorf("check tmpfs[%s] exist error: %s", fillDir, err.Error())
+		//}
+		//
+		//if isExist {
+		//	return fmt.Errorf("tmpfs[%s] exist, if another cache_fill experiment is running, please recover first", fillDir)
+		//}
 	}
 
 	return i.BaseInjector.Validator(ctx)
@@ -140,12 +140,10 @@ func (i *FillInjector) Inject(ctx context.Context) error {
 
 	// 获取命令并执行
 	if i.Args.Mode == ModeRam {
-		pid, err := memory.FillRam(ctx, MemFillKey, fillKBytes, i.Info.Uid, timeout)
+		_, err := cmdexec.StartBashCmdAndWaitPid(ctx, fmt.Sprintf("%s %s %d %dkb %d", utils.GetToolPath(MemFillKey), i.Info.Uid, -999, fillKBytes, timeout))
 		if err != nil {
-			return fmt.Errorf("fill ram error: %s", err.Error())
+			return fmt.Errorf("fill ram exec error: %s", err.Error())
 		}
-
-		i.Runtime.Pid = pid
 	} else {
 		if err := memory.FillCache(ctx, fillKBytes, getFillDir(i.Info.Uid), TmpFsFile); err != nil {
 			return fmt.Errorf("fill cache error: %s", err.Error())
@@ -174,19 +172,6 @@ func (i *FillInjector) Recover(ctx context.Context) error {
 
 		return nil
 	} else {
-		if i.Runtime.Pid == 0 {
-			return nil
-		}
-
-		isPidExist, err := process.ExistPid(i.Runtime.Pid)
-		if err != nil {
-			return fmt.Errorf("check pid[%d] exist error: %s", i.Runtime.Pid, err.Error())
-		}
-
-		if isPidExist {
-			return process.KillPidWithSignal(i.Runtime.Pid, process.SIGKILL)
-		}
-
-		return nil
+		return process.CheckExistAndKillByKey(ctx, fmt.Sprintf("%s %s", MemFillKey, i.Info.Uid))
 	}
 }

@@ -45,7 +45,7 @@ type OccupyArgs struct {
 }
 
 type OccupyRuntime struct {
-	Pid int `json:"pid,omitempty"`
+	//Pid int `json:"pid,omitempty"`
 }
 
 func (i *OccupyInjector) GetArgs() interface{} {
@@ -107,12 +107,11 @@ func (i *OccupyInjector) Inject(ctx context.Context) error {
 		timeout, err = utils.GetTimeSecond(i.Info.Timeout)
 	}
 
-	rePid, err := cmdexec.StartBashCmdAndWaitPid(ctx, fmt.Sprintf("%s %s %d %s %d", utils.GetToolPath(OccupyKey), i.Info.Uid, i.Args.Port, i.Args.Protocol, timeout))
+	_, err = cmdexec.StartBashCmdAndWaitPid(ctx, fmt.Sprintf("%s %s %d %s %d", utils.GetToolPath(OccupyKey), i.Info.Uid, i.Args.Port, i.Args.Protocol, timeout))
 	if err != nil {
 		return fmt.Errorf("start cmd error: %s", err.Error())
 	}
 
-	i.Runtime.Pid = rePid
 	return nil
 }
 
@@ -125,19 +124,8 @@ func (i *OccupyInjector) Recover(ctx context.Context) error {
 		return nil
 	}
 
-	if i.Runtime.Pid == 0 {
-		return nil
-	}
-
-	isProExist, err := process.ExistPid(i.Runtime.Pid)
-	if err != nil {
-		return fmt.Errorf("check pid[%d] exist error: %s", i.Runtime.Pid, err.Error())
-	}
-
-	if isProExist {
-		if err := process.KillPidWithSignal(i.Runtime.Pid, process.SIGKILL); err != nil {
-			return fmt.Errorf("kill process[%d] error: %s", i.Runtime.Pid, err.Error())
-		}
+	if err:= process.CheckExistAndKillByKey(ctx, fmt.Sprintf("%s %s", OccupyKey, i.Info.Uid));err != nil {
+		return err
 	}
 
 	if i.Args.RecoverCmd != "" {

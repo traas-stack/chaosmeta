@@ -41,6 +41,21 @@ func ExistPid(pid int) (bool, error) {
 	return process.PidExists(int32(pid))
 }
 
+func CheckExistAndKillByKey(ctx context.Context, processKey string) error {
+	isProExist, err := ExistProcessByKey(ctx, processKey)
+	if err != nil {
+		return fmt.Errorf("check process exist by key[%s] error: %s", processKey, err.Error())
+	}
+
+	if isProExist {
+		if err := KillProcessByKey(ctx, processKey, SIGKILL); err != nil {
+			return fmt.Errorf("kill process by key[%s] error: %s", processKey, err.Error())
+		}
+	}
+
+	return nil
+}
+
 func ExistProcessByKey(ctx context.Context, key string) (bool, error) {
 	reByte, err := cmdexec.RunBashCmdWithOutput(ctx, fmt.Sprintf("ps -ef | grep '%s' | grep -v grep | grep -v '%s inject' | grep -v '%s recover' | wc -l", key, utils.RootName, utils.RootName))
 	if err != nil {

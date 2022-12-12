@@ -140,16 +140,8 @@ func (i *BurnInjector) Recover(ctx context.Context) error {
 		return nil
 	}
 
-	processKey := fmt.Sprintf("%s %s", DiskIOBurnKey, i.Info.Uid)
-	isProExist, err := process.ExistProcessByKey(ctx, processKey)
-	if err != nil {
-		return fmt.Errorf("check process exist by key[%s] error: %s", processKey, err.Error())
-	}
-
-	if isProExist {
-		if err := process.KillProcessByKey(ctx, processKey, process.SIGKILL); err != nil {
-			return fmt.Errorf("kill process by key[%s] error: %s", processKey, err.Error())
-		}
+	if err := process.CheckExistAndKillByKey(ctx, fmt.Sprintf("%s %s", DiskIOBurnKey, i.Info.Uid));err != nil {
+		return err
 	}
 
 	file := i.getFileName()
