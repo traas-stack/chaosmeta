@@ -54,13 +54,13 @@ func (i *LoadInjector) GetRuntime() interface{} {
 	return &i.Runtime
 }
 
-//func (i *LoadInjector) SetDefault() {
-//	i.BaseInjector.SetDefault()
-//
-//	if i.Args.Count == 0 {
-//		i.Args.Count = runtime.NumCPU() * 4
-//	}
-//}
+func (i *LoadInjector) SetDefault() {
+	i.BaseInjector.SetDefault()
+
+	if i.Info.ContainerRuntime != "" {
+		i.Info.ContainerNs = []string{namespace.PID}
+	}
+}
 
 func (i *LoadInjector) SetOption(cmd *cobra.Command) {
 	// i.BaseInjector.SetOption(cmd)
@@ -69,6 +69,10 @@ func (i *LoadInjector) SetOption(cmd *cobra.Command) {
 }
 
 func (i *LoadInjector) Validator(ctx context.Context) error {
+	if err := i.BaseInjector.Validator(ctx);err != nil {
+		return err
+	}
+
 	cpuList, err := getAllCpuList(ctx, i.Info.ContainerRuntime, i.Info.ContainerId)
 	if err != nil {
 		return fmt.Errorf("get all available cpu list error: %s", err.Error())
@@ -82,14 +86,14 @@ func (i *LoadInjector) Validator(ctx context.Context) error {
 		return fmt.Errorf("\"count\"[%d] can not less than 0", i.Args.Count)
 	}
 
-	return i.BaseInjector.Validator(ctx)
+	return nil
 }
 
 func (i *LoadInjector) Inject(ctx context.Context) error {
 	cmd := fmt.Sprintf("%s %s %d", utils.GetToolPath(CpuLoadKey), i.Info.Uid, i.Args.Count)
 	var err error
 	if i.Info.ContainerRuntime != "" {
-		_, err = cmdexec.ExecContainer(ctx, cmd, i.Info.ContainerRuntime, i.Info.ContainerId, namespace.PID, cmdexec.ExecNormal)
+		_, err = cmdexec.ExecContainer(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, i.Info.ContainerNs, cmdexec.ExecNormal, cmd)
 	} else {
 		err = cmdexec.StartBashCmd(ctx, cmd)
 	}

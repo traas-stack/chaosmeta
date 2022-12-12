@@ -57,6 +57,14 @@ func (i *BurnInjector) GetRuntime() interface{} {
 	return &i.Runtime
 }
 
+func (i *BurnInjector) SetDefault() {
+	i.BaseInjector.SetDefault()
+
+	if i.Info.ContainerRuntime != "" {
+		i.Info.ContainerNs = []string{namespace.PID}
+	}
+}
+
 func (i *BurnInjector) SetOption(cmd *cobra.Command) {
 	// i.BaseInjector.SetOption(cmd)
 
@@ -65,8 +73,12 @@ func (i *BurnInjector) SetOption(cmd *cobra.Command) {
 	cmd.Flags().IntVarP(&i.Args.Count, "count", "c", 0, "cpu burn core count（default 0, means all core）. if provide args \"list\", \"count\" will be ignored.")
 }
 
-// Validator list 优先级大于 count
+// Validator list > count
 func (i *BurnInjector) Validator(ctx context.Context) error {
+	if err := i.BaseInjector.Validator(ctx);err != nil {
+		return err
+	}
+
 	if i.Args.Percent <= 0 || i.Args.Percent > 100 {
 		return fmt.Errorf("\"percent\"[%d] must be in (0,100]", i.Args.Percent)
 	}
@@ -109,7 +121,7 @@ func (i *BurnInjector) Validator(ctx context.Context) error {
 		return fmt.Errorf("not support cmd \"taskset\"")
 	}
 
-	return i.BaseInjector.Validator(ctx)
+	return nil
 }
 
 func (i *BurnInjector) Inject(ctx context.Context) error {
@@ -135,7 +147,7 @@ func (i *BurnInjector) Inject(ctx context.Context) error {
 		cmd := fmt.Sprintf("taskset -c %d %s %s %d %d %d", coreList[c], utils.GetToolPath(CpuBurnKey), i.Info.Uid, coreList[c], i.Args.Percent, timeout)
 
 		if i.Info.ContainerRuntime != "" {
-			_, err = cmdexec.ExecContainer(ctx, cmd, i.Info.ContainerRuntime, i.Info.ContainerId, namespace.PID, cmdexec.ExecWait)
+			_, err = cmdexec.ExecContainer(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, i.Info.ContainerNs, cmdexec.ExecWait, cmd)
 		} else {
 			_, err = cmdexec.StartBashCmdAndWaitPid(ctx, cmd)
 		}

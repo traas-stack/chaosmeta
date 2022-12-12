@@ -63,10 +63,12 @@ type BaseInfo struct {
 	Error   string `json:"error"`
 	Timeout string `json:"timeout"`
 	// 基础实验配置信息
-	Target           string `json:"target"`
-	Fault            string `json:"fault"`
-	ContainerId      string `json:"container_id"`
-	ContainerRuntime string `json:"container_runtime"`
+	Target string `json:"target"`
+	Fault  string `json:"fault"`
+	// 容器运行时信息
+	ContainerId      string   `json:"container_id"`
+	ContainerRuntime string   `json:"container_runtime"`
+	ContainerNs      []string `json:"container_ns"`
 }
 
 func (i *BaseInjector) GetArgs() interface{} {
@@ -114,8 +116,6 @@ func (i *BaseInjector) SetOption(cmd *cobra.Command) {
 	//cmd.Flags().StringVar(&i.Info.Creator, "creator", "", "experiment's creator（default the cmd exec user）")
 }
 
-//func (i *BaseInjector) SetCRConfig() {}
-
 func (i *BaseInjector) Inject(ctx context.Context) error {
 	//i.Info.Status = core.StatusSuccess
 	return fmt.Errorf("not implemented")
@@ -148,10 +148,6 @@ func (i *BaseInjector) SetDefault() {
 }
 
 func (i *BaseInjector) Validator(ctx context.Context) error {
-	if i.Info.Timeout == "" {
-		return nil
-	}
-
 	if i.Info.ContainerRuntime != "" {
 		if i.Info.ContainerId == "" {
 			return fmt.Errorf("\"container-id\" is empty")
@@ -160,6 +156,10 @@ func (i *BaseInjector) Validator(ctx context.Context) error {
 		if _, err := crclient.GetClient(ctx, i.Info.ContainerRuntime); err != nil {
 			return fmt.Errorf("create container runtime client[%s] error: %s", i.Info.ContainerRuntime, err.Error())
 		}
+	}
+
+	if i.Info.Timeout == "" {
+		return nil
 	}
 
 	if _, err := utils.GetTimeSecond(i.Info.Timeout); err != nil {

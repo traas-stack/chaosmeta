@@ -73,15 +73,15 @@ rm -rf ${VERSION_DIR}/version.go && mv ${VERSION_DIR}/version.bak ${VERSION_DIR}
 
 # build tool
 mkdir -p ${PACKAGE_DIR}/${OS_NAME}/tools
-if [ "${OS_NAME}" == "linux" ]; then
-  g++ ${PROJECT_DIR}/tools/${CPU_LOAD}.cpp -o ${PACKAGE_DIR}/${OS_NAME}/tools/${CPU_LOAD}
-fi
+
+gcc ${PROJECT_DIR}/tools/${CPU_LOAD}.c -o ${PACKAGE_DIR}/${OS_NAME}/tools/${CPU_LOAD}
+gcc ${PROJECT_DIR}/tools/${TOOL_EXECNS}.c -o ${PACKAGE_DIR}/${OS_NAME}/tools/${TOOL_EXECNS}
 CGO_ENABLED=1 GOOS=${OS_NAME} GOARCH=${ARCH_NAME} ${GO_TOOL} build -o ${PACKAGE_DIR}/${OS_NAME}/tools/${CPU_BURN} ${PROJECT_DIR}/tools/${CPU_BURN}.go
 CGO_ENABLED=1 GOOS=${OS_NAME} GOARCH=${ARCH_NAME} ${GO_TOOL} build -o ${PACKAGE_DIR}/${OS_NAME}/tools/${DISK_BURN} ${PROJECT_DIR}/tools/${DISK_BURN}.go
 CGO_ENABLED=1 GOOS=${OS_NAME} GOARCH=${ARCH_NAME} ${GO_TOOL} build -o ${PACKAGE_DIR}/${OS_NAME}/tools/${MEM_FILL} ${PROJECT_DIR}/tools/${MEM_FILL}.go
 CGO_ENABLED=1 GOOS=${OS_NAME} GOARCH=${ARCH_NAME} ${GO_TOOL} build -o ${PACKAGE_DIR}/${OS_NAME}/tools/${NET_OCCUPY} ${PROJECT_DIR}/tools/${NET_OCCUPY}.go
 CGO_ENABLED=1 GOOS=${OS_NAME} GOARCH=${ARCH_NAME} ${GO_TOOL} build -o ${PACKAGE_DIR}/${OS_NAME}/tools/${FD_FULL} ${PROJECT_DIR}/tools/${FD_FULL}.go
 CGO_ENABLED=1 GOOS=${OS_NAME} GOARCH=${ARCH_NAME} ${GO_TOOL} build -o ${PACKAGE_DIR}/${OS_NAME}/tools/${NPROC} ${PROJECT_DIR}/tools/${NPROC}.go
-CGO_ENABLED=1 GOOS=${OS_NAME} GOARCH=${ARCH_NAME} ${GO_TOOL} build -o ${PACKAGE_DIR}/${OS_NAME}/tools/${TOOL_EXECNS} ${PROJECT_DIR}/tools/${TOOL_EXECNS}.go
+# CGO_ENABLED=1 GOOS=${OS_NAME} GOARCH=${ARCH_NAME} ${GO_TOOL} build -o ${PACKAGE_DIR}/${OS_NAME}/tools/${TOOL_EXECNS} ${PROJECT_DIR}/tools/${TOOL_EXECNS}.go
 
 cp -R ${PACKAGE_DIR}/${OS_NAME}/tools ${OUTPUT_DIR}/

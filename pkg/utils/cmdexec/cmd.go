@@ -38,6 +38,13 @@ const (
 	ExecNormal = "normal"
 )
 
+//type CmdExecutor struct {
+//	ContainerId      string
+//	ContainerRuntime string
+//	ContainerNs      []string
+//	//Method           string
+//}
+
 func StartSleepRecover(ctx context.Context, sleepTime int64, uid string) error {
 	return StartBashCmd(ctx, utils.GetSleepRecoverCmd(sleepTime, uid))
 }
@@ -75,6 +82,20 @@ func SupportCmd(cmd string) bool {
 	return true
 }
 
+func ExecContainer(ctx context.Context, cr, containerId string, namespaces []string, method, cmd string) (int, error) {
+	client, err := crclient.GetClient(ctx, cr)
+	if err != nil {
+		return utils.NoPid, fmt.Errorf("get cr[%s] client error: %s", cr, err.Error())
+	}
+
+	targetPid, err := client.GetPidById(ctx, containerId)
+	if err != nil {
+		return utils.NoPid, fmt.Errorf("get pid of container[%s]'s init process error: %s", containerId, err.Error())
+	}
+
+	return StartBashCmdAndWaitPid(ctx, fmt.Sprintf("%s %d %s %s %s", utils.GetToolPath(execnsKey), targetPid, strings.Join(namespaces, ","), method, cmd))
+}
+
 func RunBashCmdWithOutput(ctx context.Context, cmd string) ([]byte, error) {
 	log.GetLogger(ctx).Debugf("run cmd with output: %s", cmd)
 	return exec.Command("/bin/bash", "-c", cmd).CombinedOutput()
@@ -88,20 +109,6 @@ func RunBashCmdWithoutOutput(ctx context.Context, cmd string) error {
 func StartBashCmd(ctx context.Context, cmd string) error {
 	log.GetLogger(ctx).Debugf("start cmd: %s", cmd)
 	return exec.Command("/bin/bash", "-c", cmd).Start()
-}
-
-func ExecContainer(ctx context.Context, cmd, cr, containerId, namespaces, method string) (int, error) {
-	client, err := crclient.GetClient(ctx, cr)
-	if err != nil {
-		return utils.NoPid, fmt.Errorf("get cr[%s] client error: %s", cr, err.Error())
-	}
-
-	targetPid, err := client.GetPidById(ctx, containerId)
-	if err != nil {
-		return utils.NoPid, fmt.Errorf("get pid of container[%s]'s init process error: %s", containerId, err.Error())
-	}
-
-	return StartBashCmdAndWaitPid(ctx, fmt.Sprintf("%s %d %s %s %s", utils.GetToolPath(execnsKey), targetPid, namespaces, method, cmd))
 }
 
 func StartBashCmdAndWaitPid(ctx context.Context, cmd string) (int, error) {
@@ -139,3 +146,18 @@ func StartBashCmdAndWaitByUser(ctx context.Context, cmd, user string) error {
 
 	return nil
 }
+
+//
+//func (e *CmdExecutor) GetCmdInContainer(ctx context.Context, method, cmd string) (string, error) {
+//	client, err := crclient.GetClient(ctx, e.ContainerRuntime)
+//	if err != nil {
+//		return "", fmt.Errorf("get cr[%s] client error: %s", e.ContainerRuntime, err.Error())
+//	}
+//
+//	targetPid, err := client.GetPidById(ctx, e.ContainerId)
+//	if err != nil {
+//		return "", fmt.Errorf("get pid of container[%s]'s init process error: %s", e.ContainerId, err.Error())
+//	}
+//
+//	return fmt.Sprintf("%s %d %s %s %s", utils.GetToolPath(execnsKey), targetPid, strings.Join(e.ContainerNs, ","), method, cmd), nil
+//}
