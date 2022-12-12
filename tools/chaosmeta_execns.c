@@ -23,6 +23,7 @@
 #include <sys/syscall.h>
 #include <fcntl.h>
 #include <getopt.h>
+#include <signal.h>
 
 int enter_ns(int pid, const char* type) {
     char path[64], selfpath[64];
@@ -61,6 +62,12 @@ int enter_ns(int pid, const char* type) {
 }
 
 int main(int argc, char *argv[]) {
+    int ret = kill(getpid(), SIGSTOP);
+    if (ret < 0) {
+        fprintf(stderr, "stop process error\n");
+        return ret;
+    }
+
     int opt;
     char *cmd;
     int target = 0;

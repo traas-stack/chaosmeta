@@ -19,6 +19,7 @@ package cpu
 import (
 	"context"
 	"fmt"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/crclient"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
@@ -69,7 +70,7 @@ func (i *LoadInjector) SetOption(cmd *cobra.Command) {
 }
 
 func (i *LoadInjector) Validator(ctx context.Context) error {
-	if err := i.BaseInjector.Validator(ctx);err != nil {
+	if err := i.BaseInjector.Validator(ctx); err != nil {
 		return err
 	}
 
@@ -93,7 +94,8 @@ func (i *LoadInjector) Inject(ctx context.Context) error {
 	cmd := fmt.Sprintf("%s %s %d", utils.GetToolPath(CpuLoadKey), i.Info.Uid, i.Args.Count)
 	var err error
 	if i.Info.ContainerRuntime != "" {
-		_, err = cmdexec.ExecContainer(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, i.Info.ContainerNs, cmdexec.ExecNormal, cmd)
+		client, _ := crclient.GetClient(ctx, i.Info.ContainerRuntime)
+		err = client.ExecContainer(ctx, i.Info.ContainerId, i.Info.ContainerNs, cmd)
 	} else {
 		err = cmdexec.StartBashCmd(ctx, cmd)
 	}

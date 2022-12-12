@@ -19,7 +19,6 @@ package cgroup
 import (
 	"context"
 	"fmt"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/crclient"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
 	"github.com/containerd/cgroups"
@@ -36,24 +35,24 @@ func NewCgroup(ctx context.Context, cgroupPath string, configCmdStr string) erro
 	return nil
 }
 
-func GetContainerCgroupPath(ctx context.Context, cr, cid, subSys string) (string, error) {
-	client, err := crclient.GetClient(ctx, cr)
-	if err != nil {
-		return "", fmt.Errorf("get cr[%s] client error: %s", cr, err.Error())
-	}
-
-	pid, err := client.GetPidById(context.Background(), cid)
-	if err != nil {
-		return "", fmt.Errorf("get pid of container[%s] error: %s", cid, err.Error())
-	}
-
-	cPath, err := GetpidCurCgroup(ctx, pid, subSys)
-	if err != nil {
-		return "", fmt.Errorf("get cgroup[%s] path of process[%d] error: %s", subSys, pid, err.Error())
-	}
-
-	return cPath, nil
-}
+//func GetContainerCgroupPath(ctx context.Context, cr, cid, subSys string) (string, error) {
+//	client, err := crclient.GetClient(ctx, cr)
+//	if err != nil {
+//		return "", fmt.Errorf("get cr[%s] client error: %s", cr, err.Error())
+//	}
+//
+//	pid, err := client.GetPidById(context.Background(), cid)
+//	if err != nil {
+//		return "", fmt.Errorf("get pid of container[%s] error: %s", cid, err.Error())
+//	}
+//
+//	cPath, err := GetpidCurCgroup(ctx, pid, subSys)
+//	if err != nil {
+//		return "", fmt.Errorf("get cgroup[%s] path of process[%d] error: %s", subSys, pid, err.Error())
+//	}
+//
+//	return cPath, nil
+//}
 
 func GetBlkioCPath(uid string) string {
 	return fmt.Sprintf("%s/%s/%s_%s", RootPath, BLKIO, BlkioCgroupName, uid)

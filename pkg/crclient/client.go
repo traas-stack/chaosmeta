@@ -25,11 +25,9 @@ import (
 )
 
 const (
-	CrLocal      = "local"
-	CrDocker     = "docker"
+	CrLocal  = "local"
+	CrDocker = "docker"
 	CrContainerd = "containerd"
-
-	defaultDockerSocket = "unix:///var/run/docker.sock"
 )
 
 type Client interface {
@@ -38,6 +36,8 @@ type Client interface {
 	KillContainerById(ctx context.Context, containerID string) error
 	RmFContainerById(ctx context.Context, containerID string) error
 	RestartContainerById(ctx context.Context, containerID string, timeout *time.Duration) error
+	GetCgroupPath(ctx context.Context, containerID, subSys string) (string, error)
+	ExecContainer(ctx context.Context, containerID string, namespaces []string, cmd string) error
 }
 
 func GetClient(ctx context.Context, cr string) (Client, error) {
@@ -45,7 +45,7 @@ func GetClient(ctx context.Context, cr string) (Client, error) {
 
 	switch cr {
 	case CrDocker:
-		return docker.GetClient(ctx, defaultDockerSocket)
+		return docker.GetClient(ctx)
 	case CrContainerd:
 		return nil, fmt.Errorf("to be supported")
 	default:

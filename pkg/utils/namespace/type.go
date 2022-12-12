@@ -21,6 +21,5 @@ const (
 	MNT  = "mnt"
 	NET  = "net"
 	PID  = "pid"
-	USER = "user"
 	UTS  = "uts"
 )

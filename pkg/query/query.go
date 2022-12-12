@@ -92,5 +92,5 @@ func printExp(ctx context.Context, exps []*storage.Experiment, total int64, ifAl
 		formatData = t.Render("grid")
 	}
 
-	logger.Infof("total count of experiments: %d\n%s", total, formatData)
+	logger.Infof("total count of experiments: %d\n%s\n", total, formatData)
 }
