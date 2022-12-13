@@ -23,7 +23,6 @@ import (
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/filesys"
 	"github.com/spf13/cobra"
 	"os"
-	"path/filepath"
 )
 
 func init() {
@@ -63,7 +62,7 @@ func (i *MvInjector) Validator(ctx context.Context) error {
 	}
 
 	var err error
-	i.Args.Src, err = filepath.Abs(i.Args.Src)
+	i.Args.Src, err = filesys.GetAbsPath(i.Args.Src)
 	if err != nil {
 		return fmt.Errorf("get absolute path of src[%s] error: %s", i.Args.Src, err.Error())
 	}
@@ -81,7 +80,7 @@ func (i *MvInjector) Validator(ctx context.Context) error {
 		return fmt.Errorf("\"dst\" is empty")
 	}
 
-	i.Args.Dst, err = filepath.Abs(i.Args.Dst)
+	i.Args.Dst, err = filesys.GetAbsPath(i.Args.Dst)
 	if err != nil {
 		return fmt.Errorf("get absolute path of dst[%s] error: %s", i.Args.Dst, err.Error())
 	}

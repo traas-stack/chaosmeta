@@ -25,9 +25,11 @@ import (
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
 	disk2 "github.com/ChaosMetaverse/chaosmetad/pkg/utils/disk"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/filesys"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/namespace"
 	"github.com/shirou/gopsutil/disk"
 	"github.com/spf13/cobra"
 	"os"
+	"path/filepath"
 )
 
 func init() {
@@ -63,6 +65,17 @@ func (i *FillInjector) SetDefault() {
 	if i.Args.Dir == "" {
 		i.Args.Dir = DefaultDir
 	}
+
+	if i.Info.ContainerRuntime != "" {
+		return
+	}
+
+	// TODO: SetDefault还是需要加上error返回参数才行，需要改参数的都放到SetDefault来，容器内的怎么获取
+	var err error
+	i.Args.Dir, err = filesys.GetAbsPath(i.Args.Dir)
+	if err != nil {
+		panic(any(fmt.Sprintf("\"dir\"[%s] get absolute path error: %s", i.Args.Dir, err.Error())))
+	}
 }
 
 func (i *FillInjector) SetOption(cmd *cobra.Command) {
@@ -74,33 +87,57 @@ func (i *FillInjector) SetOption(cmd *cobra.Command) {
 }
 
 func (i *FillInjector) Validator(ctx context.Context) error {
-	if i.Args.Dir == "" {
-		return fmt.Errorf("\"dir\" is empty")
+	if err := i.BaseInjector.Validator(ctx); err != nil {
+		return err
 	}
 
-	if err := filesys.CheckDir(i.Args.Dir); err != nil {
-		return fmt.Errorf("\"dir\"[%s] check error: %s", i.Args.Dir, err.Error())
+	if i.Info.ContainerRuntime != "" {
+		if !filepath.IsAbs(i.Args.Dir) {
+			return fmt.Errorf("\"dir\" must provide absolute path")
+		}
+
+		//client, _ := crclient.GetClient(ctx, i.Info.ContainerRuntime)
+		//if err := client.CpFile(ctx, i.Info.ContainerId, utils.GetToolPath(DiskFillKey), fmt.Sprintf("/tmp/%s", DiskFillKey)); err != nil {
+		//	return fmt.Errorf("cp exec tool to container[%s] error: %s", i.Info.ContainerId, err.Error())
+		//}
+
+		if err := filesys.CpContainerFile(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, utils.GetToolPath(DiskFillKey),
+			fmt.Sprintf("/tmp/%s", DiskFillKey)); err != nil {
+			return fmt.Errorf("cp exec tool to container[%s] error: %s", i.Info.ContainerId, err.Error())
+		}
+
+		_, err := cmdexec.ExecContainer(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, []string{namespace.MNT},
+			fmt.Sprintf("/tmp/%s %s %d %s %s", DiskFillKey, "validator", i.Args.Percent, i.Args.Bytes, i.Args.Dir), true)
+		if err != nil {
+			return fmt.Errorf("exec in container error: %s", err.Error())
+		}
+
+		return nil
+	} else {
+		return ValidatorDiskFill(ctx, i.Args.Percent, i.Args.Bytes, i.Args.Dir)
 	}
+}
 
-	path, err := filesys.GetAbsPath(i.Args.Dir)
-	if err != nil {
-		return fmt.Errorf("\"dir\"[%s] get absolute path error: %s", i.Args.Dir, err.Error())
-	}
-
-	i.Args.Dir = path
-
-	if i.Args.Percent == 0 && i.Args.Bytes == "" {
+func ValidatorDiskFill(ctx context.Context, percent int, bytes, dir string) error {
+	if percent == 0 && bytes == "" {
 		return fmt.Errorf("must provide \"percent\" or \"bytes\"")
 	}
 
-	if i.Args.Percent != 0 {
-		if i.Args.Percent < 0 || i.Args.Percent > 100 {
-			return fmt.Errorf("\"percent\"[%d] must be in (0,100]", i.Args.Percent)
+	if percent != 0 {
+		if percent < 0 || percent > 100 {
+			return fmt.Errorf("\"percent\"[%d] must be in (0,100]", percent)
 		}
 	}
 
-	_, err = getFillKBytes(i.Args.Dir, i.Args.Percent, i.Args.Bytes)
-	if err != nil {
+	if dir == "" {
+		return fmt.Errorf("\"dir\" is empty")
+	}
+
+	if err := filesys.CheckDir(dir); err != nil {
+		return fmt.Errorf("\"dir\"[%s] check error: %s", dir, err.Error())
+	}
+
+	if _, err := getFillKBytes(dir, percent, bytes); err != nil {
 		return fmt.Errorf("calculate fill bytes error: %s", err.Error())
 	}
 
@@ -108,7 +145,7 @@ func (i *FillInjector) Validator(ctx context.Context) error {
 		return fmt.Errorf("not support cmd \"fallocate\" and \"dd\", can not fill disk")
 	}
 
-	return i.BaseInjector.Validator(ctx)
+	return nil
 }
 
 func getFillFileName(uid string) string {
@@ -116,9 +153,28 @@ func getFillFileName(uid string) string {
 }
 
 func (i *FillInjector) Inject(ctx context.Context) error {
+	if i.Info.ContainerRuntime != "" {
+		if err := filesys.CpContainerFile(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, utils.GetToolPath(DiskFillKey),
+			fmt.Sprintf("/tmp/%s", DiskFillKey)); err != nil {
+			return fmt.Errorf("cp exec tool to container[%s] error: %s", i.Info.ContainerId, err.Error())
+		}
+
+		_, err := cmdexec.ExecContainer(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, []string{namespace.MNT},
+			fmt.Sprintf("/tmp/%s %s %d %s %s %s", DiskFillKey, "inject", i.Args.Percent, i.Args.Bytes, i.Args.Dir, i.Info.Uid), true)
+		if err != nil {
+			return fmt.Errorf("exec in container error: %s", err.Error())
+		}
+
+		return nil
+	} else {
+		return InjectDiskFill(ctx, i.Args.Percent, i.Args.Bytes, i.Args.Dir, i.Info.Uid)
+	}
+}
+
+func InjectDiskFill(ctx context.Context, percent int, bytes, dir, uid string) error {
 	logger := log.GetLogger(ctx)
-	fillFile := fmt.Sprintf("%s/%s", i.Args.Dir, getFillFileName(i.Info.Uid))
-	bytesKb, _ := getFillKBytes(i.Args.Dir, i.Args.Percent, i.Args.Bytes)
+	fillFile := fmt.Sprintf("%s/%s", dir, getFillFileName(uid))
+	bytesKb, _ := getFillKBytes(dir, percent, bytes)
 
 	if err := disk2.RunFillDisk(ctx, bytesKb, fillFile); err != nil {
 		if err := os.Remove(fillFile); err != nil {
@@ -135,7 +191,26 @@ func (i *FillInjector) Recover(ctx context.Context) error {
 		return nil
 	}
 
-	fillFile := fmt.Sprintf("%s/%s", i.Args.Dir, getFillFileName(i.Info.Uid))
+	if i.Info.ContainerRuntime != "" {
+		if err := filesys.CpContainerFile(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, utils.GetToolPath(DiskFillKey),
+			fmt.Sprintf("/tmp/%s", DiskFillKey)); err != nil {
+			return fmt.Errorf("cp exec tool to container[%s] error: %s", i.Info.ContainerId, err.Error())
+		}
+
+		_, err := cmdexec.ExecContainer(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, []string{namespace.MNT},
+			fmt.Sprintf("/tmp/%s %s %s %s", DiskFillKey, "recover", i.Args.Dir, i.Info.Uid), true)
+		if err != nil {
+			return fmt.Errorf("exec in container error: %s", err.Error())
+		}
+
+		return nil
+	} else {
+		return RecoverDiskFill(ctx, i.Args.Dir, i.Info.Uid)
+	}
+}
+
+func RecoverDiskFill(ctx context.Context, dir, uid string) error {
+	fillFile := fmt.Sprintf("%s/%s", dir, getFillFileName(uid))
 	isExist, err := filesys.ExistPath(fillFile)
 	if err != nil {
 		return fmt.Errorf("check file[%s] exist error: %s", fillFile, err.Error())

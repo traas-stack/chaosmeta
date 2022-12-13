@@ -16,18 +16,32 @@
 
 package namespace
 
-import (
-	"fmt"
-	"golang.org/x/sys/unix"
-	"os"
-)
+//func JoinProcNs(pid int, nsType string) error {
+//	filePath := fmt.Sprintf("/proc/%d/ns/%s", pid, nsType)
+//	f, err := os.Open(filePath)
+//	if err != nil {
+//		return fmt.Errorf("open ns file[%s] error: %s", filePath, err.Error())
+//	}
+//
+//	return unix.Setns(int(f.Fd()), 0)
+//}
 
-func JoinProcNs(pid int, nsType string) error {
-	filePath := fmt.Sprintf("/proc/%d/ns/%s", pid, nsType)
-	f, err := os.Open(filePath)
-	if err != nil {
-		return fmt.Errorf("open ns file[%s] error: %s", filePath, err.Error())
+func GetNsOption(namespaces []string) string {
+	var nsOptionStr string
+	for _, unitNs := range namespaces {
+		switch unitNs {
+		case MNT:
+			nsOptionStr += " -m"
+		case PID:
+			nsOptionStr += " -p"
+		case UTS:
+			nsOptionStr += " -u"
+		case NET:
+			nsOptionStr += " -n"
+		case IPC:
+			nsOptionStr += " -i"
+		}
 	}
 
-	return unix.Setns(int(f.Fd()), 0)
+	return nsOptionStr
 }

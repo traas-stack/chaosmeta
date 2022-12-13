@@ -19,6 +19,7 @@ package filesys
 import (
 	"context"
 	"fmt"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/crclient"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
 	"os"
 	"path/filepath"
@@ -197,4 +198,13 @@ func CreateFdFile(ctx context.Context, dir, filePrefix string, count int) error 
 	}
 
 	return nil
+}
+
+func CpContainerFile(ctx context.Context, cr, containerID, src, dst string) error {
+	client, err := crclient.GetClient(ctx, cr)
+	if err != nil {
+		return fmt.Errorf("get %s client error: %s", cr, err.Error())
+	}
+
+	return client.CpFile(ctx, containerID, src, dst)
 }

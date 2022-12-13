@@ -169,7 +169,7 @@ func (i *LimitInjector) Recover(ctx context.Context) error {
 			oldPath = TmpCgroup
 		}
 
-		if err := cgroup.MoveTaskToCgroup(ctx, pid, fmt.Sprintf("%s/%s%s", cgroup.RootPath, cgroup.BLKIO, oldPath)); err != nil {
+		if err := cgroup.MoveTaskToCgroup(ctx, pid, fmt.Sprintf("%s/%s%s", utils.RootCgroupPath, cgroup.BLKIO, oldPath)); err != nil {
 			return fmt.Errorf("recover pid[%d] error: %s", pid, err.Error())
 		}
 	}

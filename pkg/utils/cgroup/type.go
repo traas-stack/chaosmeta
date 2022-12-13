@@ -22,8 +22,6 @@ const (
 )
 
 const (
-	RootPath = "/sys/fs/cgroup"
-
 	CpusetCoreFile  = "cpuset.cpus"
 	WriteBytesFile  = "blkio.throttle.write_bps_device"
 	ReadBytesFile   = "blkio.throttle.read_bps_device"

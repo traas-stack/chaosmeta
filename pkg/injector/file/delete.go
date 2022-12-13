@@ -61,7 +61,7 @@ func (i *DeleteInjector) Validator(ctx context.Context) error {
 	}
 
 	var err error
-	i.Args.Path, err = filepath.Abs(i.Args.Path)
+	i.Args.Path, err = filesys.GetAbsPath(i.Args.Path)
 	if err != nil {
 		return fmt.Errorf("get absolute path of path[%s] error: %s", i.Args.Path, err.Error())
 	}

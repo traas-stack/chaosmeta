@@ -17,9 +17,11 @@
 package namespace
 
 const (
-	IPC  = "ipc"
-	MNT  = "mnt"
-	NET  = "net"
-	PID  = "pid"
-	UTS  = "uts"
+	ExecnsKey = "chaosmeta_execns"
+
+	IPC = "ipc"
+	MNT = "mnt"
+	NET = "net"
+	PID = "pid"
+	UTS = "uts"
 )

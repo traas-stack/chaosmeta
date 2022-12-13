@@ -19,7 +19,6 @@ package cpu
 import (
 	"context"
 	"fmt"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/crclient"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
@@ -55,13 +54,13 @@ func (i *LoadInjector) GetRuntime() interface{} {
 	return &i.Runtime
 }
 
-func (i *LoadInjector) SetDefault() {
-	i.BaseInjector.SetDefault()
-
-	if i.Info.ContainerRuntime != "" {
-		i.Info.ContainerNs = []string{namespace.PID}
-	}
-}
+//func (i *LoadInjector) SetDefault() {
+//	i.BaseInjector.SetDefault()
+//
+//	if i.Info.ContainerRuntime != "" {
+//		i.Info.ContainerNs = []string{namespace.PID}
+//	}
+//}
 
 func (i *LoadInjector) SetOption(cmd *cobra.Command) {
 	// i.BaseInjector.SetOption(cmd)
@@ -94,8 +93,7 @@ func (i *LoadInjector) Inject(ctx context.Context) error {
 	cmd := fmt.Sprintf("%s %s %d", utils.GetToolPath(CpuLoadKey), i.Info.Uid, i.Args.Count)
 	var err error
 	if i.Info.ContainerRuntime != "" {
-		client, _ := crclient.GetClient(ctx, i.Info.ContainerRuntime)
-		err = client.ExecContainer(ctx, i.Info.ContainerId, i.Info.ContainerNs, cmd)
+		_, err = cmdexec.ExecContainer(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, []string{namespace.PID}, cmd, false)
 	} else {
 		err = cmdexec.StartBashCmd(ctx, cmd)
 	}

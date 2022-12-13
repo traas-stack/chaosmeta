@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cgroup"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/disk"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/filesys"
@@ -167,7 +168,7 @@ func (i *HangInjector) Recover(ctx context.Context) error {
 			oldPath = TmpCgroup
 		}
 
-		if err := cgroup.MoveTaskToCgroup(ctx, pid, fmt.Sprintf("%s/%s%s", cgroup.RootPath, cgroup.BLKIO, oldPath)); err != nil {
+		if err := cgroup.MoveTaskToCgroup(ctx, pid, fmt.Sprintf("%s/%s%s", utils.RootCgroupPath, cgroup.BLKIO, oldPath)); err != nil {
 			return fmt.Errorf("recover pid[%d] error: %s", pid, err.Error())
 		}
 	}

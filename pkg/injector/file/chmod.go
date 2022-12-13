@@ -22,7 +22,6 @@ import (
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/filesys"
 	"github.com/spf13/cobra"
-	"path/filepath"
 )
 
 func init() {
@@ -64,7 +63,7 @@ func (i *ChmodInjector) Validator(ctx context.Context) error {
 	}
 
 	var err error
-	i.Args.Path, err = filepath.Abs(i.Args.Path)
+	i.Args.Path, err = filesys.GetAbsPath(i.Args.Path)
 	if err != nil {
 		return fmt.Errorf("get absolute path of path[%s] error: %s", i.Args.Path, err.Error())
 	}

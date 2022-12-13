@@ -19,7 +19,6 @@ package cpu
 import (
 	"context"
 	"fmt"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/crclient"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
@@ -58,13 +57,13 @@ func (i *BurnInjector) GetRuntime() interface{} {
 	return &i.Runtime
 }
 
-func (i *BurnInjector) SetDefault() {
-	i.BaseInjector.SetDefault()
-
-	if i.Info.ContainerRuntime != "" {
-		i.Info.ContainerNs = []string{namespace.PID}
-	}
-}
+//func (i *BurnInjector) SetDefault() {
+//	i.BaseInjector.SetDefault()
+//
+//	if i.Info.ContainerRuntime != "" {
+//		i.Info.ContainerNs = []string{namespace.PID}
+//	}
+//}
 
 func (i *BurnInjector) SetOption(cmd *cobra.Command) {
 	// i.BaseInjector.SetOption(cmd)
@@ -148,9 +147,8 @@ func (i *BurnInjector) Inject(ctx context.Context) error {
 		cmd := fmt.Sprintf("taskset -c %d %s %s %d %d %d", coreList[c], utils.GetToolPath(CpuBurnKey), i.Info.Uid, coreList[c], i.Args.Percent, timeout)
 
 		if i.Info.ContainerRuntime != "" {
-			client, _ := crclient.GetClient(ctx, i.Info.ContainerRuntime)
-			err = client.ExecContainer(ctx, i.Info.ContainerId, i.Info.ContainerNs, cmd)
-			//_, err = cmdexec.ExecContainer(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, i.Info.ContainerNs, cmdexec.ExecWait, cmd)
+			_, err = cmdexec.ExecContainer(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, []string{namespace.PID}, cmd, false)
+			//_, err = cmdexec.Exec(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, i.Info.ContainerNs, cmdexec.ExecWait, cmd)
 		} else {
 			_, err = cmdexec.StartBashCmdAndWaitPid(ctx, cmd)
 		}
@@ -181,8 +179,7 @@ func (i *BurnInjector) DelayRecover(ctx context.Context, timeout int64) error {
 func getAllCpuList(ctx context.Context, cr, cId string) (cpuList []int, err error) {
 	var cpusetPath = "/"
 	if cr != "" {
-		client, _ := crclient.GetClient(ctx, cr)
-		cpusetPath, err = client.GetCgroupPath(ctx, cId, cgroup.CPUSET)
+		cpusetPath, err = cgroup.GetContainerCgroupPath(ctx, cr, cId, cgroup.CPUSET)
 		if err != nil {
 			return nil, fmt.Errorf("get cgroup[%s] path of container[%s] error: %s", cgroup.CPUSET, cId, err.Error())
 		}
@@ -192,7 +189,7 @@ func getAllCpuList(ctx context.Context, cr, cId string) (cpuList []int, err erro
 }
 
 func getCpuList(path string) ([]int, error) {
-	cpusetFile := fmt.Sprintf("%s/%s%s/%s", cgroup.RootPath, cgroup.CPUSET, path, cgroup.CpusetCoreFile)
+	cpusetFile := fmt.Sprintf("%s/%s%s/%s", utils.RootCgroupPath, cgroup.CPUSET, path, cgroup.CpusetCoreFile)
 	reByte, err := ioutil.ReadFile(cpusetFile)
 	if err != nil {
 		return nil, fmt.Errorf("read cpu list info from file[%s] error: %s", cpusetFile, err.Error())

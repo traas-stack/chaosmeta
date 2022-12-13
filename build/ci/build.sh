@@ -38,6 +38,7 @@ VERSION_FLAG="@VERSION@"
 CPU_BURN="chaosmeta_cpuburn"
 CPU_LOAD="chaosmeta_cpuload"
 DISK_BURN="chaosmeta_diskburn"
+DISK_FILL="chaosmeta_diskfill"
 MEM_FILL="chaosmeta_memfill"
 FD_FULL="chaosmeta_fd"
 NPROC="chaosmeta_nproc"
@@ -78,6 +79,7 @@ gcc ${PROJECT_DIR}/tools/${CPU_LOAD}.c -o ${PACKAGE_DIR}/${OS_NAME}/tools/${CPU_
 gcc ${PROJECT_DIR}/tools/${TOOL_EXECNS}.c -o ${PACKAGE_DIR}/${OS_NAME}/tools/${TOOL_EXECNS}
 CGO_ENABLED=1 GOOS=${OS_NAME} GOARCH=${ARCH_NAME} ${GO_TOOL} build -o ${PACKAGE_DIR}/${OS_NAME}/tools/${CPU_BURN} ${PROJECT_DIR}/tools/${CPU_BURN}.go
 CGO_ENABLED=1 GOOS=${OS_NAME} GOARCH=${ARCH_NAME} ${GO_TOOL} build -o ${PACKAGE_DIR}/${OS_NAME}/tools/${DISK_BURN} ${PROJECT_DIR}/tools/${DISK_BURN}.go
+CGO_ENABLED=1 GOOS=${OS_NAME} GOARCH=${ARCH_NAME} ${GO_TOOL} build -o ${PACKAGE_DIR}/${OS_NAME}/tools/${DISK_FILL} ${PROJECT_DIR}/tools/${DISK_FILL}.go
 CGO_ENABLED=1 GOOS=${OS_NAME} GOARCH=${ARCH_NAME} ${GO_TOOL} build -o ${PACKAGE_DIR}/${OS_NAME}/tools/${MEM_FILL} ${PROJECT_DIR}/tools/${MEM_FILL}.go
 CGO_ENABLED=1 GOOS=${OS_NAME} GOARCH=${ARCH_NAME} ${GO_TOOL} build -o ${PACKAGE_DIR}/${OS_NAME}/tools/${NET_OCCUPY} ${PROJECT_DIR}/tools/${NET_OCCUPY}.go
 CGO_ENABLED=1 GOOS=${OS_NAME} GOARCH=${ARCH_NAME} ${GO_TOOL} build -o ${PACKAGE_DIR}/${OS_NAME}/tools/${FD_FULL} ${PROJECT_DIR}/tools/${FD_FULL}.go

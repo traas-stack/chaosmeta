@@ -19,22 +19,19 @@ package docker
 import (
 	"context"
 	"fmt"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cgroup"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/namespace"
 	"github.com/docker/docker/api/types"
 	dockerClient "github.com/docker/docker/client"
-	"os/exec"
+	"github.com/docker/docker/pkg/archive"
+	"github.com/docker/docker/pkg/system"
+	"io"
+	"os"
+	"path/filepath"
 	"sync"
-	"syscall"
 	"time"
 )
 
 const (
 	defaultDockerSocket = "unix:///var/run/docker.sock"
-	cgroupWaitInterval = time.Millisecond * 200
 )
 
 type Client struct {
@@ -108,80 +105,52 @@ func (d *Client) ListId(ctx context.Context) ([]string, error) {
 	return idList, nil
 }
 
-func (d *Client) GetCgroupPath(ctx context.Context, containerID, subSys string) (string, error) {
-	client, err := GetClient(ctx)
-	if err != nil {
-		return "", fmt.Errorf("get client error: %s", err.Error())
-	}
+func (d *Client) CpFile(ctx context.Context, containerID, src, dst string) error {
+	dstInfo := archive.CopyInfo{Path: dst}
+	dstStat, err := d.client.ContainerStatPath(ctx, containerID, dst)
 
-	pid, err := client.GetPidById(context.Background(), containerID)
-	if err != nil {
-		return "", fmt.Errorf("get pid of container[%s] error: %s", containerID, err.Error())
-	}
-
-	cPath, err := cgroup.GetpidCurCgroup(ctx, pid, subSys)
-	if err != nil {
-		return "", fmt.Errorf("get cgroup[%s] path of process[%d] error: %s", subSys, pid, err.Error())
-	}
-
-	return cPath, nil
-}
-
-func (d *Client) ExecContainer(ctx context.Context, containerID string, namespaces []string, cmd string) error {
-	logger := log.GetLogger(ctx)
-	// get container's init process
-	client, err := GetClient(ctx)
-	if err != nil {
-		return fmt.Errorf("get client error: %s", err.Error())
-	}
-
-	targetPid, err := client.GetPidById(ctx, containerID)
-	if err != nil {
-		return fmt.Errorf("get pid of container[%s]'s init process error: %s", containerID, err.Error())
-	}
-
-	// exec ns
-	var nsOptionStr string
-	for _, unitNs := range namespaces {
-		switch unitNs {
-		case namespace.MNT:
-			nsOptionStr += " -m"
-		case namespace.PID:
-			nsOptionStr += " -p"
-		case namespace.UTS:
-			nsOptionStr += " -u"
-		case namespace.NET:
-			nsOptionStr += " -n"
-		case namespace.IPC:
-			nsOptionStr += " -i"
-		}
-	}
-
-	c := exec.Command("/bin/bash", "-c", fmt.Sprintf("%s -t %d %s -c \"%s\"", utils.GetToolPath(cmdexec.ExecnsKey), targetPid, nsOptionStr, cmd))
-	logger.Debugf("container exec cmd: %s", c.Args)
-
-	// TODO: need to catch execns error
-	//var stdout, stderr bytes.Buffer
-	//c.Stdout, c.Stderr = &stdout, &stderr
-
-	if err := c.Start(); err != nil {
-		return fmt.Errorf("start process error: %s", err.Error())
-	}
-
-	// set cgroup for new process
-	if err := cgroup.AddToProCgroup(c.Process.Pid, targetPid); err != nil {
-		if err := c.Process.Kill(); err != nil {
-			logger.Warnf("undo: kill container exec process[%d] error: %s", c.Process.Pid, err.Error())
+	if err == nil && dstStat.Mode&os.ModeSymlink != 0 {
+		linkTarget := dstStat.LinkTarget
+		if !system.IsAbs(linkTarget) {
+			dstParent, _ := archive.SplitPathDirEntry(dst)
+			linkTarget = filepath.Join(dstParent, linkTarget)
 		}
 
-		return fmt.Errorf("add process[%d] to container[%d] cgroup error: %s", c.Process.Pid, targetPid, err.Error())
+		dstInfo.Path = linkTarget
+		dstStat, err = d.client.ContainerStatPath(ctx, containerID, linkTarget)
 	}
 
-	time.Sleep(cgroupWaitInterval)
-	if err := c.Process.Signal(syscall.SIGCONT); err != nil {
+	if err == nil {
+		dstInfo.Exists, dstInfo.IsDir = true, dstStat.Mode.IsDir()
+	}
+
+	var (
+		content         io.Reader
+		resolvedDstPath string
+	)
+
+	srcInfo, err := archive.CopyInfoSourcePath(src, true)
+	if err != nil {
 		return err
 	}
 
-	// signal continue
-	return nil
+	srcArchive, err := archive.TarResource(srcInfo)
+	if err != nil {
+		return err
+	}
+
+	defer srcArchive.Close()
+
+	dstDir, preparedArchive, err := archive.PrepareArchiveCopy(srcArchive, srcInfo, dstInfo)
+	if err != nil {
+		return err
+	}
+	defer preparedArchive.Close()
+
+	resolvedDstPath = dstDir
+	content = preparedArchive
+
+	return d.client.CopyToContainer(ctx, containerID, resolvedDstPath, content, types.CopyToContainerOptions{
+		AllowOverwriteDirWithFile: true,
+	})
 }

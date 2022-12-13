@@ -55,20 +55,20 @@ type BaseInjector struct {
 }
 
 type BaseInfo struct {
-	// 实验基础信息
+	// basic information
 	Uid     string `json:"uid"`
 	Creator string `json:"creator"`
-	// 实验状态信息
+	// state information
 	Status  string `json:"status"`
 	Error   string `json:"error"`
 	Timeout string `json:"timeout"`
-	// 基础实验配置信息
+	// configuration information
 	Target string `json:"target"`
 	Fault  string `json:"fault"`
-	// 容器运行时信息
-	ContainerId      string   `json:"container_id"`
-	ContainerRuntime string   `json:"container_runtime"`
-	ContainerNs      []string `json:"container_ns"`
+	// container information
+	ContainerId      string `json:"container_id"`
+	ContainerRuntime string `json:"container_runtime"`
+	//ContainerNs      []string `json:"container_ns"`
 }
 
 func (i *BaseInjector) GetArgs() interface{} {

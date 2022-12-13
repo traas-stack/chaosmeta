@@ -25,8 +25,7 @@ import (
 )
 
 const (
-	CrLocal  = "local"
-	CrDocker = "docker"
+	CrDocker     = "docker"
 	CrContainerd = "containerd"
 )
 
@@ -36,8 +35,9 @@ type Client interface {
 	KillContainerById(ctx context.Context, containerID string) error
 	RmFContainerById(ctx context.Context, containerID string) error
 	RestartContainerById(ctx context.Context, containerID string, timeout *time.Duration) error
-	GetCgroupPath(ctx context.Context, containerID, subSys string) (string, error)
-	ExecContainer(ctx context.Context, containerID string, namespaces []string, cmd string) error
+	CpFile(ctx context.Context, containerID, src, dst string) error
+	//GetCgroupPath(ctx context.Context, containerID, subSys string) (string, error)
+	//Exec(ctx context.Context, containerID string, namespaces []string, cmd string, finish bool) (string, error)
 }
 
 func GetClient(ctx context.Context, cr string) (Client, error) {

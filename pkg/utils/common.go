@@ -38,6 +38,7 @@ const (
 	RootName   = "chaosmetad"
 	TimeFormat = "2006-01-02 15:04:05"
 	RecoverLog = "/tmp/chaosmetad_recover.log" //TODO: Need to add log cleanup strategy
+	RootCgroupPath = "/sys/fs/cgroup"
 )
 
 // TraceId for command line

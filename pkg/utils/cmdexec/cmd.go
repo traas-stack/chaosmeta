@@ -20,16 +20,19 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/crclient"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/namespace"
 	"os/exec"
 	"strings"
+	"syscall"
 	"time"
 )
 
 const (
 	InjectCheckInterval = time.Millisecond * 200
-	ExecnsKey           = "chaosmeta_execns"
+	cgroupWaitInterval  = time.Millisecond * 200
 )
 
 const (
@@ -142,31 +145,60 @@ func StartBashCmdAndWaitByUser(ctx context.Context, cmd, user string) error {
 	return nil
 }
 
-//func ExecContainer(ctx context.Context, cr, containerID string, namespaces []string, method, cmd string) (int, error) {
-//	client, err := crclient.GetClient(ctx, cr)
-//	if err != nil {
-//		return utils.NoPid, fmt.Errorf("get cr[%s] client error: %s", cr, err.Error())
-//	}
-//
-//	targetPid, err := client.GetPidById(ctx, containerID)
-//	if err != nil {
-//		return utils.NoPid, fmt.Errorf("get pid of container[%s]'s init process error: %s", containerID, err.Error())
-//	}
-//
-//	return StartBashCmdAndWaitPid(ctx, fmt.Sprintf("%s %d %s %s %s", utils.GetToolPath(execnsKey), targetPid, strings.Join(namespaces, ","), method, cmd))
-//}
+// finish: false[wait success], true[finish and get all output]
 
-//
-//func (e *CmdExecutor) GetCmdInContainer(ctx context.Context, method, cmd string) (string, error) {
-//	client, err := crclient.GetClient(ctx, e.ContainerRuntime)
-//	if err != nil {
-//		return "", fmt.Errorf("get cr[%s] client error: %s", e.ContainerRuntime, err.Error())
-//	}
-//
-//	targetPid, err := client.GetPidById(ctx, e.ContainerId)
-//	if err != nil {
-//		return "", fmt.Errorf("get pid of container[%s]'s init process error: %s", e.ContainerId, err.Error())
-//	}
-//
-//	return fmt.Sprintf("%s %d %s %s %s", utils.GetToolPath(execnsKey), targetPid, strings.Join(e.ContainerNs, ","), method, cmd), nil
-//}
+func ExecContainer(ctx context.Context, cr, containerID string, namespaces []string, cmd string, finish bool) (string, error) {
+	logger := log.GetLogger(ctx)
+
+	// get container's init process
+	client, err := crclient.GetClient(ctx, cr)
+	if err != nil {
+		return "", fmt.Errorf("get %s client error: %s", cr, err.Error())
+	}
+
+	targetPid, err := client.GetPidById(ctx, containerID)
+	if err != nil {
+		return "", fmt.Errorf("get pid of container[%s]'s init process error: %s", containerID, err.Error())
+	}
+
+	// exec ns
+	c := exec.Command("/bin/bash", "-c", fmt.Sprintf("%s -t %d %s -c \"%s\"",
+		utils.GetToolPath(namespace.ExecnsKey), targetPid, namespace.GetNsOption(namespaces), cmd))
+
+	var stdout, stderr bytes.Buffer
+	c.Stdout, c.Stderr = &stdout, &stderr
+	logger.Debugf("container exec cmd: %s", c.Args)
+	if err := c.Start(); err != nil {
+		return "", fmt.Errorf("start process error: %s", err.Error())
+	}
+
+	// set cgroup for new process
+	if err := addToProCgroup(c.Process.Pid, targetPid); err != nil {
+		if err := c.Process.Kill(); err != nil {
+			logger.Warnf("undo: kill container exec process[%d] error: %s", c.Process.Pid, err.Error())
+		}
+
+		return "", fmt.Errorf("add process[%d] to container[%d] cgroup error: %s", c.Process.Pid, targetPid, err.Error())
+	}
+
+	// signal continue
+	time.Sleep(cgroupWaitInterval)
+	if err := c.Process.Signal(syscall.SIGCONT); err != nil {
+		return "", err
+	}
+
+	if finish {
+		if err := c.Wait(); err != nil {
+			return "", fmt.Errorf("wait process error: %s", err.Error())
+		}
+
+		if strings.Index(stdout.String()+stderr.String(), "error") >= 0 {
+			return "", fmt.Errorf(stdout.String() + stderr.String())
+		} else {
+			return stdout.String() + stderr.String(), nil
+		}
+
+	} else {
+		return "", waitProExec(ctx, &stdout, &stderr)
+	}
+}
