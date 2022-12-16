@@ -18,6 +18,7 @@ package inject
 
 import (
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
+	_ "github.com/ChaosMetaverse/chaosmetad/pkg/injector/container"
 	_ "github.com/ChaosMetaverse/chaosmetad/pkg/injector/cpu"
 	_ "github.com/ChaosMetaverse/chaosmetad/pkg/injector/disk"
 	_ "github.com/ChaosMetaverse/chaosmetad/pkg/injector/diskio"

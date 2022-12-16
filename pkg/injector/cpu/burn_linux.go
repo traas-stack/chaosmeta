@@ -57,14 +57,6 @@ func (i *BurnInjector) GetRuntime() interface{} {
 	return &i.Runtime
 }
 
-//func (i *BurnInjector) SetDefault() {
-//	i.BaseInjector.SetDefault()
-//
-//	if i.Info.ContainerRuntime != "" {
-//		i.Info.ContainerNs = []string{namespace.PID}
-//	}
-//}
-
 func (i *BurnInjector) getCmdExecutor() *cmdexec.CmdExecutor {
 	return &cmdexec.CmdExecutor{
 		ContainerId:      i.Info.ContainerId,

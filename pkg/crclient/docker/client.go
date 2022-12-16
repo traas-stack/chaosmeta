@@ -81,12 +81,22 @@ func (d *Client) GetPidById(ctx context.Context, containerID string) (int, error
 	return info.State.Pid, nil
 }
 
+// KillContainerById convert to static container
 func (d *Client) KillContainerById(ctx context.Context, containerID string) error {
 	return d.client.ContainerKill(ctx, containerID, "SIGKILL")
 }
 
+// RmFContainerById remove container
 func (d *Client) RmFContainerById(ctx context.Context, containerID string) error {
 	return d.client.ContainerRemove(ctx, containerID, types.ContainerRemoveOptions{Force: true})
+}
+
+func (d *Client) PauseContainerById(ctx context.Context, containerID string) error {
+	return d.client.ContainerPause(ctx, containerID)
+}
+
+func (d *Client) UnPauseContainerById(ctx context.Context, containerID string) error {
+	return d.client.ContainerUnpause(ctx, containerID)
 }
 
 func (d *Client) RestartContainerById(ctx context.Context, containerID string, timeout *time.Duration) error {

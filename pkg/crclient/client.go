@@ -33,6 +33,8 @@ type Client interface {
 	GetPidById(ctx context.Context, containerID string) (int, error)
 	ListId(ctx context.Context) ([]string, error)
 	KillContainerById(ctx context.Context, containerID string) error
+	PauseContainerById(ctx context.Context, containerID string) error
+	UnPauseContainerById(ctx context.Context, containerID string) error
 	RmFContainerById(ctx context.Context, containerID string) error
 	RestartContainerById(ctx context.Context, containerID string, timeout *time.Duration) error
 	CpFile(ctx context.Context, containerID, src, dst string) error
