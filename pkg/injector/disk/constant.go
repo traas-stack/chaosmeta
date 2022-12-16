@@ -20,7 +20,7 @@ const (
 	TargetDisk = "disk"
 
 	FaultDiskFill = "fill"
-	FillFileName  = "chaosmeta_fill"
+
 	DefaultDir    = "/tmp"
 
 	DiskFillKey = "chaosmeta_diskfill"

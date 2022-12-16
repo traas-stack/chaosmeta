@@ -23,6 +23,7 @@ import (
 	"github.com/ChaosMetaverse/chaosmetad/pkg/crclient"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/errutil"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/namespace"
 	"os/exec"
 	"strings"
@@ -33,19 +34,87 @@ import (
 const (
 	InjectCheckInterval = time.Millisecond * 200
 	cgroupWaitInterval  = time.Millisecond * 200
+
+	ExecWait  = "wait"
+	ExecStart = "start"
+	ExecRun   = "run"
 )
 
-const (
-	ExecWait   = "wait"
-	ExecNormal = "normal"
-)
+type CmdExecutor struct {
+	ContainerId      string
+	ContainerRuntime string
+	ContainerNs      []string
+	ToolKey          string
+	Method           string
+	Fault            string
+	Args             string
+}
 
-//type CmdExecutor struct {
-//	ContainerId      string
-//	ContainerRuntime string
-//	ContainerNs      []string
-//	//Method           string
+//func (e *CmdExecutor) RunCmdWithOutput(ctx context.Context, cmd string) (string, error) {
+//	if e.ContainerRuntime != "" {
+//		return ExecContainer(ctx, e.ContainerRuntime, e.ContainerId, e.ContainerNs, cmd, ExecRun)
+//	} else {
+//		return RunBashCmdWithOutput(ctx, cmd)
+//	}
 //}
+
+func (e *CmdExecutor) StartCmdAndWait(ctx context.Context, cmd string) error {
+	var err error
+	if e.ContainerRuntime != "" {
+		_, err = ExecContainer(ctx, e.ContainerRuntime, e.ContainerId, e.ContainerNs, cmd, ExecWait)
+	} else {
+		_, err = StartBashCmdAndWaitPid(ctx, cmd)
+	}
+	return err
+}
+
+func (e *CmdExecutor) StartCmd(ctx context.Context, cmd string) error {
+	var err error
+	if e.ContainerRuntime != "" {
+		_, err = ExecContainer(ctx, e.ContainerRuntime, e.ContainerId, e.ContainerNs, cmd, ExecStart)
+	} else {
+		err = StartBashCmd(ctx, cmd)
+	}
+	return err
+}
+
+func (e *CmdExecutor) ExecTool(ctx context.Context) error {
+	logger, commonArgs := log.GetLogger(ctx), fmt.Sprintf("%s %s %s %s", e.Method, e.Fault, log.Level, e.Args)
+
+	if e.ContainerRuntime != "" {
+		var execTool = utils.GetToolPath(e.ToolKey)
+		if utils.StrListContain(e.ContainerNs, namespace.MNT) {
+			srcTool := execTool
+			execTool = utils.GetContainerPath(e.ToolKey)
+			if err := CpContainerFile(ctx, e.ContainerRuntime, e.ContainerId, srcTool, execTool); err != nil {
+				return fmt.Errorf("cp exec tool to container[%s] error: %s", e.ContainerId, err.Error())
+			}
+		}
+
+		re, err := ExecContainer(ctx, e.ContainerRuntime, e.ContainerId, e.ContainerNs, fmt.Sprintf("%s %s", execTool, commonArgs), ExecRun)
+		logger.Debugf(re)
+		if err != nil {
+			return fmt.Errorf("exec in container error: %s", err.Error())
+		}
+	} else {
+		re, err := RunBashCmdWithOutput(ctx, fmt.Sprintf("%s %s", utils.GetToolPath(e.ToolKey), commonArgs))
+		logger.Debugf(re)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func CpContainerFile(ctx context.Context, cr, containerID, src, dst string) error {
+	client, err := crclient.GetClient(ctx, cr)
+	if err != nil {
+		return fmt.Errorf("get %s client error: %s", cr, err.Error())
+	}
+
+	return client.CpFile(ctx, containerID, src, dst)
+}
 
 func StartSleepRecover(ctx context.Context, sleepTime int64, uid string) error {
 	return StartBashCmd(ctx, utils.GetSleepRecoverCmd(sleepTime, uid))
@@ -84,9 +153,21 @@ func SupportCmd(cmd string) bool {
 	return true
 }
 
-func RunBashCmdWithOutput(ctx context.Context, cmd string) ([]byte, error) {
+func RunBashCmdWithOutput(ctx context.Context, cmd string) (string, error) {
 	log.GetLogger(ctx).Debugf("run cmd with output: %s", cmd)
-	return exec.Command("/bin/bash", "-c", cmd).CombinedOutput()
+	c := exec.Command("/bin/bash", "-c", cmd)
+
+	reByte, err := c.CombinedOutput()
+	re := string(reByte)
+	if err != nil {
+		if c.ProcessState.Sys().(syscall.WaitStatus).ExitStatus() == errutil.ExpectedErr {
+			return "", fmt.Errorf(re)
+		}
+
+		return "", err
+	}
+
+	return re, nil
 }
 
 func RunBashCmdWithoutOutput(ctx context.Context, cmd string) error {
@@ -99,15 +180,15 @@ func StartBashCmd(ctx context.Context, cmd string) error {
 	return exec.Command("/bin/bash", "-c", cmd).Start()
 }
 
-func StartBashCmdWithPid(ctx context.Context, cmd string) (int, error) {
-	log.GetLogger(ctx).Debugf("start cmd: %s", cmd)
-	c := exec.Command("/bin/bash", "-c", cmd)
-	if err := c.Start(); err != nil {
-		return utils.NoPid, err
-	}
-
-	return c.Process.Pid, nil
-}
+//func StartBashCmdWithPid(ctx context.Context, cmd string) (int, error) {
+//	log.GetLogger(ctx).Debugf("start cmd: %s", cmd)
+//	c := exec.Command("/bin/bash", "-c", cmd)
+//	if err := c.Start(); err != nil {
+//		return utils.NoPid, err
+//	}
+//
+//	return c.Process.Pid, nil
+//}
 
 func StartBashCmdAndWaitPid(ctx context.Context, cmd string) (int, error) {
 	log.GetLogger(ctx).Debugf("start cmd: %s", cmd)
@@ -147,7 +228,7 @@ func StartBashCmdAndWaitByUser(ctx context.Context, cmd, user string) error {
 
 // finish: false[wait success], true[finish and get all output]
 
-func ExecContainer(ctx context.Context, cr, containerID string, namespaces []string, cmd string, finish bool) (string, error) {
+func ExecContainer(ctx context.Context, cr, containerID string, namespaces []string, cmd string, method string) (string, error) {
 	logger := log.GetLogger(ctx)
 
 	// get container's init process
@@ -187,18 +268,24 @@ func ExecContainer(ctx context.Context, cr, containerID string, namespaces []str
 		return "", err
 	}
 
-	if finish {
+	// solve return
+	switch method {
+	case ExecWait:
+		return "", waitProExec(ctx, &stdout, &stderr)
+	case ExecRun:
 		if err := c.Wait(); err != nil {
 			return "", fmt.Errorf("wait process error: %s", err.Error())
 		}
 
-		if strings.Index(stdout.String()+stderr.String(), "error") >= 0 {
-			return "", fmt.Errorf(stdout.String() + stderr.String())
+		combinedOutput := stdout.String() + stderr.String()
+		if strings.Index(combinedOutput, "error") >= 0 {
+			return "", fmt.Errorf(combinedOutput)
 		} else {
-			return stdout.String() + stderr.String(), nil
+			return combinedOutput, nil
 		}
-
-	} else {
-		return "", waitProExec(ctx, &stdout, &stderr)
+	case ExecStart:
+		return "", nil
+	default:
+		return "", fmt.Errorf("unknown exec method")
 	}
 }

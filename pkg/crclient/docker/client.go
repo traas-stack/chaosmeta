@@ -19,6 +19,7 @@ package docker
 import (
 	"context"
 	"fmt"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
 	"github.com/docker/docker/api/types"
 	dockerClient "github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/archive"
@@ -55,6 +56,7 @@ func GetClient(ctx context.Context) (d *Client, err error) {
 	if clientInstance == nil {
 		mutex.Lock()
 		if clientInstance == nil {
+			log.GetLogger(ctx).Debug("new docker client")
 			cli, err := dockerClient.NewClientWithOpts(dockerClient.FromEnv, dockerClient.WithHost(defaultDockerSocket))
 			if err != nil {
 				return nil, fmt.Errorf("new docker client error: %s", err.Error())

@@ -310,7 +310,7 @@ func ExistTCRootQdisc(ctx context.Context, netInterface string) (bool, error) {
 		return false, err
 	}
 
-	if strings.TrimSpace(string(out)) == "0" {
+	if strings.TrimSpace(out) == "0" {
 		return false, nil
 	}
 
@@ -333,7 +333,7 @@ func GetPidByPort(ctx context.Context, port int, proto string) (int, error) {
 		return utils.NoPid, fmt.Errorf("cmd exec error: %s", err.Error())
 	}
 
-	pidStr := strings.TrimSpace(string(out))
+	pidStr := strings.TrimSpace(out)
 	if pidStr == "" {
 		return utils.NoPid, nil
 	}

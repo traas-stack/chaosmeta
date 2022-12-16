@@ -38,13 +38,17 @@ VERSION_FLAG="@VERSION@"
 CPU_BURN="chaosmeta_cpuburn"
 CPU_LOAD="chaosmeta_cpuload"
 DISK_BURN="chaosmeta_diskburn"
-DISK_FILL="chaosmeta_diskfill"
+
 MEM_FILL="chaosmeta_memfill"
 FD_FULL="chaosmeta_fd"
 NPROC="chaosmeta_nproc"
 NET_OCCUPY="chaosmeta_occupy"
 
+DISK_EXEC="chaosmeta_diskfill"
 TOOL_EXECNS="chaosmeta_execns"
+FILE_EXEC="chaosmeta_file"
+PRO_EXEC="chaosmeta_process"
+NET_EXEC="chaosmeta_network"
 
 # file path
 CI_DIR=$(
@@ -59,6 +63,7 @@ PROJECT_DIR=$(pwd)
 PACKAGE_DIR=${BUILD_DIR}/package
 OUTPUT_DIR=${BUILD_DIR}/${BUILD_NAME}
 VERSION_DIR=${PROJECT_DIR}/pkg/version
+EXEC_DIR=${PROJECT_DIR}/pkg/exec
 
 # set version and date
 cp ${VERSION_DIR}/version.go ${VERSION_DIR}/version.bak
@@ -76,14 +81,18 @@ rm -rf ${VERSION_DIR}/version.go && mv ${VERSION_DIR}/version.bak ${VERSION_DIR}
 mkdir -p ${PACKAGE_DIR}/${OS_NAME}/tools
 
 gcc ${PROJECT_DIR}/tools/${CPU_LOAD}.c -o ${PACKAGE_DIR}/${OS_NAME}/tools/${CPU_LOAD}
-gcc ${PROJECT_DIR}/tools/${TOOL_EXECNS}.c -o ${PACKAGE_DIR}/${OS_NAME}/tools/${TOOL_EXECNS}
 CGO_ENABLED=1 GOOS=${OS_NAME} GOARCH=${ARCH_NAME} ${GO_TOOL} build -o ${PACKAGE_DIR}/${OS_NAME}/tools/${CPU_BURN} ${PROJECT_DIR}/tools/${CPU_BURN}.go
 CGO_ENABLED=1 GOOS=${OS_NAME} GOARCH=${ARCH_NAME} ${GO_TOOL} build -o ${PACKAGE_DIR}/${OS_NAME}/tools/${DISK_BURN} ${PROJECT_DIR}/tools/${DISK_BURN}.go
-CGO_ENABLED=1 GOOS=${OS_NAME} GOARCH=${ARCH_NAME} ${GO_TOOL} build -o ${PACKAGE_DIR}/${OS_NAME}/tools/${DISK_FILL} ${PROJECT_DIR}/tools/${DISK_FILL}.go
 CGO_ENABLED=1 GOOS=${OS_NAME} GOARCH=${ARCH_NAME} ${GO_TOOL} build -o ${PACKAGE_DIR}/${OS_NAME}/tools/${MEM_FILL} ${PROJECT_DIR}/tools/${MEM_FILL}.go
 CGO_ENABLED=1 GOOS=${OS_NAME} GOARCH=${ARCH_NAME} ${GO_TOOL} build -o ${PACKAGE_DIR}/${OS_NAME}/tools/${NET_OCCUPY} ${PROJECT_DIR}/tools/${NET_OCCUPY}.go
 CGO_ENABLED=1 GOOS=${OS_NAME} GOARCH=${ARCH_NAME} ${GO_TOOL} build -o ${PACKAGE_DIR}/${OS_NAME}/tools/${FD_FULL} ${PROJECT_DIR}/tools/${FD_FULL}.go
 CGO_ENABLED=1 GOOS=${OS_NAME} GOARCH=${ARCH_NAME} ${GO_TOOL} build -o ${PACKAGE_DIR}/${OS_NAME}/tools/${NPROC} ${PROJECT_DIR}/tools/${NPROC}.go
+
+gcc ${EXEC_DIR}/execns/${TOOL_EXECNS}.c -o ${PACKAGE_DIR}/${OS_NAME}/tools/${TOOL_EXECNS}
+CGO_ENABLED=1 GOOS=${OS_NAME} GOARCH=${ARCH_NAME} ${GO_TOOL} build -o ${PACKAGE_DIR}/${OS_NAME}/tools/${DISK_EXEC} ${EXEC_DIR}/disk/${DISK_EXEC}.go
+CGO_ENABLED=1 GOOS=${OS_NAME} GOARCH=${ARCH_NAME} ${GO_TOOL} build -o ${PACKAGE_DIR}/${OS_NAME}/tools/${FILE_EXEC} ${EXEC_DIR}/file/${FILE_EXEC}.go
+CGO_ENABLED=1 GOOS=${OS_NAME} GOARCH=${ARCH_NAME} ${GO_TOOL} build -o ${PACKAGE_DIR}/${OS_NAME}/tools/${PRO_EXEC} ${EXEC_DIR}/process/${PRO_EXEC}.go
+CGO_ENABLED=1 GOOS=${OS_NAME} GOARCH=${ARCH_NAME} ${GO_TOOL} build -o ${PACKAGE_DIR}/${OS_NAME}/tools/${NET_EXEC} ${EXEC_DIR}/network/${NET_EXEC}.go
 # CGO_ENABLED=1 GOOS=${OS_NAME} GOARCH=${ARCH_NAME} ${GO_TOOL} build -o ${PACKAGE_DIR}/${OS_NAME}/tools/${TOOL_EXECNS} ${PROJECT_DIR}/tools/${TOOL_EXECNS}.go
 
 cp -R ${PACKAGE_DIR}/${OS_NAME}/tools ${OUTPUT_DIR}/

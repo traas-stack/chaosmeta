@@ -86,12 +86,12 @@ func GetPidListCurCgroup(ctx context.Context, pidList []int, subSys string) (map
 }
 
 func GetpidCurCgroup(ctx context.Context, pid int, subSys string) (string, error) {
-	reByte, err := cmdexec.RunBashCmdWithOutput(ctx, fmt.Sprintf("cat /proc/%d/cgroup | grep -w %s", pid, subSys))
+	re, err := cmdexec.RunBashCmdWithOutput(ctx, fmt.Sprintf("cat /proc/%d/cgroup | grep -w %s", pid, subSys))
 	if err != nil {
 		return "", fmt.Errorf("run cmd error: %s", err.Error())
 	}
 
-	out := strings.TrimSpace(string(reByte))
+	out := strings.TrimSpace(re)
 	sArr := strings.Split(out, ":")
 	if strings.Index(sArr[1], subSys) < 0 {
 		return "", fmt.Errorf("out string is not valid: %s", out)
@@ -127,13 +127,13 @@ func MoveTaskToCgroup(ctx context.Context, pid int, cgroupPath string) error {
 //}
 
 func GetPidStrListByCgroup(ctx context.Context, cgroupPath string) ([]int, error) {
-	reByte, err := cmdexec.RunBashCmdWithOutput(ctx, fmt.Sprintf("cat %s/tasks", cgroupPath))
+	re, err := cmdexec.RunBashCmdWithOutput(ctx, fmt.Sprintf("cat %s/tasks", cgroupPath))
 	if err != nil {
 		return nil, fmt.Errorf("run cmd error: %s", err.Error())
 	}
 
 	var pidList []int
-	strList := strings.Split(string(reByte), "\n")
+	strList := strings.Split(re, "\n")
 	for _, unit := range strList {
 		if unit == "" {
 			continue

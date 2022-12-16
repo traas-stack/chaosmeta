@@ -52,7 +52,7 @@ int enter_ns(int pid, const char* type) {
 
         int result = syscall(__NR_setns, newns, 0);
         close(newns);
-        if (result < 0) {
+        if (result != 0) {
             fprintf(stderr, "setns error\n");
             return result;
         }
@@ -63,7 +63,7 @@ int enter_ns(int pid, const char* type) {
 
 int main(int argc, char *argv[]) {
     int ret = kill(getpid(), SIGSTOP);
-    if (ret < 0) {
+    if (ret != 0) {
         fprintf(stderr, "stop process error\n");
         return ret;
     }
@@ -152,8 +152,8 @@ int main(int argc, char *argv[]) {
     }
 
     int re = system(cmd);
-    if (re < 0) {
-        fprintf(stderr, "cmd exec error\n");
+    if (re != 0) {
+//        fprintf(stderr, "cmd exec error\n");
         return re;
     }
 

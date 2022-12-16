@@ -37,7 +37,7 @@ const (
 	SIGCONT = 18
 )
 
-func ExistPid(pid int) (bool, error) {
+func ExistPid(ctx context.Context, pid int) (bool, error) {
 	return process.PidExists(int32(pid))
 }
 
@@ -57,19 +57,19 @@ func CheckExistAndKillByKey(ctx context.Context, processKey string) error {
 }
 
 func ExistProcessByKey(ctx context.Context, key string) (bool, error) {
-	reByte, err := cmdexec.RunBashCmdWithOutput(ctx, fmt.Sprintf("ps -ef | grep '%s' | grep -v grep | grep -v '%s inject' | grep -v '%s recover' | wc -l", key, utils.RootName, utils.RootName))
+	re, err := cmdexec.RunBashCmdWithOutput(ctx, fmt.Sprintf("ps -ef | grep '%s' | grep -v grep | grep -v '%s inject' | grep -v '%s recover' | grep -v 'chaosmeta_process ' | wc -l", key, utils.RootName, utils.RootName))
 	if err != nil {
 		return false, fmt.Errorf("cmd exec error: %s", err.Error())
 	}
 
-	if strings.TrimSpace(string(reByte)) == "0" {
+	if strings.TrimSpace(re) == "0" {
 		return false, nil
 	}
 
 	return true, nil
 }
 
-func KillPidWithSignal(pid int, signal int) error {
+func KillPidWithSignal(ctx context.Context, pid int, signal int) error {
 	p, err := process.NewProcess(int32(pid))
 	if err != nil {
 		return fmt.Errorf("find process [%d] error: %s", pid, err.Error())
@@ -96,17 +96,17 @@ func KillPidWithSignal(pid int, signal int) error {
 }
 
 func KillProcessByKey(ctx context.Context, key string, signal int) error {
-	return cmdexec.RunBashCmdWithoutOutput(ctx, fmt.Sprintf("ps -ef | grep '%s' | grep -v grep | grep -v '%s inject' | grep -v '%s recover' | awk '{print $2}' | xargs kill -%d", key, utils.RootName, utils.RootName, signal))
+	return cmdexec.RunBashCmdWithoutOutput(ctx, fmt.Sprintf("ps -ef | grep '%s' | grep -v grep | grep -v '%s inject' | grep -v '%s recover' | grep -v 'chaosmeta_process ' | awk '{print $2}' | xargs kill -%d", key, utils.RootName, utils.RootName, signal))
 }
 
 func GetPidListByKey(ctx context.Context, key string) ([]int, error) {
-	reByte, err := cmdexec.RunBashCmdWithOutput(ctx, fmt.Sprintf("ps -ef | grep '%s' | grep -v grep | grep -v '%s inject' | grep -v '%s recover' | awk '{print $2}'", key, utils.RootName, utils.RootName))
+	re, err := cmdexec.RunBashCmdWithOutput(ctx, fmt.Sprintf("ps -ef | grep '%s' | grep -v grep | grep -v '%s inject' | grep -v '%s recover' | grep -v 'chaosmeta_process ' | awk '{print $2}'", key, utils.RootName, utils.RootName))
 	if err != nil {
 		return nil, fmt.Errorf("get process list error: %s", err.Error())
 	}
 
 	var pidList []int
-	pStrList := strings.Split(string(reByte), "\n")
+	pStrList := strings.Split(re, "\n")
 	for _, unitPStr := range pStrList {
 		if unitPStr == "" {
 			continue
@@ -121,7 +121,7 @@ func GetPidListByKey(ctx context.Context, key string) ([]int, error) {
 	return pidList, nil
 }
 
-func GetPidListByStr(pidStr string) ([]int, error) {
+func GetPidListByStr(ctx context.Context, pidStr string) ([]int, error) {
 	var pidList []int
 
 	pidStrList := strings.Split(pidStr, ",")
@@ -136,7 +136,7 @@ func GetPidListByStr(pidStr string) ([]int, error) {
 			return nil, fmt.Errorf("pid[%s] is not a int: %s", unitPid, err.Error())
 		}
 
-		isExist, err := ExistPid(pid)
+		isExist, err := ExistPid(ctx, pid)
 		if err != nil {
 			return nil, fmt.Errorf("check pid[%d] exist error: %s", pid, err.Error())
 		}
@@ -153,7 +153,7 @@ func GetPidListByStr(pidStr string) ([]int, error) {
 
 func GetPidListByListStrAndKey(ctx context.Context, pidListStr, key string) (pidList []int, err error) {
 	if pidListStr != "" {
-		pidList, err = GetPidListByStr(pidListStr)
+		pidList, err = GetPidListByStr(ctx, pidListStr)
 		if err != nil {
 			return nil, fmt.Errorf("get pid list by args[%s] error: %s", pidListStr, err.Error())
 		}
@@ -175,12 +175,12 @@ func GetPidListByListStrAndKey(ctx context.Context, pidListStr, key string) (pid
 }
 
 func GetPidByKeyWithoutRunUser(ctx context.Context, key string) (int, error) {
-	reByte, err := cmdexec.RunBashCmdWithOutput(ctx, fmt.Sprintf("ps -ef | grep '%s' | grep -v grep | grep -v runuser | awk '{print $2}'", key))
+	re, err := cmdexec.RunBashCmdWithOutput(ctx, fmt.Sprintf("ps -ef | grep '%s' | grep -v grep | grep -v runuser | awk '{print $2}'", key))
 	if err != nil {
 		return utils.NoPid, fmt.Errorf("grep process error: %s", err.Error())
 	}
 
-	pidStr := strings.TrimSpace(string(reByte))
+	pidStr := strings.TrimSpace(re)
 	pid, err := strconv.Atoi(pidStr)
 	if err != nil {
 		return utils.NoPid, fmt.Errorf("\"%s\" change to int error: %s", pidStr, err.Error())
@@ -192,13 +192,13 @@ func GetPidByKeyWithoutRunUser(ctx context.Context, key string) (int, error) {
 func WaitDefunctProcess(ctx context.Context) {
 	logger := log.GetLogger(ctx)
 
-	reByte, err := cmdexec.RunBashCmdWithOutput(ctx, fmt.Sprintf("ps -ef | grep '%d' | grep '%s' | grep -v grep | awk '{print $2}'", os.Getpid(), "defunct"))
+	re, err := cmdexec.RunBashCmdWithOutput(ctx, fmt.Sprintf("ps -ef | grep '%d' | grep '%s' | grep -v grep | awk '{print $2}'", os.Getpid(), "defunct"))
 	if err != nil {
 		logger.Warnf("get defunct process error: %s", err.Error())
 		return
 	}
 
-	output := strings.TrimSpace(string(reByte))
+	output := strings.TrimSpace(re)
 	if output == "" {
 		logger.Debugf("no defunct process")
 		return

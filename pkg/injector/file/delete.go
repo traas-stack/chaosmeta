@@ -20,9 +20,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/filesys"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/namespace"
 	"github.com/spf13/cobra"
-	"os"
 	"path/filepath"
 )
 
@@ -55,58 +57,50 @@ func (i *DeleteInjector) SetOption(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&i.Args.Path, "path", "p", "", "file path, include dir and file name")
 }
 
+func (i *DeleteInjector) getCmdExecutor(method, args string) *cmdexec.CmdExecutor {
+	return &cmdexec.CmdExecutor{
+		ContainerId:      i.Info.ContainerId,
+		ContainerRuntime: i.Info.ContainerRuntime,
+		ContainerNs:      []string{namespace.MNT},
+		ToolKey:          FileKey,
+		Method:           method,
+		Fault:            FaultFileDelete,
+		Args:             args,
+	}
+}
+
 func (i *DeleteInjector) Validator(ctx context.Context) error {
+	if err := i.BaseInjector.Validator(ctx); err != nil {
+		return err
+	}
+
 	if i.Args.Path == "" {
 		return fmt.Errorf("\"path\" is empty")
 	}
 
-	var err error
-	i.Args.Path, err = filesys.GetAbsPath(i.Args.Path)
-	if err != nil {
-		return fmt.Errorf("get absolute path of path[%s] error: %s", i.Args.Path, err.Error())
+	if i.Info.ContainerRuntime != "" {
+		if !filepath.IsAbs(i.Args.Path) {
+			return fmt.Errorf("\"path\" must provide absolute path")
+		}
+	} else {
+		var err error
+		i.Args.Path, err = filesys.GetAbsPath(i.Args.Path)
+		if err != nil {
+			return fmt.Errorf("\"path\"[%s] get absolute path error: %s", i.Args.Path, err.Error())
+		}
 	}
 
-	isPathExist, err := filesys.ExistFile(i.Args.Path)
-	if err != nil {
-		return fmt.Errorf("\"path\"[%s] check exist error: %s", i.Args.Path, err.Error())
-	}
-
-	if !isPathExist {
-		return fmt.Errorf("\"path\"[%s] is not an existed file", i.Args.Path)
-	}
-
-	return i.BaseInjector.Validator(ctx)
-}
-
-func (i *DeleteInjector) getBackupDir() string {
-	return fmt.Sprintf("%s%s", BackUpDir, i.Info.Uid)
+	return i.getCmdExecutor(utils.MethodValidator, i.Args.Path).ExecTool(ctx)
 }
 
 func (i *DeleteInjector) Inject(ctx context.Context) error {
-	backupDir := i.getBackupDir()
-	if err := filesys.MkdirP(ctx, backupDir); err != nil {
-		return fmt.Errorf("create backup dir[%s] error: %s", backupDir, err.Error())
-	}
-
-	return os.Rename(i.Args.Path, fmt.Sprintf("%s/%s", backupDir, filepath.Base(i.Args.Path)))
+	return i.getCmdExecutor(utils.MethodInject, fmt.Sprintf("%s %s", i.Args.Path, i.Info.Uid)).ExecTool(ctx)
 }
 
 func (i *DeleteInjector) Recover(ctx context.Context) error {
 	if i.BaseInjector.Recover(ctx) == nil {
 		return nil
 	}
-	backupDir := i.getBackupDir()
 
-	isExist, err := filesys.ExistPath(i.Args.Path)
-	if err != nil {
-		return fmt.Errorf("check path[%s] exist error: %s", i.Args.Path, err.Error())
-	}
-	if !isExist {
-		backupFile := fmt.Sprintf("%s/%s", backupDir, filepath.Base(i.Args.Path))
-		if err := os.Rename(backupFile, i.Args.Path); err != nil {
-			return fmt.Errorf("mv from[%s] to[%s] error: %s", backupFile, i.Args.Path, err.Error())
-		}
-	}
-
-	return os.Remove(backupDir)
+	return i.getCmdExecutor(utils.MethodRecover, fmt.Sprintf("%s %s", i.Args.Path, i.Info.Uid)).ExecTool(ctx)
 }

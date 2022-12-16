@@ -19,7 +19,6 @@ package testcase
 import (
 	"context"
 	"fmt"
-	file2 "github.com/ChaosMetaverse/chaosmetad/pkg/injector/file"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/filesys"
 	"github.com/ChaosMetaverse/chaosmetad/test/common"
@@ -29,6 +28,10 @@ import (
 
 var (
 	fileDeleteFileName = "chaosmeta_file.test"
+)
+
+const (
+	BackUpDir = "/tmp/chaosmeta_backup_file"
 )
 
 func GetFileDeleteTest() []common.TestCase {
@@ -93,7 +96,7 @@ func checkDelete(file string, ifExist bool) error {
 		return fmt.Errorf("expected exist status: %v, actually: %v", ifExist, exist)
 	}
 
-	backupFile := fmt.Sprintf("%s%s/%s", file2.BackUpDir, common.UID, file)
+	backupFile := fmt.Sprintf("%s%s/%s", BackUpDir, common.UID, file)
 	exist, err = filesys.ExistFile(backupFile)
 	if err != nil {
 		return fmt.Errorf("check file[%s] exist error: %s", backupFile, err.Error())

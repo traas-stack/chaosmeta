@@ -112,6 +112,10 @@ func getNproc() (int, error) {
 	}
 
 	reStr := strings.TrimSpace(string(re))
+	if reStr == "unlimited" {
+		return -1, fmt.Errorf("nproc is unlimited")
+	}
+
 	nproc, err := strconv.Atoi(reStr)
 	if err != nil {
 		return -1, fmt.Errorf("%s is not a num", reStr)

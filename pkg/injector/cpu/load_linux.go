@@ -54,18 +54,18 @@ func (i *LoadInjector) GetRuntime() interface{} {
 	return &i.Runtime
 }
 
-//func (i *LoadInjector) SetDefault() {
-//	i.BaseInjector.SetDefault()
-//
-//	if i.Info.ContainerRuntime != "" {
-//		i.Info.ContainerNs = []string{namespace.PID}
-//	}
-//}
-
 func (i *LoadInjector) SetOption(cmd *cobra.Command) {
 	// i.BaseInjector.SetOption(cmd)
 
 	cmd.Flags().IntVarP(&i.Args.Count, "count", "c", 0, "cpu load value（default 0, mean: cpu core num * 4）")
+}
+
+func (i *LoadInjector) getCmdExecutor() *cmdexec.CmdExecutor {
+	return &cmdexec.CmdExecutor{
+		ContainerId:      i.Info.ContainerId,
+		ContainerRuntime: i.Info.ContainerRuntime,
+		ContainerNs:      []string{namespace.PID},
+	}
 }
 
 func (i *LoadInjector) Validator(ctx context.Context) error {
@@ -91,20 +91,15 @@ func (i *LoadInjector) Validator(ctx context.Context) error {
 
 func (i *LoadInjector) Inject(ctx context.Context) error {
 	cmd := fmt.Sprintf("%s %s %d", utils.GetToolPath(CpuLoadKey), i.Info.Uid, i.Args.Count)
-	var err error
-	if i.Info.ContainerRuntime != "" {
-		_, err = cmdexec.ExecContainer(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, []string{namespace.PID}, cmd, false)
-	} else {
-		err = cmdexec.StartBashCmd(ctx, cmd)
-	}
-
-	if err != nil {
+	if err :=i.getCmdExecutor().StartCmd(ctx, cmd); err != nil {
 		if err := i.Recover(ctx); err != nil {
 			log.GetLogger(ctx).Warnf("undo error: %s", err.Error())
 		}
+
+		return err
 	}
 
-	return err
+	return nil
 }
 
 func (i *LoadInjector) Recover(ctx context.Context) error {

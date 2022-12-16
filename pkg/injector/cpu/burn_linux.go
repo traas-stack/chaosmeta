@@ -65,6 +65,14 @@ func (i *BurnInjector) GetRuntime() interface{} {
 //	}
 //}
 
+func (i *BurnInjector) getCmdExecutor() *cmdexec.CmdExecutor {
+	return &cmdexec.CmdExecutor{
+		ContainerId:      i.Info.ContainerId,
+		ContainerRuntime: i.Info.ContainerRuntime,
+		ContainerNs:      []string{namespace.PID},
+	}
+}
+
 func (i *BurnInjector) SetOption(cmd *cobra.Command) {
 	// i.BaseInjector.SetOption(cmd)
 
@@ -142,18 +150,19 @@ func (i *BurnInjector) Inject(ctx context.Context) error {
 		timeout, _ = utils.GetTimeSecond(i.Info.Timeout)
 	}
 
+	e := i.getCmdExecutor()
 	for c := 0; c < len(coreList); c++ {
-		var err error
+		//var err error
 		cmd := fmt.Sprintf("taskset -c %d %s %s %d %d %d", coreList[c], utils.GetToolPath(CpuBurnKey), i.Info.Uid, coreList[c], i.Args.Percent, timeout)
 
-		if i.Info.ContainerRuntime != "" {
-			_, err = cmdexec.ExecContainer(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, []string{namespace.PID}, cmd, false)
-			//_, err = cmdexec.Exec(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, i.Info.ContainerNs, cmdexec.ExecWait, cmd)
-		} else {
-			_, err = cmdexec.StartBashCmdAndWaitPid(ctx, cmd)
-		}
+		//if i.Info.ContainerRuntime != "" {
+		//	_, err = cmdexec.ExecContainer(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, []string{namespace.PID}, cmd, false)
+		//	//_, err = cmdexec.ExecTool(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, i.Info.ContainerNs, cmdexec.ExecWait, cmd)
+		//} else {
+		//	_, err = cmdexec.StartBashCmdAndWaitPid(ctx, cmd)
+		//}
 
-		if err != nil {
+		if err := e.StartCmdAndWait(ctx, cmd); err != nil {
 			if err := i.Recover(ctx); err != nil {
 				logger.Warnf("undo error: %s", err.Error())
 			}

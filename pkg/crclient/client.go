@@ -41,7 +41,7 @@ type Client interface {
 }
 
 func GetClient(ctx context.Context, cr string) (Client, error) {
-	log.GetLogger(ctx).Debugf("create %s client", cr)
+	log.GetLogger(ctx).Debugf("get %s client", cr)
 
 	switch cr {
 	case CrDocker:

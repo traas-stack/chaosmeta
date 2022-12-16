@@ -18,6 +18,7 @@ package errutil
 
 import (
 	"context"
+	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
 	"os"
 )
@@ -32,6 +33,10 @@ const (
 	UnknownErr
 )
 
+const (
+	ExpectedErr = 99
+)
+
 func SolveErr(ctx context.Context, code int, msg string) {
 	if code == NoErr {
 		log.GetLogger(ctx).Debug(msg)
@@ -39,4 +44,9 @@ func SolveErr(ctx context.Context, code int, msg string) {
 	}
 	log.GetLogger(ctx).Error(msg)
 	os.Exit(code)
+}
+
+func ExitExpectedErr(msg string) {
+	fmt.Printf("[error]%s\n", msg)
+	os.Exit(ExpectedErr)
 }

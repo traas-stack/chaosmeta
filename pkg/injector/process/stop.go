@@ -20,7 +20,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/process"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/namespace"
 	"github.com/spf13/cobra"
 )
 
@@ -57,50 +59,27 @@ func (i *StopInjector) SetOption(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&i.Args.Key, "key", "k", "", "the key used to grep to get target process, the effect is equivalent to \"ps -ef | grep [key]\". if \"pid\" provided, \"key\" will be ignored")
 }
 
+func (i *StopInjector) getCmdExecutor(method, args string) *cmdexec.CmdExecutor {
+	return &cmdexec.CmdExecutor{
+		ContainerId:      i.Info.ContainerId,
+		ContainerRuntime: i.Info.ContainerRuntime,
+		ContainerNs:      []string{namespace.MNT, namespace.PID},
+		ToolKey:          ProcessKey,
+		Method:           method,
+		Fault:            FaultProcessStop,
+		Args:             args,
+	}
+}
+
 func (i *StopInjector) Validator(ctx context.Context) error {
-	if i.Args.Pid < 0 {
-		return fmt.Errorf("\"pid\" can not less than 0")
+	if err := i.BaseInjector.Validator(ctx); err != nil {
+		return err
 	}
-
-	if i.Args.Pid == 0 && i.Args.Key == "" {
-		return fmt.Errorf("must provide \"pid\" or \"key\"")
-	}
-
-	if i.Args.Pid > 0 {
-		exist, err := process.ExistPid(i.Args.Pid)
-		if err != nil {
-			return fmt.Errorf("check pid[%d] exist error: %s", i.Args.Pid, err.Error())
-		}
-
-		if !exist {
-			return fmt.Errorf("pid[%d] not exist", i.Args.Pid)
-		}
-	} else {
-		exist, err := process.ExistProcessByKey(ctx, i.Args.Key)
-		if err != nil {
-			return fmt.Errorf("check pid by key[%s] error: %s", i.Args.Key, err.Error())
-		}
-
-		if !exist {
-			return fmt.Errorf("no process grep by key[%s]", i.Args.Key)
-		}
-	}
-
-	return i.BaseInjector.Validator(ctx)
+	return i.getCmdExecutor(utils.MethodValidator, fmt.Sprintf("%d '%s'", i.Args.Pid, i.Args.Key)).ExecTool(ctx)
 }
 
 func (i *StopInjector) Inject(ctx context.Context) error {
-	if i.Args.Pid > 0 {
-		if err := process.KillPidWithSignal(i.Args.Pid, process.SIGSTOP); err != nil {
-			return err
-		}
-	} else {
-		if err := process.KillProcessByKey(ctx, i.Args.Key, process.SIGSTOP); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return i.getCmdExecutor(utils.MethodInject, fmt.Sprintf("%d '%s'", i.Args.Pid, i.Args.Key)).ExecTool(ctx)
 }
 
 func (i *StopInjector) Recover(ctx context.Context) error {
@@ -108,15 +87,5 @@ func (i *StopInjector) Recover(ctx context.Context) error {
 		return nil
 	}
 
-	if i.Args.Pid > 0 {
-		if err := process.KillPidWithSignal(i.Args.Pid, process.SIGCONT); err != nil {
-			return err
-		}
-	} else {
-		if err := process.KillProcessByKey(ctx, i.Args.Key, process.SIGCONT); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return i.getCmdExecutor(utils.MethodRecover, fmt.Sprintf("%d '%s'", i.Args.Pid, i.Args.Key)).ExecTool(ctx)
 }

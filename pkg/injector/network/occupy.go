@@ -94,7 +94,7 @@ func (i *OccupyInjector) Inject(ctx context.Context) error {
 
 	if pid != utils.NoPid {
 		if i.Args.Force {
-			if err := process.KillPidWithSignal(pid, process.SIGKILL); err != nil {
+			if err := process.KillPidWithSignal(ctx, pid, process.SIGKILL); err != nil {
 				return fmt.Errorf("kill occupied process[%d] error: %s", pid, err.Error())
 			}
 		} else {

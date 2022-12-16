@@ -170,12 +170,12 @@ func GetDiskIOBurnTest() []common.TestCase {
 }
 
 func getDevByDir(dir string) (string, error) {
-	reByte, err := cmdexec.RunBashCmdWithOutput(context.Background(), fmt.Sprintf("df -h %s | sed '1d' | awk '{print $1}'", dir))
+	re, err := cmdexec.RunBashCmdWithOutput(context.Background(), fmt.Sprintf("df -h %s | sed '1d' | awk '{print $1}'", dir))
 	if err != nil {
 		return "", err
 	}
 
-	return strings.TrimSpace(string(reByte)), nil
+	return strings.TrimSpace(re), nil
 }
 
 func checkExistPro(ifExist bool, dir string) error {

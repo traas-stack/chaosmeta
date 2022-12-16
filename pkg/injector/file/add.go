@@ -20,11 +20,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/filesys"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/namespace"
 	"github.com/spf13/cobra"
-	"os"
 	"path/filepath"
 )
 
@@ -63,42 +63,36 @@ func (i *AddInjector) SetOption(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&i.Args.Force, "force", "f", false, "if target dir not exist, will create. if target file exist, will overwrite")
 }
 
+func (i *AddInjector) getCmdExecutor(method, args string) *cmdexec.CmdExecutor {
+	return &cmdexec.CmdExecutor{
+		ContainerId:      i.Info.ContainerId,
+		ContainerRuntime: i.Info.ContainerRuntime,
+		ContainerNs:      []string{namespace.MNT},
+		ToolKey:          FileKey,
+		Method:           method,
+		Fault:            FaultFileAdd,
+		Args:             args,
+	}
+}
+
 func (i *AddInjector) Validator(ctx context.Context) error {
+	if err := i.BaseInjector.Validator(ctx); err != nil {
+		return err
+	}
+
 	if i.Args.Path == "" {
 		return fmt.Errorf("\"path\" is empty")
 	}
 
-	var err error
-	i.Args.Path, err = filesys.GetAbsPath(i.Args.Path)
-	if err != nil {
-		return fmt.Errorf("get absolute path of path[%s] error: %s", i.Args.Path, err.Error())
-	}
-
-	isPathExist, err := filesys.ExistPath(i.Args.Path)
-	if err != nil {
-		return fmt.Errorf("\"path\"[%s] check exist error: %s", i.Args.Path, err.Error())
-	}
-
-	dir := filepath.Dir(i.Args.Path)
-	isDirExist, err := filesys.ExistPath(dir)
-	if err != nil {
-		return fmt.Errorf("check dir[%s] exist error: %s", dir, err.Error())
-	}
-
-	if isPathExist {
-		isFile, _ := filesys.ExistFile(i.Args.Path)
-		if !isFile {
-			return fmt.Errorf("\"path\"[%s] is an existed dir", i.Args.Path)
+	if i.Info.ContainerRuntime != "" {
+		if !filepath.IsAbs(i.Args.Path) {
+			return fmt.Errorf("\"path\" must provide absolute path")
 		}
-	}
-
-	if !i.Args.Force {
-		if isPathExist {
-			return fmt.Errorf("file[%s] exist, if want to force to overwrite, please provide [-f] or [--force] args", i.Args.Path)
-		}
-
-		if !isDirExist {
-			return fmt.Errorf("dir[%s] is not exist, if want to auto create, please provide [-f] or [--force] args", dir)
+	} else {
+		var err error
+		i.Args.Path, err = filesys.GetAbsPath(i.Args.Path)
+		if err != nil {
+			return fmt.Errorf("\"path\"[%s] get absolute path error: %s", i.Args.Path, err.Error())
 		}
 	}
 
@@ -108,36 +102,11 @@ func (i *AddInjector) Validator(ctx context.Context) error {
 		}
 	}
 
-	return i.BaseInjector.Validator(ctx)
+	return i.getCmdExecutor(utils.MethodValidator, fmt.Sprintf("%s %v", i.Args.Path, i.Args.Force)).ExecTool(ctx)
 }
 
 func (i *AddInjector) Inject(ctx context.Context) error {
-	logger := log.GetLogger(ctx)
-
-	dir := filepath.Dir(i.Args.Path)
-	isDirExist, _ := filesys.ExistPath(dir)
-
-	if !isDirExist {
-		if err := filesys.MkdirP(ctx, dir); err != nil {
-			return fmt.Errorf("mkdir dir[%s] error: %s", dir, err.Error())
-		}
-	}
-
-	if err := cmdexec.RunBashCmdWithoutOutput(ctx, fmt.Sprintf("echo -en \"%s\" > %s", i.Args.Content, i.Args.Path)); err != nil {
-		return fmt.Errorf("add content to %s error: %s", i.Args.Path, err.Error())
-	}
-
-	if i.Args.Permission != "" {
-		if err := filesys.Chmod(ctx, i.Args.Path, i.Args.Permission); err != nil {
-			if err := i.Recover(ctx); err != nil {
-				logger.Warnf("undo error: %s", err.Error())
-			}
-
-			return fmt.Errorf("chmod file[%s] to[%s] error: %s", i.Args.Path, i.Args.Permission, err.Error())
-		}
-	}
-
-	return nil
+	return i.getCmdExecutor(utils.MethodInject, fmt.Sprintf("%s '%s' '%s'", i.Args.Path, i.Args.Permission, i.Args.Content)).ExecTool(ctx)
 }
 
 func (i *AddInjector) Recover(ctx context.Context) error {
@@ -145,14 +114,5 @@ func (i *AddInjector) Recover(ctx context.Context) error {
 		return nil
 	}
 
-	isExist, err := filesys.ExistPath(i.Args.Path)
-	if err != nil {
-		return fmt.Errorf("check file[%s] exist error: %s", i.Args.Path, err.Error())
-	}
-
-	if isExist {
-		return os.Remove(i.Args.Path)
-	}
-
-	return nil
+	return i.getCmdExecutor(utils.MethodRecover, i.Args.Path).ExecTool(ctx)
 }

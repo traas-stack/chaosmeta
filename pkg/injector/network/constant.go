@@ -36,4 +36,6 @@ const (
 	FaultReorder   = "reorder"
 	DefaultGap     = 3
 	DefaultLatency = "1s"
+
+	NetworkKey = "chaosmeta_network"
 )

@@ -35,9 +35,9 @@ const (
 	CmdSplit     = " && "
 	PortSplit    = "-"
 
-	RootName   = "chaosmetad"
-	TimeFormat = "2006-01-02 15:04:05"
-	RecoverLog = "/tmp/chaosmetad_recover.log" //TODO: Need to add log cleanup strategy
+	RootName       = "chaosmetad"
+	TimeFormat     = "2006-01-02 15:04:05"
+	RecoverLog     = "/tmp/chaosmetad_recover.log"
 	RootCgroupPath = "/sys/fs/cgroup"
 )
 
@@ -52,6 +52,12 @@ const (
 
 const (
 	CtxTraceId = "TraceId"
+)
+
+const (
+	MethodValidator = "validator"
+	MethodInject    = "inject"
+	MethodRecover   = "recover"
 )
 
 // task status
@@ -72,6 +78,16 @@ func NewUuid() string {
 	return uuid.New().String()
 }
 
+func StrListContain(arr []string, target string) bool {
+	for _, unit := range arr {
+		if target == unit {
+			return true
+		}
+	}
+
+	return false
+}
+
 func GetRunPath() string {
 	path, _ := filepath.Abs(filepath.Dir(os.Args[0]))
 	return path
@@ -79,6 +95,10 @@ func GetRunPath() string {
 
 func GetToolPath(tool string) string {
 	return fmt.Sprintf("%s/tools/%s", GetRunPath(), tool)
+}
+
+func GetContainerPath(tool string) string {
+	return fmt.Sprintf("/tmp/%s", tool)
 }
 
 func GetSleepRecoverCmd(sleepTime int64, uid string) string {

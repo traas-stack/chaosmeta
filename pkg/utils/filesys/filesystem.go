@@ -19,8 +19,8 @@ package filesys
 import (
 	"context"
 	"fmt"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/crclient"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/namespace"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -33,6 +33,20 @@ func MkdirP(ctx context.Context, path string) error {
 
 func Chmod(ctx context.Context, path, perm string) error {
 	return cmdexec.RunBashCmdWithoutOutput(ctx, fmt.Sprintf("chmod %s %s", perm, path))
+}
+
+//func GetPermCmd(path string) string {
+//	return "stat -c '%a' " + path
+//}
+
+func GetPerm(ctx context.Context, cr, cId string, path string) (perm string, err error) {
+	cmd := "stat -c '%a' " + path
+	if cr == "" {
+		perm, err = cmdexec.RunBashCmdWithOutput(ctx, cmd)
+	} else {
+		perm, err = cmdexec.ExecContainer(ctx, cr, cId, []string{namespace.MNT}, cmd, cmdexec.ExecRun)
+	}
+	return strings.TrimSpace(perm), err
 }
 
 func GetPermission(path string) (string, error) {
@@ -135,7 +149,7 @@ func HasFileLineByKey(ctx context.Context, key string, file string) (bool, error
 		return false, err
 	}
 
-	return strings.TrimSpace(string(re)) != "0", nil
+	return strings.TrimSpace(re) != "0", nil
 }
 
 func GetProMaxFd(ctx context.Context) (int, error) {
@@ -144,7 +158,7 @@ func GetProMaxFd(ctx context.Context) (int, error) {
 		return -1, fmt.Errorf("cmd exec error: %s", err.Error())
 	}
 
-	reStr := strings.TrimSpace(string(re))
+	reStr := strings.TrimSpace(re)
 	unitMax, err := strconv.Atoi(reStr)
 	if err != nil {
 		return -1, fmt.Errorf("%s is not a num: %s", reStr, err.Error())
@@ -159,7 +173,7 @@ func GetKernelFdStatus(ctx context.Context) (int, int, error) {
 		return -1, -1, fmt.Errorf("cmd exec error: %s", err.Error())
 	}
 
-	reStr := strings.TrimSpace(string(re))
+	reStr := strings.TrimSpace(re)
 	reArr := strings.Split(reStr, " ")
 	if len(reArr) != 2 {
 		return -1, -1, fmt.Errorf("unexpected output: %s", reStr)
@@ -198,13 +212,4 @@ func CreateFdFile(ctx context.Context, dir, filePrefix string, count int) error 
 	}
 
 	return nil
-}
-
-func CpContainerFile(ctx context.Context, cr, containerID, src, dst string) error {
-	client, err := crclient.GetClient(ctx, cr)
-	if err != nil {
-		return fmt.Errorf("get %s client error: %s", cr, err.Error())
-	}
-
-	return client.CpFile(ctx, containerID, src, dst)
 }

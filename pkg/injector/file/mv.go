@@ -20,9 +20,12 @@ import (
 	"context"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/filesys"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/namespace"
 	"github.com/spf13/cobra"
-	"os"
+	"path/filepath"
 )
 
 func init() {
@@ -56,50 +59,58 @@ func (i *MvInjector) SetOption(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&i.Args.Dst, "dst", "d", "", "destination file path, include dir and file name")
 }
 
+func (i *MvInjector) getCmdExecutor(method, args string) *cmdexec.CmdExecutor {
+	return &cmdexec.CmdExecutor{
+		ContainerId:      i.Info.ContainerId,
+		ContainerRuntime: i.Info.ContainerRuntime,
+		ContainerNs:      []string{namespace.MNT},
+		ToolKey:          FileKey,
+		Method:           method,
+		Fault:            FaultFileMv,
+		Args:             args,
+	}
+}
+
 func (i *MvInjector) Validator(ctx context.Context) error {
+	if err := i.BaseInjector.Validator(ctx); err != nil {
+		return err
+	}
+
 	if i.Args.Src == "" {
 		return fmt.Errorf("\"src\" is empty")
-	}
-
-	var err error
-	i.Args.Src, err = filesys.GetAbsPath(i.Args.Src)
-	if err != nil {
-		return fmt.Errorf("get absolute path of src[%s] error: %s", i.Args.Src, err.Error())
-	}
-
-	isPathExist, err := filesys.ExistFile(i.Args.Src)
-	if err != nil {
-		return fmt.Errorf("\"src\"[%s] check exist error: %s", i.Args.Src, err.Error())
-	}
-
-	if !isPathExist {
-		return fmt.Errorf("\"src\"[%s] is not an existed file", i.Args.Src)
 	}
 
 	if i.Args.Dst == "" {
 		return fmt.Errorf("\"dst\" is empty")
 	}
 
-	i.Args.Dst, err = filesys.GetAbsPath(i.Args.Dst)
-	if err != nil {
-		return fmt.Errorf("get absolute path of dst[%s] error: %s", i.Args.Dst, err.Error())
+	if i.Info.ContainerRuntime != "" {
+		if !filepath.IsAbs(i.Args.Src) {
+			return fmt.Errorf("\"src\" must provide absolute path")
+		}
+
+		if !filepath.IsAbs(i.Args.Dst) {
+			return fmt.Errorf("\"dst\" must provide absolute path")
+		}
+	} else {
+		var err error
+		i.Args.Src, err = filesys.GetAbsPath(i.Args.Src)
+		if err != nil {
+			return fmt.Errorf("\"src\"[%s] get absolute path error: %s", i.Args.Src, err.Error())
+		}
+
+		i.Args.Dst, err = filesys.GetAbsPath(i.Args.Dst)
+		if err != nil {
+			return fmt.Errorf("\"dst\"[%s] get absolute path error: %s", i.Args.Dst, err.Error())
+		}
 	}
 
-	isPathExist, err = filesys.ExistPath(i.Args.Dst)
-	if err != nil {
-		return fmt.Errorf("\"dst\"[%s] check exist error: %s", i.Args.Dst, err.Error())
-	}
-
-	if isPathExist {
-		return fmt.Errorf("\"dst\"[%s] is existed", i.Args.Dst)
-	}
-
-	return i.BaseInjector.Validator(ctx)
+	return i.getCmdExecutor(utils.MethodValidator, fmt.Sprintf("%s %s", i.Args.Src, i.Args.Dst)).ExecTool(ctx)
 }
 
 // Inject TODO: Consider whether to add a backup operation, copy first and then move
 func (i *MvInjector) Inject(ctx context.Context) error {
-	return os.Rename(i.Args.Src, i.Args.Dst)
+	return i.getCmdExecutor(utils.MethodInject, fmt.Sprintf("%s %s", i.Args.Src, i.Args.Dst)).ExecTool(ctx)
 }
 
 func (i *MvInjector) Recover(ctx context.Context) error {
@@ -107,14 +118,5 @@ func (i *MvInjector) Recover(ctx context.Context) error {
 		return nil
 	}
 
-	isExist, err := filesys.ExistPath(i.Args.Src)
-	if err != nil {
-		return fmt.Errorf("check src[%s] exist error: %s", i.Args.Src, err.Error())
-	}
-
-	if isExist {
-		return nil
-	}
-
-	return os.Rename(i.Args.Dst, i.Args.Src)
+	return i.getCmdExecutor(utils.MethodRecover, fmt.Sprintf("%s %s", i.Args.Src, i.Args.Dst)).ExecTool(ctx)
 }

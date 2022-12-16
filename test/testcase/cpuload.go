@@ -86,7 +86,7 @@ func checkProcessCountByKey(ctx context.Context, key string, count int) error {
 		return fmt.Errorf("cmd run error: %s", err.Error())
 	}
 
-	nowCount := strings.TrimSpace(string(re))
+	nowCount := strings.TrimSpace(re)
 	if nowCount != strconv.Itoa(count) {
 		return fmt.Errorf("expected count: %d, now count: %s", count, nowCount)
 	}

@@ -81,7 +81,7 @@ func GetProKillTest() []common.TestCase {
 			Check: func() error {
 				time.Sleep(proKillSleepTime)
 				fmt.Printf("target pid: %d\n", proKillPid)
-				proExist, err := process.ExistPid(proKillPid)
+				proExist, err := process.ExistPid(ctx, proKillPid)
 				if err != nil {
 					return fmt.Errorf("check pid[%d] exist error: %s", proKillPid, err.Error())
 				}
@@ -93,27 +93,27 @@ func GetProKillTest() []common.TestCase {
 				return nil
 			},
 			CheckRecover: func() error {
-				return checkProExistByKey(ctx, proKillCmd, true)
+				return checkProExistByKey(ctx, "", "", proKillCmd, true)
 			},
 		},
 		{
 			Args:  fmt.Sprintf("-k '%s' -r '%s'", proKillCmd, proKillCmd),
 			Error: false,
 			Check: func() error {
-				return checkProExistByKey(ctx, proKillCmd, false)
+				return checkProExistByKey(ctx, "", "", proKillCmd, false)
 			},
 			CheckRecover: func() error {
-				return checkProExistByKey(ctx, proKillCmd, true)
+				return checkProExistByKey(ctx, "", "", proKillCmd, true)
 			},
 		},
 		{
 			Args:  fmt.Sprintf("-k '%s' -r '%s'", proKillCmd, "chaosfalsed"),
 			Error: false,
 			Check: func() error {
-				return checkProExistByKey(ctx, proKillCmd, false)
+				return checkProExistByKey(ctx, "", "", proKillCmd, false)
 			},
 			CheckRecover: func() error {
-				return checkProExistByKey(ctx, proKillCmd, false)
+				return checkProExistByKey(ctx, "", "", proKillCmd, false)
 			},
 		},
 	}
@@ -132,7 +132,7 @@ func GetProKillTest() []common.TestCase {
 	return tempCaseList
 }
 
-func checkProExistByKey(ctx context.Context, key string, expected bool) error {
+func checkProExistByKey(ctx context.Context, cr, cId, key string, expected bool) error {
 	fmt.Printf("expected exist status: %v\n", expected)
 	time.Sleep(proKillSleepTime)
 	exist, err := process.ExistProcessByKey(ctx, key)
