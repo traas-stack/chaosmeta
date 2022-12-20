@@ -62,7 +62,7 @@ func (i *DeleteInjector) getCmdExecutor(method, args string) *cmdexec.CmdExecuto
 		ContainerId:      i.Info.ContainerId,
 		ContainerRuntime: i.Info.ContainerRuntime,
 		ContainerNs:      []string{namespace.MNT},
-		ToolKey:          FileKey,
+		ToolKey:          FileExec,
 		Method:           method,
 		Fault:            FaultFileDelete,
 		Args:             args,

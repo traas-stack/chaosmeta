@@ -37,5 +37,5 @@ const (
 	DefaultGap     = 3
 	DefaultLatency = "1s"
 
-	NetworkKey = "chaosmeta_network"
+	NetworkExec = "chaosmeta_network"
 )

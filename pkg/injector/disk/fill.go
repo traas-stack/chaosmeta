@@ -76,7 +76,7 @@ func (i *FillInjector) getCmdExecutor(method, args string) *cmdexec.CmdExecutor 
 		ContainerId:      i.Info.ContainerId,
 		ContainerRuntime: i.Info.ContainerRuntime,
 		ContainerNs:      []string{namespace.MNT},
-		ToolKey:          DiskFillKey,
+		ToolKey:          DiskFillExec,
 		Method:           method,
 		Fault:            FaultDiskFill,
 		Args:             args,

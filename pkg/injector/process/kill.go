@@ -69,7 +69,7 @@ func (i *KillInjector) getCmdExecutor(method, args string) *cmdexec.CmdExecutor 
 		ContainerId:      i.Info.ContainerId,
 		ContainerRuntime: i.Info.ContainerRuntime,
 		ContainerNs:      []string{namespace.MNT, namespace.PID},
-		ToolKey:          ProcessKey,
+		ToolKey:          ProcessExec,
 		Method:           method,
 		Fault:            FaultProcessKill,
 		Args:             args,

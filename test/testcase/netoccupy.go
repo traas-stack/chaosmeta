@@ -117,7 +117,7 @@ func GetNetOccupyTest() []common.TestCase {
 }
 
 func checkPortOccupy(targetPid int, eq bool) error {
-	pid, err := net2.GetPidByPort(context.Background(), netOccupyPort, net2.ProtocolTCP)
+	pid, err := net2.GetPidByPort(context.Background(), "", "", netOccupyPort, net2.ProtocolTCP)
 	if err != nil {
 		return err
 	}

@@ -68,7 +68,7 @@ func (i *AddInjector) getCmdExecutor(method, args string) *cmdexec.CmdExecutor {
 		ContainerId:      i.Info.ContainerId,
 		ContainerRuntime: i.Info.ContainerRuntime,
 		ContainerNs:      []string{namespace.MNT},
-		ToolKey:          FileKey,
+		ToolKey:          FileExec,
 		Method:           method,
 		Fault:            FaultFileAdd,
 		Args:             args,

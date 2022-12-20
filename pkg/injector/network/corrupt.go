@@ -92,7 +92,7 @@ func (i *CorruptInjector) getCmdExecutor(method, args string) *cmdexec.CmdExecut
 		ContainerId:      i.Info.ContainerId,
 		ContainerRuntime: i.Info.ContainerRuntime,
 		ContainerNs:      []string{namespace.NET},
-		ToolKey:          NetworkKey,
+		ToolKey:          NetworkExec,
 		Method:           method,
 		Fault:            FaultCorrupt,
 		Args:             args,

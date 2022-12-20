@@ -93,7 +93,7 @@ func (i *LossInjector) getCmdExecutor(method, args string) *cmdexec.CmdExecutor 
 		ContainerId:      i.Info.ContainerId,
 		ContainerRuntime: i.Info.ContainerRuntime,
 		ContainerNs:      []string{namespace.NET},
-		ToolKey:          NetworkKey,
+		ToolKey:          NetworkExec,
 		Method:           method,
 		Fault:            FaultLoss,
 		Args:             args,

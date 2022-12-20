@@ -91,7 +91,7 @@ func (i *DuplicateInjector) getCmdExecutor(method, args string) *cmdexec.CmdExec
 		ContainerId:      i.Info.ContainerId,
 		ContainerRuntime: i.Info.ContainerRuntime,
 		ContainerNs:      []string{namespace.NET},
-		ToolKey:          NetworkKey,
+		ToolKey:          NetworkExec,
 		Method:           method,
 		Fault:            FaultDuplicate,
 		Args:             args,

@@ -23,5 +23,5 @@ const (
 
 	FaultProcessStop = "stop"
 
-	ProcessKey = "chaosmeta_process"
+	ProcessExec = "chaosmeta_process"
 )

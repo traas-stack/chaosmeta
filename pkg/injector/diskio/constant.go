@@ -23,7 +23,7 @@ const (
 	DefaultBlockSize = "10M"
 	DefaultDir       = "/tmp"
 	DiskIOBurnKey    = "chaosmeta_diskburn"
-	DiskIOBurnFile   = "chaosmeta_diskburn"
+	//DiskIOBurnFile   = "chaosmeta_diskburn"
 	MaxBlockK        = 1048576 // 1G
 	FlagDirect       = "direct"
 
@@ -36,4 +36,6 @@ const (
 	ModeAll         = "all"
 
 	TmpCgroup = "/user.slice"
+
+	DiskIOExec = "chaosmeta_diskio"
 )

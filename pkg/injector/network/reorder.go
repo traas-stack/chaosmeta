@@ -104,7 +104,7 @@ func (i *ReorderInjector) getCmdExecutor(method, args string) *cmdexec.CmdExecut
 		ContainerId:      i.Info.ContainerId,
 		ContainerRuntime: i.Info.ContainerRuntime,
 		ContainerNs:      []string{namespace.NET},
-		ToolKey:          NetworkKey,
+		ToolKey:          NetworkExec,
 		Method:           method,
 		Fault:            FaultReorder,
 		Args:             args,

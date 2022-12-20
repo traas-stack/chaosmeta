@@ -28,5 +28,5 @@ const (
 	FaultFileDelete = "del"
 
 	FaultFileChmod = "chmod"
-	FileKey        = "chaosmeta_file"
+	FileExec       = "chaosmeta_file"
 )

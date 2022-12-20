@@ -23,5 +23,5 @@ const (
 
 	DefaultDir    = "/tmp"
 
-	DiskFillKey = "chaosmeta_diskfill"
+	DiskFillExec = "chaosmeta_diskfill"
 )

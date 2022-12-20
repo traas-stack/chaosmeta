@@ -17,8 +17,8 @@
 package main
 
 import (
-	"github.com/ChaosMetaverse/chaosmetad/tools/common"
 	"fmt"
+	"github.com/ChaosMetaverse/chaosmetad/tools/common"
 	"os"
 	"os/exec"
 	"strconv"
@@ -70,7 +70,7 @@ func burnWriteDisk(file, argsBs, argsCount, flagArgs string) {
 	argsIf, argsOf, argsBs, argsCount, flagArgs := "if=/dev/zero", fmt.Sprintf("of=%s", file), fmt.Sprintf("bs=%s", argsBs), fmt.Sprintf("count=%s", argsCount), fmt.Sprintf("oflag=%s", flagArgs)
 	for {
 		ddBurn(argsIf, argsOf, argsBs, argsCount, flagArgs)
-		if err := exec.Command("rm", "-rf", file).Run(); err != nil {
+		if err := os.Remove(file); err != nil {
 			common.ExitWithErr(fmt.Sprintf("rm file error: %s", err.Error()))
 		}
 	}

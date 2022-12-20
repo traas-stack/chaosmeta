@@ -94,7 +94,7 @@ func (i *DelayInjector) getCmdExecutor(method, args string) *cmdexec.CmdExecutor
 		ContainerId:      i.Info.ContainerId,
 		ContainerRuntime: i.Info.ContainerRuntime,
 		ContainerNs:      []string{namespace.NET},
-		ToolKey:          NetworkKey,
+		ToolKey:          NetworkExec,
 		Method:           method,
 		Fault:            FaultDelay,
 		Args:             args,
