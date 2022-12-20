@@ -31,4 +31,6 @@ const (
 	TmpFsFile = "chaosmeta_mem_tmpfs"
 
 	MemFillKey = "chaosmeta_memfill"
+
+	MemExec = "chaosmeta_mem"
 )

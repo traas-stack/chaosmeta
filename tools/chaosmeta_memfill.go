@@ -17,7 +17,9 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/memory"
 	"github.com/ChaosMetaverse/chaosmetad/tools/common"
 	"math"
 	"os"
@@ -26,27 +28,29 @@ import (
 	"strings"
 )
 
-func parseByteValue(byteStr string) (int, string, error) {
-	splitIndex := len(byteStr) - 2
-	if splitIndex <= 0 {
-		return -1, "", fmt.Errorf("byte value must contain unit: KB/MB/GB/TB")
-	}
+func parseByteValue(value int64) (int, string, error) {
+	//splitIndex := len(byteStr) - 2
+	//if splitIndex <= 0 {
+	//	return -1, "", fmt.Errorf("byte value must contain unit: KB/MB/GB/TB")
+	//}
+	//
+	//unit := strings.ToLower(byteStr[splitIndex:])
+	//valueStr := byteStr[:splitIndex]
+	//
+	//value, err := strconv.ParseInt(valueStr, 10, 64)
+	//if err != nil {
+	//	return -1, "", fmt.Errorf("value is not a num: %s", valueStr)
+	//}
+	//
+	//if value <= 0 {
+	//	return -1, "", fmt.Errorf("value must larger than 0")
+	//}
+	//
+	//if unit != "kb" && unit != "mb" && unit != "gb" && unit != "tb" {
+	//	return -1, "", fmt.Errorf("unit only support: KB/MB/GB/TB")
+	//}
 
-	unit := strings.ToLower(byteStr[splitIndex:])
-	valueStr := byteStr[:splitIndex]
-
-	value, err := strconv.ParseInt(valueStr, 10, 64)
-	if err != nil {
-		return -1, "", fmt.Errorf("value is not a num: %s", valueStr)
-	}
-
-	if value <= 0 {
-		return -1, "", fmt.Errorf("value must larger than 0")
-	}
-
-	if unit != "kb" && unit != "mb" && unit != "gb" && unit != "tb" {
-		return -1, "", fmt.Errorf("unit only support: KB/MB/GB/TB")
-	}
+	unit := "kb"
 
 	//  Prevent the integer from being too large, as long as it is less than the maximum value of int
 	for value > math.MaxInt {
@@ -112,17 +116,30 @@ func writeScore(scoreStr string) error {
 }
 
 // [uid] [score] [fill bytes: KB/MB/GB/TB] [timeout second]
+// [uid] [score] [percent] [bytes] [timeout second]
 func main() {
 	args := os.Args
-	if len(args) < 4 {
-		common.ExitWithErr("args must at lease 3. format: [score] [fill bytes: KB/MB/GB/TB] [timeout second]")
+	if len(args) < 5 {
+		common.ExitWithErr("args must at lease 4. format: [uid] [score] [percent] [bytes] [timeout second]")
 	}
 
-	if err := writeScore(args[2]); err != nil {
-		common.ExitWithErr(fmt.Sprintf("set score fail: %s", err.Error()))
+	score, percentStr, bytes := args[2], args[3], args[4]
+
+	if err := writeScore(score); err != nil {
+		common.ExitWithErr(fmt.Sprintf("set score error: %s", err.Error()))
 	}
 
-	value, unit, err := parseByteValue(args[3])
+	percent, err := strconv.Atoi(percentStr)
+	if err != nil {
+		common.ExitWithErr(fmt.Sprintf("percent is not a num: %s", err.Error()))
+	}
+
+	fillKBytes, err := memory.CalculateFillKBytes(context.Background(), percent, bytes)
+	if err != nil {
+		common.ExitWithErr(fmt.Sprintf("get fill KBytes error: %s", err.Error()))
+	}
+
+	value, unit, err := parseByteValue(fillKBytes)
 	if err != nil {
 		common.ExitWithErr(fmt.Sprintf("parse byte value error: %s", err.Error()))
 	}
@@ -134,8 +151,8 @@ func main() {
 	}
 
 	var timeout int
-	if len(args) > 3 {
-		timeout, err = strconv.Atoi(args[4])
+	if len(args) > 4 {
+		timeout, err = strconv.Atoi(args[5])
 		if err != nil {
 			common.ExitWithErr(fmt.Sprintf("timeout value is not a valid int, error: %s", err.Error()))
 		}

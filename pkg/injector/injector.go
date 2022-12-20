@@ -153,8 +153,13 @@ func (i *BaseInjector) Validator(ctx context.Context) error {
 			return fmt.Errorf("\"container-id\" is empty")
 		}
 
-		if _, err := crclient.GetClient(ctx, i.Info.ContainerRuntime); err != nil {
+		client, err := crclient.GetClient(ctx, i.Info.ContainerRuntime)
+		if err != nil {
 			return fmt.Errorf("create container runtime client[%s] error: %s", i.Info.ContainerRuntime, err.Error())
+		}
+
+		if _, err := client.GetPidById(ctx, i.Info.ContainerId); err != nil {
+			return fmt.Errorf("check container error: %s", err.Error())
 		}
 	}
 

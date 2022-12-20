@@ -50,6 +50,7 @@ FILE_EXEC="chaosmeta_file"
 PRO_EXEC="chaosmeta_process"
 NET_EXEC="chaosmeta_network"
 DISKIO_EXEC="chaosmeta_diskio"
+MEM_EXEC="chaosmeta_mem"
 
 # file path
 CI_DIR=$(
@@ -95,6 +96,7 @@ CGO_ENABLED=1 GOOS=${OS_NAME} GOARCH=${ARCH_NAME} ${GO_TOOL} build -o ${PACKAGE_
 CGO_ENABLED=1 GOOS=${OS_NAME} GOARCH=${ARCH_NAME} ${GO_TOOL} build -o ${PACKAGE_DIR}/${OS_NAME}/tools/${PRO_EXEC} ${EXEC_DIR}/process/${PRO_EXEC}.go
 CGO_ENABLED=1 GOOS=${OS_NAME} GOARCH=${ARCH_NAME} ${GO_TOOL} build -o ${PACKAGE_DIR}/${OS_NAME}/tools/${NET_EXEC} ${EXEC_DIR}/network/${NET_EXEC}.go
 CGO_ENABLED=1 GOOS=${OS_NAME} GOARCH=${ARCH_NAME} ${GO_TOOL} build -o ${PACKAGE_DIR}/${OS_NAME}/tools/${DISKIO_EXEC} ${EXEC_DIR}/diskio/${DISKIO_EXEC}.go
+CGO_ENABLED=1 GOOS=${OS_NAME} GOARCH=${ARCH_NAME} ${GO_TOOL} build -o ${PACKAGE_DIR}/${OS_NAME}/tools/${MEM_EXEC} ${EXEC_DIR}/mem/${MEM_EXEC}.go
 # CGO_ENABLED=1 GOOS=${OS_NAME} GOARCH=${ARCH_NAME} ${GO_TOOL} build -o ${PACKAGE_DIR}/${OS_NAME}/tools/${TOOL_EXECNS} ${PROJECT_DIR}/tools/${TOOL_EXECNS}.go
 
 cp -R ${PACKAGE_DIR}/${OS_NAME}/tools ${OUTPUT_DIR}/

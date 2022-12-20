@@ -26,6 +26,7 @@ import (
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/filesys"
 	"github.com/shirou/gopsutil/mem"
 	"os"
+	"time"
 )
 
 // CalculateFillKBytes The calculation of memory usage is consistent with the calculation method of the top command: Available/Total.
@@ -57,7 +58,12 @@ func CalculateFillKBytes(ctx context.Context, percent int, fillBytes string) (in
 	return fillKBytes, nil
 }
 
-func FillCache(ctx context.Context, fillKBytes int64, dir string, filename string) error {
+func FillCache(ctx context.Context, percent int, bytes string, dir string, filename string) error {
+	fillKBytes, err := CalculateFillKBytes(ctx, percent, bytes)
+	if err != nil {
+		return err
+	}
+
 	if err := filesys.MkdirP(ctx, dir); err != nil {
 		return fmt.Errorf("create tmpfs dir[%s] error: %s", dir, err.Error())
 	}
@@ -82,6 +88,8 @@ func UndoTmpfs(ctx context.Context, dir string) error {
 	if err := cmdexec.RunBashCmdWithoutOutput(ctx, fmt.Sprintf("umount %s", dir)); err != nil {
 		logger.Warnf("umount %s error: %s", dir, err.Error())
 	}
+
+	time.Sleep(500 *time.Millisecond)
 
 	if err := os.RemoveAll(dir); err != nil {
 		logger.Warnf("rm %s error: %s", dir, err.Error())

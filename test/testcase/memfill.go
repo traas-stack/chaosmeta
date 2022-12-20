@@ -92,26 +92,6 @@ func GetMemFillTest() []common.TestCase {
 			Error: true,
 		},
 		{
-			Args:  fmt.Sprintf("-p %d", upperMemPer),
-			Error: false,
-			Check: func() error {
-				return checkMemPer(upperMemPer, getMemFillDir(), false, "cache")
-			},
-			CheckRecover: func() error {
-				return checkMemPer(memPer, getMemFillDir(), true, "cache")
-			},
-		},
-		{
-			Args:  fmt.Sprintf("-p %d -b 5000kb", 100),
-			Error: false,
-			Check: func() error {
-				return checkMemPer(100, getMemFillDir(), false, "cache")
-			},
-			CheckRecover: func() error {
-				return checkMemPer(memPer, getMemFillDir(), true, "cache")
-			},
-		},
-		{
 			Args:  "-b 200000kB",
 			Error: false,
 			Check: func() error {
@@ -180,6 +160,26 @@ func GetMemFillTest() []common.TestCase {
 			},
 			CheckRecover: func() error {
 				return checkMemPer(memPer, getMemFillDir(), true, "ram")
+			},
+		},
+		{
+			Args:  fmt.Sprintf("-p %d", upperMemPer),
+			Error: false,
+			Check: func() error {
+				return checkMemPer(upperMemPer, getMemFillDir(), false, "cache")
+			},
+			CheckRecover: func() error {
+				return checkMemPer(memPer, getMemFillDir(), true, "cache")
+			},
+		},
+		{
+			Args:  fmt.Sprintf("-p %d -b 5000kb", 100),
+			Error: false,
+			Check: func() error {
+				return checkMemPer(100, getMemFillDir(), false, "cache")
+			},
+			CheckRecover: func() error {
+				return checkMemPer(memPer, getMemFillDir(), true, "cache")
 			},
 		},
 	}

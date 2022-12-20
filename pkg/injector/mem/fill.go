@@ -23,11 +23,9 @@ import (
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/filesys"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/memory"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/namespace"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/process"
 	"github.com/spf13/cobra"
-	"runtime"
 )
 
 func init() {
@@ -71,14 +69,28 @@ func (i *FillInjector) SetOption(cmd *cobra.Command) {
 
 	cmd.Flags().IntVarP(&i.Args.Percent, "percent", "p", 0, "mem fill target percent, an integer in (0,100] without \"%\", eg: \"30\" means \"30%\"")
 	cmd.Flags().StringVarP(&i.Args.Bytes, "bytes", "b", "", "mem fill bytes to add, support unit: KB/MB/GB/TB（default KB）")
-	i.Args.Mode = ModeRam
-	if runtime.GOOS == utils.LINUX {
-		cmd.Flags().StringVarP(&i.Args.Mode, "mode", "m", "", fmt.Sprintf("mem fill mode, support: %s、%s（default %s）", ModeRam, ModeCache, ModeCache))
+	// TODO: darwin not support "cache" mode
+	cmd.Flags().StringVarP(&i.Args.Mode, "mode", "m", "", fmt.Sprintf("mem fill mode, support: %s、%s（default %s）", ModeRam, ModeCache, ModeCache))
+}
+
+func (i *FillInjector) getCmdExecutor(method, args string) *cmdexec.CmdExecutor {
+	return &cmdexec.CmdExecutor{
+		ContainerId:      i.Info.ContainerId,
+		ContainerRuntime: i.Info.ContainerRuntime,
+		ContainerNs:      []string{namespace.MNT, namespace.PID},
+		ToolKey:          MemExec,
+		Method:           method,
+		Fault:            FaultMemFill,
+		Args:             args,
 	}
 }
 
 // Validator percent > bytes
 func (i *FillInjector) Validator(ctx context.Context) error {
+	if err := i.BaseInjector.Validator(ctx); err != nil {
+		return err
+	}
+
 	if i.Args.Percent == 0 && i.Args.Bytes == "" {
 		return fmt.Errorf("must provide \"percent\" or \"bytes\"")
 	}
@@ -98,16 +110,17 @@ func (i *FillInjector) Validator(ctx context.Context) error {
 	}
 
 	if i.Args.Mode == ModeCache {
-		if !cmdexec.SupportCmd("fallocate") && !cmdexec.SupportCmd("dd") {
-			return fmt.Errorf("not support cmd \"fallocate\" and \"dd\", can not fill cache")
-		}
-
-		if !cmdexec.SupportCmd("mount") {
-			return fmt.Errorf("not support cmd \"mount\", can not fill cache")
-		}
+		return i.getCmdExecutor(utils.MethodValidator, "").ExecTool(ctx)
+		//if !cmdexec.SupportCmd("fallocate") && !cmdexec.SupportCmd("dd") {
+		//	return fmt.Errorf("not support cmd \"fallocate\" and \"dd\", can not fill cache")
+		//}
+		//
+		//if !cmdexec.SupportCmd("mount") {
+		//	return fmt.Errorf("not support cmd \"mount\", can not fill cache")
+		//}
 	}
 
-	return i.BaseInjector.Validator(ctx)
+	return nil
 }
 
 func getFillDir(uid string) string {
@@ -116,28 +129,51 @@ func getFillDir(uid string) string {
 
 func (i *FillInjector) Inject(ctx context.Context) error {
 	logger := log.GetLogger(ctx)
-	fillKBytes, err := memory.CalculateFillKBytes(ctx, i.Args.Percent, i.Args.Bytes)
-	if err != nil {
-		return err
-	}
+	//fillKBytes, err := memory.CalculateFillKBytes(ctx, i.Args.Percent, i.Args.Bytes)
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//logger.Debugf("need to fill mem: %dKB", fillKBytes)
 
-	logger.Debugf("need to fill mem: %dKB", fillKBytes)
-
-	var timeout int64
-	if i.Info.Timeout != "" {
-		timeout, _ = utils.GetTimeSecond(i.Info.Timeout)
-	}
-
-	// 获取命令并执行
 	if i.Args.Mode == ModeRam {
-		_, err := cmdexec.StartBashCmdAndWaitPid(ctx, fmt.Sprintf("%s %s %d %dkb %d", utils.GetToolPath(MemFillKey), i.Info.Uid, -999, fillKBytes, timeout))
-		if err != nil {
-			return fmt.Errorf("fill ram exec error: %s", err.Error())
+		var timeout int64
+		if i.Info.Timeout != "" {
+			timeout, _ = utils.GetTimeSecond(i.Info.Timeout)
 		}
+
+		toolPath := utils.GetToolPath(MemFillKey)
+		args := fmt.Sprintf("'%s' %d %d '%s' %d", i.Info.Uid, -999, i.Args.Percent, i.Args.Bytes, timeout)
+
+		if i.Info.ContainerRuntime != "" {
+			localPath := toolPath
+			toolPath = utils.GetContainerPath(MemFillKey)
+			if err := cmdexec.CpContainerFile(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, localPath, toolPath); err != nil {
+				return fmt.Errorf("container cp from [%s] to [%s] error: %s", localPath, toolPath, err.Error())
+			}
+		}
+
+		cmd := fmt.Sprintf("%s %s", toolPath, args)
+		if err := i.getCmdExecutor("", "").StartCmdAndWait(ctx, cmd); err != nil {
+			if err := i.Recover(ctx); err != nil {
+				logger.Warnf("undo error: %s", err.Error())
+			}
+
+			return err
+		}
+
+		//_, err := cmdexec.StartBashCmdAndWaitPid(ctx, fmt.Sprintf("%s %s %d %dkb %d", utils.GetToolPath(MemFillKey), i.Info.Uid, -999, fillKBytes, timeout))
+
+		//_, err := cmdexec.StartBashCmdAndWaitPid(ctx, fmt.Sprintf("%s '%s' %d %d '%s' %d", utils.GetToolPath(MemFillKey), i.Info.Uid, -999, i.Args.Percent, i.Args.Bytes, timeout))
+		//if err != nil {
+		//	return fmt.Errorf("fill ram exec error: %s", err.Error())
+		//}
 	} else {
-		if err := memory.FillCache(ctx, fillKBytes, getFillDir(i.Info.Uid), TmpFsFile); err != nil {
-			return fmt.Errorf("fill cache error: %s", err.Error())
-		}
+		return i.getCmdExecutor(utils.MethodInject, fmt.Sprintf("%d '%s' '%s' '%s'", i.Args.Percent, i.Args.Bytes, getFillDir(i.Info.Uid), TmpFsFile)).ExecTool(ctx)
+
+		//if err := memory.FillCache(ctx, i.Args.Percent, i.Args.Bytes, getFillDir(i.Info.Uid), TmpFsFile); err != nil {
+		//	return fmt.Errorf("fill cache error: %s", err.Error())
+		//}
 	}
 
 	return nil
@@ -149,18 +185,20 @@ func (i *FillInjector) Recover(ctx context.Context) error {
 	}
 
 	if i.Args.Mode == ModeCache {
-		fillDir := getFillDir(i.Info.Uid)
+		return i.getCmdExecutor(utils.MethodRecover, getFillDir(i.Info.Uid)).ExecTool(ctx)
 
-		isDirExist, err := filesys.ExistPath(fillDir)
-		if err != nil {
-			return fmt.Errorf("check tmpfs[%s] exist error: %s", fillDir, err.Error())
-		}
-
-		if isDirExist {
-			return memory.UndoTmpfs(ctx, fillDir)
-		}
-
-		return nil
+		//fillDir := getFillDir(i.Info.Uid)
+		//
+		//isDirExist, err := filesys.ExistPath(fillDir)
+		//if err != nil {
+		//	return fmt.Errorf("check tmpfs[%s] exist error: %s", fillDir, err.Error())
+		//}
+		//
+		//if isDirExist {
+		//	return memory.UndoTmpfs(ctx, fillDir)
+		//}
+		//
+		//return nil
 	} else {
 		return process.CheckExistAndKillByKey(ctx, fmt.Sprintf("%s %s", MemFillKey, i.Info.Uid))
 	}
