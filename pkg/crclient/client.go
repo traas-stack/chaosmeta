@@ -38,6 +38,7 @@ type Client interface {
 	RmFContainerById(ctx context.Context, containerID string) error
 	RestartContainerById(ctx context.Context, containerID string, timeout *time.Duration) error
 	CpFile(ctx context.Context, containerID, src, dst string) error
+	Exec(ctx context.Context, containerID, cmd string) (string, error)
 	//GetCgroupPath(ctx context.Context, containerID, subSys string) (string, error)
 	//Exec(ctx context.Context, containerID string, namespaces []string, cmd string, finish bool) (string, error)
 }

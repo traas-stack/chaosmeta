@@ -20,8 +20,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/namespace"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/net"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/process"
 	"github.com/spf13/cobra"
@@ -64,6 +66,14 @@ func (i *OccupyInjector) SetDefault() {
 	}
 }
 
+func (i *OccupyInjector) getCmdExecutor() *cmdexec.CmdExecutor {
+	return &cmdexec.CmdExecutor{
+		ContainerId:      i.Info.ContainerId,
+		ContainerRuntime: i.Info.ContainerRuntime,
+		ContainerNs:      []string{namespace.NET},
+	}
+}
+
 func (i *OccupyInjector) SetOption(cmd *cobra.Command) {
 	// i.BaseInjector.SetOption(cmd)
 	cmd.Flags().IntVarP(&i.Args.Port, "port", "p", 0, "target port")
@@ -87,7 +97,7 @@ func (i *OccupyInjector) Validator(ctx context.Context) error {
 }
 
 func (i *OccupyInjector) Inject(ctx context.Context) error {
-	pid, err := net.GetPidByPort(ctx, i.Args.Port, i.Args.Protocol)
+	pid, err := net.GetPidByPort(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, i.Args.Port, i.Args.Protocol)
 	if err != nil {
 		return fmt.Errorf("get pid by port[%d] error: %s", i.Args.Port, err.Error())
 	}
@@ -104,18 +114,14 @@ func (i *OccupyInjector) Inject(ctx context.Context) error {
 
 	var timeout int64
 	if i.Info.Timeout != "" {
-		timeout, err = utils.GetTimeSecond(i.Info.Timeout)
+		timeout, _ = utils.GetTimeSecond(i.Info.Timeout)
 	}
 
-	_, err = cmdexec.StartBashCmdAndWaitPid(ctx, fmt.Sprintf("%s %s %d %s %d", utils.GetToolPath(OccupyKey), i.Info.Uid, i.Args.Port, i.Args.Protocol, timeout))
+	err = i.getCmdExecutor().StartCmdAndWait(ctx, fmt.Sprintf("%s %s %d %s %d", utils.GetToolPath(OccupyKey), i.Info.Uid, i.Args.Port, i.Args.Protocol, timeout))
 	if err != nil {
 		return fmt.Errorf("start cmd error: %s", err.Error())
 	}
 
-	return nil
-}
-
-func (i *OccupyInjector) DelayRecover(ctx context.Context, timeout int64) error {
 	return nil
 }
 
@@ -124,13 +130,15 @@ func (i *OccupyInjector) Recover(ctx context.Context) error {
 		return nil
 	}
 
-	if err:= process.CheckExistAndKillByKey(ctx, fmt.Sprintf("%s %s", OccupyKey, i.Info.Uid));err != nil {
+	if err := process.CheckExistAndKillByKey(ctx, fmt.Sprintf("%s %s", OccupyKey, i.Info.Uid)); err != nil {
 		return err
 	}
 
-	if i.Args.RecoverCmd != "" {
-		return cmdexec.StartBashCmd(ctx, i.Args.RecoverCmd)
+	if i.Args.RecoverCmd == "" {
+		return nil
 	}
 
-	return nil
+	re, err := i.getCmdExecutor().Exec(ctx, i.Args.RecoverCmd)
+	log.GetLogger(ctx).Debug(re)
+	return err
 }

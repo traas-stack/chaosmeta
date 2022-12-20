@@ -22,6 +22,7 @@ import (
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/namespace"
 	"net"
 	"strconv"
 	"strings"
@@ -317,8 +318,12 @@ func ExistTCRootQdisc(ctx context.Context, netInterface string) (bool, error) {
 	return true, nil
 }
 
-func GetPidByPort(ctx context.Context, port int, proto string) (int, error) {
-	var cmd string
+func GetPidByPort(ctx context.Context, cr, cId string, port int, proto string) (int, error) {
+	var (
+		cmd string
+		err error
+		pidStr string
+	)
 	if proto == ProtocolTCP || proto == ProtocolTCP6 {
 		cmd = fmt.Sprintf("netstat -anpt | grep -w %s | awk '{print $4,$7}' | grep -w %d | grep :%d | awk '{print $2}' | awk -F'/' '{print $1}'", proto, port, port)
 	} else if proto == ProtocolUDP || proto == ProtocolUDP6 {
@@ -328,12 +333,18 @@ func GetPidByPort(ctx context.Context, port int, proto string) (int, error) {
 	}
 
 	log.GetLogger(ctx).Debugf("get pid by port cmd: %s", cmd)
-	out, err := cmdexec.RunBashCmdWithOutput(ctx, cmd)
+
+	if cr != "" {
+		pidStr, err = cmdexec.ExecContainer(ctx, cr,cId, []string{namespace.NET}, cmd, cmdexec.ExecRun)
+	} else {
+		pidStr, err = cmdexec.RunBashCmdWithOutput(ctx, cmd)
+	}
+
 	if err != nil {
 		return utils.NoPid, fmt.Errorf("cmd exec error: %s", err.Error())
 	}
 
-	pidStr := strings.TrimSpace(out)
+	pidStr = strings.TrimSpace(pidStr)
 	if pidStr == "" {
 		return utils.NoPid, nil
 	}

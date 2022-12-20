@@ -25,6 +25,7 @@ import (
 	"github.com/docker/docker/pkg/archive"
 	"github.com/docker/docker/pkg/system"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sync"
@@ -79,6 +80,32 @@ func (d *Client) GetPidById(ctx context.Context, containerID string) (int, error
 	}
 
 	return info.State.Pid, nil
+}
+
+func (d *Client) Exec(ctx context.Context, containerID, cmd string) (string, error) {
+	execOpts := types.ExecConfig{
+		AttachStdin:  true,
+		AttachStdout: true,
+		AttachStderr: true,
+		Cmd:          []string{"/bin/bash", "-c", cmd},
+	}
+
+	resp, err := d.client.ContainerExecCreate(ctx, containerID, execOpts)
+	if err != nil {
+		return "", fmt.Errorf("container exec create error: %s", err.Error())
+	}
+	attach, err := d.client.ContainerExecAttach(ctx, resp.ID, types.ExecStartCheck{})
+	if err != nil {
+		return "", fmt.Errorf("container exec attach error: %s", err.Error())
+	}
+
+	defer attach.Close()
+	data, err := ioutil.ReadAll(attach.Reader)
+	if err != nil {
+		return "", fmt.Errorf("read container exec date error: %s", err.Error())
+	}
+
+	return string(data), nil
 }
 
 // KillContainerById convert to static container

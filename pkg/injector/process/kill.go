@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/namespace"
@@ -104,5 +105,7 @@ func (i *KillInjector) Recover(ctx context.Context) error {
 		return nil
 	}
 
-	return i.getCmdExecutor(utils.MethodRecover, "").StartCmd(ctx, i.Args.RecoverCmd)
+	re, err := i.getCmdExecutor(utils.MethodRecover, "").Exec(ctx, i.Args.RecoverCmd)
+	log.GetLogger(ctx).Debug(re)
+	return err
 }

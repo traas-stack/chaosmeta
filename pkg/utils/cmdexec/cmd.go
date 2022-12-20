@@ -50,14 +50,6 @@ type CmdExecutor struct {
 	Args             string
 }
 
-//func (e *CmdExecutor) RunCmdWithOutput(ctx context.Context, cmd string) (string, error) {
-//	if e.ContainerRuntime != "" {
-//		return ExecContainer(ctx, e.ContainerRuntime, e.ContainerId, e.ContainerNs, cmd, ExecRun)
-//	} else {
-//		return RunBashCmdWithOutput(ctx, cmd)
-//	}
-//}
-
 func (e *CmdExecutor) StartCmdAndWait(ctx context.Context, cmd string) error {
 	var err error
 	if e.ContainerRuntime != "" {
@@ -76,6 +68,15 @@ func (e *CmdExecutor) StartCmd(ctx context.Context, cmd string) error {
 		err = StartBashCmd(ctx, cmd)
 	}
 	return err
+}
+
+// Exec cmd should not block
+func (e *CmdExecutor) Exec(ctx context.Context, cmd string) (string, error) {
+	if e.ContainerRuntime != "" {
+		return ExecContainerRaw(ctx, e.ContainerRuntime, e.ContainerId, cmd)
+	} else {
+		return RunBashCmdWithOutput(ctx, cmd)
+	}
 }
 
 func (e *CmdExecutor) ExecTool(ctx context.Context) error {
@@ -288,4 +289,13 @@ func ExecContainer(ctx context.Context, cr, containerID string, namespaces []str
 	default:
 		return "", fmt.Errorf("unknown exec method")
 	}
+}
+
+func ExecContainerRaw(ctx context.Context, cr, cId, cmd string) (string, error) {
+	client, err := crclient.GetClient(ctx, cr)
+	if err != nil {
+		return "", fmt.Errorf("get %s client error: %s", cr, err.Error())
+	}
+
+	return client.Exec(ctx, cId, cmd)
 }

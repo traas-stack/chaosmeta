@@ -105,16 +105,6 @@ func (i *FillInjector) Validator(ctx context.Context) error {
 		if !cmdexec.SupportCmd("mount") {
 			return fmt.Errorf("not support cmd \"mount\", can not fill cache")
 		}
-
-		//fillDir := getFillDir(i.Info.Uid)
-		//isExist, err := filesys.ExistPath(fillDir)
-		//if err != nil {
-		//	return fmt.Errorf("check tmpfs[%s] exist error: %s", fillDir, err.Error())
-		//}
-		//
-		//if isExist {
-		//	return fmt.Errorf("tmpfs[%s] exist, if another cache_fill experiment is running, please recover first", fillDir)
-		//}
 	}
 
 	return i.BaseInjector.Validator(ctx)
