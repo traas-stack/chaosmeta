@@ -65,6 +65,10 @@ func (i *NprocInjector) SetOption(cmd *cobra.Command) {
 }
 
 func (i *NprocInjector) Validator(ctx context.Context) error {
+	if err := i.BaseInjector.Validator(ctx); err != nil {
+		return err
+	}
+
 	if i.Args.Count < 0 {
 		return fmt.Errorf("\"count\" must larger than 0")
 	}
@@ -82,7 +86,7 @@ func (i *NprocInjector) Validator(ctx context.Context) error {
 		return fmt.Errorf("nproc experiment of user[%s] is running, please recover first", i.Args.User)
 	}
 
-	return i.BaseInjector.Validator(ctx)
+	return nil
 }
 
 func (i *NprocInjector) Inject(ctx context.Context) error {

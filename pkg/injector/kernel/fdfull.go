@@ -71,6 +71,10 @@ func (i *FdfullInjector) SetOption(cmd *cobra.Command) {
 }
 
 func (i *FdfullInjector) Validator(ctx context.Context) error {
+	if err := i.BaseInjector.Validator(ctx); err != nil {
+		return err
+	}
+
 	if i.Args.Mode != ModeFdFill && i.Args.Mode != ModeFileMax {
 		return fmt.Errorf(fmt.Sprintf("\"mode\" not support: %s, only support: %s, %s", i.Args.Mode, ModeFdFill, ModeFileMax))
 	}
@@ -88,7 +92,7 @@ func (i *FdfullInjector) Validator(ctx context.Context) error {
 		return fmt.Errorf("now fd[%d] is larger than max fd[%d], no need to inject", nowFd, maxFd)
 	}
 
-	return i.BaseInjector.Validator(ctx)
+	return nil
 }
 
 func (i *FdfullInjector) getFdFullDir() string {

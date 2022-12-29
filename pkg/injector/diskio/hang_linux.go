@@ -79,7 +79,11 @@ func (i *HangInjector) SetOption(cmd *cobra.Command) {
 }
 
 func (i *HangInjector) Validator(ctx context.Context) error {
-	pidList, err := process.GetPidListByListStrAndKey(ctx, i.Args.PidList, i.Args.Key)
+	if err := i.BaseInjector.Validator(ctx); err != nil {
+		return err
+	}
+
+	pidList, err := process.GetPidListByListStrAndKey(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, i.Args.PidList, i.Args.Key)
 	if err != nil {
 		return fmt.Errorf("\"pid-list\" or \"key\" is invalid: %s", err.Error())
 	}
@@ -89,7 +93,7 @@ func (i *HangInjector) Validator(ctx context.Context) error {
 	}
 
 	i.Args.DevList = strings.TrimSpace(i.Args.DevList)
-	if _, err := disk.GetDevList(ctx, i.Args.DevList); err != nil {
+	if _, err := disk.GetDevList(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, i.Args.DevList); err != nil {
 		return fmt.Errorf("\"dev-list\"[%s] is invalid: %s", i.Args.DevList, err.Error())
 	}
 
@@ -97,13 +101,13 @@ func (i *HangInjector) Validator(ctx context.Context) error {
 		return fmt.Errorf("\"mode\" is not support: %s", i.Args.Mode)
 	}
 
-	return i.BaseInjector.Validator(ctx)
+	return nil
 }
 
 func (i *HangInjector) Inject(ctx context.Context) error {
 	logger := log.GetLogger(ctx)
 
-	pidList, err := process.GetPidListByListStrAndKey(ctx, i.Args.PidList, i.Args.Key)
+	pidList, err := process.GetPidListByListStrAndKey(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, i.Args.PidList, i.Args.Key)
 	if err != nil {
 		return err
 	}
@@ -114,7 +118,7 @@ func (i *HangInjector) Inject(ctx context.Context) error {
 	}
 	logger.Debugf("old cgroup path: %v", i.Runtime.OldCgroupMap)
 
-	devList, _ := disk.GetDevList(ctx, i.Args.DevList)
+	devList, _ := disk.GetDevList(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, i.Args.DevList)
 
 	rByte, wByte := HangBytes, HangBytes
 	if i.Args.Mode == ModeRead {
@@ -123,8 +127,20 @@ func (i *HangInjector) Inject(ctx context.Context) error {
 		rByte = ""
 	}
 
-	blkioPath := cgroup.GetBlkioCPath(i.Info.Uid)
+	var containerCgroup string
+	if i.Info.ContainerRuntime != "" {
+		containerCgroup, err = cgroup.GetContainerCgroup(ctx, i.Info.ContainerRuntime, i.Info.ContainerId)
+		if err != nil {
+			return fmt.Errorf("get cgroup path of container[%s] error: %s", i.Info.ContainerId, err.Error())
+		}
+	}
+
+	blkioPath := cgroup.GetBlkioCPath(i.Info.Uid, containerCgroup)
 	if err := cgroup.NewCgroup(ctx, blkioPath, cgroup.GetBlkioConfig(ctx, devList, rByte, wByte, 0, 0, blkioPath)); err != nil {
+		if err := i.Recover(ctx); err != nil {
+			logger.Warnf("undo error: %s", err.Error())
+		}
+
 		return fmt.Errorf("create cgroup[%s] error: %s", blkioPath, err.Error())
 	}
 
@@ -144,8 +160,22 @@ func (i *HangInjector) Recover(ctx context.Context) error {
 		return nil
 	}
 
-	logger := log.GetLogger(ctx)
-	cgroupPath := cgroup.GetBlkioCPath(i.Info.Uid)
+	var (
+		logger          = log.GetLogger(ctx)
+		containerCgroup string
+		err             error
+		tmpPath         = TmpCgroup
+	)
+
+	if i.Info.ContainerRuntime != "" {
+		containerCgroup, err = cgroup.GetContainerCgroup(ctx, i.Info.ContainerRuntime, i.Info.ContainerId)
+		if err != nil {
+			return fmt.Errorf("get cgroup path of container[%s] error: %s", i.Info.ContainerId, err.Error())
+		}
+		tmpPath = containerCgroup
+	}
+
+	cgroupPath := cgroup.GetBlkioCPath(i.Info.Uid, containerCgroup)
 	isCgroupExist, err := filesys.ExistPath(cgroupPath)
 	if err != nil {
 		return fmt.Errorf("check cgroup[%s] exist error: %s", cgroupPath, err.Error())
@@ -162,10 +192,9 @@ func (i *HangInjector) Recover(ctx context.Context) error {
 
 	for _, pid := range pidList {
 		oldPath, ok := i.Runtime.OldCgroupMap[pid]
-		// 目标进程产生的子进程可能会遇到这种情况
 		if !ok {
-			logger.Warnf("fail to get pid[%d]'s old cgroup path, move to \"%s\" instead", pid, TmpCgroup)
-			oldPath = TmpCgroup
+			logger.Warnf("fail to get pid[%d]'s old cgroup path, move to \"%s\" instead", pid, tmpPath)
+			oldPath = tmpPath
 		}
 
 		if err := cgroup.MoveTaskToCgroup(ctx, pid, fmt.Sprintf("%s/%s%s", utils.RootCgroupPath, cgroup.BLKIO, oldPath)); err != nil {

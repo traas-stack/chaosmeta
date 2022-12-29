@@ -29,7 +29,8 @@ import (
 )
 
 const (
-	DiskIOBurnKey = "chaosmeta_diskburn"
+	DiskIOBurnKey   = "chaosmeta_diskburn"
+	FaultDiskIOBurn = "burn"
 )
 
 // [func] [fault] [level] [args]
@@ -58,8 +59,15 @@ func main() {
 }
 
 func execValidator(ctx context.Context, fault string, args []string) error {
-	dir := args[0]
+	switch fault {
+	case FaultDiskIOBurn:
+		return validatorBurn(ctx, args[0])
+	default:
+		return fmt.Errorf("not support fault: %s", fault)
+	}
+}
 
+func validatorBurn(ctx context.Context, dir string) error {
 	if err := filesys.CheckDir(dir); err != nil {
 		return fmt.Errorf("\"dir\"[%s] check error: %s", dir, err.Error())
 	}
@@ -72,21 +80,33 @@ func execValidator(ctx context.Context, fault string, args []string) error {
 }
 
 func execInject(ctx context.Context, fault string, args []string) error {
-	return fmt.Errorf("not implemented")
+	switch fault {
+	case FaultDiskIOBurn:
+		return fmt.Errorf("not implemented")
+	default:
+		return fmt.Errorf("not support fault: %s", fault)
+	}
 }
 
-func getFileName(uid, dir string) string {
+func getBurnFileName(uid, dir string) string {
 	return fmt.Sprintf("%s/%s_%s", dir, DiskIOBurnKey, uid)
 }
 
 func execRecover(ctx context.Context, fault string, args []string) error {
-	uid, dir := args[0], args[1]
+	switch fault {
+	case FaultDiskIOBurn:
+		return recoverBurn(ctx, args[0], args[1])
+	default:
+		return fmt.Errorf("not support fault: %s", fault)
+	}
+}
 
+func recoverBurn(ctx context.Context, uid, dir string) error {
 	if err := process.CheckExistAndKillByKey(ctx, fmt.Sprintf("%s %s", DiskIOBurnKey, uid)); err != nil {
 		return err
 	}
 
-	file := getFileName(uid, dir)
+	file := getBurnFileName(uid, dir)
 	isFileExist, err := filesys.ExistPath(file)
 	if err != nil {
 		return fmt.Errorf("check file[%s] exist error: %s", file, err.Error())

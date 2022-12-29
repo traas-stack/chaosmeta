@@ -107,7 +107,7 @@ func checkProStatusByKey(ctx context.Context, key string, expectedStatus string,
 	time.Sleep(proStopSleepTime)
 	fmt.Printf("key: %s, expected status: %s, expected count: %d\n", key, expectedStatus, expectedCount)
 
-	pidList, err := process2.GetPidListByKey(ctx, key)
+	pidList, err := process2.GetPidListByKey(ctx, "", "", key)
 	if err != nil {
 		return fmt.Errorf("get pid list by key[%s] error: %s", key, err.Error())
 	}

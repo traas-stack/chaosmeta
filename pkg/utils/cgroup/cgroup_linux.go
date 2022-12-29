@@ -53,8 +53,8 @@ func GetContainerCgroupPath(ctx context.Context, cr, containerID, subSys string)
 	return cPath, nil
 }
 
-func GetBlkioCPath(uid string) string {
-	return fmt.Sprintf("%s/%s/%s_%s", utils.RootCgroupPath, BLKIO, BlkioCgroupName, uid)
+func GetBlkioCPath(uid string, prefix string) string {
+	return fmt.Sprintf("%s/%s%s/%s_%s", utils.RootCgroupPath, BLKIO, prefix, BlkioCgroupName, uid)
 }
 
 func CheckPidListBlkioCgroup(ctx context.Context, pidList []int) error {
@@ -83,6 +83,20 @@ func GetPidListCurCgroup(ctx context.Context, pidList []int, subSys string) (map
 	}
 
 	return re, nil
+}
+
+func GetContainerCgroup(ctx context.Context, cr, cId string) (string, error) {
+	client, err := crclient.GetClient(ctx, cr)
+	if err != nil {
+		return "", fmt.Errorf("get %s client error: %s", cr, err.Error())
+	}
+
+	pid, err := client.GetPidById(ctx, cId)
+	if err != nil {
+		return "", fmt.Errorf("get pid of container[%s] error: %s", cId, err.Error())
+	}
+
+	return GetpidCurCgroup(ctx, pid, BLKIO)
 }
 
 func GetpidCurCgroup(ctx context.Context, pid int, subSys string) (string, error) {

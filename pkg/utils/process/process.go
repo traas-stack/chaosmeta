@@ -19,6 +19,7 @@ package process
 import (
 	"context"
 	"fmt"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/crclient"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
@@ -99,23 +100,41 @@ func KillProcessByKey(ctx context.Context, key string, signal int) error {
 	return cmdexec.RunBashCmdWithoutOutput(ctx, fmt.Sprintf("ps -ef | grep '%s' | grep -v grep | grep -v '%s inject' | grep -v '%s recover' | grep -v 'chaosmeta_process ' | awk '{print $2}' | xargs kill -%d", key, utils.RootName, utils.RootName, signal))
 }
 
-func GetPidListByKey(ctx context.Context, key string) ([]int, error) {
-	re, err := cmdexec.RunBashCmdWithOutput(ctx, fmt.Sprintf("ps -ef | grep '%s' | grep -v grep | grep -v '%s inject' | grep -v '%s recover' | grep -v 'chaosmeta_process ' | awk '{print $2}'", key, utils.RootName, utils.RootName))
-	if err != nil {
-		return nil, fmt.Errorf("get process list error: %s", err.Error())
-	}
-
+func GetPidListByKey(ctx context.Context, cr, cId string, key string) ([]int, error) {
 	var pidList []int
-	pStrList := strings.Split(re, "\n")
-	for _, unitPStr := range pStrList {
-		if unitPStr == "" {
-			continue
-		}
-		pid, err := strconv.Atoi(unitPStr)
+	if cr == "" {
+		re, err := cmdexec.RunBashCmdWithOutput(ctx, fmt.Sprintf("ps -ef | grep '%s' | grep -v grep | grep -v '%s inject' | grep -v '%s recover' | grep -v 'chaosmeta_process ' | awk '{print $2}'", key, utils.RootName, utils.RootName))
 		if err != nil {
-			return nil, fmt.Errorf("%s is not a valid pid: %s", unitPStr, err.Error())
+			return nil, fmt.Errorf("get process list error: %s", err.Error())
 		}
-		pidList = append(pidList, pid)
+
+		pStrList := strings.Split(re, "\n")
+		for _, unitPStr := range pStrList {
+			if unitPStr == "" {
+				continue
+			}
+			pid, err := strconv.Atoi(unitPStr)
+			if err != nil {
+				return nil, fmt.Errorf("%s is not a valid pid: %s", unitPStr, err.Error())
+			}
+			pidList = append(pidList, pid)
+		}
+	} else {
+		client, err := crclient.GetClient(ctx, cr)
+		if err != nil {
+			return nil, fmt.Errorf("get %s client error: %s", cr, err.Error())
+		}
+
+		existPro, err := client.GetAllPidList(ctx, cId)
+		if err != nil {
+			return nil, fmt.Errorf("get pid of %s error: %s", cId, err.Error())
+		}
+
+		for _, unit := range existPro {
+			if strings.Index(unit.Cmd, key) >= 0 {
+				pidList = append(pidList, unit.Pid)
+			}
+		}
 	}
 
 	return pidList, nil
@@ -123,7 +142,6 @@ func GetPidListByKey(ctx context.Context, key string) ([]int, error) {
 
 func GetPidListByStr(ctx context.Context, pidStr string) ([]int, error) {
 	var pidList []int
-
 	pidStrList := strings.Split(pidStr, ",")
 	for _, unitPid := range pidStrList {
 		unitPid = strings.TrimSpace(unitPid)
@@ -151,14 +169,18 @@ func GetPidListByStr(ctx context.Context, pidStr string) ([]int, error) {
 	return pidList, nil
 }
 
-func GetPidListByListStrAndKey(ctx context.Context, pidListStr, key string) (pidList []int, err error) {
+func GetPidListByListStrAndKey(ctx context.Context, cr, cId string, pidListStr, key string) (pidList []int, err error) {
 	if pidListStr != "" {
+		if cr != "" {
+			return nil, fmt.Errorf("not support \"pid-list\" args in container")
+		}
+
 		pidList, err = GetPidListByStr(ctx, pidListStr)
 		if err != nil {
 			return nil, fmt.Errorf("get pid list by args[%s] error: %s", pidListStr, err.Error())
 		}
 	} else if key != "" {
-		pidList, err = GetPidListByKey(ctx, key)
+		pidList, err = GetPidListByKey(ctx, cr, cId, key)
 		if err != nil {
 			return nil, fmt.Errorf("get pid list by grep key[%s] error: %s", key, err.Error())
 		}

@@ -19,6 +19,7 @@ package crclient
 import (
 	"context"
 	"fmt"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/crclient/base"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/crclient/docker"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
 	"time"
@@ -39,8 +40,7 @@ type Client interface {
 	RestartContainerById(ctx context.Context, containerID string, timeout *time.Duration) error
 	CpFile(ctx context.Context, containerID, src, dst string) error
 	Exec(ctx context.Context, containerID, cmd string) (string, error)
-	//GetCgroupPath(ctx context.Context, containerID, subSys string) (string, error)
-	//Exec(ctx context.Context, containerID string, namespaces []string, cmd string, finish bool) (string, error)
+	GetAllPidList(ctx context.Context, containerID string) ([]base.SimpleProcess, error)
 }
 
 func GetClient(ctx context.Context, cr string) (Client, error) {

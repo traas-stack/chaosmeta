@@ -19,6 +19,7 @@ package docker
 import (
 	"context"
 	"fmt"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/crclient/base"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
 	"github.com/docker/docker/api/types"
 	dockerClient "github.com/docker/docker/client"
@@ -28,6 +29,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -73,6 +75,30 @@ func GetClient(ctx context.Context) (d *Client, err error) {
 	return clientInstance, nil
 }
 
+func (d *Client) GetAllPidList(ctx context.Context, containerID string) ([]base.SimpleProcess, error) {
+	re, err := d.client.ContainerTop(ctx, containerID, nil)
+	if err != nil {
+		return nil, fmt.Errorf("get process info from client error: %s", err.Error())
+	}
+
+	var rePro = make([]base.SimpleProcess, len(re.Processes))
+	for i := 0; i < len(re.Processes); i++ {
+		for j := 0; j < len(re.Titles); j++ {
+			if re.Titles[j] == "PID" {
+				pid, err := strconv.Atoi(re.Processes[i][j])
+				if err != nil {
+					return nil, fmt.Errorf("PID[%s] is not a num: %s", re.Processes[i][j], err.Error())
+				}
+				rePro[i].Pid = pid
+			} else if re.Titles[j] == "CMD" {
+				rePro[i].Cmd = re.Processes[i][j]
+			}
+		}
+	}
+
+	return rePro, nil
+}
+
 func (d *Client) GetPidById(ctx context.Context, containerID string) (int, error) {
 	info, err := d.client.ContainerInspect(ctx, containerID)
 	if err != nil {
@@ -86,7 +112,10 @@ func (d *Client) GetPidById(ctx context.Context, containerID string) (int, error
 	return info.State.Pid, nil
 }
 
+// Exec TODO: now output has extra space prefix, need to fix this bug
 func (d *Client) Exec(ctx context.Context, containerID, cmd string) (string, error) {
+	logger := log.GetLogger(ctx)
+	logger.Debugf("container exec cmd: %s", cmd)
 	execOpts := types.ExecConfig{
 		AttachStdin:  true,
 		AttachStdout: true,
@@ -109,6 +138,7 @@ func (d *Client) Exec(ctx context.Context, containerID, cmd string) (string, err
 		return "", fmt.Errorf("read container exec date error: %s", err.Error())
 	}
 
+	logger.Debugf("container exec output: %s", string(data))
 	return string(data), nil
 }
 

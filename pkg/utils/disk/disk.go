@@ -21,18 +21,19 @@ import (
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/namespace"
 	"github.com/shirou/gopsutil/disk"
 	"strings"
 )
 
-func GetDevList(ctx context.Context, devStr string) ([]string, error) {
+func GetDevList(ctx context.Context, cr, cId string, devStr string) ([]string, error) {
 	if devStr == "" {
 		return nil, fmt.Errorf("args dev-list is empty")
 	}
 
 	devStrList := strings.Split(devStr, ",")
 	for _, unit := range devStrList {
-		isExist, err := existDev(ctx, unit)
+		isExist, err := existDev(ctx, cr, cId, unit)
 		if err != nil {
 			return nil, fmt.Errorf("check dev[%s] exist error: %s", unit, err.Error())
 		}
@@ -45,8 +46,19 @@ func GetDevList(ctx context.Context, devStr string) ([]string, error) {
 	return devStrList, nil
 }
 
-func existDev(ctx context.Context, devNum string) (bool, error) {
-	re, err := cmdexec.RunBashCmdWithOutput(ctx, fmt.Sprintf("lsblk -a | grep disk | awk '{print $2}' | grep \"%s\" | wc -l", devNum))
+func existDev(ctx context.Context, cr, cId string, devNum string) (bool, error) {
+	cmd := fmt.Sprintf("lsblk -a | grep disk | awk '{print $2}' | grep \"%s\" | wc -l", devNum)
+	var (
+		re  string
+		err error
+	)
+
+	if cr == "" {
+		re, err = cmdexec.RunBashCmdWithOutput(ctx, cmd)
+	} else {
+		re, err = cmdexec.ExecContainer(ctx, cr,cId, []string{namespace.MNT}, cmd, cmdexec.ExecRun)
+	}
+
 	if err != nil {
 		return false, err
 	}

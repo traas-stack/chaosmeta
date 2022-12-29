@@ -77,7 +77,11 @@ func (i *LimitInjector) SetOption(cmd *cobra.Command) {
 }
 
 func (i *LimitInjector) Validator(ctx context.Context) error {
-	pidList, err := process.GetPidListByListStrAndKey(ctx, i.Args.PidList, i.Args.Key)
+	if err := i.BaseInjector.Validator(ctx); err != nil {
+		return err
+	}
+
+	pidList, err := process.GetPidListByListStrAndKey(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, i.Args.PidList, i.Args.Key)
 	if err != nil {
 		return fmt.Errorf("\"pid-list\" or \"key\" is invalid: %s", err.Error())
 	}
@@ -87,7 +91,7 @@ func (i *LimitInjector) Validator(ctx context.Context) error {
 	}
 
 	i.Args.DevList = strings.TrimSpace(i.Args.DevList)
-	if _, err := disk.GetDevList(ctx, i.Args.DevList); err != nil {
+	if _, err := disk.GetDevList(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, i.Args.DevList); err != nil {
 		return fmt.Errorf("\"dev-list\"[%s] is invalid: %s", i.Args.DevList, err.Error())
 	}
 
@@ -107,12 +111,12 @@ func (i *LimitInjector) Validator(ctx context.Context) error {
 		}
 	}
 
-	return i.BaseInjector.Validator(ctx)
+	return nil
 }
 
 func (i *LimitInjector) Inject(ctx context.Context) error {
 	logger := log.GetLogger(ctx)
-	pidList, err := process.GetPidListByListStrAndKey(ctx, i.Args.PidList, i.Args.Key)
+	pidList, err := process.GetPidListByListStrAndKey(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, i.Args.PidList, i.Args.Key)
 	if err != nil {
 		return err
 	}
@@ -123,10 +127,23 @@ func (i *LimitInjector) Inject(ctx context.Context) error {
 	}
 	logger.Debugf("old cgroup path: %v", i.Runtime.OldCgroupMap)
 
-	devList, _ := disk.GetDevList(ctx, i.Args.DevList)
-	blkioPath := cgroup.GetBlkioCPath(i.Info.Uid)
+	devList, _ := disk.GetDevList(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, i.Args.DevList)
+
+	var containerCgroup string
+	if i.Info.ContainerRuntime != "" {
+		containerCgroup, err = cgroup.GetContainerCgroup(ctx, i.Info.ContainerRuntime, i.Info.ContainerId)
+		if err != nil {
+			return fmt.Errorf("get cgroup path of container[%s] error: %s", i.Info.ContainerId, err.Error())
+		}
+	}
+
+	blkioPath := cgroup.GetBlkioCPath(i.Info.Uid, containerCgroup)
 	if err := cgroup.NewCgroup(ctx, blkioPath, cgroup.GetBlkioConfig(ctx, devList, i.Args.ReadBytes, i.Args.WriteBytes, i.Args.ReadIO, i.Args.WriteIO, blkioPath)); err != nil {
-		return fmt.Errorf("create cgroup[%s] error: %s", cgroup.BlkioCgroupName, err.Error())
+		if err := i.Recover(ctx); err != nil {
+			logger.Warnf("undo error: %s", err.Error())
+		}
+
+		return fmt.Errorf("create cgroup[%s] error: %s", blkioPath, err.Error())
 	}
 
 	if err := cgroup.MovePidListToCgroup(ctx, pidList, blkioPath); err != nil {
@@ -134,7 +151,7 @@ func (i *LimitInjector) Inject(ctx context.Context) error {
 			logger.Warnf("undo error: %s", err.Error())
 		}
 
-		return err
+		return fmt.Errorf("move pid list to cgroup[%s] error: %s", blkioPath, err.Error())
 	}
 
 	return nil
@@ -144,9 +161,22 @@ func (i *LimitInjector) Recover(ctx context.Context) error {
 	if i.BaseInjector.Recover(ctx) == nil {
 		return nil
 	}
-	logger := log.GetLogger(ctx)
+	var (
+		logger          = log.GetLogger(ctx)
+		containerCgroup string
+		err             error
+		tmpPath         = TmpCgroup
+	)
 
-	cgroupPath := cgroup.GetBlkioCPath(i.Info.Uid)
+	if i.Info.ContainerRuntime != "" {
+		containerCgroup, err = cgroup.GetContainerCgroup(ctx, i.Info.ContainerRuntime, i.Info.ContainerId)
+		if err != nil {
+			return fmt.Errorf("get cgroup path of container[%s] error: %s", i.Info.ContainerId, err.Error())
+		}
+		tmpPath = containerCgroup
+	}
+
+	cgroupPath := cgroup.GetBlkioCPath(i.Info.Uid, containerCgroup)
 	isCgroupExist, err := filesys.ExistPath(cgroupPath)
 	if err != nil {
 		return fmt.Errorf("check cgroup[%s] exist error: %s", cgroupPath, err.Error())
@@ -163,10 +193,9 @@ func (i *LimitInjector) Recover(ctx context.Context) error {
 
 	for _, pid := range pidList {
 		oldPath, ok := i.Runtime.OldCgroupMap[pid]
-		// 目标进程产生的子进程可能会遇到这种情况
 		if !ok {
 			logger.Warnf("fail to get pid[%d]'s old cgroup path, move to \"%s\" instead", pid, TmpCgroup)
-			oldPath = TmpCgroup
+			oldPath = tmpPath
 		}
 
 		if err := cgroup.MoveTaskToCgroup(ctx, pid, fmt.Sprintf("%s/%s%s", utils.RootCgroupPath, cgroup.BLKIO, oldPath)); err != nil {
