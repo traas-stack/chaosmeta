@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package testcase
+package disk
 
 import (
 	"fmt"

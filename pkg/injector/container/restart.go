@@ -84,6 +84,6 @@ func (i *RestartInjector) Recover(ctx context.Context) error {
 	return nil
 }
 
-func (i *RestartInjector) DelayRecover(ctx context.Context, timeout int64) error {
-	return nil
-}
+//func (i *RestartInjector) DelayRecover(ctx context.Context, timeout int64) error {
+//	return nil
+//}

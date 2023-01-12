@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package testcase
+package file
 
 import (
 	"context"
 	"fmt"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/filesys"
 	"github.com/ChaosMetaverse/chaosmetad/test/common"
@@ -28,12 +27,11 @@ import (
 )
 
 var (
-	fileChmodFileName = "chaosmeta_file.test"
-	fileChmodPerm     = "762"
-	fileChmodOldPerm  = ""
+	fileMvSrcFileName = "chaosmeta_src.test"
+	fileMvDstFileName = "chaosmeta_dst.test"
 )
 
-func GetFileChmodTest() []common.TestCase {
+func GetFileMvTest() []common.TestCase {
 	ctx := context.Background()
 	var tempCaseList = []common.TestCase{
 		{
@@ -41,11 +39,11 @@ func GetFileChmodTest() []common.TestCase {
 			Error: true,
 		},
 		{
-			Args:  fmt.Sprintf("-p /notexistpath/temp.log -P %s", fileChmodPerm),
+			Args:  "-s /fg3g -d wfq",
 			Error: true,
 		},
 		{
-			Args:  fmt.Sprintf("-p tempdir -P %s", fileChmodPerm),
+			Args:  "-s tempdir",
 			Error: true,
 			PreProcessor: func() error {
 				return cmdexec.RunBashCmdWithoutOutput(ctx, "mkdir tempdir")
@@ -55,56 +53,35 @@ func GetFileChmodTest() []common.TestCase {
 			},
 		},
 		{
-			Args:  fmt.Sprintf("-p %s -P %s", fileChmodFileName, "799"),
+			Args:  fmt.Sprintf("-s %s", fileMvSrcFileName),
 			Error: true,
 			PreProcessor: func() error {
-				return cmdexec.RunBashCmdWithoutOutput(ctx, fmt.Sprintf("touch %s", fileChmodFileName))
+				return cmdexec.RunBashCmdWithoutOutput(ctx, fmt.Sprintf("touch %s", fileMvSrcFileName))
 			},
 			PostProcessor: func() error {
-				return os.Remove(fileChmodFileName)
+				return os.Remove(fileMvSrcFileName)
 			},
 		},
 		{
-			Args:  fmt.Sprintf("-p %s -P %s", fileChmodFileName, "reg34t"),
-			Error: true,
+			Args: fmt.Sprintf("-s %s -d %s", fileMvSrcFileName, fileMvDstFileName),
 			PreProcessor: func() error {
-				return cmdexec.RunBashCmdWithoutOutput(ctx, fmt.Sprintf("touch %s", fileChmodFileName))
+				return cmdexec.RunBashCmdWithoutOutput(ctx, fmt.Sprintf("touch %s", fileMvSrcFileName))
 			},
 			PostProcessor: func() error {
-				return os.Remove(fileChmodFileName)
-			},
-		},
-		{
-			Args: fmt.Sprintf("-p %s -P %s", fileChmodFileName, fileChmodPerm),
-			PreProcessor: func() error {
-				if err := cmdexec.RunBashCmdWithoutOutput(ctx, fmt.Sprintf("touch %s", fileChmodFileName)); err != nil {
-					return err
-				}
-
-				var err error
-				fileChmodOldPerm, err = filesys.GetPermission(fileChmodFileName)
-				if err != nil {
-					return err
-				}
-
-				fmt.Println(fileChmodOldPerm)
-				return nil
+				return os.Remove(fileMvSrcFileName)
 			},
 			Check: func() error {
-				return checkPerm(fmt.Sprintf("%s/%s", utils.GetRunPath(), fileChmodFileName), fileChmodPerm)
+				return checkMv(fileMvSrcFileName, fileMvDstFileName)
 			},
 			CheckRecover: func() error {
-				return checkPerm(fmt.Sprintf("%s/%s", utils.GetRunPath(), fileChmodFileName), fileChmodOldPerm)
-			},
-			PostProcessor: func() error {
-				return os.Remove(fileChmodFileName)
+				return checkMv(fileMvDstFileName, fileMvSrcFileName)
 			},
 		},
 	}
 
 	for i := range tempCaseList {
 		tempCaseList[i].Target = "file"
-		tempCaseList[i].Fault = "chmod"
+		tempCaseList[i].Fault = "mv"
 		tempCaseList[i].Name = fmt.Sprintf("%s-%s-%s", tempCaseList[i].Target, tempCaseList[i].Fault, strconv.Itoa(i))
 		if tempCaseList[i].CheckRecover == nil {
 			tempCaseList[i].CheckRecover = func() error {
@@ -116,14 +93,23 @@ func GetFileChmodTest() []common.TestCase {
 	return tempCaseList
 }
 
-func checkPerm(fileName, targetPerm string) error {
-	perm, err := filesys.GetPermission(fileName)
+func checkMv(src, dst string) error {
+	exist, err := filesys.ExistFile(dst)
 	if err != nil {
-		return fmt.Errorf("get perm error: %s", err.Error())
+		return fmt.Errorf("check file[%s] exist error: %s", dst, err.Error())
 	}
 
-	if perm != targetPerm {
-		return fmt.Errorf("expected perm: %s, actually: %s", targetPerm, perm)
+	if !exist {
+		return fmt.Errorf("dst file[%s] is not exist", dst)
+	}
+
+	exist, err = filesys.ExistFile(src)
+	if err != nil {
+		return fmt.Errorf("check file[%s] exist error: %s", src, err.Error())
+	}
+
+	if exist {
+		return fmt.Errorf("src file[%s] is still exist", src)
 	}
 
 	return nil

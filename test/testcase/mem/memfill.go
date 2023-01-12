@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package testcase
+package mem
 
 import (
 	"fmt"
@@ -92,6 +92,16 @@ func GetMemFillTest() []common.TestCase {
 			Error: true,
 		},
 		{
+			Args:  "-b 1gb",
+			Error: false,
+			Check: func() error {
+				return checkMemByteKb(memBytesKb+1024*1024, getMemFillDir(), false, "cache")
+			},
+			CheckRecover: func() error {
+				return checkMemByteKb(memBytesKb, getMemFillDir(), true, "cache")
+			},
+		},
+		{
 			Args:  "-b 200000kB",
 			Error: false,
 			Check: func() error {
@@ -126,16 +136,6 @@ func GetMemFillTest() []common.TestCase {
 			Error: false,
 			Check: func() error {
 				return checkMemByteKb(memBytesKb+200*1024, getMemFillDir(), false, "cache")
-			},
-			CheckRecover: func() error {
-				return checkMemByteKb(memBytesKb, getMemFillDir(), true, "cache")
-			},
-		},
-		{
-			Args:  "-b 1gb",
-			Error: false,
-			Check: func() error {
-				return checkMemByteKb(memBytesKb+1024*1024, getMemFillDir(), false, "cache")
 			},
 			CheckRecover: func() error {
 				return checkMemByteKb(memBytesKb, getMemFillDir(), true, "cache")

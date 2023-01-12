@@ -72,6 +72,6 @@ func (i *KillInjector) Recover(ctx context.Context) error {
 	return nil
 }
 
-func (i *KillInjector) DelayRecover(ctx context.Context, timeout int64) error {
-	return nil
-}
+//func (i *KillInjector) DelayRecover(ctx context.Context, timeout int64) error {
+//	return nil
+//}

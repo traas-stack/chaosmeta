@@ -72,6 +72,6 @@ func (i *RmInjector) Recover(ctx context.Context) error {
 	return nil
 }
 
-func (i *RmInjector) DelayRecover(ctx context.Context, timeout int64) error {
-	return nil
-}
+//func (i *RmInjector) DelayRecover(ctx context.Context, timeout int64) error {
+//	return nil
+//}

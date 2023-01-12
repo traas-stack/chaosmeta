@@ -114,9 +114,9 @@ func GetTraceId(ctx context.Context) string {
 }
 
 func GetCtxWithTraceId(ctx context.Context, traceId string) context.Context {
-	if traceId == "" {
-		traceId = NewUuid()
-	}
+	//if traceId == "" {
+	//	traceId = NewUuid()
+	//}
 
 	return context.WithValue(ctx, CtxTraceId, traceId)
 }

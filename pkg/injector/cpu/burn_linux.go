@@ -144,16 +144,7 @@ func (i *BurnInjector) Inject(ctx context.Context) error {
 
 	e := i.getCmdExecutor()
 	for c := 0; c < len(coreList); c++ {
-		//var err error
 		cmd := fmt.Sprintf("taskset -c %d %s %s %d %d %d", coreList[c], utils.GetToolPath(CpuBurnKey), i.Info.Uid, coreList[c], i.Args.Percent, timeout)
-
-		//if i.Info.ContainerRuntime != "" {
-		//	_, err = cmdexec.ExecContainer(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, []string{namespace.PID}, cmd, false)
-		//	//_, err = cmdexec.ExecTool(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, i.Info.ContainerNs, cmdexec.ExecWait, cmd)
-		//} else {
-		//	_, err = cmdexec.StartBashCmdAndWaitPid(ctx, cmd)
-		//}
-
 		if err := e.StartCmdAndWait(ctx, cmd); err != nil {
 			if err := i.Recover(ctx); err != nil {
 				logger.Warnf("undo error: %s", err.Error())
@@ -173,9 +164,9 @@ func (i *BurnInjector) Recover(ctx context.Context) error {
 	return process.CheckExistAndKillByKey(ctx, fmt.Sprintf("%s %s", CpuBurnKey, i.Info.Uid))
 }
 
-func (i *BurnInjector) DelayRecover(ctx context.Context, timeout int64) error {
-	return nil
-}
+//func (i *BurnInjector) DelayRecover(ctx context.Context, timeout int64) error {
+//	return nil
+//}
 
 func getAllCpuList(ctx context.Context, cr, cId string) (cpuList []int, err error) {
 	var cpusetPath = "/"

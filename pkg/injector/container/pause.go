@@ -81,6 +81,6 @@ func (i *PauseInjector) Recover(ctx context.Context) error {
 	return client.UnPauseContainerById(ctx, i.Info.ContainerId)
 }
 
-func (i *PauseInjector) DelayRecover(ctx context.Context, timeout int64) error {
-	return nil
-}
+//func (i *PauseInjector) DelayRecover(ctx context.Context, timeout int64) error {
+//	return nil
+//}

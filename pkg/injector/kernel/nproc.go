@@ -99,9 +99,9 @@ func (i *NprocInjector) Inject(ctx context.Context) error {
 		utils.GetToolPath(NprocKey), i.Args.User, i.Args.User, i.Args.Count, timeout), i.Args.User)
 }
 
-func (i *NprocInjector) DelayRecover(ctx context.Context, timeout int64) error {
-	return nil
-}
+//func (i *NprocInjector) DelayRecover(ctx context.Context, timeout int64) error {
+//	return nil
+//}
 
 func (i *NprocInjector) Recover(ctx context.Context) error {
 	if i.BaseInjector.Recover(ctx) == nil {

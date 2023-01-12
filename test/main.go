@@ -19,12 +19,58 @@ package main
 import (
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/test/common"
-	"github.com/ChaosMetaverse/chaosmetad/test/testcase"
+	"github.com/ChaosMetaverse/chaosmetad/test/testcase/cpu"
+	"github.com/ChaosMetaverse/chaosmetad/test/testcase/disk"
+	"github.com/ChaosMetaverse/chaosmetad/test/testcase/diskio"
+	"github.com/ChaosMetaverse/chaosmetad/test/testcase/file"
+	"github.com/ChaosMetaverse/chaosmetad/test/testcase/kernel"
+	"github.com/ChaosMetaverse/chaosmetad/test/testcase/mem"
+	"github.com/ChaosMetaverse/chaosmetad/test/testcase/network"
+	"github.com/ChaosMetaverse/chaosmetad/test/testcase/process"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 )
+
+//var testCaseMap = map[string]func() []common.TestCase{
+//	"mem-fill":       mem.GetMemFillTest,
+//	"cpu-burn":       cpu.GetCpuBurnTest,
+//	"cpu-load":       cpu.GetCpuLoadTest,
+//	"disk-fill":      disk.GetDiskFillTest,
+//	"diskio-burn":    diskio.GetDiskIOBurnTest,
+//	"network-occupy": network.GetNetOccupyTest,
+//	"kernel-nproc":   kernel.GetNProcTest,
+//	"kernel-fd":      kernel.GetFdTest,
+//	"file-add":       file.GetFileAddTest,
+//	"file-append":    file.GetFileAppendTest,
+//	"file-chmod":     file.GetFileChmodTest,
+//	"file-mv":        file.GetFileMvTest,
+//	"file-delete":    file.GetFileDeleteTest,
+//	"process-stop":   process.GetProStopTest,
+//	"process-kill":   process.GetProKillTest,
+//}
+
+func getTestCases() []common.TestCase {
+	var testCases []common.TestCase
+	testCases = append(testCases, mem.GetMemFillTest()...)
+	testCases = append(testCases, cpu.GetCpuBurnTest()...)
+	testCases = append(testCases, cpu.GetCpuLoadTest()...)
+	testCases = append(testCases, disk.GetDiskFillTest()...)
+	testCases = append(testCases, diskio.GetDiskIOBurnTest()...)
+	testCases = append(testCases, network.GetNetOccupyTest()...)
+	testCases = append(testCases, kernel.GetNProcTest()...)
+	testCases = append(testCases, kernel.GetFdTest()...)
+	testCases = append(testCases, file.GetFileAddTest()...)
+	testCases = append(testCases, file.GetFileAppendTest()...)
+	testCases = append(testCases, file.GetFileChmodTest()...)
+	testCases = append(testCases, file.GetFileMvTest()...)
+	testCases = append(testCases, file.GetFileDeleteTest()...)
+	testCases = append(testCases, process.GetProStopTest()...)
+	testCases = append(testCases, process.GetProKillTest()...)
+
+	return testCases
+}
 
 // TODO: Currently, only the P0 use case (single fault execution) is supported, the non-root user and concurrent faults are not added, the use case of automatic recovery, and the use case of manually recovering and then performing recover
 func main() {
@@ -38,66 +84,12 @@ func main() {
 	tool := fmt.Sprintf("%s/build/chaosmetad/chaosmetad", rootPath)
 	fmt.Println(tool)
 
-	var testCases []common.TestCase
-	fmt.Println("@@@@@@@@@@@@@@@CPU BURN@@@@@@@@@@@@@@@")
-	testCases = testcase.GetCpuBurnTest()
+	var testCases = getTestCases()
 	runTestCases(tool, testCases)
-
-	fmt.Println("@@@@@@@@@@@@@@@CPU LOAD@@@@@@@@@@@@@@@")
-	testCases = testcase.GetCpuLoadTest()
-	runTestCases(tool, testCases)
-
-	fmt.Println("@@@@@@@@@@@@@@@DISK FILL@@@@@@@@@@@@@@@")
-	testCases = testcase.GetDiskFillTest()
-	runTestCases(tool, testCases)
-
-	fmt.Println("@@@@@@@@@@@@@@@MEM FILL@@@@@@@@@@@@@@@")
-	testCases = testcase.GetMemFillTest()
-	runTestCases(tool, testCases)
-
-	fmt.Println("@@@@@@@@@@@@@@@PROCESS STOP@@@@@@@@@@@@@@@")
-	testCases = testcase.GetProStopTest()
-	runTestCases(tool, testCases)
-
-	fmt.Println("@@@@@@@@@@@@@@@PROCESS KILL@@@@@@@@@@@@@@@")
-	testCases = testcase.GetProKillTest()
-	runTestCases(tool, testCases)
-
-	fmt.Println("@@@@@@@@@@@@@@@KERNEL NPROC@@@@@@@@@@@@@@@")
-	testCases = testcase.GetNProcTest()
-	runTestCases(tool, testCases)
-
-	fmt.Println("@@@@@@@@@@@@@@@KERNEL FD@@@@@@@@@@@@@@@")
-	testCases = testcase.GetFdTest()
-	runTestCases(tool, testCases)
-
-	fmt.Println("@@@@@@@@@@@@@@@FILE ADD@@@@@@@@@@@@@@@")
-	testCases = testcase.GetFileAddTest()
-	runTestCases(tool, testCases)
-
-	fmt.Println("@@@@@@@@@@@@@@@FILE APPEND@@@@@@@@@@@@@@@")
-	testCases = testcase.GetFileAppendTest()
-	runTestCases(tool, testCases)
-
-	fmt.Println("@@@@@@@@@@@@@@@FILE CHMOD@@@@@@@@@@@@@@@")
-	testCases = testcase.GetFileChmodTest()
-	runTestCases(tool, testCases)
-
-	fmt.Println("@@@@@@@@@@@@@@@FILE MV@@@@@@@@@@@@@@@")
-	testCases = testcase.GetFileMvTest()
-	runTestCases(tool, testCases)
-
-	fmt.Println("@@@@@@@@@@@@@@@FILE DELETE@@@@@@@@@@@@@@@")
-	testCases = testcase.GetFileDeleteTest()
-	runTestCases(tool, testCases)
-
-	fmt.Println("@@@@@@@@@@@@@@@DISKIO BURN@@@@@@@@@@@@@@@")
-	testCases = testcase.GetDiskIOBurnTest()
-	runTestCases(tool, testCases)
-
-	fmt.Println("@@@@@@@@@@@@@@@NETWORK OCCUPY@@@@@@@@@@@@@@@")
-	testCases = testcase.GetNetOccupyTest()
-	runTestCases(tool, testCases)
+	//for count, t := range testCases {
+	//	fmt.Printf("@@@@@@@@@@@@@@@@@@@@@@@ %d %s %s @@@@@@@@@@@@@@@@@@@@@@@\n", count, t.Target, t.Fault)
+	//	runTestCases(tool, )
+	//}
 }
 
 func runTestCases(tool string, testCases []common.TestCase) {
