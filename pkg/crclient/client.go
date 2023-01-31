@@ -28,6 +28,9 @@ import (
 const (
 	CrDocker     = "docker"
 	CrContainerd = "containerd"
+
+	// /var/run/pouchd.sock
+	// /var/run/containerd.sock
 )
 
 type Client interface {

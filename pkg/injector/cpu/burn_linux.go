@@ -124,16 +124,32 @@ func (i *BurnInjector) Validator(ctx context.Context) error {
 	return nil
 }
 
+func getIndexList(cpuList, coreList []int) []int {
+	var indexList = make([]int, len(coreList))
+	for i := 0; i < len(coreList); i++ {
+		for j := 0; j < len(cpuList); j++ {
+			if coreList[i] == cpuList[j] {
+				indexList[i] = j
+			}
+		}
+	}
+
+	return indexList
+}
+
 func (i *BurnInjector) Inject(ctx context.Context) error {
 	logger := log.GetLogger(ctx)
 
 	var coreList []int
+	cpuList, _ := getAllCpuList(ctx, i.Info.ContainerRuntime, i.Info.ContainerId)
+
 	if i.Args.List != "" {
 		coreList, _ = utils.GetNumArrByList(i.Args.List)
 	} else {
-		cpuList, _ := getAllCpuList(ctx, i.Info.ContainerRuntime, i.Info.ContainerId)
 		coreList = utils.GetNumArrByCount(i.Args.Count, cpuList)
 	}
+
+	indexList := getIndexList(cpuList, coreList)
 
 	logger.Debugf("burn core list: %v", coreList)
 
@@ -144,7 +160,7 @@ func (i *BurnInjector) Inject(ctx context.Context) error {
 
 	e := i.getCmdExecutor()
 	for c := 0; c < len(coreList); c++ {
-		cmd := fmt.Sprintf("taskset -c %d %s %s %d %d %d", coreList[c], utils.GetToolPath(CpuBurnKey), i.Info.Uid, coreList[c], i.Args.Percent, timeout)
+		cmd := fmt.Sprintf("taskset -c %d %s %s %d %d %d", coreList[c], utils.GetToolPath(CpuBurnKey), i.Info.Uid, indexList[c], i.Args.Percent, timeout)
 		if err := e.StartCmdAndWait(ctx, cmd); err != nil {
 			if err := i.Recover(ctx); err != nil {
 				logger.Warnf("undo error: %s", err.Error())

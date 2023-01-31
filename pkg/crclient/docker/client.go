@@ -35,7 +35,7 @@ import (
 )
 
 const (
-	defaultDockerSocket = "unix:///var/run/docker.sock"
+	defaultSocket = "unix:///var/run/docker.sock"
 )
 
 type Client struct {
@@ -60,7 +60,7 @@ func GetClient(ctx context.Context) (d *Client, err error) {
 		mutex.Lock()
 		if clientInstance == nil {
 			log.GetLogger(ctx).Debug("new docker client")
-			cli, err := dockerClient.NewClientWithOpts(dockerClient.FromEnv, dockerClient.WithHost(defaultDockerSocket))
+			cli, err := dockerClient.NewClientWithOpts(dockerClient.FromEnv, dockerClient.WithHost(defaultSocket))
 			if err != nil {
 				return nil, fmt.Errorf("new docker client error: %s", err.Error())
 			}

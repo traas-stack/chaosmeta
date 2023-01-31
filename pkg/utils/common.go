@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/uuid"
-	"math/rand"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -179,10 +178,10 @@ func GetNumArrByList(listStr string) ([]int, error) {
 }
 
 func GetNumArrByCount(count int, listArr []int) []int {
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	r.Shuffle(len(listArr), func(i, j int) {
-		listArr[i], listArr[j] = listArr[j], listArr[i]
-	})
+	//r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	//r.Shuffle(len(listArr), func(i, j int) {
+	//	listArr[i], listArr[j] = listArr[j], listArr[i]
+	//})
 
 	return listArr[:count]
 }

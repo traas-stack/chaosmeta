@@ -71,6 +71,7 @@ func FillCache(ctx context.Context, percent int, bytes string, dir string, filen
 	file := fmt.Sprintf("%s/%s", dir, filename)
 
 	if err := cmdexec.RunBashCmdWithoutOutput(ctx, fmt.Sprintf("mount -t tmpfs tmpfs %s -o size=%dk", dir, fillKBytes)); err != nil {
+		UndoTmpfs(ctx, dir)
 		return fmt.Errorf("mount tmpfs[%s] error: %s", dir, err.Error())
 	}
 
