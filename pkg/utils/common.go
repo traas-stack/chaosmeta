@@ -19,7 +19,6 @@ package utils
 import (
 	"context"
 	"fmt"
-	"github.com/google/uuid"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -73,9 +72,9 @@ func NewUid() string {
 	return fmt.Sprintf("%s%04d", timeStr, t.Nanosecond()/1000%100000%10000)
 }
 
-func NewUuid() string {
-	return uuid.New().String()
-}
+//func NewUuid() string {
+//	return uuid.New().String()
+//}
 
 func StrListContain(arr []string, target string) bool {
 	for _, unit := range arr {

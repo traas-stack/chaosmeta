@@ -22,7 +22,6 @@ import (
 	"github.com/ChaosMetaverse/chaosmetad/pkg/crclient"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
 	"github.com/spf13/cobra"
-	"time"
 )
 
 func init() {
@@ -76,8 +75,7 @@ func (i *RestartInjector) Inject(ctx context.Context) error {
 		return fmt.Errorf("get %s client error: %s", i.Info.ContainerRuntime, err.Error())
 	}
 
-	var waitTime = time.Second * time.Duration(i.Args.WaitTime)
-	return client.RestartContainerById(ctx, i.Info.ContainerId, &waitTime)
+	return client.RestartContainerById(ctx, i.Info.ContainerId, i.Args.WaitTime)
 }
 
 func (i *RestartInjector) Recover(ctx context.Context) error {

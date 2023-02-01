@@ -21,13 +21,14 @@ import (
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/crclient/base"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/crclient/docker"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/crclient/pouch"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
-	"time"
 )
 
 const (
 	CrDocker     = "docker"
 	CrContainerd = "containerd"
+	CrPouch = "pouch"
 
 	// /var/run/pouchd.sock
 	// /var/run/containerd.sock
@@ -40,7 +41,7 @@ type Client interface {
 	PauseContainerById(ctx context.Context, containerID string) error
 	UnPauseContainerById(ctx context.Context, containerID string) error
 	RmFContainerById(ctx context.Context, containerID string) error
-	RestartContainerById(ctx context.Context, containerID string, timeout *time.Duration) error
+	RestartContainerById(ctx context.Context, containerID string, timeout int64) error
 	CpFile(ctx context.Context, containerID, src, dst string) error
 	Exec(ctx context.Context, containerID, cmd string) (string, error)
 	GetAllPidList(ctx context.Context, containerID string) ([]base.SimpleProcess, error)
@@ -54,6 +55,8 @@ func GetClient(ctx context.Context, cr string) (Client, error) {
 		return docker.GetClient(ctx)
 	case CrContainerd:
 		return nil, fmt.Errorf("to be supported")
+	case CrPouch:
+		return pouch.GetClient(ctx)
 	default:
 		return nil, fmt.Errorf("not support container runtime: %s", cr)
 	}

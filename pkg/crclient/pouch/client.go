@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package docker
+package pouch
 
 import (
 	"context"
 	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/crclient/base"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
-	"github.com/docker/docker/api/types"
-	dockerClient "github.com/docker/docker/client"
+	"github.com/alibaba/pouch/apis/types"
+	pouchClient "github.com/alibaba/pouch/client"
 	"github.com/docker/docker/pkg/archive"
 	"github.com/docker/docker/pkg/system"
 	"io"
@@ -31,15 +31,14 @@ import (
 	"path/filepath"
 	"strconv"
 	"sync"
-	"time"
 )
 
 const (
-	defaultSocket = "unix:///var/run/docker.sock"
+	defaultSocket = "unix:///var/run/pouchd.sock"
 )
 
 type Client struct {
-	client *dockerClient.Client
+	client pouchClient.CommonAPIClient
 }
 
 var (
@@ -59,10 +58,10 @@ func GetClient(ctx context.Context) (d *Client, err error) {
 	if clientInstance == nil {
 		mutex.Lock()
 		if clientInstance == nil {
-			log.GetLogger(ctx).Debug("new docker client")
-			cli, err := dockerClient.NewClientWithOpts(dockerClient.FromEnv, dockerClient.WithHost(defaultSocket))
+			log.GetLogger(ctx).Debug("new pouch client")
+			cli, err := pouchClient.NewAPIClient(defaultSocket, pouchClient.TLSConfig{})
 			if err != nil {
-				return nil, fmt.Errorf("new docker client error: %s", err.Error())
+				return nil, fmt.Errorf("new pouch client error: %s", err.Error())
 			}
 
 			clientInstance = &Client{
@@ -73,6 +72,19 @@ func GetClient(ctx context.Context) (d *Client, err error) {
 	}
 
 	return clientInstance, nil
+}
+
+func (d *Client) GetPidById(ctx context.Context, containerID string) (int, error) {
+	info, err := d.client.ContainerGet(ctx, containerID)
+	if err != nil {
+		return -1, fmt.Errorf("get meta data of container[%s] error: %s", containerID, err.Error())
+	}
+
+	if info.State.Pid <= 0 {
+		return -1, fmt.Errorf("no such container[%s]", containerID)
+	}
+
+	return int(info.State.Pid), nil
 }
 
 func (d *Client) GetAllPidList(ctx context.Context, containerID string) ([]base.SimpleProcess, error) {
@@ -99,41 +111,29 @@ func (d *Client) GetAllPidList(ctx context.Context, containerID string) ([]base.
 	return rePro, nil
 }
 
-func (d *Client) GetPidById(ctx context.Context, containerID string) (int, error) {
-	info, err := d.client.ContainerInspect(ctx, containerID)
-	if err != nil {
-		return -1, fmt.Errorf("get meta data of container[%s] error: %s", containerID, err.Error())
-	}
-
-	if info.State.Pid <= 0 {
-		return -1, fmt.Errorf("no such container[%s]", containerID)
-	}
-
-	return info.State.Pid, nil
-}
-
 // Exec TODO: now output has extra space prefix, need to fix this bug
 func (d *Client) Exec(ctx context.Context, containerID, cmd string) (string, error) {
 	logger := log.GetLogger(ctx)
 	logger.Debugf("container exec cmd: %s", cmd)
-	execOpts := types.ExecConfig{
+	execOpts := &types.ExecCreateConfig{
 		AttachStdin:  true,
 		AttachStdout: true,
 		AttachStderr: true,
 		Cmd:          []string{"/bin/bash", "-c", cmd},
 	}
 
-	resp, err := d.client.ContainerExecCreate(ctx, containerID, execOpts)
+	resp, err := d.client.ContainerCreateExec(ctx, containerID, execOpts)
 	if err != nil {
 		return "", fmt.Errorf("container exec create error: %s", err.Error())
 	}
-	attach, err := d.client.ContainerExecAttach(ctx, resp.ID, types.ExecStartCheck{})
+
+	conn, r, err := d.client.ContainerStartExec(ctx, resp.ID, &types.ExecStartConfig{})
 	if err != nil {
-		return "", fmt.Errorf("container exec attach error: %s", err.Error())
+		return "", fmt.Errorf("container exec start error: %s", err.Error())
 	}
 
-	defer attach.Close()
-	data, err := ioutil.ReadAll(attach.Reader)
+	defer conn.Close()
+	data, err := ioutil.ReadAll(r)
 	if err != nil {
 		return "", fmt.Errorf("read container exec date error: %s", err.Error())
 	}
@@ -147,22 +147,8 @@ func (d *Client) KillContainerById(ctx context.Context, containerID string) erro
 	return d.client.ContainerKill(ctx, containerID, "SIGKILL")
 }
 
-// RmFContainerById remove container
-func (d *Client) RmFContainerById(ctx context.Context, containerID string) error {
-	return d.client.ContainerRemove(ctx, containerID, types.ContainerRemoveOptions{Force: true})
-}
-
 func (d *Client) PauseContainerById(ctx context.Context, containerID string) error {
 	return d.client.ContainerPause(ctx, containerID)
-}
-
-func (d *Client) UnPauseContainerById(ctx context.Context, containerID string) error {
-	return d.client.ContainerUnpause(ctx, containerID)
-}
-
-func (d *Client) RestartContainerById(ctx context.Context, containerID string, timeout int64) error {
-	var waitTime = time.Second * time.Duration(timeout)
-	return d.client.ContainerRestart(ctx, containerID, &waitTime)
 }
 
 func (d *Client) ListId(ctx context.Context) ([]string, error) {
@@ -179,12 +165,25 @@ func (d *Client) ListId(ctx context.Context) ([]string, error) {
 	return idList, nil
 }
 
+func (d *Client) UnPauseContainerById(ctx context.Context, containerID string) error {
+	return d.client.ContainerUnpause(ctx, containerID)
+}
+
+// RmFContainerById remove container
+func (d *Client) RmFContainerById(ctx context.Context, containerID string) error {
+	return d.client.ContainerRemove(ctx, containerID, &types.ContainerRemoveOptions{Force: true})
+}
+
+func (d *Client) RestartContainerById(ctx context.Context, containerID string, timeout int64) error {
+	return d.client.ContainerRestart(ctx, containerID, strconv.Itoa(int(timeout)))
+}
+
 func (d *Client) CpFile(ctx context.Context, containerID, src, dst string) error {
 	dstInfo := archive.CopyInfo{Path: dst}
 	dstStat, err := d.client.ContainerStatPath(ctx, containerID, dst)
 
-	if err == nil && dstStat.Mode&os.ModeSymlink != 0 {
-		linkTarget := dstStat.LinkTarget
+	if err == nil && os.FileMode(dstStat.Mode)&os.ModeSymlink != 0 {
+		linkTarget := dstStat.Path
 		if !system.IsAbs(linkTarget) {
 			dstParent, _ := archive.SplitPathDirEntry(dst)
 			linkTarget = filepath.Join(dstParent, linkTarget)
@@ -195,7 +194,7 @@ func (d *Client) CpFile(ctx context.Context, containerID, src, dst string) error
 	}
 
 	if err == nil {
-		dstInfo.Exists, dstInfo.IsDir = true, dstStat.Mode.IsDir()
+		dstInfo.Exists, dstInfo.IsDir = true, os.FileMode(dstStat.Mode).IsDir()
 	}
 
 	var (
@@ -224,7 +223,5 @@ func (d *Client) CpFile(ctx context.Context, containerID, src, dst string) error
 	resolvedDstPath = dstDir
 	content = preparedArchive
 
-	return d.client.CopyToContainer(ctx, containerID, resolvedDstPath, content, types.CopyToContainerOptions{
-		AllowOverwriteDirWithFile: true,
-	})
+	return d.client.CopyToContainer(ctx, containerID, resolvedDstPath, content)
 }
