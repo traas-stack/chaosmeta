@@ -71,6 +71,10 @@ func (i *FdfullInjector) SetOption(cmd *cobra.Command) {
 }
 
 func (i *FdfullInjector) Validator(ctx context.Context) error {
+	if i.Info.ContainerId != "" || i.Info.ContainerRuntime != "" {
+		return fmt.Errorf("fault \"fdfull\" not support in container")
+	}
+
 	if err := i.BaseInjector.Validator(ctx); err != nil {
 		return err
 	}

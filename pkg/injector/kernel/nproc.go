@@ -65,6 +65,10 @@ func (i *NprocInjector) SetOption(cmd *cobra.Command) {
 }
 
 func (i *NprocInjector) Validator(ctx context.Context) error {
+	if i.Info.ContainerId != "" || i.Info.ContainerRuntime != "" {
+		return fmt.Errorf("fault \"nproc\" not support in container")
+	}
+
 	if err := i.BaseInjector.Validator(ctx); err != nil {
 		return err
 	}
