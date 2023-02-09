@@ -86,6 +86,10 @@ func (i *BaseInjector) SetCommonArgs(info *BaseInfo) {
 		return
 	}
 
+	if info.Uid != "" {
+		i.Info.Uid = info.Uid
+	}
+
 	if info.Target != "" {
 		i.Info.Target = info.Target
 	}
@@ -160,6 +164,18 @@ func (i *BaseInjector) Validator(ctx context.Context) error {
 
 		if _, err := client.GetPidById(ctx, i.Info.ContainerId); err != nil {
 			return fmt.Errorf("check container error: %s", err.Error())
+		}
+	}
+
+	if len(i.Info.Uid) > 30 || len(i.Info.Uid) < 5 {
+		return fmt.Errorf("\"uid\"'s length should be in [5, 30]")
+	}
+
+	for _, letter := range i.Info.Uid {
+		if (97 <= letter && letter <= 122) || (65 <= letter && letter <= 90) || (48 <= letter && letter <= 57) || letter == '-' {
+			continue
+		} else {
+			return fmt.Errorf("\"uid\" must consist of numbers、characters and '-'")
 		}
 	}
 
