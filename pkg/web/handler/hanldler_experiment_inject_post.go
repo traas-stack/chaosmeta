@@ -33,7 +33,7 @@ func ExperimentInjectPost(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	var (
-		ctx   = context.Background()
+		ctx       = context.Background()
 		injectReq = &model.InjectRequest{}
 		injectRes *model.InjectResponse
 	)
@@ -52,6 +52,7 @@ func ExperimentInjectPost(w http.ResponseWriter, r *http.Request) {
 			}
 
 			if err := i.LoadInjector(&storage.Experiment{
+				Uid:              injectReq.Uid,
 				Target:           injectReq.Target,
 				Fault:            injectReq.Fault,
 				Args:             injectReq.Args,

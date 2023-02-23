@@ -16,14 +16,7 @@
 
 package model
 
-type InjectRequest struct {
-	Target           string `json:"target"`
-	Fault            string `json:"fault"`
-	Timeout          string `json:"timeout"`
-	Creator          string `json:"creator"`
-	Args             string `json:"args"`
-	ContainerId      string `json:"container_id"`
-	ContainerRuntime string `json:"container_runtime"`
-	TraceId          string `json:"trace_id"`
-	Uid              string `json:"uid"`
+type RecoverRequest struct {
+	Uid     string `json:"uid"`
+	TraceId string `json:"trace_id"`
 }

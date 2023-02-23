@@ -85,10 +85,10 @@ var routes = Routes{
 	},
 
 	Route{
-		"ExperimentUidRecoverPost",
+		"ExperimentRecoverPost",
 		strings.ToUpper("Post"),
-		"/v1/experiment/{uid}/recover",
-		handler.ExperimentUidRecoverPost,
+		"/v1/experiment/recover",
+		handler.ExperimentRecoverPost,
 	},
 
 	Route{

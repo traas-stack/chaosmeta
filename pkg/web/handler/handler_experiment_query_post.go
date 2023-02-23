@@ -33,8 +33,8 @@ func ExperimentQueryPost(w http.ResponseWriter, r *http.Request) {
 
 	var (
 		ctx  = context.Background()
-		queryReq = &model.ExperimentQueryRequest{}
-		queryRes *model.ExperimentQueryResponse
+		queryReq = &model.QueryRequest{}
+		queryRes *model.QueryResponse
 	)
 
 	if err := json.NewDecoder(r.Body).Decode(queryReq); err != nil {
@@ -57,8 +57,8 @@ func ExperimentQueryPost(w http.ResponseWriter, r *http.Request) {
 	WriteResponse(ctx, w, queryRes)
 }
 
-func getExperimentQueryPostResponse(ctx context.Context, code int, msg string, exps []*storage.Experiment, total int64) *model.ExperimentQueryResponse {
-	var re = &model.ExperimentQueryResponse{
+func getExperimentQueryPostResponse(ctx context.Context, code int, msg string, exps []*storage.Experiment, total int64) *model.QueryResponse {
+	var re = &model.QueryResponse{
 		Code:    code,
 		Message: msg,
 		TraceId: utils.GetTraceId(ctx),
@@ -69,7 +69,7 @@ func getExperimentQueryPostResponse(ctx context.Context, code int, msg string, e
 			reList[i] = expToExperimentDataUnit(exp)
 		}
 
-		re.Data = &model.ExperimentQueryResponseData{
+		re.Data = &model.QueryResponseData{
 			Experiments: reList,
 			Total:       total,
 		}
