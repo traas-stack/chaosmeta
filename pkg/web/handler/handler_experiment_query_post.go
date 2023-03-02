@@ -66,7 +66,7 @@ func getExperimentQueryPostResponse(ctx context.Context, code int, msg string, e
 	if exps != nil {
 		reList := make([]model.ExperimentDataUnit, len(exps))
 		for i, exp := range exps {
-			reList[i] = expToExperimentDataUnit(exp)
+			reList[i] = ExpToExperimentDataUnit(exp)
 		}
 
 		re.Data = &model.QueryResponseData{
@@ -78,7 +78,7 @@ func getExperimentQueryPostResponse(ctx context.Context, code int, msg string, e
 	return re
 }
 
-func expToExperimentDataUnit(exp *storage.Experiment) model.ExperimentDataUnit {
+func ExpToExperimentDataUnit(exp *storage.Experiment) model.ExperimentDataUnit {
 	return model.ExperimentDataUnit{
 		Uid:              exp.Uid,
 		Target:           exp.Target,

@@ -23,6 +23,8 @@ import (
 	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/storage"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/errutil"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/web/handler"
+	"github.com/ChaosMetaverse/chaosmetad/pkg/web/model"
 	"github.com/bndr/gotabulate"
 )
 
@@ -38,7 +40,16 @@ type OptionExpQuery struct {
 	Limit            uint   `json:"limit"`
 }
 
-func PrintExpByOption(ctx context.Context, o *OptionExpQuery, ifAll bool) {
+const (
+	TableFormat = "table"
+	JsonFormat  = "json"
+)
+
+func PrintExpByOption(ctx context.Context, o *OptionExpQuery, ifAll bool, format string) {
+	if format != TableFormat && format != JsonFormat {
+		errutil.SolveErr(ctx, errutil.BadArgsErr, fmt.Sprintf("not support format: %s", format))
+	}
+
 	if o == nil {
 		errutil.SolveErr(ctx, errutil.BadArgsErr, fmt.Sprintf("option is empty"))
 	}
@@ -59,10 +70,34 @@ func PrintExpByOption(ctx context.Context, o *OptionExpQuery, ifAll bool) {
 		errutil.SolveErr(ctx, errutil.DBErr, queryErr.Error())
 	}
 
-	printExp(ctx, exps, total, ifAll)
+	if format == JsonFormat {
+		printJson(ctx, exps, total)
+	} else {
+		printTable(ctx, exps, total, ifAll)
+	}
 }
 
-func printExp(ctx context.Context, exps []*storage.Experiment, total int64, ifAll bool) {
+func printJson(ctx context.Context, exps []*storage.Experiment, total int64) {
+	//logger := log.GetLogger(ctx)
+	reList := make([]model.ExperimentDataUnit, len(exps))
+	for i, exp := range exps {
+		reList[i] = handler.ExpToExperimentDataUnit(exp)
+	}
+
+	res := &model.QueryResponseData{
+		Experiments: reList,
+		Total:       total,
+	}
+
+	reBytes, err := json.Marshal(res)
+	if err != nil {
+		errutil.SolveErr(ctx, errutil.InternalErr, fmt.Sprintf("query response change to string error: %s", err.Error()))
+	}
+
+	fmt.Println(string(reBytes))
+}
+
+func printTable(ctx context.Context, exps []*storage.Experiment, total int64, ifAll bool) {
 	logger := log.GetLogger(ctx)
 	var formatData string
 	if len(exps) != 0 {

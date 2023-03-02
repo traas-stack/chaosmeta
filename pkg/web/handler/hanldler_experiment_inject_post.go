@@ -91,7 +91,7 @@ func getExperimentInjectPostResponse(ctx context.Context, code int, msg string, 
 
 	if exp != nil {
 		re.Data = &model.InjectSuccessResponseData{
-			Experiment: expToExperimentDataUnit(exp),
+			Experiment: ExpToExperimentDataUnit(exp),
 		}
 	}
 

@@ -18,6 +18,7 @@ package query
 
 import (
 	"context"
+	"fmt"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/query"
 	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
 	"github.com/spf13/cobra"
@@ -25,13 +26,17 @@ import (
 
 // NewQueryCommand queryCmd represents the query command
 func NewQueryCommand() *cobra.Command {
-	var optionQuery = &query.OptionExpQuery{}
-	var ifAll bool
+	var (
+		optionQuery = &query.OptionExpQuery{}
+		ifAll       bool
+		format      string
+	)
+
 	queryCmd := &cobra.Command{
 		Use:   "query",
 		Short: "experiment query command",
 		Run: func(cmd *cobra.Command, args []string) {
-			query.PrintExpByOption(utils.GetCtxWithTraceId(context.Background(), utils.TraceId), optionQuery, ifAll)
+			query.PrintExpByOption(utils.GetCtxWithTraceId(context.Background(), utils.TraceId), optionQuery, ifAll, format)
 		},
 	}
 
@@ -43,6 +48,7 @@ func NewQueryCommand() *cobra.Command {
 	queryCmd.Flags().UintVarP(&optionQuery.Offset, "offset", "o", 0, "query experiment records with offset, eg: chaosmetad query -o 5")
 	queryCmd.Flags().UintVarP(&optionQuery.Limit, "limit", "l", 10, "query experiment records with limit, eg: chaosmetad query -o 5 -l 5")
 	queryCmd.Flags().BoolVarP(&ifAll, "all", "a", false, "if show all")
+	queryCmd.Flags().StringVar(&format, "format", query.TableFormat, fmt.Sprintf("data show format, support: %s(default), %s", query.TableFormat, query.JsonFormat))
 
 	return queryCmd
 }
