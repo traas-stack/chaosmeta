@@ -59,8 +59,6 @@ func PrintExpByOption(ctx context.Context, o *OptionExpQuery, ifAll bool, format
 		errutil.SolveErr(ctx, errutil.BadArgsErr, err.Error())
 	}
 
-	log.GetLogger(ctx).Infof("query args: %s", string(temp))
-
 	db, dbErr := storage.GetExperimentStore()
 	if dbErr != nil {
 		errutil.SolveErr(ctx, errutil.DBErr, dbErr.Error())
@@ -73,6 +71,7 @@ func PrintExpByOption(ctx context.Context, o *OptionExpQuery, ifAll bool, format
 	if format == JsonFormat {
 		printJson(ctx, exps, total)
 	} else {
+		log.GetLogger(ctx).Infof("query args: %s", string(temp))
 		printTable(ctx, exps, total, ifAll)
 	}
 }
