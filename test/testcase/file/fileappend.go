@@ -19,9 +19,9 @@ package file
 import (
 	"context"
 	"fmt"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
-	"github.com/ChaosMetaverse/chaosmetad/test/common"
+	"github.com/traas-stack/chaosmetad/pkg/utils"
+	"github.com/traas-stack/chaosmetad/pkg/utils/cmdexec"
+	"github.com/traas-stack/chaosmetad/test/common"
 	"io/ioutil"
 	"os"
 	"strconv"

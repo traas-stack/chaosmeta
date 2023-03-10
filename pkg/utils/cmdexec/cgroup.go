@@ -18,8 +18,8 @@ package cmdexec
 
 import (
 	"fmt"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
 	"github.com/containerd/cgroups"
+	"github.com/traas-stack/chaosmetad/pkg/utils"
 	"os"
 )
 

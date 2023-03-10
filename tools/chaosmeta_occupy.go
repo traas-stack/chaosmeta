@@ -18,7 +18,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/ChaosMetaverse/chaosmetad/tools/common"
+	"github.com/traas-stack/chaosmetad/tools/common"
 	"net"
 	"os"
 	"strconv"

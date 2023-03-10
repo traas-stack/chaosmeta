@@ -19,7 +19,7 @@ package handler
 import (
 	"context"
 	"encoding/json"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
+	"github.com/traas-stack/chaosmetad/pkg/log"
 	"net/http"
 )
 

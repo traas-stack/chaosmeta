@@ -1,6 +1,6 @@
-module github.com/ChaosMetaverse/chaosmetad
+module github.com/traas-stack/chaosmetad
 
-go 1.18
+go 1.19
 
 require (
 	github.com/alibaba/pouch v0.0.0-20221109061116-9caf9bae0b23

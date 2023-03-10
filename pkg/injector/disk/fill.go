@@ -19,12 +19,12 @@ package disk
 import (
 	"context"
 	"fmt"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/filesys"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/namespace"
 	"github.com/spf13/cobra"
+	"github.com/traas-stack/chaosmetad/pkg/injector"
+	"github.com/traas-stack/chaosmetad/pkg/utils"
+	"github.com/traas-stack/chaosmetad/pkg/utils/cmdexec"
+	"github.com/traas-stack/chaosmetad/pkg/utils/filesys"
+	"github.com/traas-stack/chaosmetad/pkg/utils/namespace"
 	"path/filepath"
 )
 

@@ -19,12 +19,12 @@ package kernel
 import (
 	"context"
 	"fmt"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/process"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/user"
 	"github.com/spf13/cobra"
+	"github.com/traas-stack/chaosmetad/pkg/injector"
+	"github.com/traas-stack/chaosmetad/pkg/utils"
+	"github.com/traas-stack/chaosmetad/pkg/utils/cmdexec"
+	"github.com/traas-stack/chaosmetad/pkg/utils/process"
+	"github.com/traas-stack/chaosmetad/pkg/utils/user"
 	"strconv"
 	"time"
 )

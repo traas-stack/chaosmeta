@@ -19,10 +19,10 @@ package disk
 import (
 	"context"
 	"fmt"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/namespace"
 	"github.com/shirou/gopsutil/disk"
+	"github.com/traas-stack/chaosmetad/pkg/utils"
+	"github.com/traas-stack/chaosmetad/pkg/utils/cmdexec"
+	"github.com/traas-stack/chaosmetad/pkg/utils/namespace"
 	"strings"
 )
 
@@ -56,7 +56,7 @@ func existDev(ctx context.Context, cr, cId string, devNum string) (bool, error) 
 	if cr == "" {
 		re, err = cmdexec.RunBashCmdWithOutput(ctx, cmd)
 	} else {
-		re, err = cmdexec.ExecContainer(ctx, cr,cId, []string{namespace.MNT}, cmd, cmdexec.ExecRun)
+		re, err = cmdexec.ExecContainer(ctx, cr, cId, []string{namespace.MNT}, cmd, cmdexec.ExecRun)
 	}
 
 	if err != nil {

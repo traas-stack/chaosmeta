@@ -19,10 +19,10 @@ package cpu
 import (
 	"context"
 	"fmt"
-	cpu2 "github.com/ChaosMetaverse/chaosmetad/pkg/injector/cpu"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/process"
-	"github.com/ChaosMetaverse/chaosmetad/test/common"
 	"github.com/shirou/gopsutil/cpu"
+	cpu2 "github.com/traas-stack/chaosmetad/pkg/injector/cpu"
+	"github.com/traas-stack/chaosmetad/pkg/utils/process"
+	"github.com/traas-stack/chaosmetad/test/common"
 	"runtime"
 	"strconv"
 	"time"

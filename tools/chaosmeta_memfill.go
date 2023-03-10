@@ -19,8 +19,8 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/memory"
-	"github.com/ChaosMetaverse/chaosmetad/tools/common"
+	"github.com/traas-stack/chaosmetad/pkg/utils/memory"
+	"github.com/traas-stack/chaosmetad/tools/common"
 	"math"
 	"os"
 	"runtime"

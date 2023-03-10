@@ -19,12 +19,12 @@ package memory
 import (
 	"context"
 	"fmt"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/disk"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/filesys"
 	"github.com/shirou/gopsutil/mem"
+	"github.com/traas-stack/chaosmetad/pkg/log"
+	"github.com/traas-stack/chaosmetad/pkg/utils"
+	"github.com/traas-stack/chaosmetad/pkg/utils/cmdexec"
+	"github.com/traas-stack/chaosmetad/pkg/utils/disk"
+	"github.com/traas-stack/chaosmetad/pkg/utils/filesys"
 	"os"
 	"time"
 )
@@ -90,7 +90,7 @@ func UndoTmpfs(ctx context.Context, dir string) error {
 		logger.Warnf("umount %s error: %s", dir, err.Error())
 	}
 
-	time.Sleep(500 *time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 
 	if err := os.RemoveAll(dir); err != nil {
 		logger.Warnf("rm %s error: %s", dir, err.Error())

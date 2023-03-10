@@ -19,7 +19,7 @@ package errutil
 import (
 	"context"
 	"fmt"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
+	"github.com/traas-stack/chaosmetad/pkg/log"
 	"os"
 )
 

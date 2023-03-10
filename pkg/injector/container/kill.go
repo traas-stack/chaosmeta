@@ -19,9 +19,9 @@ package container
 import (
 	"context"
 	"fmt"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/crclient"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
 	"github.com/spf13/cobra"
+	"github.com/traas-stack/chaosmetad/pkg/crclient"
+	"github.com/traas-stack/chaosmetad/pkg/injector"
 )
 
 func init() {

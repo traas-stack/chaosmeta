@@ -20,10 +20,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/errutil"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/web/model"
+	"github.com/traas-stack/chaosmetad/pkg/injector"
+	"github.com/traas-stack/chaosmetad/pkg/utils"
+	"github.com/traas-stack/chaosmetad/pkg/utils/errutil"
+	"github.com/traas-stack/chaosmetad/pkg/web/model"
 	"net/http"
 )
 

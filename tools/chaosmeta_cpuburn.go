@@ -18,8 +18,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/ChaosMetaverse/chaosmetad/tools/common"
 	"github.com/shirou/gopsutil/cpu"
+	"github.com/traas-stack/chaosmetad/tools/common"
 	"os"
 	"strconv"
 	"time"

@@ -19,8 +19,8 @@ package cgroup
 import (
 	"context"
 	"fmt"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/traas-stack/chaosmetad/pkg/log"
+	"github.com/traas-stack/chaosmetad/pkg/utils"
 )
 
 func GetBlkioConfig(ctx context.Context, devList []string, rBytes, wBytes string, rIO, wIO int64, cgroupPath string) string {

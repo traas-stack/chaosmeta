@@ -19,12 +19,12 @@ package network
 import (
 	"context"
 	"fmt"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/namespace"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/net"
 	"github.com/spf13/cobra"
+	"github.com/traas-stack/chaosmetad/pkg/injector"
+	"github.com/traas-stack/chaosmetad/pkg/utils"
+	"github.com/traas-stack/chaosmetad/pkg/utils/cmdexec"
+	"github.com/traas-stack/chaosmetad/pkg/utils/namespace"
+	"github.com/traas-stack/chaosmetad/pkg/utils/net"
 )
 
 func init() {
