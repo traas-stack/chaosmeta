@@ -19,7 +19,7 @@ package storage
 import (
 	"errors"
 	"fmt"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
+	"github.com/traas-stack/chaosmetad/pkg/utils"
 	"gorm.io/gorm"
 	"time"
 )

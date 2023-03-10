@@ -19,10 +19,10 @@ package recover
 import (
 	"context"
 	"fmt"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/errutil"
 	"github.com/spf13/cobra"
+	"github.com/traas-stack/chaosmetad/pkg/injector"
+	"github.com/traas-stack/chaosmetad/pkg/utils"
+	"github.com/traas-stack/chaosmetad/pkg/utils/errutil"
 )
 
 func NewRecoverCommand() *cobra.Command {

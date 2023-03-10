@@ -19,12 +19,12 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/errutil"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/filesys"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/process"
+	"github.com/traas-stack/chaosmetad/pkg/log"
+	"github.com/traas-stack/chaosmetad/pkg/utils"
+	"github.com/traas-stack/chaosmetad/pkg/utils/cmdexec"
+	"github.com/traas-stack/chaosmetad/pkg/utils/errutil"
+	"github.com/traas-stack/chaosmetad/pkg/utils/filesys"
+	"github.com/traas-stack/chaosmetad/pkg/utils/process"
 	"os"
 )
 

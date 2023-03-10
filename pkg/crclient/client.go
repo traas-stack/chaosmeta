@@ -19,16 +19,16 @@ package crclient
 import (
 	"context"
 	"fmt"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/crclient/base"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/crclient/docker"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/crclient/pouch"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
+	"github.com/traas-stack/chaosmetad/pkg/crclient/base"
+	"github.com/traas-stack/chaosmetad/pkg/crclient/docker"
+	"github.com/traas-stack/chaosmetad/pkg/crclient/pouch"
+	"github.com/traas-stack/chaosmetad/pkg/log"
 )
 
 const (
 	CrDocker     = "docker"
 	CrContainerd = "containerd"
-	CrPouch = "pouch"
+	CrPouch      = "pouch"
 
 	// /var/run/pouchd.sock
 	// /var/run/containerd.sock

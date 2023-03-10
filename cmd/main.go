@@ -18,15 +18,15 @@ package main
 
 import (
 	"fmt"
-	"github.com/ChaosMetaverse/chaosmetad/cmd/inject"
-	"github.com/ChaosMetaverse/chaosmetad/cmd/query"
-	"github.com/ChaosMetaverse/chaosmetad/cmd/recover"
-	"github.com/ChaosMetaverse/chaosmetad/cmd/server"
-	"github.com/ChaosMetaverse/chaosmetad/cmd/version"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/errutil"
 	"github.com/spf13/cobra"
+	"github.com/traas-stack/chaosmetad/cmd/inject"
+	"github.com/traas-stack/chaosmetad/cmd/query"
+	"github.com/traas-stack/chaosmetad/cmd/recover"
+	"github.com/traas-stack/chaosmetad/cmd/server"
+	"github.com/traas-stack/chaosmetad/cmd/version"
+	"github.com/traas-stack/chaosmetad/pkg/log"
+	"github.com/traas-stack/chaosmetad/pkg/utils"
+	"github.com/traas-stack/chaosmetad/pkg/utils/errutil"
 	"os"
 )
 

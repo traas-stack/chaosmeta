@@ -18,7 +18,7 @@ package kernel
 
 import (
 	"fmt"
-	"github.com/ChaosMetaverse/chaosmetad/test/common"
+	"github.com/traas-stack/chaosmetad/test/common"
 	"os/exec"
 	"strconv"
 	"strings"

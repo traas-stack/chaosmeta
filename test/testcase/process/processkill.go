@@ -19,9 +19,9 @@ package process
 import (
 	"context"
 	"fmt"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/process"
-	"github.com/ChaosMetaverse/chaosmetad/test/common"
+	"github.com/traas-stack/chaosmetad/pkg/utils/cmdexec"
+	"github.com/traas-stack/chaosmetad/pkg/utils/process"
+	"github.com/traas-stack/chaosmetad/test/common"
 	"strconv"
 	"time"
 )

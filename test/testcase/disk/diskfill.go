@@ -18,9 +18,9 @@ package disk
 
 import (
 	"fmt"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/filesys"
-	"github.com/ChaosMetaverse/chaosmetad/test/common"
 	"github.com/shirou/gopsutil/disk"
+	"github.com/traas-stack/chaosmetad/pkg/utils/filesys"
+	"github.com/traas-stack/chaosmetad/test/common"
 	"math"
 	"os/exec"
 	"strconv"

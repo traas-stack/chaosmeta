@@ -19,10 +19,10 @@ package file
 import (
 	"context"
 	"fmt"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/filesys"
-	"github.com/ChaosMetaverse/chaosmetad/test/common"
+	"github.com/traas-stack/chaosmetad/pkg/utils"
+	"github.com/traas-stack/chaosmetad/pkg/utils/cmdexec"
+	"github.com/traas-stack/chaosmetad/pkg/utils/filesys"
+	"github.com/traas-stack/chaosmetad/test/common"
 	"os"
 	"strconv"
 )

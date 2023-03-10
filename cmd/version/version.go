@@ -18,9 +18,9 @@ package version
 
 import (
 	"context"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/version"
 	"github.com/spf13/cobra"
+	"github.com/traas-stack/chaosmetad/pkg/utils"
+	"github.com/traas-stack/chaosmetad/pkg/version"
 )
 
 func NewVersionCommand() *cobra.Command {

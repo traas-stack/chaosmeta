@@ -19,7 +19,7 @@ package web
 import (
 	"context"
 	"fmt"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/web/handler"
+	"github.com/traas-stack/chaosmetad/pkg/web/handler"
 	"net/http"
 	"net/http/pprof"
 	"strings"

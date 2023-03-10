@@ -19,8 +19,8 @@ package kernel
 import (
 	"context"
 	"fmt"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/filesys"
-	"github.com/ChaosMetaverse/chaosmetad/test/common"
+	"github.com/traas-stack/chaosmetad/pkg/utils/filesys"
+	"github.com/traas-stack/chaosmetad/test/common"
 	"strconv"
 	"time"
 )

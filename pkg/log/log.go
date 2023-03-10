@@ -19,8 +19,8 @@ package log
 import (
 	"context"
 	"fmt"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
 	"github.com/sirupsen/logrus"
+	"github.com/traas-stack/chaosmetad/pkg/utils"
 	"sync"
 
 	"os"

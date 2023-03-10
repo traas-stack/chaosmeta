@@ -19,9 +19,9 @@ package query
 import (
 	"context"
 	"fmt"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/query"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
 	"github.com/spf13/cobra"
+	"github.com/traas-stack/chaosmetad/pkg/query"
+	"github.com/traas-stack/chaosmetad/pkg/utils"
 )
 
 // NewQueryCommand queryCmd represents the query command

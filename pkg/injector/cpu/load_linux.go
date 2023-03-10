@@ -19,13 +19,13 @@ package cpu
 import (
 	"context"
 	"fmt"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/log"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/cmdexec"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/namespace"
-	"github.com/ChaosMetaverse/chaosmetad/pkg/utils/process"
 	"github.com/spf13/cobra"
+	"github.com/traas-stack/chaosmetad/pkg/injector"
+	"github.com/traas-stack/chaosmetad/pkg/log"
+	"github.com/traas-stack/chaosmetad/pkg/utils"
+	"github.com/traas-stack/chaosmetad/pkg/utils/cmdexec"
+	"github.com/traas-stack/chaosmetad/pkg/utils/namespace"
+	"github.com/traas-stack/chaosmetad/pkg/utils/process"
 )
 
 // Register
@@ -91,7 +91,7 @@ func (i *LoadInjector) Validator(ctx context.Context) error {
 
 func (i *LoadInjector) Inject(ctx context.Context) error {
 	cmd := fmt.Sprintf("%s %s %d", utils.GetToolPath(CpuLoadKey), i.Info.Uid, i.Args.Count)
-	if err :=i.getCmdExecutor().StartCmd(ctx, cmd); err != nil {
+	if err := i.getCmdExecutor().StartCmd(ctx, cmd); err != nil {
 		if err := i.Recover(ctx); err != nil {
 			log.GetLogger(ctx).Warnf("undo error: %s", err.Error())
 		}

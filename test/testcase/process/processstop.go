@@ -19,9 +19,9 @@ package process
 import (
 	"context"
 	"fmt"
-	process2 "github.com/ChaosMetaverse/chaosmetad/pkg/utils/process"
-	"github.com/ChaosMetaverse/chaosmetad/test/common"
 	"github.com/shirou/gopsutil/process"
+	process2 "github.com/traas-stack/chaosmetad/pkg/utils/process"
+	"github.com/traas-stack/chaosmetad/test/common"
 	"strconv"
 	"time"
 )

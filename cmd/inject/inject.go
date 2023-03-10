@@ -17,17 +17,17 @@
 package inject
 
 import (
-	"github.com/ChaosMetaverse/chaosmetad/pkg/injector"
-	_ "github.com/ChaosMetaverse/chaosmetad/pkg/injector/container"
-	_ "github.com/ChaosMetaverse/chaosmetad/pkg/injector/cpu"
-	_ "github.com/ChaosMetaverse/chaosmetad/pkg/injector/disk"
-	_ "github.com/ChaosMetaverse/chaosmetad/pkg/injector/diskio"
-	_ "github.com/ChaosMetaverse/chaosmetad/pkg/injector/file"
-	_ "github.com/ChaosMetaverse/chaosmetad/pkg/injector/kernel"
-	_ "github.com/ChaosMetaverse/chaosmetad/pkg/injector/mem"
-	_ "github.com/ChaosMetaverse/chaosmetad/pkg/injector/network"
-	_ "github.com/ChaosMetaverse/chaosmetad/pkg/injector/process"
 	"github.com/spf13/cobra"
+	"github.com/traas-stack/chaosmetad/pkg/injector"
+	_ "github.com/traas-stack/chaosmetad/pkg/injector/container"
+	_ "github.com/traas-stack/chaosmetad/pkg/injector/cpu"
+	_ "github.com/traas-stack/chaosmetad/pkg/injector/disk"
+	_ "github.com/traas-stack/chaosmetad/pkg/injector/diskio"
+	_ "github.com/traas-stack/chaosmetad/pkg/injector/file"
+	_ "github.com/traas-stack/chaosmetad/pkg/injector/kernel"
+	_ "github.com/traas-stack/chaosmetad/pkg/injector/mem"
+	_ "github.com/traas-stack/chaosmetad/pkg/injector/network"
+	_ "github.com/traas-stack/chaosmetad/pkg/injector/process"
 )
 
 // NewInjectCommand injectCmd represents the inject command
