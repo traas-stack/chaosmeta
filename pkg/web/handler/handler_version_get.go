@@ -18,22 +18,18 @@ package handler
 
 import (
 	"context"
-	"encoding/json"
-	"github.com/traas-stack/chaosmetad/pkg/log"
+	"github.com/traas-stack/chaosmetad/pkg/version"
+	"github.com/traas-stack/chaosmetad/pkg/web/model"
 	"net/http"
 )
 
-func WriteResponse(ctx context.Context, w http.ResponseWriter, res interface{}) {
-	logger := log.GetLogger(ctx)
-	resBytes, err := json.Marshal(res)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		logger.Errorf("response Marshal error: %s", err.Error())
-		return
-	}
-
-	if _, err := w.Write(resBytes); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		logger.Errorf("write data error: %s", err.Error())
-	}
+func VersionGet(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	ctx := context.Background()
+	WriteResponse(ctx, w, &model.VersionResponse{
+		Code:    0,
+		Message: "success",
+		Data:    version.GetVersion(),
+	})
 }
