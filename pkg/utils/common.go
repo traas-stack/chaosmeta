@@ -72,9 +72,21 @@ func NewUid() string {
 	return fmt.Sprintf("%s%04d", timeStr, t.Nanosecond()/1000%100000%10000)
 }
 
-//func NewUuid() string {
-//	return uuid.New().String()
-//}
+func IsValidUid(uid string) error {
+	if len(uid) > 36 || len(uid) < 5 {
+		return fmt.Errorf("length should be in [5, 36]")
+	}
+
+	for _, letter := range uid {
+		if ('a' <= letter && letter <= 'z') || ('A' <= letter && letter <= 'Z') || ('0' <= letter && letter <= '9') || letter == '-' || letter == '_' {
+			continue
+		} else {
+			return fmt.Errorf("must consist of numbers、characters、'-' and '_'")
+		}
+	}
+
+	return nil
+}
 
 func StrListContain(arr []string, target string) bool {
 	for _, unit := range arr {
