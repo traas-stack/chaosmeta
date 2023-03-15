@@ -92,10 +92,10 @@ var routes = Routes{
 	},
 
 	Route{
-		"StatusGet",
+		"VersionGet",
 		strings.ToUpper("Get"),
-		"/v1/status",
-		handler.StatusGet,
+		"/v1/version",
+		handler.VersionGet,
 	},
 }
 

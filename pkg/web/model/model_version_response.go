@@ -14,26 +14,12 @@
  * limitations under the License.
  */
 
-package handler
+package model
 
-import (
-	"context"
-	"encoding/json"
-	"github.com/traas-stack/chaosmetad/pkg/log"
-	"net/http"
-)
+import "github.com/traas-stack/chaosmetad/pkg/version"
 
-func WriteResponse(ctx context.Context, w http.ResponseWriter, res interface{}) {
-	logger := log.GetLogger(ctx)
-	resBytes, err := json.Marshal(res)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		logger.Errorf("response Marshal error: %s", err.Error())
-		return
-	}
-
-	if _, err := w.Write(resBytes); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		logger.Errorf("write data error: %s", err.Error())
-	}
+type VersionResponse struct {
+	Code    int           `json:"code"`
+	Message string        `json:"message"`
+	Data    *version.Info `json:"data,omitempty"`
 }

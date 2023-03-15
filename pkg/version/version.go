@@ -19,16 +19,16 @@ package version
 import (
 	"context"
 	"encoding/json"
-	"github.com/traas-stack/chaosmetad/pkg/log"
+	"fmt"
 )
 
 func PrintVersion(ctx context.Context) {
 	reBytes, _ := json.Marshal(GetVersion())
-	log.GetLogger(ctx).Infof(string(reBytes))
+	fmt.Println(string(reBytes))
 }
 
-func GetVersion() Info {
-	return Info{
+func GetVersion() *Info {
+	return &Info{
 		Version:   "@VERSION@",
 		BuildDate: "@DATE@",
 	}
