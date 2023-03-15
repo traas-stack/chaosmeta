@@ -164,3 +164,57 @@ func Test_getNumArrByCount(t *testing.T) {
 		})
 	}
 }
+
+func TestIsValidUid(t *testing.T) {
+	type args struct {
+		uid string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "true format",
+			args: args{
+				uid: "cm_20230315102420_gsxccza7",
+			},
+			wantErr: false,
+		},
+		{
+			name: "wrong letter",
+			args: args{
+				uid: "cm@20230315102420_gsxccza7",
+			},
+			wantErr: true,
+		},
+		{
+			name: "too long",
+			args: args{
+				uid: "cm_20230315102420_gsxccza7777777777777777",
+			},
+			wantErr: true,
+		},
+		{
+			name: "too short",
+			args: args{
+				uid: "cm",
+			},
+			wantErr: true,
+		},
+		{
+			name: "too short",
+			args: args{
+				uid: "",
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := IsValidUid(tt.args.uid); (err != nil) != tt.wantErr {
+				t.Errorf("IsValidUid() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}

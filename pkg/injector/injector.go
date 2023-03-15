@@ -167,16 +167,8 @@ func (i *BaseInjector) Validator(ctx context.Context) error {
 		}
 	}
 
-	if len(i.Info.Uid) > 30 || len(i.Info.Uid) < 5 {
-		return fmt.Errorf("\"uid\"'s length should be in [5, 30]")
-	}
-
-	for _, letter := range i.Info.Uid {
-		if (97 <= letter && letter <= 122) || (65 <= letter && letter <= 90) || (48 <= letter && letter <= 57) || letter == '-' {
-			continue
-		} else {
-			return fmt.Errorf("\"uid\" must consist of numbers、characters and '-'")
-		}
+	if err := utils.IsValidUid(i.Info.Uid); err != nil {
+		return fmt.Errorf("\"uid\" format error: %s", err.Error())
 	}
 
 	if i.Info.Timeout == "" {
