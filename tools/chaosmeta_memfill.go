@@ -29,27 +29,6 @@ import (
 )
 
 func parseByteValue(value int64) (int, string, error) {
-	//splitIndex := len(byteStr) - 2
-	//if splitIndex <= 0 {
-	//	return -1, "", fmt.Errorf("byte value must contain unit: KB/MB/GB/TB")
-	//}
-	//
-	//unit := strings.ToLower(byteStr[splitIndex:])
-	//valueStr := byteStr[:splitIndex]
-	//
-	//value, err := strconv.ParseInt(valueStr, 10, 64)
-	//if err != nil {
-	//	return -1, "", fmt.Errorf("value is not a num: %s", valueStr)
-	//}
-	//
-	//if value <= 0 {
-	//	return -1, "", fmt.Errorf("value must larger than 0")
-	//}
-	//
-	//if unit != "kb" && unit != "mb" && unit != "gb" && unit != "tb" {
-	//	return -1, "", fmt.Errorf("unit only support: KB/MB/GB/TB")
-	//}
-
 	unit := "kb"
 
 	//  Prevent the integer from being too large, as long as it is less than the maximum value of int
@@ -144,6 +123,8 @@ func main() {
 		common.ExitWithErr(fmt.Sprintf("parse byte value error: %s", err.Error()))
 	}
 
+	fmt.Println("[success]inject success")
+
 	unitStr := getStrUnit(unit)
 	runtime.GC()
 	if value > 1 {
@@ -157,8 +138,6 @@ func main() {
 			common.ExitWithErr(fmt.Sprintf("timeout value is not a valid int, error: %s", err.Error()))
 		}
 	}
-
-	fmt.Println("[success]inject success")
 
 	common.SleepWait(timeout)
 }

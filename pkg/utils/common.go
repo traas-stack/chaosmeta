@@ -33,10 +33,9 @@ const (
 	CmdSplit     = " && "
 	PortSplit    = "-"
 
-	RootName       = "chaosmetad"
-	TimeFormat     = "2006-01-02 15:04:05"
-	RecoverLog     = "/tmp/chaosmetad_recover.log"
-	RootCgroupPath = "/sys/fs/cgroup"
+	RootName   = "chaosmetad"
+	TimeFormat = "2006-01-02 15:04:05"
+	RecoverLog = "/tmp/chaosmetad_recover.log"
 )
 
 // TraceId for command line

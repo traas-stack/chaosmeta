@@ -72,7 +72,6 @@ func existDev(ctx context.Context, cr, cId string, devNum string) (bool, error) 
 
 func RunFillDisk(ctx context.Context, size int64, file string) error {
 	unit := "K"
-	// 100M以上使用M单位
 	if size/1024 >= 100 {
 		unit = "M"
 		size /= 1024

@@ -25,9 +25,10 @@ import (
 	"github.com/traas-stack/chaosmetad/pkg/utils"
 	"github.com/traas-stack/chaosmetad/pkg/utils/cgroup"
 	"github.com/traas-stack/chaosmetad/pkg/utils/cmdexec"
+	"github.com/traas-stack/chaosmetad/pkg/utils/containercgroup"
 	"github.com/traas-stack/chaosmetad/pkg/utils/namespace"
 	"github.com/traas-stack/chaosmetad/pkg/utils/process"
-	"io/ioutil"
+	"os"
 )
 
 func init() {
@@ -124,19 +125,6 @@ func (i *BurnInjector) Validator(ctx context.Context) error {
 	return nil
 }
 
-func getIndexList(cpuList, coreList []int) []int {
-	var indexList = make([]int, len(coreList))
-	for i := 0; i < len(coreList); i++ {
-		for j := 0; j < len(cpuList); j++ {
-			if coreList[i] == cpuList[j] {
-				indexList[i] = j
-			}
-		}
-	}
-
-	return indexList
-}
-
 func (i *BurnInjector) Inject(ctx context.Context) error {
 	logger := log.GetLogger(ctx)
 
@@ -149,8 +137,6 @@ func (i *BurnInjector) Inject(ctx context.Context) error {
 		coreList = utils.GetNumArrByCount(i.Args.Count, cpuList)
 	}
 
-	indexList := getIndexList(cpuList, coreList)
-
 	logger.Debugf("burn core list: %v", coreList)
 
 	var timeout int64
@@ -159,8 +145,13 @@ func (i *BurnInjector) Inject(ctx context.Context) error {
 	}
 
 	e := i.getCmdExecutor()
+	targetPid, err := e.GetTargetPid(ctx)
+	if err != nil {
+		return fmt.Errorf("get root pid error: %s", err.Error())
+	}
+
 	for c := 0; c < len(coreList); c++ {
-		cmd := fmt.Sprintf("taskset -c %d %s %s %d %d %d", coreList[c], utils.GetToolPath(CpuBurnKey), i.Info.Uid, indexList[c], i.Args.Percent, timeout)
+		cmd := fmt.Sprintf("taskset -c %d %s %s %d %d %d %d", coreList[c], utils.GetToolPath(CpuBurnKey), i.Info.Uid, coreList[c], i.Args.Percent, targetPid, timeout)
 		if err := e.StartCmdAndWait(ctx, cmd); err != nil {
 			if err := i.Recover(ctx); err != nil {
 				logger.Warnf("undo error: %s", err.Error())
@@ -197,8 +188,8 @@ func getAllCpuList(ctx context.Context, cr, cId string) (cpuList []int, err erro
 }
 
 func getCpuList(path string) ([]int, error) {
-	cpusetFile := fmt.Sprintf("%s/%s%s/%s", utils.RootCgroupPath, cgroup.CPUSET, path, cgroup.CpusetCoreFile)
-	reByte, err := ioutil.ReadFile(cpusetFile)
+	cpusetFile := fmt.Sprintf("%s/%s%s/%s", containercgroup.RootCgroupPath, cgroup.CPUSET, path, cgroup.CpusetCoreFile)
+	reByte, err := os.ReadFile(cpusetFile)
 	if err != nil {
 		return nil, fmt.Errorf("read cpu list info from file[%s] error: %s", cpusetFile, err.Error())
 	}

@@ -22,6 +22,7 @@ import (
 	"github.com/traas-stack/chaosmetad/pkg/crclient"
 	"github.com/traas-stack/chaosmetad/pkg/utils"
 	"github.com/traas-stack/chaosmetad/pkg/utils/cmdexec"
+	"github.com/traas-stack/chaosmetad/pkg/utils/containercgroup"
 	"strconv"
 	"strings"
 )
@@ -54,7 +55,7 @@ func GetContainerCgroupPath(ctx context.Context, cr, containerID, subSys string)
 }
 
 func GetBlkioCPath(uid string, prefix string) string {
-	return fmt.Sprintf("%s/%s%s/%s_%s", utils.RootCgroupPath, BLKIO, prefix, BlkioCgroupName, uid)
+	return fmt.Sprintf("%s/%s%s/%s_%s", containercgroup.RootCgroupPath, BLKIO, prefix, BlkioCgroupName, uid)
 }
 
 func CheckPidListBlkioCgroup(ctx context.Context, pidList []int) error {

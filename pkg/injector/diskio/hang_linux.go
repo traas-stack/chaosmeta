@@ -22,8 +22,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/traas-stack/chaosmetad/pkg/injector"
 	"github.com/traas-stack/chaosmetad/pkg/log"
-	"github.com/traas-stack/chaosmetad/pkg/utils"
 	"github.com/traas-stack/chaosmetad/pkg/utils/cgroup"
+	"github.com/traas-stack/chaosmetad/pkg/utils/containercgroup"
 	"github.com/traas-stack/chaosmetad/pkg/utils/disk"
 	"github.com/traas-stack/chaosmetad/pkg/utils/filesys"
 	"github.com/traas-stack/chaosmetad/pkg/utils/process"
@@ -197,7 +197,7 @@ func (i *HangInjector) Recover(ctx context.Context) error {
 			oldPath = tmpPath
 		}
 
-		if err := cgroup.MoveTaskToCgroup(ctx, pid, fmt.Sprintf("%s/%s%s", utils.RootCgroupPath, cgroup.BLKIO, oldPath)); err != nil {
+		if err := cgroup.MoveTaskToCgroup(ctx, pid, fmt.Sprintf("%s/%s%s", containercgroup.RootCgroupPath, cgroup.BLKIO, oldPath)); err != nil {
 			return fmt.Errorf("recover pid[%d] error: %s", pid, err.Error())
 		}
 	}
