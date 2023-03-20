@@ -14,17 +14,21 @@
  * limitations under the License.
  */
 
-package cmdexec
+package containercgroup
 
 import (
 	"fmt"
 	"github.com/containerd/cgroups"
-	"github.com/traas-stack/chaosmetad/pkg/utils"
 	"os"
+	"time"
 )
 
-func addToProCgroup(mPid, cPid int) error {
-	cgroup, err := cgroups.Load(hierarchy(utils.RootCgroupPath), pidPath(cPid))
+const (
+	RootCgroupPath = "/sys/fs/cgroup"
+)
+
+func AddToProCgroup(mPid, cPid int) error {
+	cgroup, err := LoadCgroup(cPid)
 	if err != nil {
 		return fmt.Errorf("load cgroup of process[%d] error: %s", cPid, err.Error())
 	}
@@ -34,6 +38,34 @@ func addToProCgroup(mPid, cPid int) error {
 	}
 
 	return nil
+}
+
+func CalculateNowPercent(targetPid int) ([]float64, error) {
+	cgroup, err := LoadCgroup(targetPid)
+	if err != nil {
+		return nil, fmt.Errorf("get cpu usage fail, %s", err.Error())
+	}
+
+	stats, err := cgroup.Stat(cgroups.IgnoreNotExist)
+	if err != nil {
+		return nil, fmt.Errorf("get cpu usage fail, %s", err.Error())
+	}
+	perUsage := make([]float64, len(stats.CPU.Usage.PerCPU))
+	time.Sleep(time.Second * 2)
+	afterStats, err := cgroup.Stat(cgroups.IgnoreNotExist)
+	if err != nil {
+		return nil, fmt.Errorf("get cpu usage fail, %s", err.Error())
+	}
+
+	for i := range stats.CPU.Usage.PerCPU {
+		perUsage[i] = (float64(afterStats.CPU.Usage.PerCPU[i]) - float64(stats.CPU.Usage.PerCPU[i])) / float64(time.Second) / 2 * 100
+	}
+
+	return perUsage, nil
+}
+
+func LoadCgroup(cPid int) (cgroups.Cgroup, error) {
+	return cgroups.Load(hierarchy(RootCgroupPath), pidPath(cPid))
 }
 
 func pidPath(pid int) cgroups.Path {
@@ -53,6 +85,7 @@ func pidPath(pid int) cgroups.Path {
 			}
 
 		}
+
 		return root, nil
 	}
 }
@@ -70,6 +103,7 @@ func hierarchy(root string) func() ([]cgroups.Subsystem, error) {
 				enabled = append(enabled, s)
 			}
 		}
+
 		return enabled, nil
 	}
 }
@@ -104,6 +138,7 @@ func defaults(root string) ([]cgroups.Subsystem, error) {
 	if err == nil {
 		s = append(s, h)
 	}
+
 	return s, nil
 }
 
@@ -119,5 +154,6 @@ func pathers(subystems []cgroups.Subsystem) []pather {
 			out = append(out, p)
 		}
 	}
+
 	return out
 }

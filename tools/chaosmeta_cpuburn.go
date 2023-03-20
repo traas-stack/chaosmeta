@@ -18,7 +18,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/shirou/gopsutil/cpu"
+	"github.com/traas-stack/chaosmetad/pkg/utils/containercgroup"
 	"github.com/traas-stack/chaosmetad/tools/common"
 	"os"
 	"strconv"
@@ -27,14 +27,14 @@ import (
 
 var nowTargetPercent, worktime, sleeptime int
 
-// uid core percent timeout
+// uid core percent pid timeout
 func main() {
 	args := os.Args
-	if len(args) < 5 {
-		common.ExitWithErr("must provide 4 args: uid、core、percent、timeout")
+	if len(args) < 6 {
+		common.ExitWithErr("must provide 5 args: uid、core、percent、target pid、timeout")
 	}
 
-	coreStr, percentStr, timeoutStr := args[2], args[3], args[4]
+	coreStr, percentStr, targetPidStr, timeoutStr := args[2], args[3], args[4], args[5]
 	core, err := strconv.Atoi(coreStr)
 	if err != nil {
 		common.ExitWithErr(fmt.Sprintf("core[%s] is not a num: %s", coreStr, err.Error()))
@@ -45,13 +45,18 @@ func main() {
 		common.ExitWithErr(fmt.Sprintf("percent[%s] is not a num: %s", percentStr, err.Error()))
 	}
 
+	targetPid, err := strconv.Atoi(targetPidStr)
+	if err != nil {
+		common.ExitWithErr(fmt.Sprintf("pid[%s] is not a num: %s", targetPidStr, err.Error()))
+	}
+
 	timeout, err := strconv.Atoi(timeoutStr)
 	if err != nil {
 		common.ExitWithErr(fmt.Sprintf("timeout[%s] is not a num: %s", timeoutStr, err.Error()))
 	}
 
 	if percent < 100 {
-		go adjustPercent(core, percent)
+		go adjustPercent(targetPid, core, percent)
 	} else {
 		nowTargetPercent = 100
 	}
@@ -83,12 +88,12 @@ func burnCpu() {
 	}
 }
 
-func adjustPercent(core, maxPercent int) {
+func adjustPercent(targetPid, core, maxPercent int) {
 	for {
-		// TODO: Need to change the implementation of "cpu.Percent" to only get the cpu usage rate of this container. Consider using "docker.CgroupCPU" to achieve
-		p, err := cpu.Percent(2*time.Second, true)
+		p, err := containercgroup.CalculateNowPercent(targetPid)
+		//p, err := cpu.Percent(2*time.Second, true)
 		if err != nil {
-			common.ExitWithErr(fmt.Sprintf("check cpu usage error: %s", err.Error()))
+			common.ExitWithErr(fmt.Sprintf("get cpu usage error: %s", err.Error()))
 		}
 
 		needAdd := maxPercent - int(p[core])

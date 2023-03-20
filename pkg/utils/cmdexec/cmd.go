@@ -23,6 +23,7 @@ import (
 	"github.com/traas-stack/chaosmetad/pkg/crclient"
 	"github.com/traas-stack/chaosmetad/pkg/log"
 	"github.com/traas-stack/chaosmetad/pkg/utils"
+	"github.com/traas-stack/chaosmetad/pkg/utils/containercgroup"
 	"github.com/traas-stack/chaosmetad/pkg/utils/errutil"
 	"github.com/traas-stack/chaosmetad/pkg/utils/namespace"
 	"os/exec"
@@ -48,6 +49,19 @@ type CmdExecutor struct {
 	Method           string
 	Fault            string
 	Args             string
+}
+
+func (e *CmdExecutor) GetTargetPid(ctx context.Context) (int, error) {
+	if e.ContainerRuntime != "" {
+		client, err := crclient.GetClient(ctx, e.ContainerRuntime)
+		if err != nil {
+			return -1, fmt.Errorf("get %s client error: %s", e.ContainerRuntime, err.Error())
+		}
+
+		return client.GetPidById(ctx, e.ContainerId)
+	} else {
+		return 1, nil
+	}
 }
 
 func (e *CmdExecutor) StartCmdAndWait(ctx context.Context, cmd string) error {
@@ -255,7 +269,7 @@ func ExecContainer(ctx context.Context, cr, containerID string, namespaces []str
 	}
 
 	// set cgroup for new process
-	if err := addToProCgroup(c.Process.Pid, targetPid); err != nil {
+	if err := containercgroup.AddToProCgroup(c.Process.Pid, targetPid); err != nil {
 		if err := c.Process.Kill(); err != nil {
 			logger.Warnf("undo: kill container exec process[%d] error: %s", c.Process.Pid, err.Error())
 		}
