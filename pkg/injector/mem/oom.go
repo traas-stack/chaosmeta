@@ -58,13 +58,16 @@ func (i *OOMInjector) SetDefault() {
 	i.BaseInjector.SetDefault()
 
 	if i.Args.Mode == "" {
-		i.Args.Mode = ModeCache
+		if i.Info.ContainerId != "" {
+			i.Args.Mode = ModeRam
+		} else {
+			i.Args.Mode = ModeCache
+		}
 	}
 }
 
 func (i *OOMInjector) SetOption(cmd *cobra.Command) {
 	// i.BaseInjector.SetOption(cmd)
-	// TODO: darwin not support "cache" mode
 	cmd.Flags().StringVarP(&i.Args.Mode, "mode", "m", "", fmt.Sprintf("mem fill mode, support: %s、%s（default %s）", ModeRam, ModeCache, ModeCache))
 }
 
@@ -90,14 +93,11 @@ func (i *OOMInjector) Validator(ctx context.Context) error {
 	}
 
 	if i.Args.Mode == ModeCache {
+		if i.Info.ContainerId != "" {
+			return fmt.Errorf("not support mode \"cache\" in container")
+		}
+
 		return i.getCmdExecutor(utils.MethodValidator, "").ExecTool(ctx)
-		//if !cmdexec.SupportCmd("fallocate") && !cmdexec.SupportCmd("dd") {
-		//	return fmt.Errorf("not support cmd \"fallocate\" and \"dd\", can not fill cache")
-		//}
-		//
-		//if !cmdexec.SupportCmd("mount") {
-		//	return fmt.Errorf("not support cmd \"mount\", can not fill cache")
-		//}
 	}
 
 	return nil
@@ -109,24 +109,6 @@ func getOOMDir(uid string) string {
 
 func (i *OOMInjector) Inject(ctx context.Context) error {
 	logger := log.GetLogger(ctx)
-	//fillKBytes, err := memory.CalculateFillKBytes(ctx, PercentOOM, "")
-	//if err != nil {
-	//	return err
-	//}
-	//
-	//logger.Debugf("need to fill mem: %dKB", fillKBytes)
-	//
-	//if i.Args.Mode == ModeRam {
-	//	_, err := cmdexec.StartBashCmdAndWaitPid(ctx, fmt.Sprintf("%s '%s' %d %d '%s' %d", utils.GetToolPath(MemFillKey), i.Info.Uid, -999, PercentOOM, "", timeout))
-	//	if err != nil {
-	//		return fmt.Errorf("fill ram exec error: %s", err.Error())
-	//	}
-	//} else {
-	//	if err := memory.FillCache(ctx, PercentOOM, "", getOOMDir(i.Info.Uid), TmpFsFile); err != nil {
-	//		return fmt.Errorf("fill cache error: %s", err.Error())
-	//	}
-	//}
-
 	if i.Args.Mode == ModeRam {
 		var timeout int64
 		if i.Info.Timeout != "" {
