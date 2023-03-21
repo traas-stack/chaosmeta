@@ -35,7 +35,9 @@ import (
 )
 
 const (
-	defaultSocket = "unix:///var/run/docker.sock"
+	defaultSocket     = "unix:///var/run/docker.sock"
+	dockerVersionKey  = "DOCKER_API_VERSION"
+	defaultAPIVersion = "1.24"
 )
 
 type Client struct {
@@ -60,11 +62,18 @@ func GetClient(ctx context.Context) (d *Client, err error) {
 		mutex.Lock()
 		if clientInstance == nil {
 			log.GetLogger(ctx).Debug("new docker client")
+			if version := os.Getenv(dockerVersionKey); version == "" {
+				if err := os.Setenv(dockerVersionKey, defaultAPIVersion); err != nil {
+					return nil, fmt.Errorf("set DOCKER_API_VERSION error: %s", err.Error())
+				}
+			}
+
 			cli, err := dockerClient.NewClientWithOpts(dockerClient.FromEnv, dockerClient.WithHost(defaultSocket))
 			if err != nil {
 				return nil, fmt.Errorf("new docker client error: %s", err.Error())
 			}
 
+			log.GetLogger(ctx).Debugf("docker client version: %s", cli.ClientVersion())
 			clientInstance = &Client{
 				client: cli,
 			}
