@@ -293,7 +293,7 @@ func ExecContainer(ctx context.Context, cr, containerID string, namespaces []str
 		}
 
 		combinedOutput := stdout.String() + stderr.String()
-		if strings.Index(combinedOutput, "error") >= 0 {
+		if strings.Index(combinedOutput, "[error]") >= 0 {
 			return "", fmt.Errorf(combinedOutput)
 		} else {
 			return combinedOutput, nil
