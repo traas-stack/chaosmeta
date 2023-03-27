@@ -80,6 +80,10 @@ func (d *Client) GetPidById(ctx context.Context, containerID string) (int, error
 		return -1, fmt.Errorf("get meta data of container[%s] error: %s", containerID, err.Error())
 	}
 
+	if info.HostConfig.Runtime != "runc" {
+		return -1, fmt.Errorf("only support: runc, not support: %s", info.HostConfig.Runtime)
+	}
+
 	if info.State.Pid <= 0 {
 		return -1, fmt.Errorf("no such container[%s]", containerID)
 	}
