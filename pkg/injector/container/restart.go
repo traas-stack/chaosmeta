@@ -25,7 +25,7 @@ import (
 )
 
 func init() {
-	injector.Register(TargetCpu, FaultContainerRestart, func() injector.IInjector { return &RestartInjector{} })
+	injector.Register(TargetContainer, FaultContainerRestart, func() injector.IInjector { return &RestartInjector{} })
 }
 
 type RestartInjector struct {

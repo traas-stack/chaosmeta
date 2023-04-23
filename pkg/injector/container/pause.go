@@ -25,7 +25,7 @@ import (
 )
 
 func init() {
-	injector.Register(TargetCpu, FaultContainerPause, func() injector.IInjector { return &PauseInjector{} })
+	injector.Register(TargetContainer, FaultContainerPause, func() injector.IInjector { return &PauseInjector{} })
 }
 
 type PauseInjector struct {

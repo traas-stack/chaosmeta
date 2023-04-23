@@ -17,12 +17,12 @@
 package container
 
 const (
-	TargetCpu = "container"
+	TargetContainer = "container"
 
-	FaultContainerKill = "kill"
+	FaultContainerKill    = "kill"
 	FaultContainerRestart = "restart"
-	FaultContainerPause = "pause"
-	FaultContainerRm = "rm"
+	FaultContainerPause   = "pause"
+	FaultContainerRm      = "rm"
 
 	DefaultWaitTime = 10
 )

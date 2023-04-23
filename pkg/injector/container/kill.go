@@ -25,7 +25,7 @@ import (
 )
 
 func init() {
-	injector.Register(TargetCpu, FaultContainerKill, func() injector.IInjector { return &KillInjector{} })
+	injector.Register(TargetContainer, FaultContainerKill, func() injector.IInjector { return &KillInjector{} })
 }
 
 type KillInjector struct {
