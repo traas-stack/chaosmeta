@@ -24,6 +24,7 @@ import (
 	_ "github.com/traas-stack/chaosmetad/pkg/injector/disk"
 	_ "github.com/traas-stack/chaosmetad/pkg/injector/diskio"
 	_ "github.com/traas-stack/chaosmetad/pkg/injector/file"
+	_ "github.com/traas-stack/chaosmetad/pkg/injector/jvm"
 	_ "github.com/traas-stack/chaosmetad/pkg/injector/kernel"
 	_ "github.com/traas-stack/chaosmetad/pkg/injector/mem"
 	_ "github.com/traas-stack/chaosmetad/pkg/injector/network"

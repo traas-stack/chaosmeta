@@ -202,3 +202,44 @@ func TestGetBlockKbytes(t *testing.T) {
 		})
 	}
 }
+
+func TestCheckSpeedValue(t *testing.T) {
+	tests := []struct {
+		name    string
+		sp      string
+		wantErr bool
+	}{
+		{
+			name:    "valid",
+			sp:      "100mbit",
+			wantErr: false,
+		},
+		{
+			name:    "invalid unit",
+			sp:      "100gb",
+			wantErr: true,
+		},
+		{
+			name:    "empty value",
+			sp:      "mbit",
+			wantErr: true,
+		},
+		{
+			name:    "negative value",
+			sp:      "-100mbit",
+			wantErr: true,
+		},
+		{
+			name:    "missing unit",
+			sp:      "100",
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := CheckSpeedValue(tt.sp); (err != nil) != tt.wantErr {
+				t.Errorf("CheckSpeedValue() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}

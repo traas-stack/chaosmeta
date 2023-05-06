@@ -69,7 +69,7 @@ func (e *CmdExecutor) StartCmdAndWait(ctx context.Context, cmd string) error {
 	if e.ContainerRuntime != "" {
 		_, err = ExecContainer(ctx, e.ContainerRuntime, e.ContainerId, e.ContainerNs, cmd, ExecWait)
 	} else {
-		_, err = StartBashCmdAndWaitPid(ctx, cmd)
+		_, err = StartBashCmdAndWaitPid(ctx, cmd, 0)
 	}
 	return err
 }
@@ -135,14 +135,21 @@ func StartSleepRecover(ctx context.Context, sleepTime int64, uid string) error {
 	return StartBashCmd(ctx, utils.GetSleepRecoverCmd(sleepTime, uid))
 }
 
-func waitProExec(ctx context.Context, stdout, stderr *bytes.Buffer) (err error) {
+func waitProExec(ctx context.Context, stdout, stderr *bytes.Buffer, timeoutSec int) (err error) {
 	var msg, timer = "", time.NewTimer(InjectCheckInterval)
+	var startTime = time.Now()
+
 	for {
 		<-timer.C
 		if stderr.String() != "" || stdout.String() != "" {
 			msg = stdout.String() + stderr.String()
 			break
 		}
+
+		if timeoutSec > 0 && time.Now().After(startTime.Add(time.Second*time.Duration(timeoutSec))) {
+			break
+		}
+
 		timer.Reset(InjectCheckInterval)
 	}
 
@@ -152,7 +159,11 @@ func waitProExec(ctx context.Context, stdout, stderr *bytes.Buffer) (err error) 
 		return fmt.Errorf("inject error: %s", msg)
 	}
 
-	if strings.Index(msg, "[success]") >= 0 {
+	if timeoutSec <= 0 {
+		if strings.Index(msg, "[success]") >= 0 {
+			return nil
+		}
+	} else {
 		return nil
 	}
 
@@ -205,7 +216,7 @@ func StartBashCmd(ctx context.Context, cmd string) error {
 //	return c.Process.Pid, nil
 //}
 
-func StartBashCmdAndWaitPid(ctx context.Context, cmd string) (int, error) {
+func StartBashCmdAndWaitPid(ctx context.Context, cmd string, timeoutSec int) (int, error) {
 	log.GetLogger(ctx).Debugf("start cmd: %s", cmd)
 
 	c := exec.Command("/bin/bash", "-c", cmd)
@@ -216,7 +227,7 @@ func StartBashCmdAndWaitPid(ctx context.Context, cmd string) (int, error) {
 		return utils.NoPid, fmt.Errorf("cmd start error: %s", err.Error())
 	}
 
-	if err := waitProExec(ctx, &stdout, &stderr); err != nil {
+	if err := waitProExec(ctx, &stdout, &stderr, timeoutSec); err != nil {
 		return c.Process.Pid, fmt.Errorf("wait process exec error: %s", err.Error())
 	}
 
@@ -234,7 +245,7 @@ func StartBashCmdAndWaitByUser(ctx context.Context, cmd, user string) error {
 		return fmt.Errorf("cmd start error: %s", err.Error())
 	}
 
-	if err := waitProExec(ctx, &stdout, &stderr); err != nil {
+	if err := waitProExec(ctx, &stdout, &stderr, 0); err != nil {
 		return fmt.Errorf("wait process exec error: %s", err.Error())
 	}
 
@@ -286,7 +297,7 @@ func ExecContainer(ctx context.Context, cr, containerID string, namespaces []str
 	// solve return
 	switch method {
 	case ExecWait:
-		return "", waitProExec(ctx, &stdout, &stderr)
+		return "", waitProExec(ctx, &stdout, &stderr, 0)
 	case ExecRun:
 		if err := c.Wait(); err != nil {
 			return "", fmt.Errorf("wait process error: %s", err.Error())
