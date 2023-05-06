@@ -1,0 +1,25 @@
+apiVersion: inject.chaosmeta.io/v1alpha1
+kind: Experiment
+metadata:
+  name: kubernetes-deployment-finalizer
+spec:
+  scope: kubernetes
+  targetPhase: inject
+  rangeMode:
+    type: count
+    value: 2
+  experiment:
+    target: deployment
+    fault: finalizer
+    duration: 1m
+    args:
+      - key: add
+        value: "c/1,c/2"
+        valueType: string
+      - key: delete
+        value: "a/1"
+        valueType: string
+  selector:
+    - namespace: default
+      name:
+        - nginx

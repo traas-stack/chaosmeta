@@ -1,0 +1,19 @@
+apiVersion: inject.chaosmeta.io/v1alpha1
+kind: Experiment
+metadata:
+  name: kubernetes-deployment-delete
+spec:
+  scope: kubernetes
+  targetPhase: inject
+  rangeMode:
+    type: count
+    value: 1
+  experiment:
+    target: deployment
+    fault: delete
+    duration: 1m
+  selector:
+    - namespace: default
+      name:
+        - nginx
+        - nginx2

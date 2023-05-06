@@ -1,0 +1,27 @@
+{
+  "worker": {
+    "poolCount": 16
+  },
+  "ticker": {
+    "autoCheckInterval": 2
+  },
+  "executor": {
+    "mode": "daemonset",
+    "executor": "chaosmetad",
+    "version": "0.0.1",
+    "agentConfig": {
+      "agentPort": 29595
+    },
+    "daemonsetConfig": {
+      "localExecPath": "/tmp",
+      "daemonNs": "chaosmeta",
+      "daemonLabel": {
+        "app.chaosmeta.io": "chaosmeta-daemon"
+      },
+      "autoLabelNode": false,
+      "nodeSelectorLabel": {
+        "chaos-role.chaosmeta.io": "chaosmeta-daemon"
+      }
+    }
+  }
+}

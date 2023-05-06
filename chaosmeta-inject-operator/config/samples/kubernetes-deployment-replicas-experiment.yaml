@@ -1,0 +1,29 @@
+apiVersion: inject.chaosmeta.io/v1alpha1
+kind: Experiment
+metadata:
+#  labels:
+#    app.kubernetes.io/name: experiment
+#    app.kubernetes.io/instance: experiment-sample
+#    app.kubernetes.io/part-of: chaosmeta-inject-operator
+#    app.kubernetes.io/managed-by: kustomize
+#    app.kubernetes.io/created-by: chaosmeta-inject-operator
+  name: kubernetes-deployment-replicas
+spec:
+  scope: kubernetes
+  targetPhase: recover
+  experiment:
+    target: deployment
+    fault: replicas
+    duration: 5m
+    args:
+      - key: value
+        value: "0"
+        valueType: int
+      - key: mode
+        value: "absolutecount"
+        valueType: string
+  selector:
+    - namespace: default
+      name:
+        - nginx
+        - nginx2

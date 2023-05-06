@@ -1,0 +1,31 @@
+apiVersion: inject.chaosmeta.io/v1alpha1
+kind: Experiment
+metadata:
+  labels:
+    app.kubernetes.io/name: experiment
+    app.kubernetes.io/instance: experiment-sample
+    app.kubernetes.io/part-of: chaosmeta-inject-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: chaosmeta-inject-operator
+  name: node-experiment
+spec:
+  scope: node
+  targetPhase: recover
+  experiment:
+    target: cpu
+    fault: burn
+    duration: 2m
+    args:
+      - key: percent
+        value: '80'
+        valueType: int
+      - key: count
+        value: '1'
+        valueType: int
+  selector:
+    - name:
+        - k8s-node1
+    - label:
+        kubernetes.io/hostname: k8s-master
+    - ip:
+        - 192.168.2.189

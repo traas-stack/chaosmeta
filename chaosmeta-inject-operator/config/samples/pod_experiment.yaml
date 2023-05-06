@@ -1,0 +1,34 @@
+apiVersion: inject.chaosmeta.io/v1alpha1
+kind: Experiment
+metadata:
+  labels:
+    app.kubernetes.io/name: experiment
+    app.kubernetes.io/instance: experiment-sample
+    app.kubernetes.io/part-of: chaosmeta-inject-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: chaosmeta-inject-operator
+  name: pod-experiment
+spec:
+  scope: pod
+  targetPhase: inject
+  rangeMode:
+    type: all
+    value: 30
+  experiment:
+    target: network
+    fault: delay
+    duration: 10m
+    args:
+      - key: interface
+        value: 'eth0'
+        valueType: string
+      - key: latency
+        value: '2s'
+        valueType: string
+  selector:
+    - namespace: default
+      label:
+        k1: v1
+    - namespace: default
+      name:
+        - nginx-75c57b6fd7-hldwd
