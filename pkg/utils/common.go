@@ -106,6 +106,10 @@ func GetToolPath(tool string) string {
 	return fmt.Sprintf("%s/tools/%s", GetRunPath(), tool)
 }
 
+func GetToolDir() string {
+	return fmt.Sprintf("%s/tools", GetRunPath())
+}
+
 func GetContainerPath(tool string) string {
 	return fmt.Sprintf("/tmp/%s", tool)
 }
