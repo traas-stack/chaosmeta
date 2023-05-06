@@ -1,0 +1,27 @@
+# permissions for end users to view experiments.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: experiment-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: chaosmeta-inject-operator
+    app.kubernetes.io/part-of: chaosmeta-inject-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: experiment-viewer-role
+rules:
+- apiGroups:
+  - inject.chaosmeta.io
+  resources:
+  - experiments
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - inject.chaosmeta.io
+  resources:
+  - experiments/status
+  verbs:
+  - get

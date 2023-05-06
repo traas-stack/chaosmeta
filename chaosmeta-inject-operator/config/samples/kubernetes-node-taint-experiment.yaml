@@ -1,0 +1,27 @@
+apiVersion: inject.chaosmeta.io/v1alpha1
+kind: Experiment
+metadata:
+  #  labels:
+  #    app.kubernetes.io/name: experiment
+  #    app.kubernetes.io/instance: experiment-sample
+  #    app.kubernetes.io/part-of: chaosmeta-inject-operator
+  #    app.kubernetes.io/managed-by: kustomize
+  #    app.kubernetes.io/created-by: chaosmeta-inject-operator
+  name: kubernetes-node-taint
+spec:
+  scope: kubernetes
+  targetPhase: recover
+  experiment:
+    target: node
+    fault: taint
+    duration: 1m
+    args:
+      - key: add
+        value: "k1=v1:NoSchedule,k2=v2:NoSchedule"
+        valueType: string
+      - key: delete
+        value: "a=b:NoSchedule"
+        valueType: string
+  selector:
+    - name:
+        - k8s-node2

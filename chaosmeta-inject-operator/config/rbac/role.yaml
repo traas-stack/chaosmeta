@@ -1,0 +1,58 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - apps
+  resources:
+  - daemonsets
+  - deployments
+  - replicasets
+  - statefulsets
+  verbs:
+  - '*'
+- apiGroups:
+  - batchs
+  resources:
+  - jobs
+  verbs:
+  - '*'
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  - nodes
+  - pods
+  - pods/exec
+  - services
+  verbs:
+  - '*'
+- apiGroups:
+  - inject.chaosmeta.io
+  resources:
+  - experiments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - inject.chaosmeta.io
+  resources:
+  - experiments/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - inject.chaosmeta.io
+  resources:
+  - experiments/status
+  verbs:
+  - get
+  - patch
+  - update

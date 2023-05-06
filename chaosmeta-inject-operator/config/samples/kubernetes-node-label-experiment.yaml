@@ -1,0 +1,29 @@
+apiVersion: inject.chaosmeta.io/v1alpha1
+kind: Experiment
+metadata:
+  #  labels:
+  #    app.kubernetes.io/name: experiment
+  #    app.kubernetes.io/instance: experiment-sample
+  #    app.kubernetes.io/part-of: chaosmeta-inject-operator
+  #    app.kubernetes.io/managed-by: kustomize
+  #    app.kubernetes.io/created-by: chaosmeta-inject-operator
+  name: kubernetes-node-label
+spec:
+  scope: kubernetes
+  targetPhase: inject
+  experiment:
+    target: node
+    fault: label
+    duration: 10m
+    args:
+      - key: add
+        value: "k1=v1,k2=v2,k3="
+        valueType: string
+      - key: delete
+        value: "chaos-role.chaosmeta.io"
+        valueType: string
+  selector:
+    - name:
+        - k8s-node1
+    - label:
+        kubernetes.io/hostname: k8s-master
