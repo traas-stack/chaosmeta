@@ -77,7 +77,7 @@ func PrintExpByOption(ctx context.Context, o *OptionExpQuery, ifAll bool, format
 }
 
 func printJson(ctx context.Context, exps []*storage.Experiment, total int64) {
-	//logger := log.GetLogger(ctx)
+	logger := log.GetLogger(ctx)
 	reList := make([]model.ExperimentDataUnit, len(exps))
 	for i, exp := range exps {
 		reList[i] = handler.ExpToExperimentDataUnit(exp)
@@ -93,7 +93,11 @@ func printJson(ctx context.Context, exps []*storage.Experiment, total int64) {
 		errutil.SolveErr(ctx, errutil.InternalErr, fmt.Sprintf("query response change to string error: %s", err.Error()))
 	}
 
-	fmt.Println(string(reBytes))
+	if log.Path != "" {
+		logger.Info(string(reBytes))
+	} else {
+		fmt.Println(string(reBytes))
+	}
 }
 
 func printTable(ctx context.Context, exps []*storage.Experiment, total int64, ifAll bool) {
