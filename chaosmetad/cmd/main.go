@@ -38,7 +38,7 @@ var rootCmd = &cobra.Command{
 
 func initRootCmd() {
 	rootCmd.PersistentFlags().StringVar(&log.Level, "log-level", "info", "value support: debug, info, warn, error")
-	rootCmd.PersistentFlags().StringVar(&log.Path, "log-path", "", "log file's path, its dir mush exist, eg: /tmp/chaosmetad.log, /tmp")
+	rootCmd.PersistentFlags().StringVar(&log.Path, "log-path", "", "log file's path, eg: /tmp/chaosmetad.log")
 	rootCmd.PersistentFlags().StringVar(&utils.TraceId, "trace-id", "", "trace id")
 
 	rootCmd.AddCommand(inject.NewInjectCommand())

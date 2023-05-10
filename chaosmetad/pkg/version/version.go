@@ -20,11 +20,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/log"
 )
 
 func PrintVersion(ctx context.Context) {
+	logger := log.GetLogger(ctx)
 	reBytes, _ := json.Marshal(GetVersion())
-	fmt.Println(string(reBytes))
+	if log.Path == "" {
+		fmt.Println(string(reBytes))
+	} else {
+		logger.Info(string(reBytes))
+	}
 }
 
 func GetVersion() *Info {

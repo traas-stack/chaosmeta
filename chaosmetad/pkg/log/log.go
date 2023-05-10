@@ -24,7 +24,6 @@ import (
 	"sync"
 
 	"os"
-	"path/filepath"
 )
 
 var (
@@ -41,7 +40,6 @@ const (
 	Error = "error"
 
 	TimeFormat = "2006-01-02 15:04:05"
-	FileName   = "chaosmetad"
 )
 
 func GetLogger(ctx context.Context) *logrus.Entry {
@@ -93,29 +91,9 @@ func setLogger() {
 }
 
 func getLogPathFile() (*os.File, error) {
-	s, err := os.Stat(filepath.Dir(Path))
+	f, err := os.OpenFile(Path, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
 	if err != nil {
 		return nil, err
-	}
-
-	logPath := Path
-	if s.IsDir() {
-		logPath = fmt.Sprintf("%s/%s.log", Path, FileName)
-	}
-
-	var f *os.File
-	var ferr error
-	_, fe := os.Stat(Path)
-	if os.IsExist(fe) {
-		f, ferr = os.OpenFile(logPath, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
-		if ferr != nil {
-			return nil, ferr
-		}
-	} else {
-		f, ferr = os.Create(Path)
-		if ferr != nil {
-			return nil, ferr
-		}
 	}
 
 	return f, nil
