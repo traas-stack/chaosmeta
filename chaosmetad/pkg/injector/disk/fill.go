@@ -68,7 +68,7 @@ func (i *FillInjector) SetOption(cmd *cobra.Command) {
 
 	cmd.Flags().IntVarP(&i.Args.Percent, "percent", "p", 0, "disk fill target percent, an integer in (0,100] without \"%\", eg: \"30\" means \"30%\"")
 	cmd.Flags().StringVarP(&i.Args.Bytes, "bytes", "b", "", "disk fill bytes to add, support unit: KB/MB/GB/TB（default KB）")
-	cmd.Flags().StringVarP(&i.Args.Dir, "dir", "d", "", "disk fill target dir")
+	cmd.Flags().StringVarP(&i.Args.Dir, "dir", "d", "", fmt.Sprintf("disk fill target dir（default %s）", DefaultDir))
 }
 
 func (i *FillInjector) getCmdExecutor(method, args string) *cmdexec.CmdExecutor {

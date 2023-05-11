@@ -43,7 +43,7 @@ type HangInjector struct {
 }
 
 type HangArgs struct {
-	PidList string `json:"pid_list"` // 需要校验是否存在
+	PidList string `json:"pid_list"`
 	Key     string `json:"key"`
 	DevList string `json:"dev_list"`
 	Mode    string `json:"mode"`

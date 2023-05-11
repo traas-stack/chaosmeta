@@ -48,7 +48,7 @@ func ExperimentInjectPost(w http.ResponseWriter, r *http.Request) {
 		} else {
 			creator := injectReq.Creator
 			if creator == "" {
-				creator = r.Host
+				creator = r.RemoteAddr
 			}
 
 			if err := i.LoadInjector(&storage.Experiment{

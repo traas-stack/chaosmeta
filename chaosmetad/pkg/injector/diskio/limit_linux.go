@@ -44,9 +44,9 @@ type LimitInjector struct {
 }
 
 type LimitArgs struct {
-	PidList    string `json:"pid_list"` // 需要校验是否存在
+	PidList    string `json:"pid_list"`
 	Key        string `json:"key"`
-	DevList    string `json:"dev_list"` // 需要校验是否存在
+	DevList    string `json:"dev_list"`
 	ReadBytes  string `json:"read_bytes,omitempty"`
 	WriteBytes string `json:"write_bytes,omitempty"`
 	ReadIO     int64  `json:"read_io,omitempty"`
