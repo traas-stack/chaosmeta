@@ -83,6 +83,10 @@ func (i *ChmodInjector) Validator(ctx context.Context) error {
 		return fmt.Errorf("\"path\" is empty")
 	}
 
+	if i.Args.Permission == "" {
+		return fmt.Errorf("\"permission\" is empty")
+	}
+
 	if i.Info.ContainerRuntime != "" {
 		if !filepath.IsAbs(i.Args.Path) {
 			return fmt.Errorf("\"path\" must provide absolute path")
@@ -95,10 +99,8 @@ func (i *ChmodInjector) Validator(ctx context.Context) error {
 		}
 	}
 
-	if i.Args.Permission != "" {
-		if err := filesys.CheckPermission(i.Args.Permission); err != nil {
-			return fmt.Errorf("\"permission\" is invalid: %s", err.Error())
-		}
+	if err := filesys.CheckPermission(i.Args.Permission); err != nil {
+		return fmt.Errorf("\"permission\" is invalid: %s", err.Error())
 	}
 
 	return i.getCmdExecutor(utils.MethodValidator, i.Args.Path).ExecTool(ctx)
