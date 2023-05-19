@@ -70,7 +70,7 @@ spec:
         - /manager
         args:
         - --leader-elect
-        image: chaosmeta-inject-controller:v0.0.1
+        image: chaosmeta-inject-controller:v0.0.2
         name: manager
         securityContext:
           allowPrivilegeEscalation: false

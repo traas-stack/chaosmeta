@@ -43,18 +43,18 @@ func AddToProCgroup(mPid, cPid int) error {
 func CalculateNowPercent(targetPid int) ([]float64, error) {
 	cgroup, err := LoadCgroup(targetPid)
 	if err != nil {
-		return nil, fmt.Errorf("get cpu usage fail, %s", err.Error())
+		return nil, fmt.Errorf("load cgroup of [%d] error: %s", targetPid, err.Error())
 	}
 
 	stats, err := cgroup.Stat(cgroups.IgnoreNotExist)
 	if err != nil {
-		return nil, fmt.Errorf("get cpu usage fail, %s", err.Error())
+		return nil, fmt.Errorf("initial stat cgroup error: %s", err.Error())
 	}
 	perUsage := make([]float64, len(stats.CPU.Usage.PerCPU))
 	time.Sleep(time.Second * 2)
 	afterStats, err := cgroup.Stat(cgroups.IgnoreNotExist)
 	if err != nil {
-		return nil, fmt.Errorf("get cpu usage fail, %s", err.Error())
+		return nil, fmt.Errorf("later stat cgroup error: %s", err.Error())
 	}
 
 	for i := range stats.CPU.Usage.PerCPU {
@@ -65,6 +65,10 @@ func CalculateNowPercent(targetPid int) ([]float64, error) {
 }
 
 func LoadCgroup(cPid int) (cgroups.Cgroup, error) {
+	if cPid == -1 {
+		return cgroups.Load(hierarchy(RootCgroupPath), cgroups.StaticPath("/"))
+	}
+
 	return cgroups.Load(hierarchy(RootCgroupPath), pidPath(cPid))
 }
 

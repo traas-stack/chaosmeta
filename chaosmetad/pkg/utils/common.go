@@ -98,8 +98,10 @@ func StrListContain(arr []string, target string) bool {
 }
 
 func GetRunPath() string {
-	path, _ := filepath.Abs(filepath.Dir(os.Args[0]))
-	return path
+	//path, _ := filepath.Abs(filepath.Dir(os.Args[0]))
+	//return path
+	executablePath, _ := os.Executable()
+	return filepath.Dir(executablePath)
 }
 
 func GetToolPath(tool string) string {

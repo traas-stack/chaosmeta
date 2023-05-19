@@ -74,11 +74,12 @@ func getTestCases() []common.TestCase {
 
 // TODO: Currently, only the P0 use case (single fault execution) is supported, the non-root user and concurrent faults are not added, the use case of automatic recovery, and the use case of manually recovering and then performing recover
 func main() {
-	path, err := filepath.Abs(filepath.Dir(os.Args[0]))
+	path, err := os.Executable()
 	if err != nil {
 		common.ExitErr(fmt.Sprintf("get path error: %s", err.Error()))
 	}
 
+	path = filepath.Dir(path)
 	pathArr := strings.Split(path, "/")
 	rootPath := strings.Join(pathArr[:len(pathArr)-1], "/")
 	tool := fmt.Sprintf("%s/build/chaosmetad/chaosmetad", rootPath)
