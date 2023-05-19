@@ -65,7 +65,7 @@ The currently supported failure capabilities are as follows:
 docker pull ghcr.io/traas-stack/chaosmetad-demo:v0.1.0
 
 # Run and enter the docker container
-docker run -it ghcr.io/traas-stack/chaosmetad-demo:v0.1.0 /bin/bash
+docker run --privileged -it ghcr.io/traas-stack/chaosmetad-demo:v0.1.0 /bin/bash
 
 # make the environment variable take effect
 source /etc/profile

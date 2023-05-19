@@ -80,8 +80,8 @@ ChaosMeta 是一个致力于支撑完整故障演练生命周期的平台，提�
 # 下载镜像
 docker pull ghcr.io/traas-stack/chaosmetad-demo:v0.1.0
 
-# 运行并进入容器
-docker run -it ghcr.io/traas-stack/chaosmetad-demo:v0.1.0 /bin/bash
+# 特权级运行并进入容器
+docker run --privileged -it ghcr.io/traas-stack/chaosmetad-demo:v0.1.0 /bin/bash
 
 # 使环境变量生效
 source /etc/profile
