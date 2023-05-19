@@ -1,5 +1,5 @@
 ![](docs/static/logo.png)
-[中文文档](README_CN.md)
+[中文版README](README_CN.md)
 # Introduction
 ChaosMeta is an open-source cloud-native chaos engineering platform developed by Ant Group. It embodies Ant Group's methodology, technology, and products accumulated over years of practice in large-scale red-blue team exercises at the company level. Guided by the "risk catalog" (a general risk scenario manual for various technical components within the company), and combined with technical practice, ChaosMeta provides protection for Ant Group's various major promotional activities over the years.
 
