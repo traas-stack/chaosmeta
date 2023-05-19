@@ -8,9 +8,9 @@ import (
 	context "context"
 	reflect "reflect"
 
+	gomock "github.com/golang/mock/gomock"
 	v1alpha1 "github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/api/v1alpha1"
 	model "github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/pkg/model"
-	gomock "github.com/golang/mock/gomock"
 )
 
 // MockIAnalyzer is a mock of IAnalyzer interface.

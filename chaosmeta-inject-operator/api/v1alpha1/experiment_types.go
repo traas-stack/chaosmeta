@@ -31,7 +31,7 @@ const (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-type ScopeType = string
+type ScopeType string
 
 const (
 	PodScopeType        ScopeType = "pod"
@@ -55,14 +55,14 @@ type ExperimentSpec struct {
 	//SubObj      bool      `json:"subObj"`
 }
 
-type PhaseType = string
+type PhaseType string
 
 const (
 	InjectPhaseType  PhaseType = "inject"
 	RecoverPhaseType PhaseType = "recover"
 )
 
-type StatusType = string
+type StatusType string
 
 const (
 	CreatedStatusType     StatusType = "created"
@@ -110,7 +110,7 @@ func init() {
 	SchemeBuilder.Register(&Experiment{}, &ExperimentList{})
 }
 
-type RangeType = string
+type RangeType string
 
 const (
 	AllRangeType     RangeType = "all"
@@ -142,7 +142,7 @@ type ExperimentCommon struct {
 	Args     []ArgsUnit `json:"args,omitempty"`
 }
 
-type VType = string
+type VType string
 
 const (
 	IntVType    VType = "int"
@@ -171,7 +171,7 @@ type ExperimentDetailUnit struct {
 	Backup     string     `json:"backup,omitempty"`
 }
 
-type CloudTargetType = string
+type CloudTargetType string
 
 const (
 	ClusterCloudTarget     CloudTargetType = "cluster"
