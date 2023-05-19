@@ -16,14 +16,18 @@
 set -eu
 
 OS_NAME=$1
-if [ "${OS_NAME}" != "darwin" ] && [ "${OS_NAME}" != "windows" ] && [ "${OS_NAME}" != "linux" ]; then
-  echo "please add args os：darwin/windows/linux. eg: sh build.sh linux"
+#if [ "${OS_NAME}" != "darwin" ] && [ "${OS_NAME}" != "windows" ] && [ "${OS_NAME}" != "linux" ]; then
+#  echo "please add args os：darwin/windows/linux. eg: sh build.sh linux"
+#  exit 1
+#fi
+if [ "${OS_NAME}" != "linux" ]; then
+  echo "please add args os：linux. eg: sh build.sh linux"
   exit 1
 fi
 
 # base info
 BUILD_NAME="chaosmetad"
-VERSION="0.0.2"
+VERSION="0.1.0"
 BUILD_DATE=$(date "+%Y-%m-%d %H:%M:%S")
 
 # env var

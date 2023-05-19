@@ -60,7 +60,7 @@ func (e *CmdExecutor) GetTargetPid(ctx context.Context) (int, error) {
 
 		return client.GetPidById(ctx, e.ContainerId)
 	} else {
-		return 1, nil
+		return -1, nil
 	}
 }
 

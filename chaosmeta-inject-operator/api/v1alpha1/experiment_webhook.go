@@ -134,9 +134,9 @@ func (r *Experiment) ValidateCreate() error {
 		}
 	} else if r.Spec.Scope == NodeScopeType {
 		for _, unitSelector := range r.Spec.Selector {
-			if len(unitSelector.Name) == 0 && len(unitSelector.Label) == 0 && len(unitSelector.IP) == 0 {
-				return fmt.Errorf("must provide one of \"name\"、\"label\"、\"ip\" in selector")
-			}
+			//if len(unitSelector.Name) == 0 && len(unitSelector.Label) == 0 && len(unitSelector.IP) == 0 {
+			//	return fmt.Errorf("must provide one of \"name\"、\"label\"、\"ip\" in selector")
+			//}
 
 			var emptyCount int
 			if len(unitSelector.Name) == 0 {
@@ -150,11 +150,11 @@ func (r *Experiment) ValidateCreate() error {
 			}
 
 			if emptyCount == 0 {
-				return fmt.Errorf("must provide one type of selector in \"nodeName\"、\"label\"、\"ip\"")
+				return fmt.Errorf("must provide one type of \"name\"、\"label\"、\"ip\" selector in one selector unit")
 			}
 
-			if emptyCount != 1 {
-				return fmt.Errorf("can only provide one type of selector in \"nodeName\"、\"label\"、\"ip\"")
+			if emptyCount != 2 {
+				return fmt.Errorf("can only provide one type of \"name\"、\"label\"、\"ip\" selector in one selector unit")
 			}
 		}
 	}
