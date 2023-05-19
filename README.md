@@ -4,7 +4,7 @@
 ChaosMeta is an open-source cloud-native chaos engineering platform developed by Ant Group. It embodies Ant Group's methodology, technology, and products accumulated over years of practice in large-scale red-blue team exercises at the company level. Guided by the "risk catalog" (a general risk scenario manual for various technical components within the company), and combined with technical practice, ChaosMeta provides protection for Ant Group's various major promotional activities over the years.
 
 ChaosMeta is a platform dedicated to supporting the entire fault injection practice lifecycle and proposes a "chaos engineering lifecycle" model that covers multiple stages including Admission Check, Traffic Injection, Fault Injection, Fault Measurement, Recovery Measurement and Fault Recovery. While liberating user productivity, it is also pursuing the future form of chaos engineering: one-click automated practice, and even intelligent practice.
-![](docs/static/lifecycle.jpg)
+![](docs/static/lifecycle_en.png)
 
 At the current stage, ChaosMeta has opened up rich fault injection capabilities to the outside world, which not only flexibly supports single-machine deployment and Kubernetes cloud-native deployment but also supports experimentation with cloud-native fault scenarios such as Kubernetes itself and Operators. It can help enterprises cope well with system complexity and uncertainty, thereby improving system reliability and stability.
 
@@ -24,7 +24,7 @@ Ant Group has internally summarized a relatively mature exercise model: "Chaos E
 Behind the rich drill experience, Ant Group has also precipitated a set of manuals containing common risk scenarios of technical components in various fields, called "risk catalog". ChaosMeta is based on the "chaos engineering life cycle" model and "risk catalog" On a theoretical basis, the automatic exercise function of one-click physical examination is realized, and the stability score of the target is directly output, which greatly liberates the human input of users in chaos engineering.
 
 # Architecture Overview
-![](docs/static/architecture.jpg)
+![](docs/static/architecture.png)
 
 ##### Client
 The Client layer is mainly composed of chaosmeta-platform components. Its main task is to lower the threshold for users to use, provide a visual interface, and facilitate users to use platform functions such as planning, arrangement, experimental configuration, and experimental record details.
@@ -115,6 +115,6 @@ At this stage, the "Risk Catalog" will play a greater role. It not only gives th
 Explore the direction of combining artificial intelligence
 ### Fault Injection Capability
 The following is just a classification of fault capabilities. For the specific atomic fault capabilities provided, please refer to the [description of fault capabilities](https://app.gitbook.com/o/W5FFF9T3K11W1z4wiLOY/s/RZU42VJaoN8AmJe0E5dG/gong-neng-shi-yong-shuo-ming) (welcome to submit issues and put forward new capability requirements, and those with higher requirements are given priority):
-![](docs/static/roadmap.jpg)
+![](docs/static/roadmap.png)
 # License
 ChaosMeta is licensed under the Apache 2.0 license, please read [LICENSE](LICENSE) for details

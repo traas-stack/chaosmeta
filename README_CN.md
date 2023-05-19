@@ -5,7 +5,7 @@
 ChaosMeta 是蚂蚁集团开源的一款云原生混沌工程平台。它凝聚了蚂蚁集团在公司级大规模红蓝攻防演练实践中多年积累的方法论、技术以及产品。由“风险目录”（内部对各领域技术组件的通用风险场景手册）作为理论指导，结合技术实践，为蚂蚁集团多年的各种大促活动保驾护航。
 
 ChaosMeta 是一个致力于支撑完整故障演练生命周期的平台，提出了一个“ **混沌工程生命周期** ”的模型，覆盖了准入检测、流量注入、故障注入、故障度量、故障恢复、恢复度量等多个阶段。为用户解放生产力的同时，也在追求着混沌工程的未来形态：一键自动化演练，甚至智能化演练。
-![](docs/static/lifecycle.jpg)
+![](docs/static/lifecycle_cn.png)
 
 在当前阶段，ChaosMeta 对外开放了丰富的故障注入能力，不仅灵活支持单机部署以及 Kubernetes 云原生部署，还支持对 Kubernetes 自身以及 Operator 等云原生故障场景进行实验。可以帮助企业很好地应对系统复杂性和不确定性，从而提高系统的可靠性和稳定性。
 
@@ -38,7 +38,7 @@ ChaosMeta 是一个致力于支撑完整故障演练生命周期的平台，提�
 在丰富的演练经验背后，蚂蚁集团还沉淀出了一套包含各领域技术组件的通用风险场景的手册，称为“风险目录”，ChaosMeta 则在“混沌工程生命周期”模型以及“风险目录”的理论基础上，实现**一键体检**的自动化演练功能，直接产出目标的稳定性分数，大大解放用户在混沌工程中的人力投入。
 
 # 架构概览
-![](docs/static/architecture.jpg)
+![](docs/static/architecture.png)
 
 ##### 用户层（Client）
 用户层主要是由 **chaosmeta-platform** 组件构成，其主要任务是降低用户使用的门槛，提供可视化界面，方便用户使用计划、编排、实验配置、实验记录详情等平台功能。
@@ -134,6 +134,6 @@ ChaosMeta 平台能力的未来演进分为三大阶段
 #### 故障注入能力
 以下仅为故障能力分类，具体提供的原子故障能力详见[故障能力说明](https://app.gitbook.com/o/W5FFF9T3K11W1z4wiLOY/s/RZU42VJaoN8AmJe0E5dG/gong-neng-shi-yong-shuo-ming)（欢迎提交issue，提出新能力需求，需求较高的优先提供）：
 
-![](docs/static/roadmap.jpg)
+![](docs/static/roadmap.png)
 # License
 ChaosMeta 遵循 Apache 2.0 许可证，详细内容请阅读 [LICENSE](LICENSE)
