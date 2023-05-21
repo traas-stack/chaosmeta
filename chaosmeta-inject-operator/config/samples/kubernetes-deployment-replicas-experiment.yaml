@@ -10,7 +10,7 @@ metadata:
   name: kubernetes-deployment-replicas
 spec:
   scope: kubernetes
-  targetPhase: recover
+  targetPhase: inject
   experiment:
     target: deployment
     fault: replicas
