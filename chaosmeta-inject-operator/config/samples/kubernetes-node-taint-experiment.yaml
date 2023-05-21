@@ -10,7 +10,7 @@ metadata:
   name: kubernetes-node-taint
 spec:
   scope: kubernetes
-  targetPhase: recover
+  targetPhase: inject
   experiment:
     target: node
     fault: taint

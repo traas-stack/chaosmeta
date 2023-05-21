@@ -10,7 +10,7 @@ metadata:
   name: node-experiment
 spec:
   scope: node
-  targetPhase: recover
+  targetPhase: inject
   experiment:
     target: cpu
     fault: burn
