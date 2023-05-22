@@ -12,11 +12,11 @@ spec:
       labels:
         app.chaosmeta.io: chaosmeta-daemon
     spec:
-      tolerations:
-        - effect: NoSchedule
-          key: node-role.kubernetes.io/master
-      nodeSelector:
-        chaos-role.chaosmeta.io: chaosmeta-daemon
+#      tolerations:
+#        - effect: NoSchedule
+#          key: node-role.kubernetes.io/master
+#      nodeSelector:
+#        chaos-role.chaosmeta.io: chaosmeta-daemon
       containers:
         - name: chaosmeta-daemon
           image: ghcr.io/traas-stack/chaosmeta-daemon:v0.1.0
