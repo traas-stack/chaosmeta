@@ -85,9 +85,9 @@ curl 127.0.0.1:8080
 chaosmetad recover test-fg3g4
 ```
 #### Failure Capability Use
-For details, see: [Instruction for Use](https://app.gitbook.com/o/W5FFF9T3K11W1z4wiLOY/s/RZU42VJaoN8AmJe0E5dG/gong-neng-shi-yong-shuo-ming)
+For details, see: [Instruction for Use](https://chaosmeta.gitbook.io/chaosmeta-cn/gong-neng-shi-yong-shuo-ming)
 #### Installation Guide
-For details, see: [Installation Guide](https://app.gitbook.com/o/W5FFF9T3K11W1z4wiLOY/s/RZU42VJaoN8AmJe0E5dG/an-zhuang-zhi-yin)
+For details, see: [Installation Guide](https://chaosmeta.gitbook.io/chaosmeta-cn/an-zhuang-zhi-yin)
 # Comminicate
 Welcome to submit defects, questions, suggestions and new features, all problems can be submitted to [Github Issues](https://github.com/traas-stack/chaosmeta/issues/new), you can also contact us in the following ways:
 - DingTalk Group: 21765030887
@@ -114,7 +114,7 @@ At this stage, the "Risk Catalog" will play a greater role. It not only gives th
 ##### Phase 3 - intelligence
 Explore the direction of combining artificial intelligence
 ### Fault Injection Capability
-The following is just a classification of fault capabilities. For the specific atomic fault capabilities provided, please refer to the [description of fault capabilities](https://app.gitbook.com/o/W5FFF9T3K11W1z4wiLOY/s/RZU42VJaoN8AmJe0E5dG/gong-neng-shi-yong-shuo-ming) (welcome to submit issues and put forward new capability requirements, and those with higher requirements are given priority):
+The following is just a classification of fault capabilities. For the specific atomic fault capabilities provided, please refer to the [description of fault capabilities](https://chaosmeta.gitbook.io/chaosmeta-cn/gong-neng-shi-yong-shuo-ming) (welcome to submit issues and put forward new capability requirements, and those with higher requirements are given priority):
 ![](docs/static/roadmap.png)
 # License
 ChaosMeta is licensed under the Apache 2.0 license, please read [LICENSE](LICENSE) for details

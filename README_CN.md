@@ -103,9 +103,9 @@ chaosmetad recover test-fg3g4
 ```
 
 #### 故障能力使用
-详见：[功能使用说明](https://app.gitbook.com/o/W5FFF9T3K11W1z4wiLOY/s/RZU42VJaoN8AmJe0E5dG/gong-neng-shi-yong-shuo-ming)
+详见：[功能使用说明](https://chaosmeta.gitbook.io/chaosmeta-cn/gong-neng-shi-yong-shuo-ming)
 #### 安装指引
-详见：[安装指引](https://app.gitbook.com/o/W5FFF9T3K11W1z4wiLOY/s/RZU42VJaoN8AmJe0E5dG/an-zhuang-zhi-yin)
+详见：[安装指引](https://chaosmeta.gitbook.io/chaosmeta-cn/an-zhuang-zhi-yin)
 # 交流
 欢迎提交缺陷、问题、建议和新功能，所有问题都可以提交到 [Github Issues](https://github.com/traas-stack/chaosmeta/issues/new)，你也可以通过以下方式联系我们：
 - 钉钉群：21765030887
@@ -132,7 +132,7 @@ ChaosMeta 平台能力的未来演进分为三大阶段
 ##### 第三阶段-智能化
 探索结合人工智能的方向，自动生成更多未知的风险场景。
 #### 故障注入能力
-以下仅为故障能力分类，具体提供的原子故障能力详见[故障能力说明](https://app.gitbook.com/o/W5FFF9T3K11W1z4wiLOY/s/RZU42VJaoN8AmJe0E5dG/gong-neng-shi-yong-shuo-ming)（欢迎提交issue，提出新能力需求，需求较高的优先提供）：
+以下仅为故障能力分类，具体提供的原子故障能力详见[故障能力说明](https://chaosmeta.gitbook.io/chaosmeta-cn/gong-neng-shi-yong-shuo-ming)（欢迎提交issue，提出新能力需求，需求较高的优先提供）：
 
 ![](docs/static/roadmap.png)
 # License
