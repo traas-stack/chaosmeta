@@ -92,7 +92,7 @@ For details, see: [Installation Guide](https://chaosmeta.gitbook.io/chaosmeta-cn
 Welcome to submit defects, questions, suggestions and new features, all problems can be submitted to [Github Issues](https://github.com/traas-stack/chaosmeta/issues/new), you can also contact us in the following ways:
 - DingTalk Group: 21765030887
 - Slack group: [ChaosMeta](https://app.slack.com/client/T057ERYMS8J/C057883SM38?geocode=zh-cn)
-- WeChat public account: ChaosMeta Chaos Engineering
+- WeChat public account: ChaosMeta混沌工程
 - Email: chaosmeta.io@gmail.com
 - WeChat group: Email communication/WeChat public account to get QR code invitation
 # RoadMap
