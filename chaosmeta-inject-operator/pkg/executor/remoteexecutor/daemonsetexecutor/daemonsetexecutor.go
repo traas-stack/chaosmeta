@@ -31,6 +31,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/remotecommand"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"strings"
 )
 
 type DaemonsetRemoteExecutor struct {
@@ -101,6 +102,7 @@ func (r *DaemonsetRemoteExecutor) Inject(ctx context.Context, injectObject strin
 			continue
 		}
 
+		unitArgs.Key = strings.ReplaceAll(unitArgs.Key, "_", "-")
 		executeCmd = fmt.Sprintf("%s --%s %s", executeCmd, unitArgs.Key, unitArgs.Value)
 	}
 

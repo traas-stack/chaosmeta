@@ -155,7 +155,7 @@ func waitProExec(ctx context.Context, stdout, stderr *bytes.Buffer, timeoutSec i
 
 	log.GetLogger(ctx).Debugf(msg)
 
-	if strings.Index(msg, "error") >= 0 {
+	if strings.Index(msg, "error") >= 0 || strings.Index(msg, "Error") >= 0 {
 		return fmt.Errorf("inject error: %s", msg)
 	}
 
