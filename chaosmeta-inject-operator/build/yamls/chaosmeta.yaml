@@ -396,7 +396,7 @@ spec:
             - --leader-elect
           command:
             - /manager
-          image: ghcr.io/traas-stack/chaosmeta-inject-controller:v0.0.2
+          image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-inject-controller:v0.0.3
           livenessProbe:
             httpGet:
               path: /healthz

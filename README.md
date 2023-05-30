@@ -61,17 +61,14 @@ The currently supported failure capabilities are as follows:
 # Getting Started
 #### Quick Start
 ```shell
-# download docker mirror
-docker pull ghcr.io/traas-stack/chaosmetad-demo:v0.1.0
-
-# Run and enter the docker container
-docker run --privileged -it ghcr.io/traas-stack/chaosmetad-demo:v0.1.0 /bin/bash
+# download docker mirror and run container
+docker run --privileged -it registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmetad-demo:v0.1.1 /bin/bash
 
 # make the environment variable take effect
 source /etc/profile
 
 # Start the test service
-cd /home/demo && python -m SimpleHTTPServer 8080 > server.log 2>&1 &
+cd /tmp && python -m SimpleHTTPServer 8080 > server.log 2>&1 &
 curl 127.0.0.1:8080
 
 # Create an experiment to inject a 2s network delay into the lo network card, and it will automatically recover after 10 minutes

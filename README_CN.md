@@ -77,18 +77,14 @@ ChaosMeta 是一个致力于支撑完整故障演练生命周期的平台，提�
 # 使用指引
 #### 快速试用单机注入能力
 ```shell
-# 下载镜像
-docker pull ghcr.io/traas-stack/chaosmetad-demo:v0.1.0
-
-# 特权级运行并进入容器
-docker run --privileged -it ghcr.io/traas-stack/chaosmetad-demo:v0.1.0 /bin/bash
+# 下载镜像并运行容器
+docker run --privileged -it registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmetad-demo:v0.1.1 /bin/bash
 
 # 使环境变量生效
 source /etc/profile
 
 # 启动测试服务
-cd /home/demo
-python -m SimpleHTTPServer 8080 > server.log 2>&1 &
+cd /tmp && python -m SimpleHTTPServer 8080 > server.log 2>&1 &
 curl 127.0.0.1:8080
 
 # 创建一个实验，给lo网卡注入2s网络延迟，10分钟后自动恢复

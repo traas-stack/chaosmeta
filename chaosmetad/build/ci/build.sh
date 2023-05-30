@@ -27,7 +27,7 @@ fi
 
 # base info
 BUILD_NAME="chaosmetad"
-VERSION="0.1.0"
+VERSION="0.1.1"
 BUILD_DATE=$(date "+%Y-%m-%d %H:%M:%S")
 
 # env var
@@ -113,6 +113,9 @@ javac -d ${PACKAGE_DIR}/${OS_NAME}/tools ${PROJECT_DIR}/tools/jvm/${JVM_METHOD_R
 javac -d ${PACKAGE_DIR}/${OS_NAME}/tools ${PROJECT_DIR}/tools/jvm/${JVM_TRANSFORMER}.java -cp ${PROJECT_DIR}/tools/jvm/lib/tools.jar:${PROJECT_DIR}/tools/jvm/lib/javassist.jar:${PACKAGE_DIR}/${OS_NAME}/tools
 javac -d ${PACKAGE_DIR}/${OS_NAME}/tools ${PROJECT_DIR}/tools/jvm/${JVM_AGENT}.java -cp ${PROJECT_DIR}/tools/jvm/lib/tools.jar:${PROJECT_DIR}/tools/jvm/lib/json-20190722.jar:${PACKAGE_DIR}/${OS_NAME}/tools
 cp ${PROJECT_DIR}/tools/jvm/MANIFEST.MF ${PACKAGE_DIR}/${OS_NAME}/tools
+cp ${PROJECT_DIR}/tools/jvm/lib/tools.jar ${PACKAGE_DIR}/${OS_NAME}/tools
+cp ${PROJECT_DIR}/tools/jvm/lib/javassist.jar ${PACKAGE_DIR}/${OS_NAME}/tools
+cp ${PROJECT_DIR}/tools/jvm/lib/json-20190722.jar ${PACKAGE_DIR}/${OS_NAME}/tools
 cd ${PACKAGE_DIR}/${OS_NAME}/tools
 jar cvfm ${JVM_AGENT}.jar MANIFEST.MF ${JVM_AGENT}.class ${JVM_TRANSFORMER}.class ${JVM_METHOD_RULE}.class
 cp -R ${PACKAGE_DIR}/${OS_NAME}/tools ${OUTPUT_DIR}/

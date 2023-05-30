@@ -2,3 +2,4 @@ Manifest-Version: 1.0
 Can-Redefine-Classes: true
 Can-Retransform-Classes: true
 Agent-Class: ChaosMetaJVMAgent
+Class-Path: javassist.jar json-20190722.jar

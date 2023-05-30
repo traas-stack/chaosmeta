@@ -25,6 +25,7 @@ import (
 	httpclient "github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/pkg/http"
 	"github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/pkg/model"
 	"strconv"
+	"strings"
 )
 
 type AgentRemoteExecutor struct {
@@ -71,6 +72,7 @@ func (r *AgentRemoteExecutor) Inject(ctx context.Context, injectObject string, t
 			continue
 		}
 
+		unitArgs.Key = strings.ReplaceAll(unitArgs.Key, "-", "_")
 		if unitArgs.ValueType == v1alpha1.IntVType {
 			argsInt, err := strconv.Atoi(unitArgs.Value)
 			if err != nil {

@@ -246,7 +246,7 @@ func getRuleConfig(methodListMap map[string][]*MethodJVMRule, timeout int64) *JV
 }
 
 func getCmd(pid int) string {
-	return fmt.Sprintf("cd %s && java %s %d %s %s", utils.GetToolDir(), AttacherTool, pid, utils.GetToolPath(JVMAgentTool), getRuleFile(pid))
+	return fmt.Sprintf("cd %s && java -cp .:tools.jar %s %d %s %s", utils.GetToolDir(), AttacherTool, pid, utils.GetToolPath(JVMAgentTool), getRuleFile(pid))
 }
 
 func writeRule(ctx context.Context, pid int, ruleBytes []byte) error {
