@@ -2,7 +2,8 @@
 
 set -e
 
-ROOT_PATH=$(dirname $(readlink -f $0))/..
+BASE_DIR=`cd $(dirname $0); pwd`
+ROOT_PATH=${BASE_DIR}/..
 echo "${ROOT_PATH}"
 
 kubectl create configmap chaosmeta-inject-config --from-file="${ROOT_PATH}"/config/chaosmeta-inject.json -n chaosmeta

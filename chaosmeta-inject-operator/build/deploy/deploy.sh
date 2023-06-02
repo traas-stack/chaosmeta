@@ -1,19 +1,42 @@
 #!/bin/bash
 
 set -e
+
+NOW_DIR=`cd $(dirname $0); pwd`
 VERSION=$1
+if [ -z "$VERSION" ]; then
+    echo "version is empty"
+    exit 1
+fi
+echo "version: ${VERSION}"
 
-ROOT_PATH=$(dirname $(readlink -f $0))/chaosmeta_build
-echo "${ROOT_PATH}"
-mkdir -p "${ROOT_PATH}"/build
-mkdir -p "${ROOT_PATH}"/config
-mkdir -p "${ROOT_PATH}"/yamls
+function downloadfile() {
+    url=$1
+    filename=$2
+    echo "download from: ${url}"
+    if [ ! -e "${filename}" ]; then
+        curl -o "${filename}" "${url}"
+    fi
+    echo "download success: ${filename}"
+}
 
-curl -o "${ROOT_PATH}"/config/chaosmeta-inject.json https://raw.githubusercontent.com/traas-stack/chaosmeta/"${VERSION}"/chaosmeta-inject-operator/config/chaosmeta-inject.json
-curl -o "${ROOT_PATH}"/build/build.sh https://raw.githubusercontent.com/traas-stack/chaosmeta/"${VERSION}"/chaosmeta-inject-operator/build/build.sh
-curl -o "${ROOT_PATH}"/yamls/chaosmeta.yaml https://raw.githubusercontent.com/traas-stack/chaosmeta/"${VERSION}"/chaosmeta-inject-operator/build/yamls/chaosmeta.yaml
-curl -o "${ROOT_PATH}"/yamls/chaosmeta-daemonset.yaml https://raw.githubusercontent.com/traas-stack/chaosmeta/"${VERSION}"/chaosmeta-inject-operator/build/yamls/chaosmeta-daemonset.yaml
+ROOT_PATH=${NOW_DIR}/../
+if [ "${VERSION}" != "local" ]; then
+    ROOT_PATH=${NOW_DIR}/chaosmeta_build
+    echo "${ROOT_PATH}"
+    mkdir -p "${ROOT_PATH}"/build "${ROOT_PATH}"/config "${ROOT_PATH}"/yamls
+    preurl=https://raw.githubusercontent.com/traas-stack/chaosmeta/"${VERSION}"/chaosmeta-inject-operator
+
+    downloadfile "${preurl}"/config/chaosmeta-inject.json "${ROOT_PATH}"/config/chaosmeta-inject.json
+    downloadfile "${preurl}"/build/build.sh "${ROOT_PATH}"/build/build.sh
+    downloadfile "${preurl}"/build/yamls/chaosmeta.yaml "${ROOT_PATH}"/yamls/chaosmeta.yaml
+    downloadfile "${preurl}"/build/yamls/chaosmeta-daemonset.yaml "${ROOT_PATH}"/yamls/chaosmeta-daemonset.yaml
+fi
 
 kubectl apply -f "${ROOT_PATH}"/yamls/chaosmeta.yaml
 kubectl apply -f "${ROOT_PATH}"/yamls/chaosmeta-daemonset.yaml
-sh "${ROOT_PATH}"/build/build.sh
+if [ "${VERSION}" != "local" ]; then
+    sh "${ROOT_PATH}"/build/build.sh
+else
+    sh "${ROOT_PATH}"/build.sh
+fi
