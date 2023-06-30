@@ -265,19 +265,24 @@ func solveFinalStatus(ctx context.Context, exp *v1alpha1.Experiment) {
 	}
 
 	injectDetail := exp.Status.Detail.Inject
-	recoverDetail := make([]v1alpha1.ExperimentDetailUnit, len(injectDetail))
 	nowTime := time.Now().Format(model.TimeFormat)
-	for i := range injectDetail {
-		recoverDetail[i] = v1alpha1.ExperimentDetailUnit{
-			InjectObjectName: injectDetail[i].InjectObjectName,
-			UID:              injectDetail[i].UID,
-			Status:           v1alpha1.CreatedStatusType,
-			Message:          "start to recover",
-			StartTime:        nowTime,
-			Backup:           injectDetail[i].Backup,
-		}
-	}
+	exp.Status.Phase, exp.Status.UpdateTime = v1alpha1.RecoverPhaseType, nowTime
 
-	exp.Status.Phase, exp.Status.Status, exp.Status.Detail.Recover = v1alpha1.RecoverPhaseType, v1alpha1.CreatedStatusType, recoverDetail
-	exp.Status.UpdateTime = nowTime
+	if len(injectDetail) != 0 {
+		recoverDetail := make([]v1alpha1.ExperimentDetailUnit, len(injectDetail))
+		for i := range injectDetail {
+			recoverDetail[i] = v1alpha1.ExperimentDetailUnit{
+				InjectObjectName: injectDetail[i].InjectObjectName,
+				UID:              injectDetail[i].UID,
+				Status:           v1alpha1.CreatedStatusType,
+				Message:          "start to recover",
+				StartTime:        nowTime,
+				Backup:           injectDetail[i].Backup,
+			}
+		}
+
+		exp.Status.Status, exp.Status.Detail.Recover = v1alpha1.CreatedStatusType, recoverDetail
+	} else {
+		exp.Status.Status = v1alpha1.SuccessStatusType
+	}
 }
