@@ -27,3 +27,14 @@
 *.swp
 *.swo
 *~
+
+/chaosmeta-platform-frontend/node_modules
+/chaosmeta-platform-frontend/.env.local
+/chaosmeta-platform-frontend/.umirc.local.ts
+/chaosmeta-platform-frontend/config/config.local.ts
+/chaosmeta-platform-frontend/src/.umi
+/chaosmeta-platform-frontend/src/.umi-production
+/chaosmeta-platform-frontend/src/.umi-test
+/chaosmeta-platform-frontend/dist
+/chaosmeta-platform-frontend/.swc
+/chaosmeta-platform-frontend/yarn.lock
