@@ -19,21 +19,31 @@ package logger
 import (
 	"context"
 	"fmt"
+	"github.com/beego/beego/v2/core/config"
 	"github.com/beego/beego/v2/core/logs"
-)
-
-var (
-	FileName = "logs/chaosmeta-platform.log"
-	MaxDays  = 7
-	Daily    = true
 )
 
 const (
 	TraceIdKey = "TraceId"
 )
 
-func Setup() {
-	if err := logs.SetLogger(logs.AdapterFile, fmt.Sprintf(`{"filename":"%s","daily":%t,"maxdays":%d}`, FileName, Daily, MaxDays)); err != nil {
+func Setup(cfg config.Configer) {
+	filename, err := cfg.String("log::filename")
+	if err != nil {
+		panic(any(fmt.Sprintf("get [log::filename] from config error: %s", err.Error())))
+	}
+
+	maxdays, err := cfg.Int("log::maxdays")
+	if err != nil {
+		panic(any(fmt.Sprintf("get [log::maxdays] from config error: %s", err.Error())))
+	}
+
+	daily, err := cfg.Bool("log::daily")
+	if err != nil {
+		panic(any(fmt.Sprintf("get [log::daily] from config error: %s", err.Error())))
+	}
+
+	if err := logs.SetLogger(logs.AdapterFile, fmt.Sprintf(`{"filename":"%s","daily":%t,"maxdays":%d}`, filename, daily, maxdays)); err != nil {
 		panic(any(fmt.Sprintf("set logger error: %s", err.Error())))
 	}
 }

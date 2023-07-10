@@ -19,28 +19,50 @@ package models
 import (
 	"fmt"
 	"github.com/beego/beego/v2/client/orm"
+	"github.com/beego/beego/v2/core/config"
 	_ "github.com/go-sql-driver/mysql"
 )
 
-var (
-	DBName    = "chaosmeta_platform"
-	DBUser    = "chaosmeta"
-	DBPasswd  = "chaosmeta"
-	DBURL     = "127.0.0.1:3306"
-	DBMaxIdle = 30
-	DBMaxConn = 30
-
-	globalORM orm.Ormer
-)
+var globalORM orm.Ormer
 
 // TODO: Whether the field is empty, and the validity check of the value, the default value, etc.
 // Do it directly in the platform logic, not in the table design
 
-func Setup() {
+func Setup(cfg config.Configer) {
+	name, err := cfg.String("db::name")
+	if err != nil {
+		panic(any(fmt.Sprintf("get [db::name] from config error: %s", err.Error())))
+	}
+
+	user, err := cfg.String("db::user")
+	if err != nil {
+		panic(any(fmt.Sprintf("get [db::user] from config error: %s", err.Error())))
+	}
+
+	passwd, err := cfg.String("db::passwd")
+	if err != nil {
+		panic(any(fmt.Sprintf("get [db::passwd] from config error: %s", err.Error())))
+	}
+
+	url, err := cfg.String("db::url")
+	if err != nil {
+		panic(any(fmt.Sprintf("get [db::url] from config error: %s", err.Error())))
+	}
+
+	maxidle, err := cfg.Int("db::maxidle")
+	if err != nil {
+		panic(any(fmt.Sprintf("get [db::maxidle] from config error: %s", err.Error())))
+	}
+
+	maxconn, err := cfg.Int("db::maxconn")
+	if err != nil {
+		panic(any(fmt.Sprintf("get [db::maxconn] from config error: %s", err.Error())))
+	}
+
 	orm.RegisterModel(new(User))
 	orm.RegisterModel(new(Namespace))
 
-	if err := orm.RegisterDataBase("default", "mysql", fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8", DBUser, DBPasswd, DBURL, DBName), orm.MaxIdleConnections(DBMaxIdle), orm.MaxOpenConnections(DBMaxConn)); err != nil {
+	if err := orm.RegisterDataBase("default", "mysql", fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8", user, passwd, url, name), orm.MaxIdleConnections(maxidle), orm.MaxOpenConnections(maxconn)); err != nil {
 		panic(any(fmt.Sprintf("connect database error: %s", err.Error())))
 	}
 

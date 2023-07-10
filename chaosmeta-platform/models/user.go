@@ -23,7 +23,7 @@ import (
 )
 
 type User struct {
-	ID         int        `orm:"column(id);auto"`
+	ID         int64      `orm:"column(id);auto"`
 	Name       string     `orm:"column(name)"`
 	Password   string     `orm:"column(password)"`
 	Role       string     `orm:"column(role)"`
@@ -40,12 +40,12 @@ func InsertUser(ctx context.Context, u *User) (int64, error) {
 	return GetORM().Insert(u)
 }
 
-func DeleteUser(ctx context.Context, id int) error {
+func DeleteUser(ctx context.Context, id int64) error {
 	_, err := GetORM().Delete(&User{ID: id})
 	return err
 }
 
-func UpdateUserPasswd(ctx context.Context, id int, passwd string) error {
+func UpdateUserPasswd(ctx context.Context, id int64, passwd string) error {
 	suc, err := GetORM().Update(&User{ID: id, Password: passwd}, "password")
 	if suc == 0 {
 		return fmt.Errorf("record[id: %d] not found", id)
@@ -54,7 +54,7 @@ func UpdateUserPasswd(ctx context.Context, id int, passwd string) error {
 	return err
 }
 
-func UpdateUserRole(ctx context.Context, id int, role string) error {
+func UpdateUserRole(ctx context.Context, id int64, role string) error {
 	suc, err := GetORM().Update(&User{ID: id, Role: role}, "role")
 	if suc == 0 {
 		return fmt.Errorf("record[id: %d] not found", id)
