@@ -1,0 +1,12 @@
+secretkey: "chaosmeta"
+db:
+  name: "chaosmeta_platform"
+  user: "chaosmeta"
+  passwd: "chaosmeta"
+  url: "127.0.0.1:3306"
+  maxidle: 30
+  maxconn: 30
+log:
+  filename: "logs/chaosmeta-platform.log"
+  maxdays: 7
+  daily: true

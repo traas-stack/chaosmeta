@@ -1,4 +1,4 @@
-package controllers
+package service
 
 import (
 	beego "github.com/beego/beego/v2/server/web"

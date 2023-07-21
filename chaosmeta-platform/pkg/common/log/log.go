@@ -14,4 +14,41 @@
  * limitations under the License.
  */
 
-package controllers
+package log
+
+import (
+	"fmt"
+	"github.com/beego/beego/v2/core/logs"
+)
+
+func Debug(v ...interface{}) {
+	logs.Debug(fmt.Sprint(v...))
+}
+
+func Debugf(f string, v ...interface{}) {
+	logs.Debug(f, v...)
+}
+
+func Info(v ...interface{}) {
+	logs.Info(fmt.Sprint(v...))
+}
+
+func Infof(f string, v ...interface{}) {
+	logs.Info(f, v...)
+}
+
+func Warn(v ...interface{}) {
+	logs.Warn(fmt.Sprint(v...))
+}
+
+func Warnf(f string, v ...interface{}) {
+	logs.Warn(f, v...)
+}
+
+func Error(v ...interface{}) {
+	logs.Error(fmt.Sprint(v...))
+}
+
+func Errorf(f string, v ...interface{}) {
+	logs.Error(f, v...)
+}
