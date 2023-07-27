@@ -97,9 +97,9 @@ export async function deleteUser(
 
 /**
  * 用户注册
- * @param body 
- * @param options 
- * @returns 
+ * @param body
+ * @param options
+ * @returns
  */
 export async function register(
   body: {
@@ -108,7 +108,7 @@ export async function register(
   },
   options?: any,
 ) {
-  return request<any>('/users', {
+  return request<any>('/users/token/create', {
     method: 'POST',
     data: body,
     headers: {
@@ -118,35 +118,124 @@ export async function register(
   });
 }
 
-// export async function getAppDepend(
-//   params: {
-//     // query
-//     appName?: string;
-//   },
-//   options?: { [key: string]: any },
-// ) {
-//   return request<API.Result_AppDependDomain_>('/chaos/app/getAppDepend', {
-//     method: 'GET',
-//     params: {
-//       ...params,
-//     },
-//     ...(options || {}),
-//   });
-// }
+/**
+ * 用户登录
+ * @param body
+ * @param options
+ * @returns
+ */
+export async function login(
+  body: {
+    name: string;
+    password: string;
+  },
+  options?: any,
+) {
+  return request<any>('/users/token/login', {
+    method: 'POST',
+    data: body,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    ...(options || {}),
+  });
+}
 
-// export async function listBuildRecordItems(
-//   body?: API.QueryBuildRecordRequestDTO,
-//   options?: { [key: string]: any },
-// ) {
-//   return request<API.PageResult_List_BuildRecordResponseDTO__>(
-//     '/chaos/build/listBuildRecordItem',
-//     {
-//       method: 'POST',
-//       headers: {
-//         'Content-Type': 'application/json',
-//       },
-//       data: body,
-//       ...(options || {}),
-//     },
-//   );
-// }
+// /users/token
+
+export async function tokenState(
+  params?: any,
+  options?: { [key: string]: any },
+) {
+  return request<API.Result_PageInfo_UserInfo__>('/users/token', {
+    method: 'GET',
+    params,
+    ...(options || {}),
+  });
+}
+
+/**
+ * 获取用户列表
+ * @param params
+ * @param options
+ * @returns
+ */
+export async function getUserList(
+  params?: {
+    sort?: string;
+    name?: string;
+    role?: string;
+    offset?: number;
+    limit?: number;
+  },
+  options?: { [key: string]: any },
+) {
+  return request<API.Result_PageInfo_UserInfo__>(
+    '/chaosmeta/api/v1/users/list',
+    {
+      method: 'GET',
+      params,
+      ...(options || {}),
+    },
+  );
+}
+
+/**
+ * 获取单个用户信息
+ * @param params
+ * @param options
+ * @returns
+ */
+export async function getUserInfo(
+  params?: {
+    name?: string;
+  },
+  options?: { [key: string]: any },
+) {
+  return request<API.Result_PageInfo_UserInfo__>(
+    `/chaosmeta/api/v1/users/${params?.name}`,
+    {
+      method: 'GET',
+      params,
+      ...(options || {}),
+    },
+  );
+}
+
+/**
+ * 更新token
+ * @param body 
+ * @param options 
+ * @returns 
+ */
+export async function updateToken(
+  body?: any,
+  options?: { [key: string]: any },
+) {
+  return request<API.Result_PageInfo_UserInfo__>(`/users/token/refresh`, {
+    method: 'POST',
+    data: body,
+    ...(options || {}),
+  });
+}
+
+/** 根据表单key获取表单
+@param sceneType
+@return Result<FormEntity>
+ GET /chaos/form/list */
+export async function list(
+  params: {
+    // query
+    /** 攻击场景类型 */
+    sceneType?: any;
+  },
+  options?: { [key: string]: any },
+) {
+  return request<any>('/chaos/form/list', {
+    method: 'GET',
+    params: {
+      ...params,
+    },
+    ...(options || {}),
+  });
+}

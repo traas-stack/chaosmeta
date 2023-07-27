@@ -96,7 +96,7 @@ const MySpace: React.FC<unknown> = () => {
         <SpaceContent>
           <Row gutter={16}>
             <Col span={16} className="left">
-              <Area style={{height: '100%'}}>
+              <Area style={{ height: '100%' }}>
                 <ExperimentalOverview />
               </Area>
             </Col>

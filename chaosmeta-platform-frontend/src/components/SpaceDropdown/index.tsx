@@ -1,7 +1,7 @@
 import { DownOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
-import { Dropdown, Input, MenuProps, Space } from 'antd';
+import { Dropdown, Input, MenuProps } from 'antd';
 import React, { useState } from 'react';
-import AddSpace from '../AddSpace';
+import AddSpaceDrawer from '../AddSpaceDrawer';
 import { SpaceContent, SpaceMenu } from './style';
 
 export default () => {
@@ -25,6 +25,7 @@ export default () => {
   return (
     <>
       <Dropdown
+        // open
         menu={{
           items,
           selectable: true,
@@ -35,17 +36,18 @@ export default () => {
         }}
         dropdownRender={(menu) => (
           <SpaceMenu>
-            <Input
-              placeholder="请输入关键词"
-              suffix={
-                <SearchOutlined
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => {
-                    console.log('-==');
-                  }}
-                />
-              }
-            />
+            <div>
+              <Input
+                placeholder="请输入关键词"
+                suffix={
+                  <SearchOutlined
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => {}}
+                  />
+                }
+              />
+            </div>
+
             {React.cloneElement(menu as React.ReactElement)}
             <a
               onClick={() => {
@@ -57,13 +59,12 @@ export default () => {
           </SpaceMenu>
         )}
       >
-        <Space>
-          <SpaceContent>{curSpace[0]}</SpaceContent>
-          <DownOutlined />
-        </Space>
+        <SpaceContent>
+          {curSpace[0]} <DownOutlined />
+        </SpaceContent>
       </Dropdown>
       {addSpaceOpen && (
-        <AddSpace open={addSpaceOpen} setOpen={setAddSpaceOpen} />
+        <AddSpaceDrawer open={addSpaceOpen} setOpen={setAddSpaceOpen} />
       )}
     </>
   );

@@ -1,7 +1,7 @@
-export const DEFAULT_NAME = 'Umi Max';
-       
+import { history } from '@umijs/max';
+import { message } from 'antd';
 
-export const httpErrorMessage = {
+export const httpErrorMessage: any = {
   'en-US': {
     200: 'The server successfully returned the requested data.',
     201: 'Data is created or modified successfully. Procedure',
@@ -35,5 +35,41 @@ export const httpErrorMessage = {
     502: '网关错误。',
     503: '服务不可用，服务器暂时过载或维护。',
     504: '网关超时。',
+  },
+};
+
+/**
+ * 错误统一处理
+ * @param error
+ */
+const errorHandler = (error: any) => {
+  console.dir(error, 'error===')
+  // 我们的 errorThrower 抛出的错误。
+  if (error.name === 'BizError') {
+    const errorInfo: any = error.info;
+    if (errorInfo) {
+      const { message: errorMsg } = errorInfo;
+      message.error(errorMsg);
+    }
+  } else if (error.response) {
+    const { statusText, status } = error.response;
+    const errorMsg = statusText || httpErrorMessage['zh-CN'][status];
+    // Axios 的错误
+    // 请求成功发出且服务器也响应了状态码，但状态代码超出了 2xx 的范围
+    message.error(errorMsg);
+    // 未登录，跳转到登录页
+    if (status === 401) {
+      history.push('/login');
+    }
+  } else if (error.request) {
+    // 请求已经成功发起，但没有收到响应
+    // \`error.request\` 在浏览器中是 XMLHttpRequest 的实例，
+    // 而在node.js中是 http.ClientRequest 的实例
+    message.error(error?.message);
+  } else {
+    // 发送请求时出了点问题
+    message.error(error?.message);
   }
-}
+};
+
+export default errorHandler;
