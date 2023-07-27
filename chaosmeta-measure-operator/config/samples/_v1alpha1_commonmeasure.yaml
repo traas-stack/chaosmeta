@@ -1,0 +1,12 @@
+apiVersion: chaosmeta.io/v1alpha1
+kind: CommonMeasure
+metadata:
+  labels:
+    app.kubernetes.io/name: commonmeasure
+    app.kubernetes.io/instance: commonmeasure-sample
+    app.kubernetes.io/part-of: chaosmeta-measure-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: chaosmeta-measure-operator
+  name: commonmeasure-sample
+spec:
+  # TODO(user): Add fields here

@@ -1,0 +1,20 @@
+apiVersion: chaosmeta.io/v1alpha1
+kind: CommonMeasure
+metadata:
+  name: measure-pod-interval
+  namespace: chaosmeta
+spec:
+  measureType: pod
+  duration: 1m
+  interval: 3s
+  successCount: 3
+  failedCount: 0
+  stopped: false
+  judgement:
+    judgeType: count
+    judgeValue: '3'
+  args:
+    - key: namespace
+      value: 'default'
+    - key: nameprefix
+      value: 'nginx-'

@@ -1,0 +1,22 @@
+apiVersion: chaosmeta.io/v1alpha1
+kind: CommonMeasure
+metadata:
+  name: measure-pod-larger
+  namespace: chaosmeta
+spec:
+  measureType: pod
+  duration: 5m
+  interval: 5s
+  successCount: 3
+  failedCount: 0
+  stopped: false
+  judgement:
+    judgeType: count
+    judgeValue: '3,'
+  args:
+    - key: namespace
+      value: 'default'
+    - key: label
+      value: 'k1:v1,k2:v2'
+    - key: nameprefix
+      value: 'nginx-'

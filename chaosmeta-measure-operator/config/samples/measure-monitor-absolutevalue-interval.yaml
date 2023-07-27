@@ -1,0 +1,18 @@
+apiVersion: chaosmeta.io/v1alpha1
+kind: CommonMeasure
+metadata:
+  name: measure-monitor-absolutevalue-interval
+  namespace: chaosmeta
+spec:
+  measureType: monitor
+  duration: 5m
+  interval: 5s
+  successCount: 3
+  failedCount: 0
+  stopped: false
+  judgement:
+    judgeType: absolutevalue
+    judgeValue: '5000,10000'
+  args:
+    - key: query
+      value: 'node_memory_MemAvailable_bytes{instance="192.168.2.189:9100"}'
