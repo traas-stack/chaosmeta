@@ -2,6 +2,9 @@ package app
 
 import (
 	"chaosmeta-platform/config"
+	"chaosmeta-platform/pkg/service/namespace"
+	"chaosmeta-platform/pkg/service/user"
+	"chaosmeta-platform/util/log"
 	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -16,6 +19,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file (default in $HOME/.prism/config.yaml)")
 
 	rootCmd.AddCommand(serverCmd)
+
 }
 
 func initConfig() {
@@ -28,6 +32,19 @@ func initConfig() {
 		panic(err)
 	}
 	config.InitConfig()
+
+	log.SetDefaultLogOption(log.LogOption{
+		LogPath:    config.DefaultRunOptIns.Log.Path,
+		MaxAge:     7,
+		MaxSize:    64,
+		MaxBackups: 3,
+		OutPutType: "BothFileAndStdErrPut",
+		Level:      config.DefaultRunOptIns.Log.Level,
+	})
+
+	config.Setup()
+	user.Init()
+	namespace.Init()
 }
 
 // rootCmd represents the base command when called without any subcommands

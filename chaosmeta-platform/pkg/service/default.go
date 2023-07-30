@@ -8,6 +8,10 @@ type MainController struct {
 	beego.Controller
 }
 
+func init() {
+	beego.Router("/", &MainController{})
+}
+
 func (c *MainController) Get() {
 	c.Data["Website"] = "beego.vip"
 	c.Data["Email"] = "astaxie@gmail.com"

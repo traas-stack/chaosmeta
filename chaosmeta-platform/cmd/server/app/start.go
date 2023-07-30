@@ -1,14 +1,15 @@
 package app
 
 import (
-	"chaosmeta-platform/pkg/common/log"
+	"chaosmeta-platform/routers"
+	"chaosmeta-platform/util/log"
 	"context"
 	beego "github.com/beego/beego/v2/server/web"
 	"github.com/spf13/cobra"
 )
 
 func init() {
-	cobra.OnInitialize(initConfig)
+	//cobra.OnInitialize(initConfig)
 	startCmd.Flags().BoolP("runModel", "m", true, "运行模式")
 }
 
@@ -31,8 +32,9 @@ func server() {
 
 func Run() (err error) {
 	ctx := context.WithValue(context.Background(), log.TraceIdKey, "erg3g42g432g")
-	log.Info(ctx, "start chaosmeta-platform")
+	log.CtxInfof(ctx, "start chaosmeta-platform")
 	beego.SetStaticPath("/swagger", "swagger")
+	routers.Init()
 	beego.Run()
 	return nil
 }

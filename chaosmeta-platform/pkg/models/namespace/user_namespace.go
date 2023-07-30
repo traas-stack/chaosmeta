@@ -1,7 +1,9 @@
-package models
+package namespace
 
 import (
+	models2 "chaosmeta-platform/pkg/models"
 	"chaosmeta-platform/pkg/models/common"
+	"context"
 	"errors"
 	"fmt"
 	"github.com/beego/beego/v2/client/orm"
@@ -11,18 +13,17 @@ import (
 type Permission int
 
 const (
-	NormalPermission  = Permission(0)
-	AdminPermission   = Permission(1)
-	VisitorPermission = Permission(2)
+	NormalPermission = Permission(0) //只读
+	AdminPermission  = Permission(1) //管理员
 )
 
 type UserNamespace struct {
 	ID          int `json:"id" orm:"pk;auto;column(id)"`
-	UserId      int `json:"userId" orm:"column(user_id)"`
-	NamespaceId int `json:"namespaceId" orm:"column(namespace_id)"`
+	UserId      int `json:"userId" orm:"column(user_id);index"`
+	NamespaceId int `json:"namespaceId" orm:"column(namespace_id);index"`
 	//User       *User      `orm:"rel(fk)"`
 	//Namespace  *Namespace `orm:"rel(fk)"`
-	Permission Permission `json:"permission" orm:"default(0)"`
+	Permission Permission `json:"permission" orm:"column(permission);default(0);index"`
 	models.BaseTimeModel
 }
 
@@ -32,6 +33,10 @@ func (u *UserNamespace) TableName() string {
 
 func (u *UserNamespace) TableUnique() [][]string {
 	return [][]string{{"user_id", "namespace_id"}}
+}
+
+func GetUserNamespace(ctx context.Context, u *UserNamespace) error {
+	return models.GetORM().Read(u, "user_id", "namespace_id", "permission")
 }
 
 func UsersOrNamespacesDelete(userIdList []int, namespaceId []int) error {
@@ -67,11 +72,20 @@ func ClearUsersFromNamespace(namespaceId int, userIds []int) error {
 	return nil
 }
 
+type UserData struct {
+	Id         int `json:"id"`
+	Permission int `json:"permission"`
+}
+
+type AddUsersParam struct {
+	Users []UserData `json:"users"`
+}
+
 // add users in batches in the space
-func AddUsersInNamespace(namespaceId int, userIds []int) error {
+func AddUsersInNamespace(namespaceId int, addUsersParam AddUsersParam) error {
 	var members []*UserNamespace
-	for _, userId := range userIds {
-		member := &UserNamespace{UserId: userId, NamespaceId: namespaceId}
+	for _, user := range addUsersParam.Users {
+		member := &UserNamespace{UserId: user.Id, NamespaceId: namespaceId, Permission: Permission(user.Permission)}
 		members = append(members, member)
 	}
 	_, err := models.GetORM().InsertMulti(len(members), members)
@@ -107,8 +121,8 @@ func UpdateUsersPermissionInNamespace(namespaceId int, userIds []int, permission
 	return nil
 }
 
-func QueryUsers(namespaceId int, userName string, permission int, orderBy string, offset, limit int) ([]*User, int64, error) {
-	o, un, u := models.GetORM(), UserNamespace{}, User{}
+func QueryUsers(namespaceId int, userName string, permission int, orderBy string, page, pageSize int) ([]*models2.User, int64, error) {
+	o, un, u := models.GetORM(), UserNamespace{}, models2.User{}
 
 	var list orm.ParamsList
 	unQS := o.QueryTable(un.TableName()).Filter("namespace_id", namespaceId)
@@ -135,12 +149,8 @@ func QueryUsers(namespaceId int, userName string, permission int, orderBy string
 
 	total, _ := q.Count()
 
-	if offset < 0 || limit <= 0 {
-		return nil, 0, errors.New("invalid offset")
-	}
-
-	q = q.Limit(limit, offset)
-	var users []*User
+	q = q.Limit(pageSize, (page-1)*pageSize)
+	var users []*models2.User
 	if _, err := q.All(&users); err != nil {
 		return nil, 0, err
 	}

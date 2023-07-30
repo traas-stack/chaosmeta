@@ -1,7 +1,6 @@
 package user
 
 import (
-	"chaosmeta-platform/pkg/gateway/apiserver/v1alpha1"
 	"time"
 )
 
@@ -13,49 +12,34 @@ type User struct {
 	UpdateTime time.Time `json:"update_time"`
 }
 
-type UserData struct {
-	Total int64   `json:"total"`
-	Users []*User `json:"users"`
-}
-
 type UserListResponse struct {
-	v1alpha1.ResponseData
-	Data UserData `json:"data"`
+	Page     int     `json:"page"`
+	PageSize int     `json:"pageSize"`
+	Total    int64   `json:"total"`
+	Users    []*User `json:"users"`
 }
 
-type SingleUserResponse struct {
-	v1alpha1.ResponseData
-	Data struct {
-		User *User `json:"user"`
-	} `json:"data"`
+type UserCreateRequest struct {
+	Name     string `json:"name"`
+	Password string `json:"password"`
 }
 
-type UserCreateResponse struct {
-	v1alpha1.ResponseData
-	Data struct {
-		ID int `json:"id"`
-	} `json:"data"`
-}
+type UserLoginRequest UserCreateRequest
 
 type UserLoginResponse struct {
-	v1alpha1.ResponseData
-	Data struct {
-		Token string `json:"token"`
-	} `json:"data"`
+	Token        string `json:"token"`
+	RefreshToken string `json:"refreshToken"`
 }
 
-type UserDeleteRequest struct {
+type UsersDeleteRequest struct {
 	UserIDs []int `json:"user_ids"`
 }
 
-type UserDeleteResponse struct {
-	v1alpha1.ResponseData
+type UsersPasswordUpdateRequest struct {
+	Password string `json:"password"`
 }
 
-type UserChangePasswordResponse struct {
-	v1alpha1.ResponseData
-}
-
-type UserChangeRoleResponse struct {
-	v1alpha1.ResponseData
+type UserUpdateRoleRequest struct {
+	UserIDs []int  `json:"user_ids"`
+	Role    string `json:"role"`
 }

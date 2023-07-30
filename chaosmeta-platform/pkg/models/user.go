@@ -17,10 +17,10 @@
 package models
 
 import (
-	"chaosmeta-platform/pkg/common/log"
 	models "chaosmeta-platform/pkg/models/common"
 	"context"
 	"fmt"
+	"github.com/beego/beego/v2/client/orm"
 	"time"
 )
 
@@ -36,6 +36,7 @@ type User struct {
 	Role          string    `json:"role" orm:"index; column(role);size(32)"`
 	Token         string    `json:"token" orm:"column(token);size(255)"`
 	Disabled      bool      `json:"disabled" orm:"column(disabled)"`
+	IsDeleted     bool      `json:"isDeleted" orm:"column(is_deleted);default(0)"`
 	LastLoginTime time.Time `json:"lastLoginTime" orm:"column(last_login_time);auto_now;type(datetime)"`
 	//Namespace     []*Namespace `json:"namespaces" orm:"rel(m2m);rel_through(chaosmeta-platform/pkg/models.UserNamespace);on_delete(cascade)"`
 	models.BaseTimeModel
@@ -46,7 +47,6 @@ func (u *User) TableName() string {
 }
 
 func InsertUser(ctx context.Context, u *User) (int64, error) {
-	log.InfoCtx(ctx, "create user:", *u)
 	return models.GetORM().Insert(u)
 }
 
@@ -58,7 +58,9 @@ func DeleteUsersByIdList(ctx context.Context, userId []int) error {
 		return err
 	}
 	userQuery.Filter("id", models.IN, false, userId)
-	_, err = userQuery.Delete()
+	_, err = userQuery.Update(orm.Params{
+		"is_deleted": true,
+	})
 	return err
 }
 
@@ -71,17 +73,33 @@ func UpdateUser(ctx context.Context, u *User) error {
 	return err
 }
 
+func UpdateUsersRole(ctx context.Context, userId []int, role string) error {
+	user := User{}
+	querySeter := models.GetORM().QueryTable(user.TableName())
+	userQuery, err := models.NewDataSelectQuery(&querySeter)
+	if err != nil {
+		return err
+	}
+	userQuery.Filter("id", models.IN, false, userId)
+	_, err = userQuery.Update(orm.Params{
+		"role": role,
+	})
+	return err
+}
+
 func GetUser(ctx context.Context, u *User) error {
 	return models.GetORM().Read(u, "email")
 }
 
-func QueryUser(ctx context.Context, name, role, orderBy string, offset, limit int) (int64, []User, error) {
+func QueryUser(ctx context.Context, name, role, orderBy string, page, pageSize int) (int64, []User, error) {
 	u, users := User{}, new([]User)
 	querySeter := models.GetORM().QueryTable(u.TableName())
 	userQuery, err := models.NewDataSelectQuery(&querySeter)
 	if err != nil {
 		return 0, nil, err
 	}
+
+	userQuery.Filter("is_deleted", models.NEGLECT, false, false)
 	if len(name) > 0 {
 		userQuery.Filter("email", models.CONTAINS, true, name)
 	}
@@ -90,18 +108,20 @@ func QueryUser(ctx context.Context, name, role, orderBy string, offset, limit in
 		userQuery.Filter("role", models.NEGLECT, false, role)
 	}
 
-	if err := userQuery.Limit(limit, offset); err != nil {
+	var totalCount int64
+	totalCount, err = userQuery.GetOamQuerySeter().Count()
+	if err := userQuery.Limit(pageSize, (page-1)*pageSize); err != nil {
 		return 0, nil, err
 	}
 	if len(orderBy) > 0 {
 		userQuery.OrderBy(orderBy)
 	}
 
-	totalCount, err := userQuery.GetOamQuerySeter().All(users)
+	_, err = userQuery.GetOamQuerySeter().All(users)
 	return totalCount, *users, err
 }
 
-func DeleteUsers(ctx context.Context, names []string) error {
+func DeleteUsersByNameList(ctx context.Context, names []string) error {
 	user := User{}
 	querySeter := models.GetORM().QueryTable(user.TableName())
 	userQuery, err := models.NewDataSelectQuery(&querySeter)

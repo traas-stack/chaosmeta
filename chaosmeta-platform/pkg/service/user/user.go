@@ -18,7 +18,10 @@ package user
 
 import (
 	"chaosmeta-platform/pkg/models"
+	namespace2 "chaosmeta-platform/pkg/models/namespace"
+	"chaosmeta-platform/pkg/service/namespace"
 	"chaosmeta-platform/util/errors"
+	"chaosmeta-platform/util/log"
 	"context"
 	"fmt"
 	"golang.org/x/crypto/bcrypt"
@@ -36,41 +39,53 @@ var (
 type UserRole string
 
 const (
-	NormalRole  = UserRole("normal")
-	AdminRole   = UserRole("admin")
-	visitorRole = UserRole("visitor")
+	NormalRole = UserRole("normal")
+	AdminRole  = UserRole("admin")
 )
 
-type User struct{}
+func Init() {
+	us := UserService{}
+	ctx := context.Background()
 
-func (a *User) InitAdmin(ctx context.Context, name, password string) error {
+	_, err := us.Get(ctx, "admin")
+	if err == nil {
+		log.Error(err)
+		return
+	}
+	_, err = us.Create(ctx, "admin", "admin", string(AdminRole))
+	if err != nil {
+		log.Error(err)
+	}
+}
+
+type UserService struct{}
+
+func (a *UserService) InitAdmin(ctx context.Context, name, password string) error {
 	user, err := a.Get(ctx, Admin)
 	if err == nil && user != nil {
 		return nil
 	}
-	return a.Create(ctx, Admin, Admin, string(AdminRole))
+	_, err = a.Create(ctx, Admin, Admin, string(AdminRole))
+	return err
 }
 
-func (a *User) IsAdmin(ctx context.Context, name, password string) bool {
+func (a *UserService) IsAdmin(ctx context.Context, name string) bool {
 	user := models.User{Email: name}
 	if err := models.GetUser(ctx, &user); err != nil {
 		return false
 	}
 	if user.Disabled {
-		return false
-	}
-	if !VerifyPassword(password, user.Password) {
 		return false
 	}
 	return user.Role == models.AdminRole
 }
 
-func (a *User) Login(ctx context.Context, name, password string) (string, string, error) {
+func (a *UserService) Login(ctx context.Context, name, password string) (string, string, error) {
 	user := models.User{Email: name}
 	if err := models.GetUser(ctx, &user); err != nil {
 		return "", "", err
 	}
-	if user.Disabled {
+	if user.Disabled || user.IsDeleted {
 		return "", "", errors.ErrUnauthorized()
 	}
 	if !VerifyPassword(password, user.Password) {
@@ -83,7 +98,7 @@ func (a *User) Login(ctx context.Context, name, password string) (string, string
 	}
 
 	authentication := Authentication{}
-	tocken, err := authentication.GenerateToken(name, string(GrantTypeAccess), 1*time.Minute)
+	tocken, err := authentication.GenerateToken(name, string(GrantTypeAccess), 5*time.Minute)
 	if err != nil {
 		return "", "", err
 	}
@@ -95,23 +110,42 @@ func (a *User) Login(ctx context.Context, name, password string) (string, string
 	return tocken, refreshToken, nil
 }
 
-func (a *User) Create(ctx context.Context, name, password, role string) error {
+func (a *UserService) Create(ctx context.Context, name, password, role string) (int, error) {
 	hash, err := HashPassword(password)
 	if err != nil {
-		return err
+		return 0, err
 	}
+
+	userGet, err := a.Get(ctx, name)
+	if err == nil && userGet.IsDeleted {
+		userGet.IsDeleted = false
+		userGet.Password = hash
+		return userGet.ID, models.UpdateUser(ctx, userGet)
+	}
+
 	user := models.User{
-		Email:    name,
-		Password: hash,
-		Role:     role,
-		Disabled: false,
+		Email:     name,
+		Password:  hash,
+		Role:      role,
+		Disabled:  false,
+		IsDeleted: false,
 	}
 
 	_, err = models.InsertUser(ctx, &user)
-	return err
+	if err != nil {
+		return 0, err
+	}
+
+	us := namespace.NamespaceService{}
+	return user.ID, us.DefaultAddUsers(ctx, namespace2.AddUsersParam{
+		Users: []namespace2.UserData{{
+			Id:         user.ID,
+			Permission: int(namespace2.AdminPermission),
+		}},
+	})
 }
 
-func (a *User) Get(ctx context.Context, name string) (*models.User, error) {
+func (a *UserService) Get(ctx context.Context, name string) (*models.User, error) {
 	user := models.User{Email: name}
 	if err := models.GetUser(ctx, &user); err != nil {
 		return nil, err
@@ -119,22 +153,22 @@ func (a *User) Get(ctx context.Context, name string) (*models.User, error) {
 	return &user, nil
 }
 
-func (a *User) GetList(ctx context.Context, name, role, orderBy string, offset, limit int) (int64, []models.User, error) {
-	return models.QueryUser(ctx, name, role, orderBy, offset, limit)
+func (a *UserService) GetList(ctx context.Context, name, role, orderBy string, page, pageSize int) (int64, []models.User, error) {
+	return models.QueryUser(ctx, name, role, orderBy, page, pageSize)
 }
 
-func (a *User) DeleteList(ctx context.Context, name, password string, deleteIds []int) error {
-	if !a.IsAdmin(ctx, name, password) {
+func (a *UserService) DeleteList(ctx context.Context, name string, deleteIds []int) error {
+	if !a.IsAdmin(ctx, name) {
 		return fmt.Errorf("not admin")
 	}
 
 	if err := models.DeleteUsersByIdList(ctx, deleteIds); err != nil {
 		return err
 	}
-	return models.UsersOrNamespacesDelete(deleteIds, nil)
+	return namespace2.UsersOrNamespacesDelete(deleteIds, nil)
 }
 
-func (a *User) UpdatePassword(ctx context.Context, name, password, newPassword string) error {
+func (a *UserService) UpdatePassword(ctx context.Context, name, newPassword string) error {
 	user, err := a.Get(ctx, name)
 	if err != nil {
 		return err
@@ -142,7 +176,7 @@ func (a *User) UpdatePassword(ctx context.Context, name, password, newPassword s
 	if user.Disabled {
 		return errors.ErrUnauthorized()
 	}
-	if !VerifyPassword(password, user.Password) {
+	if !a.IsAdmin(ctx, name) && name != user.Email {
 		return errors.ErrUnauthorized()
 	}
 	hash, err := HashPassword(newPassword)
@@ -153,31 +187,32 @@ func (a *User) UpdatePassword(ctx context.Context, name, password, newPassword s
 	return models.UpdateUser(ctx, user)
 }
 
-func (a *User) UpdateRole(ctx context.Context, name, password, changeUserName, role string) error {
-	if !a.IsAdmin(ctx, name, changeUserName) {
+func (a *UserService) UpdateListRole(ctx context.Context, name string, ids []int, role string) error {
+	if !a.IsAdmin(ctx, name) {
 		return fmt.Errorf("not admin")
 	}
-	user, err := a.Get(ctx, name)
-	if err != nil {
-		return err
-	}
-	user.Role = role
-	return models.UpdateUser(ctx, user)
+
+	return models.UpdateUsersRole(ctx, ids, role)
 }
 
-func (a *User) CheckToken(ctx context.Context, token string) error {
+func (a *UserService) CheckToken(ctx context.Context, token string) (string, error) {
 	if token == "" {
-		return errors.ErrUnauthorized()
+		return "", errors.ErrUnauthorized()
 	}
 	authentication := Authentication{}
 	tokenClaims, err := authentication.VerifyToken(token)
 	if err != nil {
-		return errors.ErrUnauthorized()
+		return "", errors.ErrUnauthorized()
 	}
 	if tokenClaims.GrantType != string(GrantTypeAccess) {
-		return errors.ErrUnauthorized()
+		return "", errors.ErrUnauthorized()
 	}
-	return nil
+	return tokenClaims.Username, nil
+}
+
+func (a *UserService) RefreshToken(ctx context.Context, token string) (string, error) {
+	authentication := Authentication{}
+	return authentication.RefreshToken(token, string(GrantTypeAccess))
 }
 
 // Generate a user's hashed password

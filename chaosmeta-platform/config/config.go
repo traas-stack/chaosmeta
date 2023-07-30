@@ -20,9 +20,8 @@ type Config struct {
 		MaxConn int    `yaml:"maxconn"`
 	} `yaml:"db"`
 	Log struct {
-		Filename string `yaml:"filename"`
-		MaxDays  int    `yaml:"maxdays"`
-		Daily    bool   `yaml:"daily"`
+		Path  string `yaml:"path"`
+		Level string `yaml:"level"`
 	} `yaml:"log"`
 }
 

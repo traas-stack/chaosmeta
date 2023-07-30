@@ -4,67 +4,37 @@ import (
 	"chaosmeta-platform/pkg/gateway/apiserver/v1alpha1"
 	"chaosmeta-platform/pkg/service/user"
 	"chaosmeta-platform/util/errors"
+	"chaosmeta-platform/util/log"
 	"context"
+	"encoding/json"
 	beego "github.com/beego/beego/v2/server/web"
-	"net/http"
+	"strconv"
+	"strings"
 )
 
 type UserController struct {
+	v1alpha1.BeegoOutputController
 	beego.Controller
 }
 
-func init() {
-	beego.Router("/users", &UserController{}, "get:GetUserList")
-}
-
-//func (c *UserController) Prepare() {
-//	// Verify that the token is valid
-//	if !c.IsLogin() {
-//		c.Ctx.Output.Status = http.StatusUnauthorized
-//		c.Data["json"] = &UserListResponse{
-//			ResponseData: v1alpha1.NewResponseData(http.StatusUnauthorized, "Invalid token", c.GetTraceID()),
-//		}
-//		c.ServeJSON()
-//		return
-//	}
-//}
-
-// @Title Get user list information
-// @Description 获取用户列表信息
-// @Tags User
-// @Param sort query string false "排序方式，正序或倒序，例如：create_time 或 -create_time"
-// @Param name query string false "筛选名称"
-// @Param role query string false "筛选角色"
-// @Param offset query int false "偏移量"
-// @Param limit query int false "每页数量"
-// @Success 200 {object} UserListResponse
-// @Failure 401 {object} ResponseData
-// @Failure 500 {object} ResponseData
-// @router / [get]
-func (c *UserController) GetUserList() {
+func (c *UserController) GetList() {
 	sort := c.GetString("sort")
 	name := c.GetString("name")
 	role := c.GetString("role")
-	offset, _ := c.GetInt("offset", 0)
-	limit, _ := c.GetInt("limit", 10)
-	a := &user.User{}
+	page, _ := c.GetInt("page", 1)
+	pageSize, _ := c.GetInt("page_size", 10)
 
-	total, usrList, err := a.GetList(context.Background(), name, role, sort, offset, limit)
+	a := &user.UserService{}
+	total, usrList, err := a.GetList(context.Background(), name, role, sort, page, pageSize)
 	if err != nil {
 		c.Data["json"] = errors.ErrServer().WithMessage(err.Error())
 		c.ServeJSON()
 		return
 	}
 
-	userListResponse := UserListResponse{
-		ResponseData: v1alpha1.NewResponseData(http.StatusInternalServerError, err.Error(), ""),
-		Data: UserData{
-			Total: total,
-		},
-	}
-
+	userListResponse := UserListResponse{Total: total, Page: page, PageSize: pageSize}
 	for _, user := range usrList {
-		userListResponse.Data.Users = append(userListResponse.Data.Users, &User{
+		userListResponse.Users = append(userListResponse.Users, &User{
 			ID:         user.ID,
 			Name:       user.Email,
 			Role:       user.Role,
@@ -73,6 +43,154 @@ func (c *UserController) GetUserList() {
 		})
 	}
 
-	c.Data["json"] = errors.OK().WithData(userListResponse)
-	c.ServeJSON()
+	c.Success(&c.Controller, userListResponse)
+}
+
+func (c *UserController) Get() {
+	name := c.Ctx.Input.Param(":name")
+
+	a := &user.UserService{}
+	user, err := a.Get(context.Background(), name)
+	if err != nil {
+		c.Error(&c.Controller, err)
+		return
+	}
+	c.Success(&c.Controller, User{
+		ID:         user.ID,
+		Name:       user.Email,
+		Role:       user.Role,
+		CreateTime: user.CreateTime,
+		UpdateTime: user.UpdateTime,
+	})
+}
+
+func (c *UserController) Create() {
+	var UserCreateRequest UserCreateRequest
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &UserCreateRequest); err != nil {
+		c.Error(&c.Controller, err)
+		return
+	}
+	a := &user.UserService{}
+	if _, err := a.Create(context.Background(), UserCreateRequest.Name, UserCreateRequest.Password, string(user.NormalRole)); err != nil {
+		c.Error(&c.Controller, err)
+		return
+	}
+	c.Success(&c.Controller, "ok")
+}
+
+func (c *UserController) Login() {
+	var UserLoginRequest UserLoginRequest
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &UserLoginRequest); err != nil {
+		c.Data["json"] = errors.ErrServer().WithMessage(err.Error())
+		c.ServeJSON()
+		log.Error(err)
+		return
+	}
+	a := &user.UserService{}
+	tocken, refreshToken, err := a.Login(context.Background(), UserLoginRequest.Name, UserLoginRequest.Password)
+	if err != nil {
+		c.Error(&c.Controller, err)
+		return
+	}
+
+	c.Ctx.Output.Cookie("TOKEN", tocken)
+	c.Ctx.Output.Cookie("REFRESH_TOKEN", refreshToken)
+	c.Success(&c.Controller, UserLoginResponse{
+		Token:        tocken,
+		RefreshToken: refreshToken,
+	})
+}
+
+func (c *UserController) RefreshToken() {
+	a := &user.UserService{}
+
+	token := strings.TrimPrefix(c.Ctx.Input.Header("Authorization"), "Bearer ")
+	if token == "" {
+		c.ErrorWithMessage(&c.Controller, "no token")
+		return
+	}
+
+	refreshToken, err := a.RefreshToken(context.Background(), token)
+	if err != nil {
+		c.ErrUnauthorized(&c.Controller, err)
+		return
+	}
+
+	c.Ctx.Output.Cookie("TOKEN", refreshToken)
+	c.Success(&c.Controller, UserLoginResponse{
+		Token:        token,
+		RefreshToken: refreshToken,
+	})
+}
+
+func (c *UserController) Delete() {
+	userName := c.Ctx.Input.GetData("userName").(string)
+
+	id, err := strconv.Atoi(c.Ctx.Input.Param(":id"))
+	if err != nil {
+		c.Error(&c.Controller, err)
+		return
+	}
+
+	a := &user.UserService{}
+	if err := a.DeleteList(context.Background(), userName, []int{id}); err != nil {
+		c.Error(&c.Controller, err)
+		return
+	}
+
+	c.Success(&c.Controller, "ok")
+}
+
+func (c *UserController) DeleteList() {
+	var usersDeleteRequest UsersDeleteRequest
+	userName := c.Ctx.Input.GetData("userName").(string)
+
+	err := json.Unmarshal(c.Ctx.Input.RequestBody, &usersDeleteRequest)
+	if err != nil {
+		c.Error(&c.Controller, err)
+		return
+	}
+
+	a := &user.UserService{}
+	if err := a.DeleteList(context.Background(), userName, usersDeleteRequest.UserIDs); err != nil {
+		c.Error(&c.Controller, err)
+		return
+	}
+	c.Success(&c.Controller, "ok")
+}
+
+func (c *UserController) UpdateUserPassword() {
+	userName := c.Ctx.Input.GetData("userName").(string)
+
+	var usersPasswordUpdateRequest UsersPasswordUpdateRequest
+	err := json.Unmarshal(c.Ctx.Input.RequestBody, &usersPasswordUpdateRequest)
+	if err != nil {
+		c.Error(&c.Controller, err)
+		return
+	}
+
+	a := &user.UserService{}
+	if err := a.UpdatePassword(context.Background(), userName, usersPasswordUpdateRequest.Password); err != nil {
+		c.Error(&c.Controller, err)
+		return
+	}
+	c.Success(&c.Controller, "ok")
+}
+
+func (c *UserController) UpdateListRole() {
+	userName := c.Ctx.Input.GetData("userName").(string)
+
+	var userUpdateRoleRequest UserUpdateRoleRequest
+	err := json.Unmarshal(c.Ctx.Input.RequestBody, &userUpdateRoleRequest)
+	if err != nil {
+		c.Error(&c.Controller, err)
+		return
+	}
+
+	a := &user.UserService{}
+	if err := a.UpdateListRole(context.Background(), userName, userUpdateRoleRequest.UserIDs, userUpdateRoleRequest.Role); err != nil {
+		c.Error(&c.Controller, err)
+		return
+	}
+	c.Success(&c.Controller, "ok")
 }

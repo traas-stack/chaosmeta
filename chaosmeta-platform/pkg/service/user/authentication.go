@@ -6,12 +6,6 @@ import (
 	"time"
 )
 
-type AuthenticationController interface {
-	GenerateToken(username, grantType string, expireDuration time.Duration) (string, error)
-	VerifyToken(tokenString string) (*Claims, error)
-	RefreshToken(refreshToken, grantType string) (string, error)
-}
-
 type Authentication struct{}
 
 type Claims struct {
@@ -48,13 +42,13 @@ func (a *Authentication) VerifyToken(tokenString string) (*Claims, error) {
 	return nil, jwt.ErrInvalidKey
 }
 
-func (a *Authentication) RefreshToken(refreshToken, grantType string) (string, error) {
-	claim, err := a.VerifyToken(refreshToken)
+func (a *Authentication) RefreshToken(token, grantType string) (string, error) {
+	claim, err := a.VerifyToken(token)
 	if err != nil {
 		return "", err
 	}
 
-	newAccessToken, err := a.GenerateToken(claim.Username, grantType, time.Hour)
+	newAccessToken, err := a.GenerateToken(claim.Username, grantType, 10*time.Minute)
 	if err != nil {
 		return "", err
 	}

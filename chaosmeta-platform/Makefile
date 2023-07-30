@@ -9,7 +9,8 @@ all: ${SERVER}
 ${SERVER}:
 	 CGO_ENABLED=0 GOARCH=amd64 go build  -ldflags "-X main.BuildTime=${NOW} -s" -o ${CHAOSMETA_EXEC} cmd/server/main.go
 
-
+doc:
+	swag init -d cmd/server/,pkg/gateway/apiserver/v1alpha1/user  -o cmd/server/docs
 start: ${SERVER}
 	./${CHAOSMETA_EXEC} server start --config=conf/app.yaml
 

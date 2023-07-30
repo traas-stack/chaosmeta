@@ -2,7 +2,7 @@ package kubectl
 
 import (
 	"bytes"
-	"chaosmeta-platform/pkg/common/log"
+	"chaosmeta-platform/util/log"
 	"context"
 	"encoding/json"
 	"errors"
@@ -50,35 +50,37 @@ type Kubectl struct {
 	Explain     string    `json:"explain,omitempty"`
 }
 
-type Kube interface {
+type KubectlServiceInterface interface {
 	ApplyByFile(ctx context.Context, file string, isReturnAfterFailure bool) (error, []Kubectl)
 	ApplyByContent(ctx context.Context, content []byte, isReturnAfterFailure bool) (error, []Kubectl)
 	DeleteByContent(ctx context.Context, content string) error
 	GetByContent(ctx context.Context, content []byte) (error, []Kubectl)
 }
 
-func NewkubectlService(config *rest.Config) (error, Kube) {
+type KubectlServiceFactory func(config *rest.Config) (KubectlServiceInterface, error)
+
+func NewkubectlService(config *rest.Config) (KubectlServiceInterface, error) {
 	clientSet, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
 	dd, err := dynamic.NewForConfig(config)
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
 	gr, err := restmapper.GetAPIGroupResources(clientSet.Discovery())
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
 	mapper := restmapper.NewDiscoveryRESTMapper(gr)
-	return nil, &KubectlService{DynamicClient: dd, ClientSet: clientSet, RESTMapper: mapper}
+	return &KubectlService{DynamicClient: dd, ClientSet: clientSet, RESTMapper: mapper}, nil
 }
 
 func (k *KubectlService) JSONToYAML(ctx context.Context, j []byte) ([]byte, error) {
 	var jsonObj interface{}
 	err := yamlV2.Unmarshal(j, &jsonObj)
 	if err != nil {
-		log.ErrorCtx(ctx, err)
+		log.Error(ctx, err)
 		return nil, err
 	}
 	return yamlV2.Marshal(jsonObj)
@@ -87,19 +89,19 @@ func (k *KubectlService) JSONToYAML(ctx context.Context, j []byte) ([]byte, erro
 func (k *KubectlService) MargePatch(ctx context.Context, originalObj, updatedObj interface{}) ([]byte, error) {
 	originalJSON, err := json.Marshal(originalObj)
 	if err != nil {
-		log.ErrorCtx(ctx, err)
+		log.Error(ctx, err)
 		return nil, err
 	}
 
 	updatedJSON, err := json.Marshal(updatedObj)
 	if err != nil {
-		log.ErrorCtx(ctx, err)
+		log.Error(ctx, err)
 		return nil, err
 	}
 
 	data, err := jsonpatch.CreateMergePatch(originalJSON, updatedJSON)
 	if err != nil {
-		log.ErrorCtx(ctx, err)
+		log.Error(ctx, err)
 		return nil, fmt.Errorf("failed to marge patch data, error: %s", err)
 	}
 
@@ -108,12 +110,12 @@ func (k *KubectlService) MargePatch(ctx context.Context, originalObj, updatedObj
 
 func (k *KubectlService) addKubectlStruct(ctx context.Context, KubectlList *[]Kubectl, isSuccess bool, KubectlStruct *unstructured.Unstructured, explain string) error {
 	if KubectlList == nil {
-		log.ErrorCtx(ctx, "KubectlList is nil")
+		log.Error(ctx, "KubectlList is nil")
 		return errors.New("KubectlList is nil")
 	}
 
 	if KubectlStruct == nil {
-		log.ErrorCtx(ctx, "KubectlStruct is nil")
+		log.Error(ctx, "KubectlStruct is nil")
 		return errors.New("KubectlStruct is nil")
 	}
 
@@ -129,13 +131,13 @@ func (k *KubectlService) addKubectlStruct(ctx context.Context, KubectlList *[]Ku
 
 	unstructuredObjBytes, err := KubectlStruct.MarshalJSON()
 	if err != nil {
-		log.ErrorCtx(ctx, err)
+		log.Error(ctx, err)
 		return err
 	}
 
 	unstructuredObjYamlBytes, err := k.JSONToYAML(ctx, unstructuredObjBytes)
 	if err != nil {
-		log.ErrorCtx(ctx, err)
+		log.Error(ctx, err)
 		return err
 	}
 	Kubectl.YamlContext = string(unstructuredObjYamlBytes)
@@ -158,21 +160,21 @@ func (k *KubectlService) option(ctx context.Context, fileBytes []byte, option Op
 				}
 				break
 			}
-			log.ErrorCtx(ctx, err)
+			log.Error(ctx, err)
 			return err, Kubectl
 		}
 
 		obj, gvk, err := yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme).Decode(rawObj.Raw, nil, nil)
 		unstructuredMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
 		if err != nil {
-			log.ErrorCtx(ctx, err)
+			log.Error(ctx, err)
 			return err, Kubectl
 		}
 
 		unstructuredObj := &unstructured.Unstructured{Object: unstructuredMap}
 		mapping, err := k.RESTMapper.RESTMapping(gvk.GroupKind(), gvk.Version)
 		if err != nil {
-			log.ErrorCtx(ctx, err)
+			log.Error(ctx, err)
 			return err, Kubectl
 		}
 
@@ -197,19 +199,18 @@ func (k *KubectlService) option(ctx context.Context, fileBytes []byte, option Op
 						break
 					}
 					errOptionDetail += ";" + err.Error()
-					log.ErrorCtx(ctx, err)
+					log.Error(ctx, err)
 					k.addKubectlStruct(ctx, &Kubectl, false, unstructuredObj, "can not create")
 					if isReturnAfterFailure {
 						return err, Kubectl
 					}
-
 				}
 			}
 
 			unstructuredObj.SetResourceVersion(objGet.GetResourceVersion())
 			data, err := k.MargePatch(ctx, objGet, unstructuredObj)
 			if err != nil {
-				log.ErrorCtx(ctx, err)
+				log.Error(ctx, err)
 				errOptionDetail += ";" + err.Error()
 				if isReturnAfterFailure {
 					return err, Kubectl
@@ -220,7 +221,7 @@ func (k *KubectlService) option(ctx context.Context, fileBytes []byte, option Op
 			objUpdate, err := dri.Patch(context.Background(), unstructuredObj.GetName(), types.StrategicMergePatchType, data, metav1.PatchOptions{})
 			if err != nil {
 				k.addKubectlStruct(ctx, &Kubectl, false, unstructuredObj, "patch failed")
-				log.ErrorCtx(ctx, err)
+				log.Error(ctx, err)
 				errOptionDetail += ";" + err.Error()
 				if isReturnAfterFailure {
 					return err, Kubectl
@@ -232,7 +233,7 @@ func (k *KubectlService) option(ctx context.Context, fileBytes []byte, option Op
 			err := dri.Delete(context.Background(), unstructuredObj.GetName(), metav1.DeleteOptions{})
 			if err != nil {
 				errOptionDetail += ";" + err.Error()
-				log.ErrorCtx(ctx, err)
+				log.Error(ctx, err)
 				if isReturnAfterFailure {
 					return err, nil
 				}
