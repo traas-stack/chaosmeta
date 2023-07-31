@@ -100,11 +100,21 @@ export const SpaceContent = styled.div`
     }
     .overview {
       margin-bottom: 16px;
-
+      .ant-select-selector {
+        background-color: rgba(255, 255, 255, 0.5);
+        margin-bottom: 8px;
+      }
+      .ant-card {
+        .ant-card-body {
+          height: 110px;
+          padding: 0 24px;
+        }
+      }
       .result {
+        height: 100%;
         display: flex;
         justify-content: space-between;
-        margin-top: 16px;
+        align-items: center;
         .count {
           font-size: 24px;
           font-weight: 500;
@@ -123,6 +133,9 @@ export const SpaceContent = styled.div`
       }
     }
     .recommend {
+      .top {
+        margin-bottom: 8px;
+      }
       .item {
         display: flex;
         align-items: center;

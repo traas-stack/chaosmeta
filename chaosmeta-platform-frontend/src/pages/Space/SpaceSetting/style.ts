@@ -4,10 +4,10 @@ export const Container = styled.div`
   .ant-tabs-nav::before {
     border: none;
   }
-  .ant-form-item {
+  /* .ant-form-item {
     margin-bottom: 0;
-  }
-  .tab-content {
+  } */
+  /* .tab-content {
     background-color: #fff;
     border-radius: 6px;
     min-height: calc(100vh - 320px);
@@ -20,5 +20,16 @@ export const Container = styled.div`
         color: #1677ff;
       }
     }
-  }
+  } */
 `;
+
+// 基本信息
+export const BasicInfoContainer = styled.div`
+  background-color: #fff;
+  padding: 24px;
+  border-radius: 6px;
+  .ant-form {
+    width: 50%;
+    min-width: 600px;
+  }
+`

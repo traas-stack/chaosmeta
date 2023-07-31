@@ -42,14 +42,16 @@ export const httpErrorMessage: any = {
  * 错误统一处理
  * @param error
  */
-const errorHandler = (error: any) => {
-  console.dir(error, 'error===')
+const errorHandler = async (error: any) => {
   // 我们的 errorThrower 抛出的错误。
   if (error.name === 'BizError') {
     const errorInfo: any = error.info;
+    // 登录过期，重新登录
     if (errorInfo) {
-      const { message: errorMsg } = errorInfo;
-      message.error(errorMsg);
+      if (errorInfo.code !== 401) {
+        const { message: errorMsg } = errorInfo;
+        message.error(errorMsg);
+      }
     }
   } else if (error.response) {
     const { statusText, status } = error.response;

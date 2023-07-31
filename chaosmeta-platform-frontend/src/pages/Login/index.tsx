@@ -3,7 +3,6 @@ import { history, useRequest } from '@umijs/max';
 import { Button, Form, Input, message } from 'antd';
 import CryptoJS from 'crypto-js';
 import { useState } from 'react';
-import cookie from 'react-cookies';
 import { Container, OperateArea } from './style';
 
 export default () => {
@@ -34,9 +33,6 @@ export default () => {
     onSuccess: (res: any, params: any) => {
       if (res.code === 200) {
         localStorage.setItem('userName', params[0]?.name);
-        // cookie.save('TOKEN', res.data?.refreshToken, {
-        //   domain: document.domain,
-        // });
         history.push('/space/overview');
         form.resetFields();
       }

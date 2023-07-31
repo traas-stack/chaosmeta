@@ -1,14 +1,18 @@
-import ShowText from '@/components/ShowText';
 import { PageContainer } from '@ant-design/pro-components';
-import { Col, Form, Row, Tabs } from 'antd';
+import { Tabs } from 'antd';
 import React, { useEffect } from 'react';
+import BasicInfo from './BasicInfo';
 import MemberManage from './MemberManage';
-import { Container } from './style';
 import TagManage from './TagManage';
+import { Container } from './style';
 
 const SpaceSetting: React.FC<unknown> = () => {
-  const [form] = Form.useForm();
   const tabItems = [
+    {
+      label: '基本信息',
+      key: 'basic',
+      children: <BasicInfo />,
+    },
     {
       label: '成员管理',
       key: 'user',
@@ -25,20 +29,11 @@ const SpaceSetting: React.FC<unknown> = () => {
     },
   ];
 
-  useEffect(() => {
-    console.log(new Date(), 'date');
-    form.setFieldsValue({
-      spaceName:
-        '空间名称空间名称空间名称空间名称空间名称空间名称空间名称空间名称',
-      createTime: new Date(),
-      userCount: '12',
-    });
-  }, []);
+  useEffect(() => {}, []);
   return (
     <PageContainer title="空间设置">
       <Container>
-        <Form form={form}>
-          <Row gutter={24}>
+        {/* <Row gutter={24}>
             <Col span={8}>
               <Form.Item name={'spaceName'} label="空间名称">
                 <ShowText ellipsis isEdit />
@@ -54,9 +49,8 @@ const SpaceSetting: React.FC<unknown> = () => {
                 <ShowText />
               </Form.Item>
             </Col>
-          </Row>
-          <Tabs items={tabItems} />
-        </Form>
+          </Row> */}
+        <Tabs items={tabItems} />
       </Container>
     </PageContainer>
   );

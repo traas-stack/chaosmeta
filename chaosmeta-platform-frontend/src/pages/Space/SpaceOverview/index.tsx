@@ -96,20 +96,20 @@ const MySpace: React.FC<unknown> = () => {
         <SpaceContent>
           <Row gutter={16}>
             <Col span={16} className="left">
-              <Area style={{ height: '100%' }}>
+              <Area>
                 <ExperimentalOverview />
               </Area>
             </Col>
             <Col span={8} className="right">
               <Area className="overview">
+                <div className="top">
+                  <span className="title">空间总览</span>
+                  <Select
+                    defaultValue={'7day'}
+                    options={[{ label: '最近7天', value: '7day' }]}
+                  />
+                </div>
                 <Card>
-                  <div className="top">
-                    <span className="title">空间总览</span>
-                    <Select
-                      defaultValue={'7day'}
-                      options={[{ label: '最近7天', value: '7day' }]}
-                    />
-                  </div>
                   <div className="result">
                     <div>
                       <span className="count">19</span>
@@ -128,14 +128,14 @@ const MySpace: React.FC<unknown> = () => {
                 </Card>
               </Area>
               <Area className="recommend">
+                <div className="top">
+                  <span className="title">推荐实验</span>
+                  <Space className="shallow-65">
+                    <span>查看更多</span>
+                    <RightOutlined />
+                  </Space>
+                </div>
                 <Card>
-                  <div className="top">
-                    <span className="title">推荐实验</span>
-                    <Space className="shallow-65">
-                      <span>查看更多</span>
-                      <RightOutlined />
-                    </Space>
-                  </div>
                   <div className="items">
                     <div className="item">
                       <img src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*h_acR7jTCrgAAAAAAAAAAAAADmKmAQ/original" />

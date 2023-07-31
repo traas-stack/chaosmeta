@@ -1,3 +1,4 @@
+import EmptyState from '@/components/EmptyState';
 import { RightOutlined } from '@ant-design/icons';
 import { Card, Space, Table, Tabs } from 'antd';
 
@@ -78,20 +79,22 @@ export default () => {
   const EditExperimental = () => {
     return (
       <Card>
-        <Table
+        <EmptyState
+          desc="当前页面暂无最近编辑的实验"
+          title="您可以前往实验列表编辑实验"
+          btnText="前往实验列表"
+        />
+        {/* <Table
           showHeader={false}
           columns={columns}
           rowKey={'id'}
           dataSource={[
             { name: '999', id: '1' },
-            { name: '999', id: '2' },
-            { name: '999', id: '3' },
-            { name: '999', id: '4' },
             { name: '999', id: '5' },
           ]}
           pagination={false}
           scroll={{ x: 760 }}
-        />
+        /> */}
       </Card>
     );
   };

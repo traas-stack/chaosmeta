@@ -2,10 +2,22 @@
  * 成员管理tab
  */
 import { Area } from '@/components/CommonStyle';
-import { SearchOutlined } from '@ant-design/icons';
-import { Button, Input, Select, Space, Table } from 'antd';
+import { Role } from '@/pages/GlobalSetting/Account/style';
+import { ExclamationCircleFilled, SearchOutlined } from '@ant-design/icons';
+import { useModel } from '@umijs/max';
+import {
+  Alert,
+  Button,
+  Input,
+  Modal,
+  Select,
+  Space,
+  Table,
+  message,
+} from 'antd';
 import { ColumnsType } from 'antd/es/table';
-import React from 'react';
+import React, { useState } from 'react';
+import AddMemberModal from './AddMemberModal';
 
 interface IProps {}
 interface DataType {
@@ -15,20 +27,51 @@ interface DataType {
 }
 
 const MemberManage: React.FC<IProps> = () => {
+  const { initialState } = useModel('@@initialState');
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [addMemberOpen, setAddMemberOpen] = useState<boolean>(false);
+
   const authOptions = [
     {
-      label: '读写',
-      value: 'writing',
-    },
-    {
-      label: '只读',
-      value: 'readonly',
-    },
-    {
-      label: '管理员',
+      label: (
+        <Role>
+          <span>读写</span>
+          <div>拥有所有权限</div>
+        </Role>
+      ),
       value: 'admain',
+      name: '读写',
+    },
+    {
+      label: (
+        <Role>
+          <span>只读</span>
+          <div>只能查看</div>
+        </Role>
+      ),
+      value: 'readonly',
+      name: '只读',
     },
   ];
+
+  /**
+   * 删除账号
+   */
+  const handleDeleteAccount = () => {
+    Modal.confirm({
+      title: '您确认要删除当前所选成员吗？',
+      icon: <ExclamationCircleFilled />,
+      content: '删除空间内成员，该成员将无法进入该空间！',
+      onOk() {
+        return new Promise((resolve, reject) => {
+          setTimeout(Math.random() > 0.5 ? resolve : reject, 1000);
+          message.success('您已成功删除所选成员');
+        }).catch(() => console.log('Oops errors!'));
+      },
+      onCancel() {},
+    });
+  };
+
   const columns: ColumnsType<DataType> = [
     {
       title: '账号',
@@ -44,14 +87,37 @@ const MemberManage: React.FC<IProps> = () => {
       title: '权限',
       width: 160,
       dataIndex: 'auth',
+      filters: [
+        {
+          text: '读写',
+          value: 'admain',
+        },
+        {
+          text: '只读',
+          value: 'readonly',
+        },
+      ],
       render: (text: string) => {
         return (
           <Select
-            style={{ minWidth: '80px' }}
-            value={text}
+            dropdownStyle={{ minWidth: '200px' }}
             bordered={false}
-            options={authOptions}
-          />
+            value={text}
+            style={{ minWidth: '80px' }}
+            optionLabelProp="label"
+          >
+            {authOptions?.map((item) => {
+              return (
+                <Select.Option
+                  value={item?.value}
+                  label={item.name}
+                  key={item.value}
+                >
+                  {item.label}
+                </Select.Option>
+              );
+            })}
+          </Select>
         );
       },
     },
@@ -59,13 +125,14 @@ const MemberManage: React.FC<IProps> = () => {
       title: '加入时间',
       width: 160,
       dataIndex: 'time',
+      sorter: true,
     },
     {
       title: '操作',
       width: 60,
       fixed: 'right',
       render: () => {
-        return <a>删除</a>;
+        return <a onClick={handleDeleteAccount}>删除</a>;
       },
     },
   ];
@@ -84,24 +151,64 @@ const MemberManage: React.FC<IProps> = () => {
               />
             }
           />
-          <Button>批量导入</Button>
-          <Button>批量删除</Button>
-          <Button type="primary">添加成员</Button>
+          {/* {initialState?.userInfo?.role === 'admain' && ( */}
+          <>
+            <Button disabled={selectedRowKeys?.length === 0}>批量删除</Button>
+            <Button
+              type="primary"
+              onClick={() => {
+                setAddMemberOpen(true);
+              }}
+            >
+              添加成员
+            </Button>
+          </>
+          {/* )} */}
         </Space>
       </div>
-      <div className="tab-content">
+      <div className="area-content">
+        {selectedRowKeys?.length > 0 && (
+          <Alert
+            message={
+              <>
+                已选择 <a>{selectedRowKeys.length}</a> 项
+              </>
+            }
+            style={{ marginBottom: '16px' }}
+            type="info"
+            action={
+              <a
+                onClick={() => {
+                  setSelectedRowKeys([]);
+                }}
+              >
+                清空
+              </a>
+            }
+            showIcon
+          />
+        )}
+
         <Table
           columns={columns}
           rowKey={'id'}
           dataSource={[{ id: '1', account: 'hlt', auth: 'admain' }]}
           scroll={{ x: 'max-content' }}
+          rowSelection={{
+            selectedRowKeys,
+            onChange: (rowKeys: React.Key[]) => {
+              setSelectedRowKeys(rowKeys);
+            },
+          }}
           pagination={{
-            showQuickJumper:true,
+            showQuickJumper: true,
             total: 200,
-            
           }}
         />
       </div>
+      {addMemberOpen && (
+        <AddMemberModal setOpen={setAddMemberOpen} open={addMemberOpen} />
+      )}
     </Area>
   );
 };
