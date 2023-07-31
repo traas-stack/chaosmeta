@@ -1,4 +1,4 @@
-apiVersion: inject.chaosmeta.io/v1alpha1
+apiVersion: chaosmeta.io/v1alpha1
 kind: Experiment
 metadata:
   #  labels:
@@ -8,6 +8,7 @@ metadata:
   #    app.kubernetes.io/managed-by: kustomize
   #    app.kubernetes.io/created-by: chaosmeta-inject-operator
   name: kubernetes-pod-finalizer
+  namespace: chaosmeta-inject
 spec:
   scope: kubernetes
   targetPhase: inject

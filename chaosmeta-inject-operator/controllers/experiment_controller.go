@@ -43,9 +43,9 @@ type ExperimentReconciler struct {
 	//Scheme     *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=inject.chaosmeta.io,resources=experiments,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=inject.chaosmeta.io,resources=experiments/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=inject.chaosmeta.io,resources=experiments/finalizers,verbs=update
+//+kubebuilder:rbac:groups=chaosmeta.io,resources=experiments,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=chaosmeta.io,resources=experiments/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=chaosmeta.io,resources=experiments/finalizers,verbs=update
 //+kubebuilder:rbac:groups=core,resources=pods;pods/exec;services;namespaces;nodes,verbs=*
 //+kubebuilder:rbac:groups=apps,resources=deployments;daemonsets;replicasets;statefulsets,verbs=*
 //+kubebuilder:rbac:groups=batchs,resources=jobs,verbs=*
