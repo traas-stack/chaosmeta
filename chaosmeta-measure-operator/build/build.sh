@@ -10,9 +10,8 @@ ns="chaosmeta-measure"
 kubectl create configmap chaosmeta-measure-config --from-file="${ROOT_PATH}"/config/chaosmeta-measure.json -n ${ns}
 
 BUILD_DIR="/tmp/chaosmeta_build"
-mkdir -p ${BUILD_DIR}/data
 mkdir -p ${BUILD_DIR}/ssl && cd ${BUILD_DIR}/ssl
-docker run --mount type=bind,source=$(pwd),destination=${BUILD_DIR}/data registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-openssl:v1.0.0 openssl req -x509 -newkey rsa:4096 -keyout ${BUILD_DIR}/data/tls.key -out ${BUILD_DIR}/data/tls.crt -days 3650 -nodes -subj "/CN=chaosmeta-measure-webhook-service.${ns}.svc" -addext "subjectAltName=DNS:chaosmeta-measure-webhook-service.${ns}.svc"
+docker run --mount type=bind,source=$(pwd),destination=${BUILD_DIR}/ssl registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-openssl:v1.0.0 openssl req -x509 -newkey rsa:4096 -keyout ${BUILD_DIR}/ssl/tls.key -out ${BUILD_DIR}/ssl/tls.crt -days 3650 -nodes -subj "/CN=chaosmeta-measure-webhook-service.${ns}.svc" -addext "subjectAltName=DNS:chaosmeta-measure-webhook-service.${ns}.svc"
 caBundle=""
 if [ "$(uname -s)" = "Linux" ]; then
     caBundle=$(cat tls.crt | base64 -w 0)

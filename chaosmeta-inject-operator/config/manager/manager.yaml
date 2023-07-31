@@ -70,7 +70,7 @@ spec:
         - /manager
         args:
         - --leader-elect
-        image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-inject-controller:v0.0.3
+        image: controller:latest
         name: manager
         securityContext:
           allowPrivilegeEscalation: false

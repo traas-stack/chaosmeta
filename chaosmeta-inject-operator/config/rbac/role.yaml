@@ -21,17 +21,7 @@ rules:
   verbs:
   - '*'
 - apiGroups:
-  - ""
-  resources:
-  - namespaces
-  - nodes
-  - pods
-  - pods/exec
-  - services
-  verbs:
-  - '*'
-- apiGroups:
-  - inject.chaosmeta.io
+  - chaosmeta.io
   resources:
   - experiments
   verbs:
@@ -43,16 +33,26 @@ rules:
   - update
   - watch
 - apiGroups:
-  - inject.chaosmeta.io
+  - chaosmeta.io
   resources:
   - experiments/finalizers
   verbs:
   - update
 - apiGroups:
-  - inject.chaosmeta.io
+  - chaosmeta.io
   resources:
   - experiments/status
   verbs:
   - get
   - patch
   - update
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  - nodes
+  - pods
+  - pods/exec
+  - services
+  verbs:
+  - '*'

@@ -14,7 +14,7 @@
     },
     "daemonsetConfig": {
       "localExecPath": "/tmp",
-      "daemonNs": "chaosmeta",
+      "daemonNs": "chaosmeta-inject",
       "daemonLabel": {
         "app.chaosmeta.io": "chaosmeta-daemon"
       }
