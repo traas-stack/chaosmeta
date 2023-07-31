@@ -20,12 +20,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
+	"runtime"
 )
 
 var globalConfig *MainConfig
 
 func init() {
-	if err := LoadConfig("./config/chaosmeta-measure.json"); err != nil {
+	_, filename, _, _ := runtime.Caller(0)
+	absPath, _ := filepath.Abs(filepath.Dir(filename))
+	if err := LoadConfig(fmt.Sprintf("%s/config/chaosmeta-measure.json", filepath.Dir(filepath.Dir(absPath)))); err != nil {
 		panic(any(fmt.Sprintf("load config error: %s", err.Error())))
 	}
 }

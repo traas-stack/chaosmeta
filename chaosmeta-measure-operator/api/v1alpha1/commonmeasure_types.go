@@ -61,7 +61,7 @@ type CommonMeasureSpec struct {
 	Interval     string        `json:"interval"`
 	SuccessCount int           `json:"successCount,omitempty"`
 	FailedCount  int           `json:"failedCount,omitempty"`
-	Stopped      bool          `json:"stopped,omitempty"`
+	Stopped      bool          `json:"stopped"`
 	Judgement    Judgement     `json:"judgement"`
 	Args         []MeasureArgs `json:"args"`
 }

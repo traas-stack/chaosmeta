@@ -37,17 +37,18 @@ func (r *CommonMeasure) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-// TODO(user): EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-
-//+kubebuilder:webhook:path=/mutate-chaosmeta-io-v1alpha1-commonmeasure,mutating=true,failurePolicy=fail,sideEffects=None,groups=chaosmeta.io,resources=commonmeasures,verbs=create;update,versions=v1alpha1,name=mcommonmeasure.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/mutate-chaosmeta-io-v1alpha1-commonmeasure,mutating=true,failurePolicy=fail,sideEffects=None,groups=chaosmeta.io,resources=commonmeasures,verbs=create,versions=v1alpha1,name=mcommonmeasure.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Defaulter = &CommonMeasure{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
 func (r *CommonMeasure) Default() {
 	commonmeasurelog.Info("default", "name", r.Name)
-	r.Status.Status = CreatedStatus
-	r.Spec.Stopped = false
+
+	if r.Spec.Stopped {
+		commonmeasurelog.Info("update \"stopped\" to false")
+		r.Spec.Stopped = false
+	}
 
 	var i int
 	for i = 0; i < len(r.ObjectMeta.Finalizers); i++ {
@@ -57,6 +58,7 @@ func (r *CommonMeasure) Default() {
 	}
 
 	if i == len(r.ObjectMeta.Finalizers) {
+		commonmeasurelog.Info(fmt.Sprintf("add \"%s\" finalizer", FinalizerName))
 		r.ObjectMeta.Finalizers = append(r.ObjectMeta.Finalizers, FinalizerName)
 	}
 }
@@ -69,6 +71,14 @@ var _ webhook.Validator = &CommonMeasure{}
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (r *CommonMeasure) ValidateCreate() error {
 	commonmeasurelog.Info("validate create", "name", r.Name)
+
+	//if r.Status.Status != CreatedStatus {
+	//	return fmt.Errorf("status is not created")
+	//}
+
+	if r.Spec.Stopped {
+		return fmt.Errorf("\"spec.stopped\" should be false")
+	}
 
 	if r.Spec.SuccessCount == 0 && r.Spec.FailedCount == 0 {
 		return fmt.Errorf("one of spec.successCount and spec.failedCount must provide")

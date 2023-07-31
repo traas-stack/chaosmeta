@@ -59,6 +59,9 @@ func (r *CommonMeasureReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		}
 		return ctrl.Result{}, fmt.Errorf("get instance error: %s", err.Error())
 	}
+	if instance.Status.Status == "" {
+		instance.Status.Status = measurev1alpha1.CreatedStatus
+	}
 
 	defer func() {
 		if e := recover(); e != any(nil) {
@@ -67,23 +70,19 @@ func (r *CommonMeasureReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		}
 	}()
 
-	// TODO: need to test
-	if !instance.ObjectMeta.DeletionTimestamp.IsZero() {
-		if instance.Status.Status != measurev1alpha1.SuccessStatus && instance.Status.Status != measurev1alpha1.FailedStatus {
+	if instance.Status.Status == measurev1alpha1.RunningStatus || instance.Status.Status == measurev1alpha1.CreatedStatus {
+		if !instance.ObjectMeta.DeletionTimestamp.IsZero() {
 			if !instance.Spec.Stopped {
-				instance.Spec.Stopped = true
 				logger.Info(fmt.Sprintf("update spec.stopped of %s/%s from false to true", instance.Namespace, instance.Name))
+				instance.Spec.Stopped = true
 				return ctrl.Result{}, r.Update(ctx, instance)
+				//return ctrl.Result{}, r.Patch(ctx, instance, client.RawPatch(types.MergePatchType, []byte(`{"spec":{"stopped":true}}`)))
 			}
-		} else {
-			solveFinalizer(instance)
-			logger.Info(fmt.Sprintf("update Finalizer of %s/%s to: %s", instance.Namespace, instance.Name, instance.ObjectMeta.Finalizers))
-			return ctrl.Result{}, r.Update(ctx, instance)
 		}
-	}
-
-	if instance.Status.Status == "" {
-		instance.Status.Status = measurev1alpha1.CreatedStatus
+	} else {
+		solveFinalizer(instance)
+		logger.Info(fmt.Sprintf("update Finalizer of %s/%s to: %s", instance.Namespace, instance.Name, instance.ObjectMeta.Finalizers))
+		return ctrl.Result{}, r.Update(ctx, instance)
 	}
 
 	logger.Info(fmt.Sprintf("process instance %s/%s, status: %s", instance.Namespace, instance.Name, instance.Status.Status))

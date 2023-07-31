@@ -15,6 +15,8 @@ RUN go mod download
 COPY main.go main.go
 COPY api/ api/
 COPY controllers/ controllers/
+COPY config/chaosmeta-measure.json config/chaosmeta-measure.json
+COPY pkg/ pkg/
 
 # Build
 # the GOARCH has not a default value to allow the binary be built according to the host where the command
@@ -27,6 +29,7 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o ma
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
 FROM gcr.io/distroless/static:nonroot
 WORKDIR /
+COPY --from=builder /workspace/config/chaosmeta-measure.json /workspace/config/chaosmeta-measure.json
 COPY --from=builder /workspace/manager .
 USER 65532:65532
 

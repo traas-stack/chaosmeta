@@ -20,6 +20,7 @@ import (
 	"context"
 )
 
+// +kubebuilder:object:generate=false
 type MeasureExecutor interface {
 	CheckConfig(ctx context.Context, args []MeasureArgs, judgement Judgement) error
 	InitialData(ctx context.Context, args []MeasureArgs) (string, error)
