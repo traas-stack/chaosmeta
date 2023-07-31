@@ -35,6 +35,7 @@ import (
 	"github.com/traas-stack/chaosmeta/chaosmeta-measure-operator/controllers"
 	//+kubebuilder:scaffold:imports
 
+	_ "github.com/traas-stack/chaosmeta/chaosmeta-measure-operator/pkg/config"
 	_ "github.com/traas-stack/chaosmeta/chaosmeta-measure-operator/pkg/executor/httpexecutor"
 	_ "github.com/traas-stack/chaosmeta/chaosmeta-measure-operator/pkg/executor/ipexecutor"
 	_ "github.com/traas-stack/chaosmeta/chaosmeta-measure-operator/pkg/executor/monitorexecutor"

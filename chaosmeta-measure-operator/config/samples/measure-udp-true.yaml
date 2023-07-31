@@ -2,11 +2,11 @@ apiVersion: chaosmeta.io/v1alpha1
 kind: CommonMeasure
 metadata:
   name: measure-udp-true
-  namespace: chaosmeta
+  namespace: chaosmeta-measure
 spec:
   measureType: udp
-  duration: 1m
-  interval: 3s
+  duration: 10m
+  interval: 5s
   successCount: 3
   failedCount: 0
   stopped: false

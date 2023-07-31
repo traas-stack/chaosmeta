@@ -2,7 +2,7 @@ apiVersion: chaosmeta.io/v1alpha1
 kind: CommonMeasure
 metadata:
   name: measure-http-body-post
-  namespace: chaosmeta
+  namespace: chaosmeta-measure
 spec:
   measureType: http
   duration: 5m

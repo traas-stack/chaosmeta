@@ -75,6 +75,7 @@ spec:
             - interval
             - judgement
             - measureType
+            - stopped
             type: object
           status:
             description: CommonMeasureStatus defines the observed state of CommonMeasure
