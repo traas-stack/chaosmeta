@@ -1,0 +1,13 @@
+basePath: /chaosmeta/api/v1
+host: 127.0.0.1:8080
+info:
+  contact:
+    name: go-swagger帮助文档
+    url: https://github.com/traas-stack/chaosmeta
+  description: This is chaosmeta-platform api docs.
+  license:
+    name: Apache 2.0
+  title: Chaosmeta
+  version: 1.0 （必填）
+paths: {}
+swagger: "2.0"

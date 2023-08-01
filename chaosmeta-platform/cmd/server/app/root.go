@@ -16,7 +16,7 @@ var cfgFile string
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file (default in $HOME/.prism/config.yaml)")
+	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file (default in $HOME/.chaosmeta/config.yaml)")
 
 	rootCmd.AddCommand(serverCmd)
 

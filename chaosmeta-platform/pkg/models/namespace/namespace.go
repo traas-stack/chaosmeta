@@ -89,7 +89,6 @@ func QueryNamespaces(ctx context.Context, name, creator, orderBy string, page, p
 		return 0, nil, err
 	}
 
-	namespaceQuery.Filter("is_deleted", models.NEGLECT, false, false)
 	if len(name) > 0 {
 		namespaceQuery.Filter("name", models.CONTAINS, true, name)
 	}

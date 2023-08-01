@@ -17,11 +17,11 @@ func init() {
 
 func TestNamespaceService_CreateNamespace(t *testing.T) {
 	s := &NamespaceService{}
-	if err := s.Create(context.Background(), "冷凇的空间", "一次重要的里程碑", "liusongshan.lss@alibaba-inc.com"); err != nil {
+	if _, err := s.Create(context.Background(), "冷凇的空间", "一次重要的里程碑", "liusongshan.lss@alibaba-inc.com"); err != nil {
 		t.Fatal("CreateNamespace() error", err)
 	}
 	for i := 0; i < 10; i++ {
-		if err := s.Create(context.Background(), fmt.Sprintf("冷凇的空间:%d", i), "一次重要的里程碑", "liusongshan.lss@alibaba-inc.com"); err != nil {
+		if _, err := s.Create(context.Background(), fmt.Sprintf("冷凇的空间:%d", i), "一次重要的里程碑", "liusongshan.lss@alibaba-inc.com"); err != nil {
 			t.Fatal("CreateNamespace() error", err)
 		}
 	}

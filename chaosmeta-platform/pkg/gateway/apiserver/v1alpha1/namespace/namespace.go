@@ -22,11 +22,14 @@ func (c *NamespaceController) Create() {
 	}
 	username := c.Ctx.Input.GetData("userName").(string)
 	namespace := &namespace.NamespaceService{}
-	if err := namespace.Create(context.Background(), requestBody.Name, requestBody.Description, username); err != nil {
+	namespaceId, err := namespace.Create(context.Background(), requestBody.Name, requestBody.Description, username)
+	if err != nil {
 		c.Error(&c.Controller, err)
 		return
 	}
-	c.Success(&c.Controller, "ok")
+	c.Success(&c.Controller, CreateNamespaceResponse{
+		ID: namespaceId,
+	})
 }
 
 func (c *NamespaceController) Get() {

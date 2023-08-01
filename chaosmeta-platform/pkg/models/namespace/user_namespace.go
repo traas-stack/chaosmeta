@@ -1,8 +1,8 @@
 package namespace
 
 import (
-	models2 "chaosmeta-platform/pkg/models"
 	"chaosmeta-platform/pkg/models/common"
+	models2 "chaosmeta-platform/pkg/models/user"
 	"context"
 	"errors"
 	"fmt"

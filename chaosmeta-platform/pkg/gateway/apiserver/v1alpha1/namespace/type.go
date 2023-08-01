@@ -10,6 +10,10 @@ type CreateNamespaceRequest struct {
 	Description string `json:"description"`
 }
 
+type CreateNamespaceResponse struct {
+	ID int64 `json:"id"`
+}
+
 type NameSpace struct {
 	ID         int       `json:"id"`
 	Name       string    `json:"name"`

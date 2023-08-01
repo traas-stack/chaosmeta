@@ -17,8 +17,8 @@
 package namespace
 
 import (
-	"chaosmeta-platform/pkg/models"
 	namespaceModel "chaosmeta-platform/pkg/models/namespace"
+	"chaosmeta-platform/pkg/models/user"
 	"chaosmeta-platform/util/log"
 	"context"
 	"errors"
@@ -42,8 +42,8 @@ func Init() {
 	if err != nil {
 		log.Panic(err)
 	}
-	u := &models.User{Email: "admin"}
-	if err := models.GetUser(ctx, u); err != nil {
+	u := &user.User{Email: "admin"}
+	if err := user.GetUser(ctx, u); err != nil {
 		log.Panic(err)
 	}
 
@@ -59,10 +59,10 @@ func Init() {
 
 type NamespaceService struct{}
 
-func (s *NamespaceService) Create(ctx context.Context, name, description string, creatorName string) error {
-	creator := models.User{Email: creatorName}
-	if err := models.GetUser(ctx, &creator); err != nil {
-		return err
+func (s *NamespaceService) Create(ctx context.Context, name, description string, creatorName string) (int64, error) {
+	creator := user.User{Email: creatorName}
+	if err := user.GetUser(ctx, &creator); err != nil {
+		return 0, err
 	}
 
 	namespace := &namespaceModel.Namespace{
@@ -72,9 +72,9 @@ func (s *NamespaceService) Create(ctx context.Context, name, description string,
 	}
 	namespaceId, err := namespaceModel.InsertNamespace(ctx, namespace)
 	if err != nil {
-		return err
+		return 0, err
 	}
-	return namespaceModel.AddUsersInNamespace(int(namespaceId), namespaceModel.AddUsersParam{
+	return namespaceId, namespaceModel.AddUsersInNamespace(int(namespaceId), namespaceModel.AddUsersParam{
 		Users: []namespaceModel.UserData{{
 			Id:         creator.ID,
 			Permission: int(namespaceModel.AdminPermission),
@@ -181,18 +181,18 @@ func (s *NamespaceService) ChangeUsersPermission(ctx context.Context, userName s
 	return namespaceModel.UpdateUsersPermissionInNamespace(namespaceId, userIds, permission)
 }
 
-func (s *NamespaceService) GetUsers(ctx context.Context, namespaceId int, userName string, permission int, orderBy string, page, pageSize int) ([]*models.User, int64, error) {
+func (s *NamespaceService) GetUsers(ctx context.Context, namespaceId int, userName string, permission int, orderBy string, page, pageSize int) ([]*user.User, int64, error) {
 	return namespaceModel.QueryUsers(namespaceId, userName, permission, orderBy, page, pageSize)
 }
 
 func (s *NamespaceService) IsAdmin(ctx context.Context, namespaceId int, userName string) bool {
-	user := models.User{Email: userName}
-	if err := models.GetUser(ctx, &user); err != nil {
+	userGet := user.User{Email: userName}
+	if err := user.GetUser(ctx, &userGet); err != nil {
 		return false
 	}
 	un := namespaceModel.UserNamespace{
 		NamespaceId: namespaceId,
-		UserId:      user.ID,
+		UserId:      userGet.ID,
 	}
 	if err := namespaceModel.GetUserNamespace(ctx, &un); err != nil {
 		return false

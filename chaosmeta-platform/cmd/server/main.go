@@ -5,7 +5,7 @@ import (
 	_ "chaosmeta-platform/cmd/server/docs"
 )
 
-// @title Prism
+// @title Chaosmeta
 // @version 1.0 （必填）
 // @description This is chaosmeta-platform api docs.
 // @license.name Apache 2.0
@@ -18,7 +18,7 @@ import (
 //	@name						CHAOSMETA_PLATFORM_TOKEN
 //	@description				用户令牌
 
-// @BasePath /prism/api/v1
+// @BasePath /chaosmeta/api/v1
 func main() {
 	app.Execute()
 }

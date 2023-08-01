@@ -16,7 +16,7 @@ func (c BeegoOutputController) Error(bc *beego.Controller, err error) {
 
 func (c BeegoOutputController) ErrUnauthorized(bc *beego.Controller, err error) {
 	log.Error(err)
-	bc.Data["json"] = errors.ErrServer().WithMessage(err.Error())
+	bc.Data["json"] = errors.ErrUnauthorized().WithMessage(err.Error())
 	bc.ServeJSON()
 }
 

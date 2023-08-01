@@ -1,4 +1,4 @@
-secretkey: chaosmeta
+secretkey: chaosmeta1234567
 db:
   name: chaosmeta_platform
   user: chaosmeta

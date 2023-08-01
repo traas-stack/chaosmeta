@@ -17,16 +17,17 @@
 package config
 
 import (
-	"chaosmeta-platform/pkg/models"
+	"chaosmeta-platform/pkg/models/cluster"
 	modelCommon "chaosmeta-platform/pkg/models/common"
 	"chaosmeta-platform/pkg/models/namespace"
+	"chaosmeta-platform/pkg/models/user"
 	"fmt"
 	"github.com/beego/beego/v2/client/orm"
 	_ "github.com/go-sql-driver/mysql"
 )
 
 func Setup() {
-	orm.RegisterModel(new(namespace.UserNamespace), new(models.User), new(namespace.Namespace))
+	orm.RegisterModel(new(namespace.UserNamespace), new(user.User), new(namespace.Namespace), new(cluster.Cluster))
 
 	if err := orm.RegisterDataBase("default", "mysql", fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8", DefaultRunOptIns.DB.User, DefaultRunOptIns.DB.Passwd, DefaultRunOptIns.DB.Url, DefaultRunOptIns.DB.Name), orm.MaxIdleConnections(DefaultRunOptIns.DB.MaxIdle), orm.MaxOpenConnections(DefaultRunOptIns.DB.MaxConn)); err != nil {
 		panic(any(fmt.Sprintf("connect database error: %s", err.Error())))

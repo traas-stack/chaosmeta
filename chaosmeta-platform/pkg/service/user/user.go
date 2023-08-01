@@ -17,8 +17,8 @@
 package user
 
 import (
-	"chaosmeta-platform/pkg/models"
 	namespace2 "chaosmeta-platform/pkg/models/namespace"
+	"chaosmeta-platform/pkg/models/user"
 	"chaosmeta-platform/pkg/service/namespace"
 	"chaosmeta-platform/util/errors"
 	"chaosmeta-platform/util/log"
@@ -70,30 +70,30 @@ func (a *UserService) InitAdmin(ctx context.Context, name, password string) erro
 }
 
 func (a *UserService) IsAdmin(ctx context.Context, name string) bool {
-	user := models.User{Email: name}
-	if err := models.GetUser(ctx, &user); err != nil {
+	userGet := user.User{Email: name}
+	if err := user.GetUser(ctx, &userGet); err != nil {
 		return false
 	}
-	if user.Disabled {
+	if userGet.Disabled {
 		return false
 	}
-	return user.Role == models.AdminRole
+	return userGet.Role == user.AdminRole
 }
 
 func (a *UserService) Login(ctx context.Context, name, password string) (string, string, error) {
-	user := models.User{Email: name}
-	if err := models.GetUser(ctx, &user); err != nil {
+	userGet := user.User{Email: name}
+	if err := user.GetUser(ctx, &userGet); err != nil {
 		return "", "", err
 	}
-	if user.Disabled || user.IsDeleted {
+	if userGet.Disabled || userGet.IsDeleted {
 		return "", "", errors.ErrUnauthorized()
 	}
-	if !VerifyPassword(password, user.Password) {
+	if !VerifyPassword(password, userGet.Password) {
 		return "", "", errors.ErrUnauthorized()
 	}
 
-	user.LastLoginTime = time.Now()
-	if err := models.UpdateUser(ctx, &user); err != nil {
+	userGet.LastLoginTime = time.Now()
+	if err := user.UpdateUser(ctx, &userGet); err != nil {
 		return "", "", err
 	}
 
@@ -120,10 +120,10 @@ func (a *UserService) Create(ctx context.Context, name, password, role string) (
 	if err == nil && userGet.IsDeleted {
 		userGet.IsDeleted = false
 		userGet.Password = hash
-		return userGet.ID, models.UpdateUser(ctx, userGet)
+		return userGet.ID, user.UpdateUser(ctx, userGet)
 	}
 
-	user := models.User{
+	userCreate := user.User{
 		Email:     name,
 		Password:  hash,
 		Role:      role,
@@ -131,30 +131,30 @@ func (a *UserService) Create(ctx context.Context, name, password, role string) (
 		IsDeleted: false,
 	}
 
-	_, err = models.InsertUser(ctx, &user)
+	_, err = user.InsertUser(ctx, &userCreate)
 	if err != nil {
 		return 0, err
 	}
 
 	us := namespace.NamespaceService{}
-	return user.ID, us.DefaultAddUsers(ctx, namespace2.AddUsersParam{
+	return userCreate.ID, us.DefaultAddUsers(ctx, namespace2.AddUsersParam{
 		Users: []namespace2.UserData{{
-			Id:         user.ID,
+			Id:         userCreate.ID,
 			Permission: int(namespace2.AdminPermission),
 		}},
 	})
 }
 
-func (a *UserService) Get(ctx context.Context, name string) (*models.User, error) {
-	user := models.User{Email: name}
-	if err := models.GetUser(ctx, &user); err != nil {
+func (a *UserService) Get(ctx context.Context, name string) (*user.User, error) {
+	userGet := user.User{Email: name}
+	if err := user.GetUser(ctx, &userGet); err != nil {
 		return nil, err
 	}
-	return &user, nil
+	return &userGet, nil
 }
 
-func (a *UserService) GetList(ctx context.Context, name, role, orderBy string, page, pageSize int) (int64, []models.User, error) {
-	return models.QueryUser(ctx, name, role, orderBy, page, pageSize)
+func (a *UserService) GetList(ctx context.Context, name, role, orderBy string, page, pageSize int) (int64, []user.User, error) {
+	return user.QueryUser(ctx, name, role, orderBy, page, pageSize)
 }
 
 func (a *UserService) DeleteList(ctx context.Context, name string, deleteIds []int) error {
@@ -162,29 +162,29 @@ func (a *UserService) DeleteList(ctx context.Context, name string, deleteIds []i
 		return fmt.Errorf("not admin")
 	}
 
-	if err := models.DeleteUsersByIdList(ctx, deleteIds); err != nil {
+	if err := user.DeleteUsersByIdList(ctx, deleteIds); err != nil {
 		return err
 	}
 	return namespace2.UsersOrNamespacesDelete(deleteIds, nil)
 }
 
 func (a *UserService) UpdatePassword(ctx context.Context, name, newPassword string) error {
-	user, err := a.Get(ctx, name)
+	userGet, err := a.Get(ctx, name)
 	if err != nil {
 		return err
 	}
-	if user.Disabled {
+	if userGet.Disabled {
 		return errors.ErrUnauthorized()
 	}
-	if !a.IsAdmin(ctx, name) && name != user.Email {
+	if !a.IsAdmin(ctx, name) && name != userGet.Email {
 		return errors.ErrUnauthorized()
 	}
 	hash, err := HashPassword(newPassword)
 	if err != nil {
 		return err
 	}
-	user.Password = hash
-	return models.UpdateUser(ctx, user)
+	userGet.Password = hash
+	return user.UpdateUser(ctx, userGet)
 }
 
 func (a *UserService) UpdateListRole(ctx context.Context, name string, ids []int, role string) error {
@@ -192,7 +192,7 @@ func (a *UserService) UpdateListRole(ctx context.Context, name string, ids []int
 		return fmt.Errorf("not admin")
 	}
 
-	return models.UpdateUsersRole(ctx, ids, role)
+	return user.UpdateUsersRole(ctx, ids, role)
 }
 
 func (a *UserService) CheckToken(ctx context.Context, token string) (string, error) {

@@ -14,10 +14,15 @@ import (
 
 const RootAPI = "/chaosmeta/api/v1/%s"
 
-func Init() {
-	beego.InsertFilter("/chaosmeta/api/*", beego.BeforeRouter, CheckTokenMiddleware)
+func routerInit() {
 	userInit()
 	nameSpaceInit()
+	kubernetesInit()
+}
+
+func Init() {
+	beego.InsertFilter("/chaosmeta/api/*", beego.BeforeRouter, CheckTokenMiddleware)
+	routerInit()
 	beego.Router("/", &service.MainController{})
 }
 
