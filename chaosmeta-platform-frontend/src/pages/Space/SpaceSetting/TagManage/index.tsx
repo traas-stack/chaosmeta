@@ -1,7 +1,7 @@
 /**
  * 成员管理tab
  */
-import { Area } from '@/components/CommonStyle';
+import { LightArea } from '@/components/CommonStyle';
 import { ExclamationCircleFilled, SearchOutlined } from '@ant-design/icons';
 import { Button, Input, Modal, Space, Table, message } from 'antd';
 import { ColumnsType } from 'antd/es/table';
@@ -69,7 +69,7 @@ const TagManage: React.FC<IProps> = () => {
     },
   ];
   return (
-    <Area>
+    <LightArea>
       <div className="area-operate">
         <div className="title">标签列表</div>
         <Space>
@@ -105,7 +105,7 @@ const TagManage: React.FC<IProps> = () => {
           }}
         />
       </div>
-    </Area>
+    </LightArea>
   );
 };
 

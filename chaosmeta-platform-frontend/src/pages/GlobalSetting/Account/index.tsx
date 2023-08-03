@@ -1,10 +1,9 @@
-import { Area } from '@/components/CommonStyle';
+import { LightArea } from '@/components/CommonStyle';
 import ShowText from '@/components/ShowText';
 import {
   batchDeleteUser,
   changeUserRole,
   getUserList,
-  list,
 } from '@/services/chaosmeta/UserController';
 import { ExclamationCircleFilled, SearchOutlined } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
@@ -36,17 +35,6 @@ const Account: React.FC<unknown> = () => {
   const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
   const { userInfo } = useModel('global');
   const [baseColumns, setColumns] = useState<ColumnsType<DataType>>([]);
-
-  const test = useRequest(list, {
-    manual: true,
-    formatResult: (res) => {
-      console.log(res, 'res-test===');
-      return res;
-    },
-    onSuccess: (res) => {
-      console.log(res, 'res=----00000');
-    },
-  });
 
   /**
    * 分页查询
@@ -230,7 +218,6 @@ const Account: React.FC<unknown> = () => {
 
   useEffect(() => {
     handleSearch();
-    // test.run({sceneType: 'CLASSIC_HA'})
     if (userInfo.role === 'admin') {
       setColumns(() => {
         const newColumns: any = columns;
@@ -261,16 +248,9 @@ const Account: React.FC<unknown> = () => {
     <Container>
       <PageContainer title="账号管理">
         <Form form={form}>
-          <Area>
+          <LightArea>
             <div className="area-operate">
-              <div
-                className="title"
-                onClick={() => {
-                  test.run({ sceneType: 'CLASSIC_HA' });
-                }}
-              >
-                账号列表
-              </div>
+              <div className="title">账号列表</div>
               <Space>
                 <Form.Item name={'name'}>
                   <Input
@@ -356,7 +336,7 @@ const Account: React.FC<unknown> = () => {
                 }}
               />
             </div>
-          </Area>
+          </LightArea>
         </Form>
       </PageContainer>
     </Container>

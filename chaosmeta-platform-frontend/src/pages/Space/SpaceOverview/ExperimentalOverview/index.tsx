@@ -79,12 +79,12 @@ export default () => {
   const EditExperimental = () => {
     return (
       <Card>
-        <EmptyState
+        {/* <EmptyState
           desc="当前页面暂无最近编辑的实验"
           title="您可以前往实验列表编辑实验"
           btnText="前往实验列表"
-        />
-        {/* <Table
+        /> */}
+        <Table
           showHeader={false}
           columns={columns}
           rowKey={'id'}
@@ -94,7 +94,7 @@ export default () => {
           ]}
           pagination={false}
           scroll={{ x: 760 }}
-        /> */}
+        />
       </Card>
     );
   };

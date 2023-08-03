@@ -1,4 +1,4 @@
-import { Area } from '@/components/CommonStyle';
+import { LightArea } from '@/components/CommonStyle';
 import { DownOutlined, RightOutlined, UpOutlined } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
 import { Button, Card, Col, Divider, Row, Select, Space, Tag } from 'antd';
@@ -11,7 +11,7 @@ const MySpace: React.FC<unknown> = () => {
   return (
     <Container>
       <PageContainer title="工作台">
-        <Area>
+        <LightArea>
           <TopStep>
             <div className="panel">
               <div className="title">开始您的实验，只需要3步！</div>
@@ -43,8 +43,8 @@ const MySpace: React.FC<unknown> = () => {
                 )}
               </div>
             </div>
-            {panelState && (
-              <Row gutter={16} className="card">
+            {/* {panelState && ( */}
+              <Row gutter={16} className={panelState ?  "card" : 'card-hidden'}>
                 <Col span={8}>
                   <Card>
                     <Space>
@@ -90,23 +90,23 @@ const MySpace: React.FC<unknown> = () => {
                   </Card>
                 </Col>
               </Row>
-            )}
+            {/* )} */}
           </TopStep>
-        </Area>
+        </LightArea>
         <SpaceContent>
           <Row gutter={16}>
             <Col span={16} className="left">
-              <Area>
+              <LightArea>
                 <ExperimentalOverview />
-              </Area>
+              </LightArea>
             </Col>
             <Col span={8} className="right">
-              <Area className="overview">
+              <LightArea className="overview">
                 <div className="top">
                   <span className="title">空间总览</span>
                   <Select
                     defaultValue={'7day'}
-                    options={[{ label: '最近7天', value: '7day' }]}
+                    options={[{ label: '最近7天', value: '7day' }, { label: '最近30天', value: '30day' }]}
                   />
                 </div>
                 <Card>
@@ -126,8 +126,8 @@ const MySpace: React.FC<unknown> = () => {
                     </div>
                   </div>
                 </Card>
-              </Area>
-              <Area className="recommend">
+              </LightArea>
+              <LightArea className="recommend">
                 <div className="top">
                   <span className="title">推荐实验</span>
                   <Space className="shallow-65">
@@ -169,7 +169,7 @@ const MySpace: React.FC<unknown> = () => {
                     </div> */}
                   </div>
                 </Card>
-              </Area>
+              </LightArea>
             </Col>
           </Row>
         </SpaceContent>

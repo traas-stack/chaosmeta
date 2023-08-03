@@ -40,4 +40,5 @@ export const SpaceContent = styled.div`
   border-bottom: 1px solid rgba(0, 10, 26, 0.07);
   overflow: hidden;
   white-space: nowrap;
+  cursor: pointer;
 `;

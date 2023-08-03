@@ -32,4 +32,24 @@ export const BasicInfoContainer = styled.div`
     width: 50%;
     min-width: 600px;
   }
-`
+`;
+
+export const AttackRangeContainer = styled.div`
+  .search {
+    background-color: #fff;
+    padding-top: 24px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+  }
+  .table {
+    background-color: #fff;
+    padding: 16px;
+    border-radius: 6px;
+    .operate {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+  }
+`;

@@ -1,22 +1,19 @@
 /**
  * 成员管理tab
  */
-import { Area } from '@/components/CommonStyle';
+import { LightArea } from '@/components/CommonStyle';
+import ShowText from '@/components/ShowText';
 import { Role } from '@/pages/GlobalSetting/Account/style';
-import { ExclamationCircleFilled, SearchOutlined } from '@ant-design/icons';
-import { useModel } from '@umijs/max';
 import {
-  Alert,
-  Button,
-  Input,
-  Modal,
-  Select,
-  Space,
-  Table,
-  message,
-} from 'antd';
+  querySpaceUserList,
+  spaceBatchDeleteUser,
+} from '@/services/chaosmeta/SpaceController';
+import { useParamChange } from '@/utils/useParamChange';
+import { ExclamationCircleFilled, SearchOutlined } from '@ant-design/icons';
+import { history, useRequest } from '@umijs/max';
+import { Alert, Button, Form, Input, Modal, Select, Space, Table } from 'antd';
 import { ColumnsType } from 'antd/es/table';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import AddMemberModal from './AddMemberModal';
 
 interface IProps {}
@@ -26,10 +23,114 @@ interface DataType {
   auth: string;
 }
 
+interface PageData {
+  page: number;
+  pageSize: number;
+  total: number;
+  users: any[];
+}
 const MemberManage: React.FC<IProps> = () => {
-  const { initialState } = useModel('@@initialState');
-  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [form] = Form.useForm();
+  const [selectedRowKeys, setSelectedRowKeys] = useState<number[]>([]);
   const [addMemberOpen, setAddMemberOpen] = useState<boolean>(false);
+  const spaceIdChange = useParamChange('spaceId');
+  const [pageData, setPageData] = useState<PageData>({
+    page: 1,
+    pageSize: 10,
+    total: 0,
+    users: [],
+  });
+
+  /**
+   * 分页接口
+   */
+  const getUserList = useRequest(querySpaceUserList, {
+    manual: true,
+    formatResult: (res) => res,
+    onSuccess: (res) => {
+      console.log(res, 'res');
+      if (res?.data?.users) {
+        setPageData(res.data);
+      }
+    },
+  });
+
+  /**
+   * 分页数据获取
+   * @param values
+   */
+  const handlePageSearch = (values?: any) => {
+    const { page, pageSize, sort, permission } = values || {};
+    const name = form.getFieldValue('name');
+    const params = {
+      id: Number(spaceIdChange),
+      page: page || pageData.page || 1,
+      page_size: pageSize || pageData.pageSize || 10,
+      sort,
+      username: name,
+      // permission,
+    };
+    getUserList?.run(params);
+  };
+
+  /**
+   * 删除成员
+   */
+  const deleteUser = useRequest(spaceBatchDeleteUser, {
+    manual: true,
+    formatResult: (res) => res,
+    onSuccess: (res) => {
+      console.log(res, '-------------');
+    },
+  });
+
+  /**
+   * 删除标签
+   */
+  // const handleDeleteUser = (id?: number) => {
+  //   const user_ids = id ? [id] : selectedRowKeys;
+  //   Modal.confirm({
+  //     title: '确认要删除所选标签吗？',
+  //     icon: <ExclamationCircleFilled />,
+  //     content: '删除将会对应删除当前空间里关联实验的标签',
+  //     onOk() {
+  //       deleteUser?.run({
+  //         user_ids,
+  //         id: Number(history?.location.query?.spaceId),
+  //       });
+  //       // return new Promise((resolve, reject) => {
+  //       //   setTimeout(Math.random() > 0.5 ? resolve : reject, 1000);
+  //       //   message.success('删除成功');
+  //       // }).catch(() => console.log('Oops errors!'));
+  //     },
+  //     onCancel() {},
+  //   });
+  // };
+
+  /**
+   * 删除成员
+   */
+  const handleDeleteUser = (id?: number) => {
+    const user_ids = id || id === 0 ? [id] : selectedRowKeys;
+    Modal.confirm({
+      title: '您确认要删除当前所选成员吗？',
+      icon: <ExclamationCircleFilled />,
+      content: '删除空间内成员，该成员将无法进入该空间！',
+      onOk() {
+        console.log(user_ids, 'user_ids')
+        // return
+        deleteUser?.run({
+          user_ids,
+          id: Number(history?.location.query?.spaceId),
+        });
+        // return new Promise((resolve, reject) => {
+        //   setTimeout(Math.random() > 0.5 ? resolve : reject, 1000);
+        //   message.success('您已成功删除所选成员');
+        // }).catch(() => console.log('Oops errors!'));
+      },
+      onCancel() {},
+    });
+  };
 
   const authOptions = [
     {
@@ -54,39 +155,16 @@ const MemberManage: React.FC<IProps> = () => {
     },
   ];
 
-  /**
-   * 删除账号
-   */
-  const handleDeleteAccount = () => {
-    Modal.confirm({
-      title: '您确认要删除当前所选成员吗？',
-      icon: <ExclamationCircleFilled />,
-      content: '删除空间内成员，该成员将无法进入该空间！',
-      onOk() {
-        return new Promise((resolve, reject) => {
-          setTimeout(Math.random() > 0.5 ? resolve : reject, 1000);
-          message.success('您已成功删除所选成员');
-        }).catch(() => console.log('Oops errors!'));
-      },
-      onCancel() {},
-    });
-  };
-
   const columns: ColumnsType<DataType> = [
-    {
-      title: '账号',
-      width: 160,
-      dataIndex: 'account',
-    },
     {
       title: '用户名',
       width: 80,
-      dataIndex: 'userName',
+      dataIndex: 'name',
     },
     {
       title: '权限',
       width: 160,
-      dataIndex: 'auth',
+      dataIndex: 'permission',
       filters: [
         {
           text: '读写',
@@ -124,47 +202,76 @@ const MemberManage: React.FC<IProps> = () => {
     {
       title: '加入时间',
       width: 160,
-      dataIndex: 'time',
+      dataIndex: 'create_time',
       sorter: true,
+      render: (text: string) => {
+        return <ShowText isTime value={text} />;
+      },
     },
     {
       title: '操作',
       width: 60,
       fixed: 'right',
-      render: () => {
-        return <a onClick={handleDeleteAccount}>删除</a>;
+      dataIndex: 'id',
+      render: (text: number) => {
+        return (
+          <a
+            onClick={() => {
+              handleDeleteUser(text);
+            }}
+          >
+            删除
+          </a>
+        );
       },
     },
   ];
+
+  useEffect(() => {
+    getUserList?.run({ id: Number(spaceIdChange), page: 1, page_size: 10 });
+  }, [spaceIdChange]);
   return (
-    <Area>
+    <LightArea>
       <div className="area-operate">
         <div className="title">成员列表</div>
-        <Space>
-          <Input
-            placeholder="请输入账号，用户名，权限"
-            suffix={
-              <SearchOutlined
-                onClick={() => {
-                  console.log('-==');
+        <Form form={form}>
+          <Space>
+            <Form.Item name={'name'} noStyle>
+              <Input
+                placeholder="请输入用户名进行搜索"
+                onPressEnter={() => {
+                  handlePageSearch();
                 }}
+                suffix={
+                  <SearchOutlined
+                    onClick={() => {
+                      handlePageSearch();
+                    }}
+                  />
+                }
               />
-            }
-          />
-          {/* {initialState?.userInfo?.role === 'admain' && ( */}
-          <>
-            <Button disabled={selectedRowKeys?.length === 0}>批量删除</Button>
-            <Button
-              type="primary"
-              onClick={() => {
-                setAddMemberOpen(true);
-              }}
-            >
-              添加成员
-            </Button>
-          </>
-          {/* )} */}
-        </Space>
+            </Form.Item>
+            <>
+              <Button
+                disabled={selectedRowKeys?.length === 0}
+                onClick={() => {
+                  handleDeleteUser();
+                }}
+              >
+                批量删除
+              </Button>
+              <Button
+                type="primary"
+                onClick={() => {
+                  setAddMemberOpen(true);
+                }}
+              >
+                添加成员
+              </Button>
+            </>
+            {/* )} */}
+          </Space>
+        </Form>
       </div>
       <div className="area-content">
         {selectedRowKeys?.length > 0 && (
@@ -192,11 +299,12 @@ const MemberManage: React.FC<IProps> = () => {
         <Table
           columns={columns}
           rowKey={'id'}
-          dataSource={[{ id: '1', account: 'hlt', auth: 'admain' }]}
+          loading={getUserList.loading}
+          dataSource={pageData.users}
           scroll={{ x: 'max-content' }}
           rowSelection={{
             selectedRowKeys,
-            onChange: (rowKeys: React.Key[]) => {
+            onChange: (rowKeys: any[]) => {
               setSelectedRowKeys(rowKeys);
             },
           }}
@@ -204,12 +312,30 @@ const MemberManage: React.FC<IProps> = () => {
             showQuickJumper: true,
             total: 200,
           }}
+          onChange={(pagination: any, filters, sorter: any) => {
+            console.log(pagination, 'filters');
+            const { current, pageSize } = pagination;
+            let sort;
+            if (sorter.order) {
+              sort = sorter.order === 'ascend' ? 'create_time' : '-create_time';
+            }
+            let permission;
+            if (filters.permission) {
+              permission = filters.permission;
+            }
+            handlePageSearch({
+              pageSize: pageSize,
+              page: current,
+              sort,
+              permission,
+            });
+          }}
         />
       </div>
       {addMemberOpen && (
         <AddMemberModal setOpen={setAddMemberOpen} open={addMemberOpen} />
       )}
-    </Area>
+    </LightArea>
   );
 };
 

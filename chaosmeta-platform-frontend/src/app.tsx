@@ -1,7 +1,7 @@
 // 运行时配置
 // 全局初始化数据配置，用于 Layout 用户信息和权限初始化
 
-import { RequestConfig } from '@umijs/max';
+import { RequestConfig, history } from '@umijs/max';
 import SpaceDropdown from './components/SpaceDropdown';
 import UserRightArea from './components/UserRightArea';
 import cookie from './utils/cookie';
@@ -133,6 +133,20 @@ export const layout = () => {
         return null;
       }
       return <SpaceDropdown />;
+    },
+    onPageChange: () => {
+      // 页面切换时需要加上空间id参数, 全局设置下不需要
+      const spaceId = sessionStorage.getItem('spaceId');
+      const { pathname, query } = history?.location || {};
+      if (
+        !history.location.query.spaceId &&
+        pathname.split('/')[1] === 'space'
+      ) {
+        history.push({
+          pathname,
+          query: { ...query, spaceId },
+        });
+      }
     },
   };
 };

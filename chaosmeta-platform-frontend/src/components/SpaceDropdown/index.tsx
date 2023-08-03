@@ -1,78 +1,108 @@
 import { querySpaceList } from '@/services/chaosmeta/SpaceController';
 import { DownOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import { history, useRequest } from '@umijs/max';
-import { Dropdown, Input } from 'antd';
+import { Dropdown, Empty, Input } from 'antd';
 import React, { useEffect, useState } from 'react';
 import AddSpaceDrawer from '../AddSpaceDrawer';
 import { SpaceContent, SpaceMenu } from './style';
 
 export default () => {
-  const [curSpace, setCurSpace] = useState<string[]>(['3st menu item']);
+  const [curSpace, setCurSpace] = useState<string[]>(['1']);
   const [addSpaceOpen, setAddSpaceOpen] = useState<boolean>(false);
+  const [spaceList, setSpaceList] = useState<any>([]);
+
+  /**
+   * 更新地址栏空间id，并保存
+   * @param id
+   */
+  const handleUpdateSpaceId = (id: string, name: string) => {
+    if (id) {
+      history.push({
+        pathname: history.location.pathname,
+        query: {
+          ...history.location.query,
+          spaceId: id,
+        },
+      });
+      setCurSpace([id]);
+      sessionStorage.setItem('spaceId', id);
+      sessionStorage.setItem('spaceName', name);
+    }
+  };
   /**
    * 获取空间列表
    */
   const getSpaceList = useRequest(querySpaceList, {
     manual: true,
     formatResult: (res) => res,
+    debounceInterval: 300,
     onSuccess: (res) => {
-      console.log(res, 'res');
+      if (res?.data) {
+        const namespaceList = res.data?.namespaces?.map(
+          (item: { name: string; id: string }) => {
+            // side侧边菜单的展开/收起会影响这里，暂时用icon代替，todo
+            return {
+              icon: item.name,
+              key: item.id,
+              id: item.id.toString(),
+              name: item.name,
+            };
+          },
+        );
+        const spaceId = history.location.query.spaceId;
+        // 初始化加载时，页面不存在空间id需要添加默认空间id
+        if (!spaceId) {
+          handleUpdateSpaceId(namespaceList[0]?.id, namespaceList[0]?.name);
+        }
+        // 保存当前空间id
+        setSpaceList(namespaceList);
+      }
     },
   });
 
-  // side侧边菜单的展开/收起会影响这里，暂时用icon代替，todo
-  const items: any = [
-    {
-      key: '1st menu item',
-      icon: '1st menu item',
-    },
-    {
-      key: '2st menu item',
-      icon: '2st menu item',
-    },
-    {
-      key: '3st menu item',
-      icon: '3st menu item',
-    },
-    {
-      key: '999 item',
-      icon: '999 menu item',
-    },
-  ];
-
   useEffect(() => {
-    console.log('=================')
-    getSpaceList?.run({page: 1, pageSize: 10});
+    getSpaceList?.run({ page: 1, page_size: 10 });
   }, []);
+  useEffect(() => {
+    // 地址栏中存在空间id，需要将空间列表选项更新，并保存当前id
+    if (history.location.query.spaceId) {
+      setCurSpace([history.location.query.spaceId as string]);
+      sessionStorage.setItem(
+        'spaceId',
+        history.location.query.spaceId as string,
+      );
+    }
+  }, [history.location.query.spaceId]);
 
   return (
     <div id="spaceDropdown">
       <Dropdown
         menu={{
-          items,
+          items: spaceList,
           selectable: true,
           onSelect: (item) => {
-            console.log(item, 'item');
-            setCurSpace(item?.selectedKeys);
+            const name = item?.item?.props?.name;
+            handleUpdateSpaceId(item.key, name);
           },
           selectedKeys: curSpace,
         }}
-        overlayStyle={{ width: 'max-content' }}
+        overlayStyle={{ width: 'max-content', maxHeight: '400px' }}
         dropdownRender={(menu) => {
-          console.log(
-            menu,
-            React.cloneElement(menu as React.ReactElement),
-            'menu===',
-          );
           return (
             <SpaceMenu>
               <div>
                 <Input
                   placeholder="请输入关键词"
+                  onChange={(event) => {
+                    const value = event?.target?.value;
+                    getSpaceList?.run({ name: value });
+                  }}
                   suffix={
                     <SearchOutlined
                       style={{ cursor: 'pointer' }}
-                      onClick={() => {}}
+                      onClick={() => {
+                        getSpaceList?.run();
+                      }}
                     />
                   }
                 />
@@ -86,8 +116,11 @@ export default () => {
                   <PlusOutlined /> 新建空间
                 </a>
               </div>
-              {/* <Menu items={items} /> */}
-              {React.cloneElement(menu as React.ReactElement)}
+              {menu ? (
+                React.cloneElement(menu as React.ReactElement)
+              ) : (
+                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />
+              )}
               <div className="more">
                 <span>
                   没有相关空间？查看{' '}
@@ -105,7 +138,11 @@ export default () => {
         }}
       >
         <SpaceContent>
-          {curSpace[0]} <DownOutlined />
+          {sessionStorage.getItem('spaceName') ||
+            spaceList?.filter(
+              (item: { id: string }) => item.id === curSpace[0],
+            )[0]?.name}{' '}
+          <DownOutlined />
         </SpaceContent>
       </Dropdown>
       {addSpaceOpen && (

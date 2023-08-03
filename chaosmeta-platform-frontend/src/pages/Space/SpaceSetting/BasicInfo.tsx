@@ -3,7 +3,9 @@ import {
   editSpaceBasic,
   querySpaceDetail,
 } from '@/services/chaosmeta/SpaceController';
-import { useRequest } from '@umijs/max';
+import { formatTime } from '@/utils/format';
+import { useParamChange } from '@/utils/useParamChange';
+import { history, useRequest } from '@umijs/max';
 import { Button, Form, Input, Space, Spin } from 'antd';
 import React, { useEffect, useState } from 'react';
 import { BasicInfoContainer } from './style';
@@ -14,6 +16,7 @@ const BasicInfo: React.FC<IProps> = () => {
   const [form] = Form.useForm();
   const [saveDisabled, setSaveDisabled] = useState<boolean>(true);
   const [spaceInfo, setSpaceInfo] = useState<any>({});
+  const spaceIdChange = useParamChange('spaceId');
 
   /**
    * 修改接口
@@ -36,7 +39,10 @@ const BasicInfo: React.FC<IProps> = () => {
     onSuccess: (res) => {
       console.log(res, 'res===');
       setSpaceInfo(res?.data?.namespace);
-      form.setFieldsValue(res?.data?.namespace);
+      form.setFieldsValue({
+        ...res?.data?.namespace,
+        create_time: formatTime(res?.data?.namespace?.create_time),
+      });
     },
   });
 
@@ -45,18 +51,20 @@ const BasicInfo: React.FC<IProps> = () => {
    */
   const handleEdit = () => {
     form.validateFields().then((values) => {
-      console.log(values, 'values----');
-      editInfo.run(values);
+      const params = {
+        id: Number(history.location.query.spaceId),
+        description: values.description,
+        name: values.name,
+      };
+      console.log(params, 'values----');
+      editInfo.run(params);
     });
   };
-
   useEffect(() => {
-    form.setFieldsValue({
-      createTime: '2023-07-12 14:00:00',
-      count: '33',
-    });
-    getSpaceInfo?.run({ id: 1 });
-  }, []);
+    if (history.location.query.spaceId) {
+      getSpaceInfo?.run({ id: history.location.query.spaceId as string });
+    }
+  }, [spaceIdChange]);
   return (
     <Spin spinning={getSpaceInfo.loading}>
       <BasicInfoContainer>
@@ -114,4 +122,4 @@ const BasicInfo: React.FC<IProps> = () => {
   );
 };
 
-export default React.memo(BasicInfo);
+export default BasicInfo;

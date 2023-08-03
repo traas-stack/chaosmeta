@@ -30,7 +30,14 @@ export const TopStep = styled.div`
       }
     }
   }
+  .card-hidden {
+    transition: .2s all;
+    overflow: hidden;
+    max-height: 0;
+  }
   .card {
+    /* max-height: 300px; */
+    transition: .2s all;
     margin-top: 16px;
     .ant-col {
       display: flex;

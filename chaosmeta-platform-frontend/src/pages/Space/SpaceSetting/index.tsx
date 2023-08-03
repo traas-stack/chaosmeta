@@ -1,12 +1,16 @@
 import { PageContainer } from '@ant-design/pro-components';
+import { history } from '@umijs/max';
 import { Tabs } from 'antd';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import AttackRange from './AttackRange';
 import BasicInfo from './BasicInfo';
 import MemberManage from './MemberManage';
 import TagManage from './TagManage';
 import { Container } from './style';
+// import { createHistory } from '@umijs/max';
 
 const SpaceSetting: React.FC<unknown> = () => {
+  const [activeKey, setActiveKey] = useState<string>('basic');
   const tabItems = [
     {
       label: '基本信息',
@@ -26,31 +30,30 @@ const SpaceSetting: React.FC<unknown> = () => {
     {
       label: '实验攻击范围配置',
       key: 'range',
+      children: <AttackRange />,
     },
   ];
 
-  useEffect(() => {}, []);
+  useEffect(() => {
+    if (history.location.query.tabKey) {
+      setActiveKey(history.location.query.tabKey as string);
+    }
+  }, []);
   return (
     <PageContainer title="空间设置">
       <Container>
-        {/* <Row gutter={24}>
-            <Col span={8}>
-              <Form.Item name={'spaceName'} label="空间名称">
-                <ShowText ellipsis isEdit />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item name={'createTime'} label="创建时间">
-                <ShowText isTime />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item name={'userCount'} label="成员数量">
-                <ShowText />
-              </Form.Item>
-            </Col>
-          </Row> */}
-        <Tabs items={tabItems} />
+        <Tabs
+          items={tabItems}
+          activeKey={activeKey}
+          onChange={(val) => {
+            console.log(val, 'val===');
+            setActiveKey(val);
+            history.push({
+              pathname: history.location.pathname,
+              query: { ...history.location.query, tabKey: val },
+            });
+          }}
+        />
       </Container>
     </PageContainer>
   );

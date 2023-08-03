@@ -1,5 +1,5 @@
 import AddSpaceDrawer from '@/components/AddSpaceDrawer';
-import { Area } from '@/components/CommonStyle';
+import { LightArea } from '@/components/CommonStyle';
 import { ExclamationCircleFilled } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
 import { Button, Modal, Tabs, message } from 'antd';
@@ -22,18 +22,18 @@ const SpaceManage: React.FC<unknown> = () => {
       label: '全部空间',
       key: 'all',
       children: (
-        <Area>
+        <LightArea>
           <SpaceList listType="all" title="空间列表" />
-        </Area>
+        </LightArea>
       ),
     },
     {
       label: '我管理的空间',
       key: 'my',
       children: (
-        <Area>
+        <LightArea>
           <SpaceList listType="my" title="我的空间列表" />
-        </Area>
+        </LightArea>
       ),
     },
   ];

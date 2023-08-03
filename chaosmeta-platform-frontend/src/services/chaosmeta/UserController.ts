@@ -57,8 +57,8 @@ export async function getUserList(
     sort?: string;
     name?: string;
     role?: string;
-    offset?: number;
-    limit?: number;
+    page?: number;
+    page_size?: number;
   },
   options?: { [key: string]: any },
 ) {
@@ -182,27 +182,6 @@ export async function changeUserRole(
   return request<any>(`/chaosmeta/api/v1/users/role`, {
     method: 'POST',
     data: body,
-    ...(options || {}),
-  });
-}
-
-/** 根据表单key获取表单
-@param sceneType
-@return Result<FormEntity>
- GET /chaos/form/list */
-export async function list(
-  params: {
-    // query
-    /** 攻击场景类型 */
-    sceneType?: any;
-  },
-  options?: { [key: string]: any },
-) {
-  return request<any>('/chaos/form/list', {
-    method: 'GET',
-    params: {
-      ...params,
-    },
     ...(options || {}),
   });
 }

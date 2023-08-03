@@ -1,4 +1,4 @@
-import request from '@/utils/request'
+import request from '@/utils/request';
 
 /**
  * 创建空间
@@ -32,7 +32,7 @@ export async function querySpaceList(
     name?: string;
     creator?: string;
     page?: number;
-    pageSize?: number;
+    page_size?: number;
   },
   options?: { [key: string]: any },
 ) {
@@ -71,10 +71,10 @@ export async function editSpaceBasic(
  * @returns
  */
 export async function querySpaceDetail(
-  params: { id: number },
+  params: { id: number | string },
   options?: { [key: string]: any },
 ) {
-  return request<any>(`/chaosmeta/api/v1/namespaces/list/${params?.id}`, {
+  return request<any>(`/chaosmeta/api/v1/namespaces/${params?.id}`, {
     method: 'GET',
     params,
     ...(options || {}),
@@ -111,9 +111,9 @@ export async function querySpaceUserList(
     id: number;
     sort?: string;
     name?: string;
-    userName?: string;
+    username?: string;
     page?: number;
-    pageSize?: number;
+    page_size?: number;
   },
   options?: { [key: string]: any },
 ) {
@@ -139,7 +139,7 @@ export async function spaceAddUser(
 ) {
   return request<any>(`/chaosmeta/api/v1/namespaces/${body.id}/users/batch`, {
     method: 'POST',
-    data: body,
+    data: { users: body.users },
     ...(options || {}),
   });
 }
@@ -172,16 +172,16 @@ export async function spaceDeleteUser(
  * @returns
  */
 export async function spaceBatchDeleteUser(
-  params: {
+  body: {
     id: number;
     user_ids: number[];
   },
   options?: { [key: string]: any },
 ) {
-  const { id } = params;
+  const { id, user_ids } = body;
   return request<any>(`/chaosmeta/api/v1/namespaces/${id}/users`, {
     method: 'DELETE',
-    params: { ...params },
+    data: { user_ids },
     ...(options || {}),
   });
 }

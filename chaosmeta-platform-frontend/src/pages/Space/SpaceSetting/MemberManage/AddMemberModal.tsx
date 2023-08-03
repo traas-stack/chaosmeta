@@ -2,9 +2,12 @@
  * 添加成员弹窗
  */
 
+import { spaceAddUser } from '@/services/chaosmeta/SpaceController';
+import { getUserList } from '@/services/chaosmeta/UserController';
 import { SearchOutlined } from '@ant-design/icons';
+import { history, useRequest } from '@umijs/max';
 import { Button, Divider, Form, Input, Modal, Radio, Select } from 'antd';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface IProps {
   open: boolean;
@@ -14,6 +17,24 @@ interface IProps {
 const AddMemberModal: React.FC<IProps> = (props) => {
   const { open, setOpen } = props;
   const [form] = Form.useForm();
+  const [userList, setUserList] = useState<any[]>([]);
+  const queryUserList = useRequest(getUserList, {
+    manual: true,
+    onSuccess: (res) => {
+      if (res?.users) {
+        setUserList(res.users);
+      }
+      console.log(res, 'eres====');
+    },
+  });
+
+  const addUser = useRequest(spaceAddUser, {
+    manual: true,
+    formatResult: (res) => res,
+    onSuccess: (res) => {
+      console.log(res, ' res----');
+    },
+  });
 
   const Users = () => {
     return (
@@ -74,23 +95,68 @@ const AddMemberModal: React.FC<IProps> = (props) => {
       </>
     );
   };
+
+  /**
+   * 添加成员
+   */
+  const handleAddUser = () => {
+    form.validateFields().then((values) => {
+      console.log(values, 'values===');
+      const users = values.users?.map((item) => {
+        return {
+          id: item,
+          permission: values.permission,
+        };
+      });
+      const params = {
+        id: history.location.query.spaceId,
+        users,
+      };
+      console.log(params, 'params');
+      addUser.run(params);
+    });
+  };
+  useEffect(() => {
+    if (open) {
+      queryUserList.run({ page: 2, page_size: 10 });
+    }
+  }, [open]);
   return (
     <Modal
       title="添加成员"
       open={open}
+      onOk={handleAddUser}
       onCancel={() => {
         setOpen(false);
       }}
     >
       <Divider />
       <Form form={form} layout="vertical">
-        <Form.Item label="用户名" name={'users'}>
-          <Users />
+        <Form.Item
+          label="用户名"
+          name={'users'}
+          rules={[{ required: true, message: '请选择' }]}
+        >
+          {/* <Users /> */}
+          <Select mode="multiple">
+            {userList?.map((item) => {
+              return (
+                <Select.Option key={item.id} value={item.id}>
+                  {item.name}
+                </Select.Option>
+              );
+            })}
+          </Select>
         </Form.Item>
-        <Form.Item label="用户权限" name={'role'}>
+        <Form.Item
+          label="用户权限"
+          name={'permission'}
+          initialValue={0}
+          rules={[{ required: true, message: '请选择' }]}
+        >
           <Radio.Group>
-            <Radio value={'readonly'}>只读</Radio>
-            <Radio value={'admain'}>读写</Radio>
+            <Radio value={0}>只读</Radio>
+            <Radio value={1}>读写</Radio>
           </Radio.Group>
         </Form.Item>
       </Form>
