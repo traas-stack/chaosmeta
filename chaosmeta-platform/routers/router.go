@@ -18,6 +18,8 @@ func routerInit() {
 	userInit()
 	nameSpaceInit()
 	kubernetesInit()
+	injectInit()
+	experimentInit()
 }
 
 func Init() {

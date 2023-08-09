@@ -3,6 +3,7 @@ package namespace
 import (
 	"chaosmeta-platform/pkg/gateway/apiserver/v1alpha1"
 	namespace2 "chaosmeta-platform/pkg/models/namespace"
+	"chaosmeta-platform/pkg/models/user"
 	"chaosmeta-platform/pkg/service/namespace"
 	"context"
 	"encoding/json"
@@ -68,6 +69,61 @@ func (c *NamespaceController) GetList() {
 	c.Success(&c.Controller, listNamespaceResponse)
 }
 
+func (c *NamespaceController) QueryList() {
+	nameSpaceName := c.GetString("name")
+	userNameQuery := c.GetString("userName")
+	username := c.Ctx.Input.GetData("userName").(string)
+	namespaceClass := c.GetString("namespaceClass")
+
+	page, _ := c.GetInt("page", 1)
+	pageSize, _ := c.GetInt("page_size", 10)
+	sort := c.GetString("sort")
+
+	userGet := user.User{Email: username}
+
+	if err := user.GetUser(context.Background(), &userGet); err != nil {
+		c.Error(&c.Controller, err)
+		return
+	}
+
+	namespaceService := &namespace.NamespaceService{}
+	var (
+		total         int64
+		namespaceList []namespace.NamespaceInfoWithUsers
+		err           error
+	)
+
+	switch namespaceClass {
+	case "read":
+		total, namespaceList, err = namespaceService.GroupNamespacesByUsername(context.Background(), userGet.ID, nameSpaceName, userNameQuery, 0, sort, page, pageSize)
+		if err != nil {
+			c.Error(&c.Controller, err)
+			return
+		}
+	case "write":
+		total, namespaceList, err = namespaceService.GroupNamespacesByUsername(context.Background(), userGet.ID, nameSpaceName, userNameQuery, 1, sort, page, pageSize)
+		if err != nil {
+			c.Error(&c.Controller, err)
+			return
+		}
+	case "all":
+		total, namespaceList, err = namespaceService.GroupAllNamespaces(context.Background(), nameSpaceName, userNameQuery, sort, page, pageSize)
+		if err != nil {
+			c.Error(&c.Controller, err)
+			return
+		}
+	case "not":
+		total, namespaceList, err = namespaceService.GroupNamespacesUserNotIn(context.Background(), userGet.ID, nameSpaceName, userNameQuery, sort, page, pageSize)
+		if err != nil {
+			c.Error(&c.Controller, err)
+			return
+		}
+	}
+
+	queryNamespaceResponse := QueryNamespaceResponse{Total: total, Page: page, PageSize: pageSize, NameSpaces: namespaceList}
+	c.Success(&c.Controller, queryNamespaceResponse)
+}
+
 func (c *NamespaceController) Update() {
 	namespaceId, err := c.GetInt(":id")
 	if err != nil {
@@ -122,7 +178,7 @@ func (c *NamespaceController) GetUserList() {
 	}
 
 	namespace := &namespace.NamespaceService{}
-	usrList, total, err := namespace.GetUsers(context.Background(), namespaceId, usernameQuery, permission, sort, page, pageSize)
+	total, usrList, err := namespace.GroupedUserInNamespaces(context.Background(), namespaceId, "", usernameQuery, permission, sort, page, pageSize)
 	if err != nil {
 		c.Error(&c.Controller, err)
 		return
@@ -131,15 +187,49 @@ func (c *NamespaceController) GetUserList() {
 	userListResponse := UserListResponse{Total: total, Page: page, PageSize: pageSize}
 	for _, user := range usrList {
 		userListResponse.Users = append(userListResponse.Users, &User{
-			ID:         user.ID,
-			Name:       user.Email,
-			Role:       user.Role,
+			ID:         user.Id,
+			Name:       user.Name,
+			Permission: user.Permission,
 			CreateTime: user.CreateTime,
-			UpdateTime: user.UpdateTime,
 		})
 	}
 	c.Success(&c.Controller, userListResponse)
 }
+
+//func (c *NamespaceController) GetUserList() {
+//	namespaceId, err := c.GetInt(":id")
+//	if err != nil {
+//		c.Error(&c.Controller, err)
+//		return
+//	}
+//
+//	page, _ := c.GetInt("page", 1)
+//	pageSize, _ := c.GetInt("page_size", 10)
+//	sort := c.GetString("sort")
+//	usernameQuery := c.GetString("username")
+//	permission, err := c.GetInt("permission")
+//	if err != nil {
+//		permission = -1
+//	}
+//
+//	namespace := &namespace.NamespaceService{}
+//	total, usrList, err := namespace.GroupedUserNamespaces(context.Background(), namespaceId, usernameQuery, permission, sort, page, pageSize)
+//	if err != nil {
+//		c.Error(&c.Controller, err)
+//		return
+//	}
+//
+//	userListResponse := UserListResponse{Total: total, Page: page, PageSize: pageSize}
+//	for _, user := range usrList {
+//		userListResponse.Users = append(userListResponse.Users, &User{
+//			ID:         user.Id,
+//			Name:       user.Name,
+//			Permission: user.Permission,
+//			CreateTime: user.CreateTime,
+//		})
+//	}
+//	c.Success(&c.Controller, userListResponse)
+//}
 
 func (c *NamespaceController) AddUsers() {
 	namespaceId, err := c.GetInt(":id")
@@ -235,4 +325,54 @@ func (c *NamespaceController) ChangePermissions() {
 		return
 	}
 	c.Success(&c.Controller, "ok")
+}
+
+func (c *NamespaceController) SetAttackableCluster() {
+	namespaceId, err := c.GetInt(":id")
+	if err != nil {
+		c.Error(&c.Controller, err)
+		return
+	}
+
+	var reqBody SetAttackableClusterRequest
+	if err = json.Unmarshal(c.Ctx.Input.RequestBody, &reqBody); err != nil {
+		c.Error(&c.Controller, err)
+		return
+	}
+
+	username := c.Ctx.Input.GetData("userName").(string)
+	namespace := &namespace.NamespaceService{}
+	if err := namespace.SetAttackableCluster(context.Background(), namespaceId, username, reqBody.ClusterID); err != nil {
+		c.Error(&c.Controller, err)
+		return
+	}
+	c.Success(&c.Controller, "ok")
+}
+
+func (c *NamespaceController) ListAttackableCluster() {
+	namespaceId, err := c.GetInt(":id")
+	if err != nil {
+		c.Error(&c.Controller, err)
+		return
+	}
+	page, _ := c.GetInt("page", 1)
+	pageSize, _ := c.GetInt("page_size", 10)
+	sort := c.GetString("sort")
+
+	namespace := &namespace.NamespaceService{}
+	total, clusterList, err := namespace.GetAttackableClustersByNamespaceID(context.Background(), namespaceId, sort, page, pageSize)
+	if err != nil {
+		c.Error(&c.Controller, err)
+		return
+	}
+	getAttackableClusterResponse := GetAttackableClusterResponse{Total: total, Page: page, PageSize: pageSize}
+	for _, cluster := range clusterList {
+		getAttackableClusterResponse.Clusters = append(getAttackableClusterResponse.Clusters, ClusterNamespaceInfo{
+			ID:         cluster.ID,
+			Name:       cluster.Name,
+			CreateTime: cluster.CreateTime,
+			UpdateTime: cluster.UpdateTime,
+		})
+	}
+	c.Success(&c.Controller, getAttackableClusterResponse)
 }

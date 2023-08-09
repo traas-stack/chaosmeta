@@ -46,6 +46,39 @@ func (c *UserController) GetList() {
 	c.Success(&c.Controller, userListResponse)
 }
 
+func (c *UserController) GetListWithNamespaceInfo() {
+	nsId, _ := c.GetInt(":id")
+	sort := c.GetString("sort")
+	name := c.GetString("name")
+	role := c.GetString("role")
+	page, _ := c.GetInt("page", 1)
+	pageSize, _ := c.GetInt("page_size", 10)
+
+	a := &user.UserService{}
+	total, userNamespaceList, err := a.GetListWithNamespaceInfo(context.Background(), nsId, name, role, sort, page, pageSize)
+	if err != nil {
+		c.Data["json"] = errors.ErrServer().WithMessage(err.Error())
+		c.ServeJSON()
+		return
+	}
+
+	userListNamespaceResponse := UserListNamespaceResponse{Total: total, Page: page, PageSize: pageSize}
+	for _, userNamespace := range userNamespaceList {
+		userListNamespaceResponse.Users = append(userListNamespaceResponse.Users, &UserNamespace{
+			User: User{
+				ID:         userNamespace.User.ID,
+				Name:       userNamespace.User.Email,
+				Role:       userNamespace.User.Role,
+				CreateTime: userNamespace.User.CreateTime,
+				UpdateTime: userNamespace.User.UpdateTime,
+			},
+			IsJoin:     userNamespace.IsJoin,
+			Permission: userNamespace.Permission,
+		})
+	}
+	c.Success(&c.Controller, userListNamespaceResponse)
+}
+
 func (c *UserController) Get() {
 	name := c.Ctx.Input.Param(":name")
 
@@ -193,4 +226,28 @@ func (c *UserController) UpdateListRole() {
 		return
 	}
 	c.Success(&c.Controller, "ok")
+}
+
+// 获取用户下的命名空间列表
+func (c *UserController) GetNamespaceList() {
+	userName := c.Ctx.Input.GetData("userName").(string)
+
+	page, _ := c.GetInt("page", 1)
+	pageSize, _ := c.GetInt("page_size", 10)
+	sort := c.GetString("sort")
+	permission, err := c.GetInt("permission")
+
+	a := &user.UserService{}
+	total, namespaceList, err := a.GetNamespaceList(context.Background(), userName, permission, sort, page, pageSize)
+	if err != nil {
+		c.Error(&c.Controller, err)
+		return
+	}
+	nameSpaceListResponse := NameSpaceListResponse{
+		Page:       page,
+		PageSize:   pageSize,
+		Total:      total,
+		Namespaces: namespaceList,
+	}
+	c.Success(&c.Controller, nameSpaceListResponse)
 }

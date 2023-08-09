@@ -23,13 +23,11 @@ import (
 )
 
 type Namespace struct {
-	Id          int    `orm:"auto; column(id)"`
+	Id          int    `json:"id" orm:"pk;auto;column(id)"`
 	Name        string `json:"name" orm:"column(name); size(255);index"`
 	Description string `json:"description" orm:"column(description); size(1024)"`
 	Creator     int    `json:"creator" orm:"column(creator); index"`
 	IsDefault   bool   `json:"is_default" orm:"column(is_default)"`
-	//User        []*User `json:"users" orm:"reverse(many)"`
-	//Members     []*UserNamespace `json:"members" orm:"reverse(many)"`
 	models.BaseTimeModel
 }
 
@@ -97,12 +95,16 @@ func QueryNamespaces(ctx context.Context, name, creator, orderBy string, page, p
 		namespaceQuery.Filter("creator", models.NEGLECT, false, creator)
 	}
 
+	orderByList := []string{}
+	if orderBy != "" {
+		orderByList = append(orderByList, orderBy)
+	} else {
+		orderByList = append(orderByList, "id")
+	}
+	namespaceQuery.OrderBy(orderByList...)
+
 	if err := namespaceQuery.Limit(pageSize, (page-1)*pageSize); err != nil {
 		return 0, nil, err
-	}
-
-	if len(orderBy) > 0 {
-		namespaceQuery.OrderBy(orderBy)
 	}
 
 	totalCount, err := namespaceQuery.GetOamQuerySeter().All(namespaceList)

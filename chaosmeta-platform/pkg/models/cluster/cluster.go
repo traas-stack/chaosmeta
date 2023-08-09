@@ -30,6 +30,27 @@ func GetClusterById(ctx context.Context, cluster *Cluster) error {
 	return models.GetORM().Read(cluster)
 }
 
+func GetClustersByIdList(ctx context.Context, ids []int, orderBy string, page, pageSize int) (int64, []*Cluster, error) {
+	if len(ids) == 0 {
+		return 0, nil, errors.New("empty ids")
+	}
+	var clusters []*Cluster
+	cluster := Cluster{}
+	query := models.GetORM().QueryTable(cluster.TableName()).Filter("id__in", ids)
+
+	var totalCount int64
+	totalCount, err := query.Count()
+	if err != nil {
+		return totalCount, nil, err
+	}
+	query = query.Limit(pageSize, (page-1)*pageSize)
+	if len(orderBy) > 0 {
+		query = query.OrderBy(orderBy)
+	}
+	_, err = query.All(clusters)
+	return totalCount, clusters, err
+}
+
 func GetClusterByName(ctx context.Context, cluster *Cluster) error {
 	if cluster == nil {
 		return errors.New("cluster is nil")
@@ -60,11 +81,15 @@ func QueryCluster(ctx context.Context, name, version, orderBy string, page, page
 	}
 	var totalCount int64
 	totalCount, err = clusterQuery.GetOamQuerySeter().Count()
+
+	orderByList := []string{"id"}
+	if len(orderBy) > 0 {
+		orderByList = append(orderByList, orderBy)
+	}
+	clusterQuery.OrderBy(orderByList...)
+
 	if err := clusterQuery.Limit(pageSize, (page-1)*pageSize); err != nil {
 		return 0, nil, err
-	}
-	if len(orderBy) > 0 {
-		clusterQuery.OrderBy(orderBy)
 	}
 
 	_, err = clusterQuery.GetOamQuerySeter().All(clusters)

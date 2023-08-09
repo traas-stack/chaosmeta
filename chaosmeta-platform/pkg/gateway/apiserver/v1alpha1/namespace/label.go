@@ -4,22 +4,27 @@ import (
 	"chaosmeta-platform/pkg/service/namespace"
 	"context"
 	"encoding/json"
-	"fmt"
 )
 
 func (c *NamespaceController) ListLabel() {
 	id, _ := c.GetInt(":id")
 	name := c.GetString("name")
 	orderBy := c.GetString("sort")
+	creator := c.GetString("creator")
 	page, _ := c.GetInt("page", 1)
 	pageSize, _ := c.GetInt("page_size", 10)
 	namespace := &namespace.NamespaceService{}
-	total, usrList, err := namespace.ListLabel(context.Background(), id, name, orderBy, page, pageSize)
+	total, labelList, err := namespace.ListLabel(context.Background(), id, name, creator, orderBy, page, pageSize)
 	if err != nil {
 		c.Error(&c.Controller, err)
 		return
 	}
-	fmt.Println(total, usrList)
+	c.Success(&c.Controller, LabelListResponse{
+		Page:     page,
+		PageSize: pageSize,
+		Total:    total,
+		Labels:   labelList,
+	})
 }
 
 func (c *NamespaceController) LabelCreate() {
@@ -32,7 +37,7 @@ func (c *NamespaceController) LabelCreate() {
 		return
 	}
 
-	id, err := namespace.CreateLabel(context.Background(), nsId, username, reqBody.Name)
+	id, err := namespace.CreateLabel(context.Background(), nsId, username, reqBody.Name, reqBody.Color)
 	if err != nil {
 		c.Error(&c.Controller, err)
 		return
@@ -51,4 +56,17 @@ func (c *NamespaceController) LabelDelete() {
 		return
 	}
 	c.Success(&c.Controller, "ok")
+}
+
+func (c *NamespaceController) LabelGet() {
+	nsId, _ := c.GetInt(":ns_id")
+	name := c.Ctx.Input.Param(":name")
+
+	namespace := &namespace.NamespaceService{}
+	label, err := namespace.GetLabelByName(context.Background(), nsId, name)
+	if err != nil {
+		c.Success(&c.Controller, nil)
+		return
+	}
+	c.Success(&c.Controller, label)
 }

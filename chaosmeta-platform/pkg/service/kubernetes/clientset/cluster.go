@@ -3,13 +3,8 @@ package clientset
 import (
 	cv1alpha1 "chaosmeta-platform/pkg/gateway/apis/chaosmetacluster/v1alpha1"
 	"chaosmeta-platform/pkg/models/common/page"
-	"chaosmeta-platform/pkg/service/kubernetes/clients"
-	"chaosmeta-platform/util/json"
-	"chaosmeta-platform/util/log"
-	"context"
+	"errors"
 	"fmt"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 type ClusterCell cv1alpha1.ChaosmetaCluster
@@ -109,53 +104,18 @@ func (cs *clientset) DeleteCluster(env, cluster string) error {
 }
 
 func (cs *clientset) PatchCluster(originalObj, updatedObj *cv1alpha1.ChaosmetaCluster) (*cv1alpha1.ChaosmetaCluster, error) {
-	updatedObj.TypeMeta = originalObj.TypeMeta
-	labels := updatedObj.ObjectMeta.Labels
-	updatedObj.ObjectMeta = originalObj.ObjectMeta
-	updatedObj.ObjectMeta.Labels = labels
+	//updatedObj.TypeMeta = originalObj.TypeMeta
+	//labels := updatedObj.ObjectMeta.Labels
+	//updatedObj.ObjectMeta = originalObj.ObjectMeta
+	//updatedObj.ObjectMeta.Labels = labels
+	//
+	//data, err := json.MargePatch(originalObj, updatedObj)
+	//
+	//if err != nil {
+	//	return nil, err
+	//}
 
-	data, err := json.MargePatch(originalObj, updatedObj)
-
-	if err != nil {
-		return nil, err
-	}
-
-	info, err := cs.opClusterClient.ChaosmetaclusterV1alpha1().ChaosmetaClusters().Patch(
-		context.TODO(),
-		originalObj.GetName(),
-		types.MergePatchType,
-		data,
-		metav1.PatchOptions{},
-	)
-	if err != nil {
-		return info, err
-	}
-	restList, err := cs.ListRestConfiguration()
-	if err != nil {
-		return info, err
-	}
-	for _, rest := range restList {
-		opClient, err := clients.NewForConfig(rest)
-		if err != nil {
-			log.Error(err)
-			return info, err
-		}
-		getCluster, err := cs.GetClusterByClusterName(updatedObj.Name)
-		if err == nil && getCluster != nil {
-			info, err := opClient.ChaosmetaclusterV1alpha1().ChaosmetaClusters().Patch(
-				context.TODO(),
-				originalObj.GetName(),
-				types.MergePatchType,
-				data,
-				metav1.PatchOptions{},
-			)
-			if err != nil {
-				return info, err
-			}
-			continue
-		}
-	}
-	return info, nil
+	return nil, errors.New("cannot patch")
 }
 
 // Replace cluster meta information

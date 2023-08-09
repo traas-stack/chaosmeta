@@ -1,6 +1,7 @@
 package user
 
 import (
+	namespace2 "chaosmeta-platform/pkg/models/namespace"
 	"time"
 )
 
@@ -17,6 +18,19 @@ type UserListResponse struct {
 	PageSize int     `json:"pageSize"`
 	Total    int64   `json:"total"`
 	Users    []*User `json:"users"`
+}
+
+type UserNamespace struct {
+	User
+	IsJoin     bool `json:"isJoin"`
+	Permission int  `json:"permission"`
+}
+
+type UserListNamespaceResponse struct {
+	Page     int              `json:"page"`
+	PageSize int              `json:"pageSize"`
+	Total    int64            `json:"total"`
+	Users    []*UserNamespace `json:"users"`
 }
 
 type UserCreateRequest struct {
@@ -42,4 +56,11 @@ type UsersPasswordUpdateRequest struct {
 type UserUpdateRoleRequest struct {
 	UserIDs []int  `json:"user_ids"`
 	Role    string `json:"role"`
+}
+
+type NameSpaceListResponse struct {
+	Page       int                            `json:"page"`
+	PageSize   int                            `json:"pageSize"`
+	Total      int64                          `json:"total"`
+	Namespaces []namespace2.UserNamespaceData `json:"namespaces"`
 }

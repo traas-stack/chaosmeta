@@ -9,6 +9,7 @@ func nameSpaceInit() {
 	beego.Router(NewWebServicePath("namespaces"), &namespace.NamespaceController{}, "post:Create")
 	beego.Router(NewWebServicePath("namespaces/:id"), &namespace.NamespaceController{}, "get:Get")
 	beego.Router(NewWebServicePath("namespaces/list"), &namespace.NamespaceController{}, "get:GetList")
+	beego.Router(NewWebServicePath("namespaces/query"), &namespace.NamespaceController{}, "get:QueryList")
 	beego.Router(NewWebServicePath("namespaces/:id"), &namespace.NamespaceController{}, "post:Update")
 	beego.Router(NewWebServicePath("namespaces/:id"), &namespace.NamespaceController{}, "delete:Delete")
 	beego.Router(NewWebServicePath("namespaces/:id/users"), &namespace.NamespaceController{}, "get:GetUserList")
@@ -17,7 +18,11 @@ func nameSpaceInit() {
 	beego.Router(NewWebServicePath("namespaces/:id/users"), &namespace.NamespaceController{}, "delete:RemoveUsers")
 	beego.Router(NewWebServicePath("namespaces/:id/users/permission"), &namespace.NamespaceController{}, "post:ChangePermissions")
 
-	beego.Router(NewWebServicePath("/namespaces/:id/labels"), &namespace.NamespaceController{}, "get:ListLabel")
-	beego.Router(NewWebServicePath("/namespaces/:id/labels"), &namespace.NamespaceController{}, "post:LabelCreate")
-	beego.Router(NewWebServicePath("/namespaces/:ns_id/labels/:id"), &namespace.NamespaceController{}, "delete:LabelDelete")
+	beego.Router(NewWebServicePath("namespaces/:id/labels"), &namespace.NamespaceController{}, "get:ListLabel")
+	beego.Router(NewWebServicePath("namespaces/:id/labels"), &namespace.NamespaceController{}, "post:LabelCreate")
+	beego.Router(NewWebServicePath("namespaces/:ns_id/labels/:id"), &namespace.NamespaceController{}, "delete:LabelDelete")
+	beego.Router(NewWebServicePath("namespaces/:ns_id/labels/:name"), &namespace.NamespaceController{}, "get:LabelGet")
+
+	beego.Router(NewWebServicePath("namespaces/:id/cluster"), &namespace.NamespaceController{}, "post:SetAttackableCluster")
+	beego.Router(NewWebServicePath("namespaces/:id/cluster"), &namespace.NamespaceController{}, "get:ListAttackableCluster")
 }

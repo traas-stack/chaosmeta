@@ -132,6 +132,9 @@ func (s *NamespaceService) Delete(ctx context.Context, userName string, namespac
 	if _, err := namespaceModel.DeleteNamespace(ctx, namespaceId); err != nil {
 		return err
 	}
+	if err := namespaceModel.ClearClusterIDsForNamespace(namespaceId); err != nil {
+		return err
+	}
 	return namespaceModel.UsersOrNamespacesDelete(nil, []int{namespaceId})
 }
 
@@ -151,6 +154,75 @@ func (s *NamespaceService) AddUsers(ctx context.Context, userName string, namesp
 		return errors.New("permission denied")
 	}
 	return namespaceModel.AddUsersInNamespace(namespaceId, addUsersParam)
+}
+
+func (s *NamespaceService) GroupedUserInNamespaces(ctx context.Context, namespaceId int, namespaceName string, userName string, permission int, orderBy string, page, pageSize int) (int64, []namespaceModel.NamespaceData, error) {
+	return namespaceModel.GroupedUserInNamespaces(namespaceId, namespaceName, userName, permission, orderBy, page, pageSize)
+}
+
+type NamespaceInfoWithUsers struct {
+	NamespaceInfo namespaceModel.NamespaceInfo   `json:"namespaceInfo"`
+	users         []namespaceModel.NamespaceData `json:"users"`
+}
+
+// 未加入
+func (s *NamespaceService) GroupNamespacesUserNotIn(ctx context.Context, userId int, namespaceName string, userName string, orderBy string, page, pageSize int) (int64, []NamespaceInfoWithUsers, error) {
+	total, namesapceList, err := namespaceModel.GroupNamespacesUserNotIn(userId, namespaceName, userName, orderBy, page, pageSize)
+	if err != nil {
+		return 0, nil, err
+	}
+	var namespaceInfoWithUsersList []NamespaceInfoWithUsers
+	for _, namesapce := range namesapceList {
+		_, userList, err := namespaceModel.GroupedUserInNamespaces(namesapce.ID, "", "", -1, "", 1, 20)
+		if err != nil {
+			continue
+		}
+		namespaceInfoWithUsersList = append(namespaceInfoWithUsersList, NamespaceInfoWithUsers{
+			NamespaceInfo: namesapce,
+			users:         userList,
+		})
+	}
+	return total, namespaceInfoWithUsersList, nil
+}
+
+// 全部
+func (s *NamespaceService) GroupAllNamespaces(ctx context.Context, namespaceName string, userName string, orderBy string, page, pageSize int) (int64, []NamespaceInfoWithUsers, error) {
+	total, namesapceList, err := namespaceModel.GroupAllNamespaces(namespaceName, userName, orderBy, page, pageSize)
+	if err != nil {
+		return 0, nil, err
+	}
+	var namespaceInfoWithUsersList []NamespaceInfoWithUsers
+	for _, namesapce := range namesapceList {
+		_, userList, err := namespaceModel.GroupedUserInNamespaces(namesapce.ID, "", "", -1, "", 1, 20)
+		if err != nil {
+			continue
+		}
+		namespaceInfoWithUsersList = append(namespaceInfoWithUsersList, NamespaceInfoWithUsers{
+			NamespaceInfo: namesapce,
+			users:         userList,
+		})
+	}
+	return total, namespaceInfoWithUsersList, nil
+}
+
+// 已加入
+func (s *NamespaceService) GroupNamespacesByUsername(ctx context.Context, userId int, namespace string, userName string, permission int, orderBy string, page, pageSize int) (int64, []NamespaceInfoWithUsers, error) {
+	total, namesapceList, err := namespaceModel.GroupAllNamespacesByUserName(userId, namespace, userName, permission, orderBy, page, pageSize)
+	if err != nil {
+		return 0, nil, err
+	}
+	var namespaceInfoWithUsersList []NamespaceInfoWithUsers
+	for _, namesapce := range namesapceList {
+		_, userList, err := namespaceModel.GroupedUserInNamespaces(namesapce.ID, "", "", -1, "", 1, 20)
+		if err != nil {
+			continue
+		}
+		namespaceInfoWithUsersList = append(namespaceInfoWithUsersList, NamespaceInfoWithUsers{
+			NamespaceInfo: namesapce,
+			users:         userList,
+		})
+	}
+	return total, namespaceInfoWithUsersList, nil
 }
 
 func (s *NamespaceService) DefaultAddUsers(ctx context.Context, addUsersParam namespaceModel.AddUsersParam) error {
@@ -181,26 +253,66 @@ func (s *NamespaceService) ChangeUsersPermission(ctx context.Context, userName s
 	return namespaceModel.UpdateUsersPermissionInNamespace(namespaceId, userIds, permission)
 }
 
-func (s *NamespaceService) GetUsers(ctx context.Context, namespaceId int, userName string, permission int, orderBy string, page, pageSize int) ([]*user.User, int64, error) {
-	return namespaceModel.QueryUsers(namespaceId, userName, permission, orderBy, page, pageSize)
-}
-
 func (s *NamespaceService) IsAdmin(ctx context.Context, namespaceId int, userName string) bool {
 	userGet := user.User{Email: userName}
 	if err := user.GetUser(ctx, &userGet); err != nil {
 		return false
 	}
+	if userGet.Role == user.AdminRole {
+		return true
+	}
 	un := namespaceModel.UserNamespace{
 		NamespaceId: namespaceId,
 		UserId:      userGet.ID,
 	}
-	if err := namespaceModel.GetUserNamespace(ctx, &un); err != nil {
+	if err := namespaceModel.GetUserNamespace(&un); err != nil {
 		return false
 	}
 	if un.Permission == namespaceModel.AdminPermission {
 		return true
 	}
 	return false
+}
+
+func (s *NamespaceService) IsUserJoin(ctx context.Context, namespaceId int, userId int) (bool, int) {
+	userGet := user.User{ID: userId}
+	if err := user.GetUserById(ctx, &userGet); err != nil {
+		return false, -1
+	}
+	if userGet.Role == user.AdminRole {
+		return true, 1
+	}
+	un := namespaceModel.UserNamespace{
+		NamespaceId: namespaceId,
+		UserId:      userGet.ID,
+	}
+	if err := namespaceModel.GetUserNamespace(&un); err != nil {
+		return false, -1
+	}
+	return true, int(un.Permission)
+}
+
+type UserInfoInNamespace struct {
+	User       user.User
+	IsJoin     bool `json:"isJoin"`
+	Permission int  `json:"permission"`
+}
+
+func (s *NamespaceService) GetUsersOfNamespacePermissions(ctx context.Context, users []user.User, namespaceId int) ([]UserInfoInNamespace, error) {
+	var userInfoInNamespaces []UserInfoInNamespace
+	for _, user := range users {
+		userInfoInNamespace := UserInfoInNamespace{
+			User:   user,
+			IsJoin: false,
+		}
+		isJoin, permission := s.IsUserJoin(ctx, namespaceId, user.ID)
+		if isJoin {
+			userInfoInNamespace.IsJoin = isJoin
+			userInfoInNamespace.Permission = permission
+		}
+		userInfoInNamespaces = append(userInfoInNamespaces, userInfoInNamespace)
+	}
+	return userInfoInNamespaces, nil
 }
 
 func (s *NamespaceService) IsDefault(ctx context.Context, namespaceId int) bool {

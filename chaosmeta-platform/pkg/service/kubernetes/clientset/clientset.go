@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"github.com/panjf2000/ants"
 	"github.com/robfig/cron"
+	"k8s.io/apiextensions-apiserver/examples/client-go/pkg/client/clientset/versioned"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/runtime"
@@ -79,7 +80,7 @@ type clientset struct {
 
 	clusterSynced   cache.InformerSynced
 	kubeLoadFile    string
-	opClusterClient clients.Interface
+	opClusterClient versioned.Interface
 	//recorder            map[string]record.EventRecorder
 	restConfig       sync.Map
 	opClient         sync.Map
@@ -121,7 +122,7 @@ type clientset struct {
 }
 
 // NewClientset returns the clientset interface.
-func NewClientset(opClusterClient clients.Interface,
+func NewClientset(opClusterClient versioned.Interface,
 ) Interface {
 
 	cs := &clientset{

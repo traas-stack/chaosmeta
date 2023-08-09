@@ -49,6 +49,7 @@ func InitConfig() {
 		log.Panic(err)
 	}
 }
+
 func getCurrentPath() string {
 	if ex, err := os.Executable(); err == nil {
 		return filepath.Dir(ex)

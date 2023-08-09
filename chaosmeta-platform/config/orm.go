@@ -17,8 +17,11 @@
 package config
 
 import (
+	"chaosmeta-platform/pkg/models/agent"
 	"chaosmeta-platform/pkg/models/cluster"
 	modelCommon "chaosmeta-platform/pkg/models/common"
+	"chaosmeta-platform/pkg/models/experiment"
+	"chaosmeta-platform/pkg/models/inject/basic"
 	"chaosmeta-platform/pkg/models/namespace"
 	"chaosmeta-platform/pkg/models/user"
 	"fmt"
@@ -27,9 +30,16 @@ import (
 )
 
 func Setup() {
-	orm.RegisterModel(new(namespace.UserNamespace), new(user.User), new(namespace.Namespace), new(cluster.Cluster))
+	orm.RegisterModel(
+		new(namespace.ClusterNamespace), new(namespace.Label), new(namespace.Namespace), new(namespace.UserNamespace),
+		new(user.User),
+		new(cluster.Cluster),
+		new(agent.Agent),
+		new(basic.Scope), new(basic.Target), new(basic.Fault), new(basic.Args),
+		new(experiment.WorkflowNode), new(experiment.LabelExperiment), new(experiment.FaultRange), new(experiment.Experiment), new(experiment.ArgsValue),
+	)
 
-	if err := orm.RegisterDataBase("default", "mysql", fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8", DefaultRunOptIns.DB.User, DefaultRunOptIns.DB.Passwd, DefaultRunOptIns.DB.Url, DefaultRunOptIns.DB.Name), orm.MaxIdleConnections(DefaultRunOptIns.DB.MaxIdle), orm.MaxOpenConnections(DefaultRunOptIns.DB.MaxConn)); err != nil {
+	if err := orm.RegisterDataBase("default", "mysql", fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8&loc=Local", DefaultRunOptIns.DB.User, DefaultRunOptIns.DB.Passwd, DefaultRunOptIns.DB.Url, DefaultRunOptIns.DB.Name), orm.MaxIdleConnections(DefaultRunOptIns.DB.MaxIdle), orm.MaxOpenConnections(DefaultRunOptIns.DB.MaxConn)); err != nil {
 		panic(any(fmt.Sprintf("connect database error: %s", err.Error())))
 	}
 

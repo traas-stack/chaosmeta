@@ -157,6 +157,24 @@ func (a *UserService) GetList(ctx context.Context, name, role, orderBy string, p
 	return user.QueryUser(ctx, name, role, orderBy, page, pageSize)
 }
 
+func (a *UserService) GetListWithNamespaceInfo(ctx context.Context, namespaceId int, name, role, orderBy string, page, pageSize int) (int64, []namespace.UserInfoInNamespace, error) {
+	total, userList, err := user.QueryUser(ctx, name, role, orderBy, page, pageSize)
+	if err != nil {
+		return 0, nil, err
+	}
+	ns := namespace.NamespaceService{}
+	userInfoList, err := ns.GetUsersOfNamespacePermissions(ctx, userList, namespaceId)
+	return total, userInfoList, err
+}
+
+func (a *UserService) GetNamespaceList(ctx context.Context, name string, permission int, orderBy string, page, pageSize int) (int64, []namespace2.UserNamespaceData, error) {
+	userGet, err := a.Get(ctx, name)
+	if err != nil {
+		return 0, nil, err
+	}
+	return namespace2.GetNamespacesFromUser(ctx, userGet.ID, permission, orderBy, page, pageSize)
+}
+
 func (a *UserService) DeleteList(ctx context.Context, name string, deleteIds []int) error {
 	if !a.IsAdmin(ctx, name) {
 		return fmt.Errorf("not admin")
@@ -188,6 +206,14 @@ func (a *UserService) UpdatePassword(ctx context.Context, name, newPassword stri
 }
 
 func (a *UserService) UpdateListRole(ctx context.Context, name string, ids []int, role string) error {
+	if !a.IsAdmin(ctx, name) {
+		return fmt.Errorf("not admin")
+	}
+
+	return user.UpdateUsersRole(ctx, ids, role)
+}
+
+func (a *UserService) UpdateListNamespace(ctx context.Context, name string, ids []int, role string) error {
 	if !a.IsAdmin(ctx, name) {
 		return fmt.Errorf("not admin")
 	}

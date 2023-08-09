@@ -2,6 +2,7 @@ package app
 
 import (
 	"chaosmeta-platform/config"
+	"chaosmeta-platform/pkg/service/inject"
 	"chaosmeta-platform/pkg/service/namespace"
 	"chaosmeta-platform/pkg/service/user"
 	"chaosmeta-platform/util/log"
@@ -45,6 +46,12 @@ func initConfig() {
 	config.Setup()
 	user.Init()
 	namespace.Init()
+	if err := inject.Init(); err != nil {
+		log.Panic(err)
+	}
+	//if err := clientset.Init(); err != nil {
+	//	log.Panic(err)
+	//}
 }
 
 // rootCmd represents the base command when called without any subcommands

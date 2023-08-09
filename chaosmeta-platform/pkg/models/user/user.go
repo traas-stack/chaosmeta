@@ -38,7 +38,6 @@ type User struct {
 	Disabled      bool      `json:"disabled" orm:"column(disabled)"`
 	IsDeleted     bool      `json:"isDeleted" orm:"column(is_deleted);default(0)"`
 	LastLoginTime time.Time `json:"lastLoginTime" orm:"column(last_login_time);auto_now;type(datetime)"`
-	//Namespace     []*Namespace `json:"namespaces" orm:"rel(m2m);rel_through(chaosmeta-platform/pkg/models.UserNamespace);on_delete(cascade)"`
 	models.BaseTimeModel
 }
 
@@ -91,6 +90,10 @@ func GetUser(ctx context.Context, u *User) error {
 	return models.GetORM().Read(u, "email")
 }
 
+func GetUserById(ctx context.Context, u *User) error {
+	return models.GetORM().Read(u)
+}
+
 func QueryUser(ctx context.Context, name, role, orderBy string, page, pageSize int) (int64, []User, error) {
 	u, users := User{}, new([]User)
 	querySeter := models.GetORM().QueryTable(u.TableName())
@@ -110,11 +113,14 @@ func QueryUser(ctx context.Context, name, role, orderBy string, page, pageSize i
 
 	var totalCount int64
 	totalCount, err = userQuery.GetOamQuerySeter().Count()
+
+	orderByList := []string{"id"}
+	if len(orderBy) > 0 {
+		orderByList = append(orderByList, orderBy)
+	}
+	userQuery.OrderBy(orderByList...)
 	if err := userQuery.Limit(pageSize, (page-1)*pageSize); err != nil {
 		return 0, nil, err
-	}
-	if len(orderBy) > 0 {
-		userQuery.OrderBy(orderBy)
 	}
 
 	_, err = userQuery.GetOamQuerySeter().All(users)
