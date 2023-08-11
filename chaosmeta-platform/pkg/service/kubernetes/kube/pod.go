@@ -512,8 +512,7 @@ func (p *podService) CopyToPod(namespace, name, container string, srcPath, destP
 
 	exec, err := remotecommand.NewSPDYExecutor(p.kubernetesParam.RestConfig, "POST", req.URL())
 	if err != nil {
-		log.Fatalf("error %v
-", err)
+		log.Fatalf("error %v", err)
 		return err
 	}
 	err = exec.Stream(remotecommand.StreamOptions{
@@ -523,8 +522,7 @@ func (p *podService) CopyToPod(namespace, name, container string, srcPath, destP
 		Tty:    false,
 	})
 	if err != nil {
-		log.Fatalf("error %v
-", err)
+		log.Fatalf("error %v", err)
 		return err
 	}
 	return nil
@@ -552,8 +550,7 @@ func (p *podService) CopyFromPod(namespace, name, container string, srcPath, des
 
 	exec, err := remotecommand.NewSPDYExecutor(p.kubernetesParam.RestConfig, "POST", req.URL())
 	if err != nil {
-		log.Fatalf("error %s
-", err)
+		log.Fatalf("error %s", err)
 		return err
 	}
 	go func() {
@@ -908,8 +905,7 @@ func (p *podService) LogFilePaths(namespace, name, container, filePath string) (
 	if err != nil {
 		return nil, err
 	}
-	return strings.Split(out, "
-"), nil
+	return strings.Split(out, ""), nil
 }
 
 func (p *podService) LogPreview(namespace, name, container, file string, offset, size int) (string, error) {

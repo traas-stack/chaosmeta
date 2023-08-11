@@ -262,8 +262,7 @@ func (l LogLines) createLogLineId(lineIndex int) *LogLineId {
 // In error cases the server returns a message without a timestamp
 func ToLogLines(rawLogs string) LogLines {
 	logLines := LogLines{}
-	for _, line := range strings.Split(rawLogs, "
-") {
+	for _, line := range strings.Split(rawLogs, "") {
 		if line != "" {
 			startsWithDate := ('0' <= line[0] && line[0] <= '9') //2017-...
 			idx := strings.Index(line, " ")
