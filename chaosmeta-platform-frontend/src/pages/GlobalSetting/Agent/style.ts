@@ -79,15 +79,62 @@ export const AppConfigContainer = styled.div`
 `;
 
 export const InstallAgentContainer = styled.div`
+  .title {
+    margin: 24px 0;
+  }
   .content {
     display: flex;
-    /* border-top: 1px solid #EDEEEF; */
-    /* padding: 24px; */
+    height: calc(100vh - 200px);
+    .transfer {
+      button {
+        width: 24px;
+        height: 24px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 0 8px;
+        margin-top: 180px;
+        padding: 0;
+      }
+    }
+    .left,
+    .right {
+      width: 420px;
+      border: 1px solid rgba(0, 10, 26, 0.16);
+      border-radius: 6px;
+      overflow-y: hidden;
+      .header {
+        /* display: flex; */
+        height: 46px;
+        line-height: 46px;
+        text-align: right;
+        padding: 0 12px;
+        margin: 0 4px;
+        border-bottom: 1px solid rgba(0, 10, 26, 0.16);
+      }
+      .search {
+        .ant-space-compact {
+          display: flex;
+          .ant-form-item:last-child {
+            flex: 1;
+          }
+        }
+        padding: 16px;
+        padding-bottom: 0;
+        .ant-form-item {
+          margin: 0;
+        }
+        .ant-select-selector {
+          width: 110px;
+        }
+      }
+      .table {
+        padding: 16px 16px 0 16px;
+        margin-bottom: 24px;
+        .ant-table-body {
+          padding-bottom: 48px;
+        }
+      }
+    }
   }
-  .left {
-    width: 470px;
-    height: 100%;
-    padding-top: 24px;
-    border-right: 1px solid #EDEEEF;
-  }
-`
+`;

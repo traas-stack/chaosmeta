@@ -5,7 +5,7 @@ import {
 } from '@/services/chaosmeta/SpaceController';
 import { formatTime } from '@/utils/format';
 import { useParamChange } from '@/utils/useParamChange';
-import { history, useRequest } from '@umijs/max';
+import { history, useModel, useRequest } from '@umijs/max';
 import { Button, Form, Input, Space, Spin } from 'antd';
 import React, { useEffect, useState } from 'react';
 import { BasicInfoContainer } from './style';
@@ -17,6 +17,8 @@ const BasicInfo: React.FC<IProps> = () => {
   const [saveDisabled, setSaveDisabled] = useState<boolean>(true);
   const [spaceInfo, setSpaceInfo] = useState<any>({});
   const spaceIdChange = useParamChange('spaceId');
+  const { spacePermission } = useModel('global');
+  console.log(spacePermission, 'spacePermission');
 
   /**
    * 修改接口
@@ -75,47 +77,68 @@ const BasicInfo: React.FC<IProps> = () => {
             setSaveDisabled(false);
           }}
         >
-          <Form.Item
-            name={'name'}
-            label="空间名称"
-            rules={[{ required: true, message: '请输入空间名称' }]}
-            help="请尽量保持项目名称的简洁，不超过 64 个字符"
-          >
-            <Input placeholder="请输入空间名称" maxLength={64} />
-          </Form.Item>
-          <Form.Item name={'description'} label="空间描述">
-            <Input.TextArea
-              placeholder="请输入空间描述"
-              style={{ resize: 'none' }}
-              rows={4}
-              maxLength={200}
-              showCount
-            />
-          </Form.Item>
-          <Form.Item name={'create_time'} label="创建时间">
-            <ShowText />
-          </Form.Item>
-          <Form.Item name={'count'} label="成员数量">
-            <ShowText />
-          </Form.Item>
-          <Space>
-            <Button
-              type="primary"
-              disabled={saveDisabled}
-              onClick={handleEdit}
-              loading={editInfo.loading}
-            >
-              保存
-            </Button>
-            <Button
-              onClick={() => {
-                form.setFieldsValue(spaceInfo);
-                setSaveDisabled(true);
-              }}
-            >
-              取消
-            </Button>
-          </Space>
+          {/* 读写权限时 */}
+          {spacePermission === 1 ? (
+            <div>
+              <Form.Item
+                name={'name'}
+                label="空间名称"
+                rules={[{ required: true, message: '请输入空间名称' }]}
+                help="请尽量保持项目名称的简洁，不超过 64 个字符"
+              >
+                <Input placeholder="请输入空间名称" maxLength={64} />
+              </Form.Item>
+              <Form.Item name={'description'} label="空间描述">
+                <Input.TextArea
+                  placeholder="请输入空间描述"
+                  style={{ resize: 'none' }}
+                  rows={4}
+                  maxLength={200}
+                  showCount
+                />
+              </Form.Item>
+              <Form.Item name={'create_time'} label="创建时间">
+                <ShowText />
+              </Form.Item>
+              <Form.Item name={'count'} label="成员数量">
+                <ShowText />
+              </Form.Item>
+              <Space>
+                <Button
+                  type="primary"
+                  disabled={saveDisabled}
+                  onClick={handleEdit}
+                  loading={editInfo.loading}
+                >
+                  保存
+                </Button>
+                <Button
+                  onClick={() => {
+                    form.setFieldsValue(spaceInfo);
+                    setSaveDisabled(true);
+                  }}
+                >
+                  取消
+                </Button>
+              </Space>
+            </div>
+          ) : (
+            // 只读权限时
+            <div>
+              <Form.Item name={'name'} label="空间名称">
+                <ShowText />
+              </Form.Item>
+              <Form.Item name={'description'} label="空间描述">
+                <ShowText />
+              </Form.Item>
+              <Form.Item name={'create_time'} label="创建时间">
+                <ShowText />
+              </Form.Item>
+              <Form.Item name={'count'} label="成员数量">
+                <ShowText />
+              </Form.Item>
+            </div>
+          )}
         </Form>
       </BasicInfoContainer>
     </Spin>

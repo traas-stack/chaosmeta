@@ -1,96 +1,71 @@
 /**
  * 安装Agent
  */
-import { SearchOutlined } from '@ant-design/icons';
-import { Button, Drawer, Form, Input, Select, Space, Tree } from 'antd';
-import { DataNode } from 'antd/es/tree';
+import { RightOutlined, SearchOutlined } from '@ant-design/icons';
+import { Button, Drawer, Form, Input, Select, Space, Table } from 'antd';
 import React, { useState } from 'react';
 import { InstallAgentContainer } from './style';
 interface IProps {
   open: boolean;
   setOpen: (val: boolean) => void;
 }
+
 const InstallAgentModal: React.FC<IProps> = (props) => {
   const { open, setOpen } = props;
   const [form] = Form.useForm();
+  const [rightData, setRightData] = useState<any>([]);
+  const [leftSelectedRows, setLeftSelectedRows] = useState<any[]>([]);
+  const [rightSelectedRows, setRightSelectedRows] = useState<any[]>([]);
 
-  const [expandedKeys, setExpandedKeys] = useState<React.Key[]>([
-    '0-0-0',
-    '0-0-1',
-  ]);
-  const [checkedKeys, setCheckedKeys] = useState<React.Key[]>(['0-0-0']);
-  const [selectedKeys, setSelectedKeys] = useState<React.Key[]>([]);
-  const [autoExpandParent, setAutoExpandParent] = useState<boolean>(true);
-
-  const treeData: DataNode[] = [
-    // {
-    //   title: '全选',
-    //   key: '0',
-    //   children
-    // },
-    {
-      title: '0-0',
-      key: '0-0',
-      children: [
-        {
-          title: '0-0-0',
-          key: '0-0-0',
-          children: [
-            { title: '0-0-0-0', key: '0-0-0-0' },
-            { title: '0-0-0-1', key: '0-0-0-1' },
-            { title: '0-0-0-2', key: '0-0-0-2' },
-          ],
-        },
-        {
-          title: '0-0-1',
-          key: '0-0-1',
-          children: [
-            { title: '0-0-1-0', key: '0-0-1-0' },
-            { title: '0-0-1-1', key: '0-0-1-1' },
-            { title: '0-0-1-2', key: '0-0-1-2' },
-          ],
-        },
-        {
-          title: '0-0-2',
-          key: '0-0-2',
-        },
-      ],
-    },
-    {
-      title: '0-1',
-      key: '0-1',
-      children: [
-        { title: '0-1-0-0', key: '0-1-0-0' },
-        { title: '0-1-0-1', key: '0-1-0-1' },
-        { title: '0-1-0-2', key: '0-1-0-2' },
-      ],
-    },
-    {
-      title: '0-2',
-      key: '0-2',
-    },
-  ];
-
-  const onExpand = (expandedKeysValue: React.Key[]) => {
-    console.log('onExpand', expandedKeysValue);
-    // if not set autoExpandParent to false, if children expanded, parent can not collapse.
-    // or, you can remove all expanded children keys.
-    setExpandedKeys(expandedKeysValue);
-    setAutoExpandParent(false);
-  };
-
-  const onCheck = (checkedKeysValue: React.Key[]) => {
-    console.log('onCheck', checkedKeysValue);
-    setCheckedKeys(checkedKeysValue);
-  };
-
-  const onSelect = (selectedKeysValue: React.Key[], info: any) => {
-    console.log('onSelect', info);
-    setSelectedKeys(selectedKeysValue);
-  };
   const handleClose = () => {
     setOpen(false);
   };
+
+  const leftData = [
+    { hostname: '11', ip: '22', id: 1 },
+    { hostname: '112', ip: '22', id: 2 },
+    { hostname: '113', ip: '22', id: 3 },
+    { hostname: '114', ip: '22', id: 4 },
+    { hostname: '11', ip: '22', id: 11 },
+    { hostname: '112', ip: '22', id: 22 },
+    { hostname: '113', ip: '22', id: 33 },
+    { hostname: '114', ip: '22', id: 44 },
+    { hostname: '11', ip: '22', id: 15 },
+    { hostname: '112', ip: '22', id: 26 },
+    { hostname: '113', ip: '22', id: 37 },
+    { hostname: '114', ip: '22', id: 48 },
+  ];
+
+  const columns = [
+    {
+      title: 'hostname',
+      dataIndex: 'hostname',
+    },
+    {
+      title: 'IP',
+      dataIndex: 'ip',
+    },
+  ];
+
+  const options = [
+    {
+      value: 'appName',
+      label: '应用名称',
+    },
+    {
+      value: 'k8s',
+      label: 'K8s Label',
+    },
+    {
+      value: 'hostname',
+      label: 'Hostname',
+    },
+    {
+      value: 'ip',
+      label: 'IP',
+    },
+  ];
+
   return (
     <Drawer
       open={open}
@@ -99,7 +74,7 @@ const InstallAgentModal: React.FC<IProps> = (props) => {
       width={960}
       bodyStyle={{ paddingTop: 0 }}
       footer={
-        <div>
+        <div style={{ textAlign: 'right' }}>
           <Space>
             <Button onClick={handleClose}>取消</Button>
             <Button type="primary">确定</Button>
@@ -109,57 +84,85 @@ const InstallAgentModal: React.FC<IProps> = (props) => {
     >
       <InstallAgentContainer>
         <Form form={form}>
+          <div className="title">选择机器</div>
           <div className="content">
             <div className="left">
-              <Input.Group compact>
-                <Select defaultValue="app" style={{ width: '120px' }}>
-                  <Select.Option value="app">应用名称</Select.Option>
-                  <Select.Option value="k8s">K8s Label</Select.Option>
-                  <Select.Option value="hostName">HostName</Select.Option>
-                  <Select.Option value="ip">IP</Select.Option>
-                </Select>
-                <Input
-                  style={{ width: '320px' }}
-                  onPressEnter={() => {}}
-                  suffix={
-                    <SearchOutlined
-                      style={{ cursor: 'pointer' }}
-                      onClick={() => {}}
+              <div className="header">机器列表</div>
+              <div className="search">
+                <Space.Compact>
+                  <Form.Item name={'type'}>
+                    <Select defaultValue="appName" options={options} />
+                  </Form.Item>
+                  <Form.Item name={'name'}>
+                    <Input
+                      placeholder="请输入"
+                      suffix={
+                        <SearchOutlined
+                          onClick={() => {
+                            // handleSearch();
+                          }}
+                        />
+                      }
                     />
-                  }
+                  </Form.Item>
+                </Space.Compact>
+              </div>
+              <div className="table">
+                <Table
+                  columns={columns}
+                  dataSource={leftData}
+                  rowKey={'id'}
+                  pagination={false}
+                  rowSelection={{
+                    selectedRowKeys: leftSelectedRows.map((item) => item.id),
+                    onChange: (rowKeys: any[], rows: any[]) => {
+                      setLeftSelectedRows(rows);
+                    },
+                  }}
+                  scroll={{ y: 600 }}
                 />
-              </Input.Group>
-
-              <Tree
-                checkable
-                onExpand={onExpand}
-                expandedKeys={expandedKeys}
-                autoExpandParent={autoExpandParent}
-                onCheck={onCheck}
-                checkedKeys={checkedKeys}
-                onSelect={onSelect}
-                selectedKeys={selectedKeys}
-                treeData={treeData}
-                titleRender={(nodeData: any) => {
-                  console.log(nodeData, 'nodeData====');
-                  const selectCount = checkedKeys.filter((item: string) => {
-                    return item.includes(nodeData.key)
-                  })?.length
-                  console.log(selectCount, 'selectCount')
-                  return (
-                    <div>
-                      {nodeData.title}
-                      {nodeData.children?.length > 0 && <span>({9}/{nodeData.children})</span>}
-                    </div>
-                  );
-                }}
-              />
+              </div>
             </div>
-            <div></div>
+            <div className="transfer">
+              <Button
+                disabled={leftSelectedRows?.length === 0}
+                type={leftSelectedRows?.length > 0 ? 'primary' : 'default'}
+                onClick={() => {
+                  if (leftSelectedRows?.length > 0) {
+                    const rightKeys = rightData?.map((item) => item.id);
+                    const newList = leftSelectedRows?.filter(
+                      (item) => !rightKeys?.includes(item.id),
+                    );
+                    setRightData([...rightData, ...newList]);
+                    setRightSelectedRows([...rightSelectedRows, ...newList]);
+                  }
+                }}
+              >
+                <RightOutlined />
+              </Button>
+            </div>
+            <div className="right">
+              <div className="header">
+                已选机器（{rightSelectedRows.length}）
+              </div>
+              <div className="table">
+                <Table
+                  columns={columns}
+                  dataSource={rightData}
+                  rowKey={'id'}
+                  pagination={false}
+                  rowSelection={{
+                    selectedRowKeys: rightSelectedRows.map((item) => item.id),
+                    onChange: (rowKeys: any[], rows: any[]) => {
+                      setRightSelectedRows(rows);
+                    },
+                  }}
+                  scroll={{ y: 400 }}
+                />
+              </div>
+              <div style={{ height: '32px' }}></div>
+            </div>
           </div>
-          {/* <Form.Item name={'name'} label="名称">
-          <Input placeholder="请输入" />
-        </Form.Item> */}
         </Form>
       </InstallAgentContainer>
     </Drawer>

@@ -8,7 +8,16 @@ import {
 } from '@/services/chaosmeta/UserController';
 import cookie from '@/utils/cookie';
 import { history, useModel, useRequest } from '@umijs/max';
-import { Button, Dropdown, Form, Input, Modal, Space, message } from 'antd';
+import {
+  Button,
+  Divider,
+  Dropdown,
+  Form,
+  Input,
+  Modal,
+  Space,
+  message,
+} from 'antd';
 import CryptoJS from 'crypto-js';
 import React, { useEffect, useState } from 'react';
 
@@ -43,10 +52,12 @@ const UserRightArea: React.FC<any> = () => {
     {
       label: (
         <div
+          style={{ color: '#FF4D4F' }}
           onClick={() => {
             cookie.clearToken('TOKEN');
             cookie.clearToken('REFRESH_TOKEN');
             localStorage.removeItem('userName');
+            sessionStorage.clear();
             history.push('/login');
           }}
         >
@@ -66,6 +77,7 @@ const UserRightArea: React.FC<any> = () => {
     onSuccess: (res) => {
       if (res?.code === 200) {
         message.success('密码修改成功，即将跳转到登录页面重新登录');
+
         setTimeout(() => {
           cookie.clearToken('TOKEN');
           cookie.clearToken('REFRESH_TOKEN');
@@ -81,9 +93,12 @@ const UserRightArea: React.FC<any> = () => {
    */
   const submit = () => {
     form.validateFields().then((values) => {
-      const { password } = values;
-      console.log(values, 'values===');
-      handleUpdatePassword.run({ password: CryptoJS.MD5(password).toString() });
+      const { password, oldPassword } = values;
+      const params = {
+        password: CryptoJS.MD5(password).toString(),
+        oldPassword: CryptoJS.MD5(oldPassword).toString(),
+      };
+      handleUpdatePassword.run(params);
     });
   };
 
@@ -104,8 +119,8 @@ const UserRightArea: React.FC<any> = () => {
       </Dropdown>
       {passwordOpen && (
         <Modal
+          title="修改密码"
           open={passwordOpen}
-          closeIcon={false}
           onCancel={() => {
             setPasswordOpen(false);
           }}
@@ -134,12 +149,22 @@ const UserRightArea: React.FC<any> = () => {
             </>
           }
         >
-          <Form form={form}>
+          <Divider />
+          <Form form={form} layout="vertical">
+            <Form.Item
+              name={'oldPassword'}
+              rules={[{ required: true, message: '请输入原密码' }]}
+              label="原密码"
+            >
+              <Input.Password placeholder="请输入原密码" />
+            </Form.Item>
             <Form.Item
               name={'password'}
               rules={[{ required: true, message: '请输入密码' }]}
+              help="密码8-16位中英文大小写及下划线等特殊字符"
+              label="新密码"
             >
-              <Input.Password placeholder="密码" />
+              <Input.Password placeholder="请输入新密码" />
             </Form.Item>
             <Form.Item
               name={'confirmPassword'}
@@ -157,8 +182,9 @@ const UserRightArea: React.FC<any> = () => {
                   },
                 },
               ]}
+              label="确认新密码"
             >
-              <Input.Password placeholder="确认密码" />
+              <Input.Password placeholder="请输入确认新密码" />
             </Form.Item>
           </Form>
         </Modal>

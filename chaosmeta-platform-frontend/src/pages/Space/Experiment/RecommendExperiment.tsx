@@ -2,6 +2,7 @@ import { LightArea } from '@/components/CommonStyle';
 import { InfoCircleOutlined } from '@ant-design/icons';
 import { Col, Row, Tag } from 'antd';
 import React, { useState } from 'react';
+import { RecommendContainer } from './style';
 /**
  * 推荐实验
  * @returns
@@ -94,100 +95,102 @@ const RecommendExperiment: React.FC<unknown> = () => {
     return name;
   };
   return (
-    <LightArea>
-      <div className="recommend">
-        <div className="left">
-          <div>
-            <Row className="tab">
-              {tabItems?.map((item, index) => {
+    <RecommendContainer>
+      <LightArea>
+        <div className="recommend">
+          <div className="left">
+            <div>
+              <Row className="tab">
+                {tabItems?.map((item, index) => {
+                  return (
+                    <>
+                      <Col
+                        key={item.key}
+                        className={groupItemClass(index, item.key)}
+                        span={8}
+                        onClick={() => {
+                          setGroupKey(item.key);
+                        }}
+                      >
+                        <span className={groupContentClass(index)}>
+                          {item.label}
+                        </span>
+                      </Col>
+                    </>
+                  );
+                })}
+              </Row>
+            </div>
+            <div className="group">
+              {tempList?.map((item) => {
                 return (
-                  <>
-                    <Col
-                      key={item.key}
-                      className={groupItemClass(index, item.key)}
-                      span={8}
-                      onClick={() => {
-                        setGroupKey(item.key);
-                      }}
-                    >
-                      <span className={groupContentClass(index)}>
-                        {item.label}
-                      </span>
-                    </Col>
-                  </>
+                  <div
+                    key={item.key}
+                    onClick={() => {
+                      setTempKey(item.key);
+                    }}
+                    className={
+                      tempKey === item.key
+                        ? 'group-item-active group-item'
+                        : 'group-item'
+                    }
+                  >
+                    {item.label}
+                  </div>
                 );
               })}
-            </Row>
+            </div>
           </div>
-          <div className="group">
-            {tempList?.map((item) => {
-              return (
-                <div
-                  key={item.key}
-                  onClick={() => {
-                    setTempKey(item.key);
-                  }}
-                  className={
-                    tempKey === item.key
-                      ? 'group-item-active group-item'
-                      : 'group-item'
-                  }
-                >
-                  {item.label}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-        <div className="right">
-          <div className="tip">
-            <InfoCircleOutlined
-              style={{ color: '#1677ff', paddingRight: '8px' }}
-            />
-            搜索“{'xxx'}”，
-            {/* <span>未找到相关结果！</span> */}
-            <span>共为您找到以下相关结果 {'xx'} 条</span>
-          </div>
-          {/* <div style={{marginTop: '160px'}}>
+          <div className="right">
+            <div className="tip">
+              <InfoCircleOutlined
+                style={{ color: '#1677ff', paddingRight: '8px' }}
+              />
+              搜索“{'xxx'}”，
+              {/* <span>未找到相关结果！</span> */}
+              <span>共为您找到以下相关结果 {'xx'} 条</span>
+            </div>
+            {/* <div style={{marginTop: '160px'}}>
             <Empty
               description="暂无相关实验模版，试试换一下关键词哦！"
               image="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*IVXqQJVKr04AAAAAAAAAAAAADmKmAQ/original"
             />
           </div> */}
-          <div>
-            <div className="title">Node</div>
-            <Row gutter={[24, 24]}>
-              {result?.map((item, index) => {
-                return (
-                  <Col key={index} span={8}>
-                    <div className="result-item">
-                      <img
-                        style={{ width: '100%' }}
-                        src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*fYqDRaaaj7gAAAAAAAAAAAAADmKmAQ/original"
-                        alt=""
-                      />
-                      <div className="introduce">
+            <div>
+              <div className="title">Node</div>
+              <Row gutter={[24, 24]}>
+                {result?.map((item, index) => {
+                  return (
+                    <Col key={index} span={8}>
+                      <div className="result-item">
                         <img
-                          src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*8jDfQoFH9NcAAAAAAAAAAAAADmKmAQ/original"
+                          style={{ width: '100%' }}
+                          src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*fYqDRaaaj7gAAAAAAAAAAAAADmKmAQ/original"
                           alt=""
                         />
-                        <div>
-                          <div>容器-docker-service-kill</div>
+                        <div className="introduce">
+                          <img
+                            src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*8jDfQoFH9NcAAAAAAAAAAAAADmKmAQ/original"
+                            alt=""
+                          />
                           <div>
-                            <Tag>我是标签</Tag>
-                            <Tag>标签</Tag>
+                            <div>容器-docker-service-kill</div>
+                            <div>
+                              <Tag>我是标签</Tag>
+                              <Tag>标签</Tag>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </Col>
-                );
-              })}
-            </Row>
+                    </Col>
+                  );
+                })}
+              </Row>
+            </div>
           </div>
         </div>
-      </div>
-    </LightArea>
+      </LightArea>
+    </RecommendContainer>
   );
 };
 

@@ -44,6 +44,30 @@ export async function querySpaceList(
 }
 
 /**
+ * 获取空间列表带分类
+ * @param params
+ * @param options
+ * @returns
+ */
+export async function queryClassSpaceList(
+  params?: {
+    sort?: string;
+    name?: string;
+    creator?: string;
+    page?: number;
+    page_size?: number;
+    namespaceClass?: string;
+  },
+  options?: { [key: string]: any },
+) {
+  return request<any>(`/chaosmeta/api/v1/namespaces/query`, {
+    method: 'GET',
+    params,
+    ...(options || {}),
+  });
+}
+
+/**
  * 修改空间基础信息
  * @param body
  * @param options
@@ -132,7 +156,7 @@ export async function querySpaceUserList(
  */
 export async function spaceAddUser(
   body: {
-    id: number;
+    id: number | string;
     users: API.Query_AddUser[];
   },
   options?: { [key: string]: any },
@@ -194,20 +218,21 @@ export async function spaceBatchDeleteUser(
  */
 export async function spaceModifyUserPermission(
   body: {
-    id: number;
-    users_ids: number[];
-    permission: number;
+    id: number | string;
+    user_ids: number[];
+    permission: number | string;
   },
   options?: { [key: string]: any },
 ) {
-  return request<any>(
-    `/chaosmeta/api/v1/namespaces/${body.id}/users/permission`,
-    {
-      method: 'POST',
-      data: body,
-      ...(options || {}),
+  const { id, user_ids, permission } = body;
+  return request<any>(`/chaosmeta/api/v1/namespaces/${id}/users/permission`, {
+    method: 'POST',
+    data: {
+      permission,
+      user_ids,
     },
-  );
+    ...(options || {}),
+  });
 }
 
 /**
@@ -321,6 +346,7 @@ export async function querySpaceTagList(
     name?: string;
     page?: number;
     pageSize?: number;
+    creator?: string;
   },
   options?: { [key: string]: any },
 ) {
@@ -339,14 +365,40 @@ export async function querySpaceTagList(
  */
 export async function spaceAddTag(
   body: {
-    id: number;
+    id: number | string;
+    name: string;
+    color: string;
+  },
+  options?: { [key: string]: any },
+) {
+  const { id, name, color } = body;
+  return request<any>(`/chaosmeta/api/v1/namespaces/${id}/labels`, {
+    method: 'POST',
+    data: {
+      name,
+      color,
+    },
+    ...(options || {}),
+  });
+}
+
+/**
+ * 查询标签信息，可用于校验标签是否已添加
+ * @param params
+ * @param options
+ * @returns
+ */
+export async function querySpaceTagName(
+  params: {
+    ns_id: number | string;
     name: string;
   },
   options?: { [key: string]: any },
 ) {
-  return request<any>(`/chaosmeta/api/v1/namespaces/${body.id}/labels`, {
-    method: 'POST',
-    data: body,
+  const { ns_id, name } = params;
+  return request<any>(`/chaosmeta/api/v1/namespaces/${ns_id}/labels/${name}`, {
+    method: 'GET',
+    params,
     ...(options || {}),
   });
 }
@@ -360,12 +412,12 @@ export async function spaceAddTag(
 export async function spaceDeleteTag(
   params: {
     id: number;
-    ns_id: number;
+    ns_id: number | string;
   },
   options?: { [key: string]: any },
 ) {
   const { id, ns_id } = params;
-  return request<any>(`/chaosmeta/api/v1/namespaces/${ns_id}labels/${id}`, {
+  return request<any>(`/chaosmeta/api/v1/namespaces/${ns_id}/labels/${id}`, {
     method: 'DELETE',
     params: { ...params },
     ...(options || {}),

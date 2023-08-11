@@ -35,6 +35,9 @@ export const Container = styled.div`
       color: rgba(0, 0, 0, 0.26);
     }
   }
+`;
+
+export const RecommendContainer = styled.div`
   /* 推荐实验 */
   .recommend {
     background-color: #fff;

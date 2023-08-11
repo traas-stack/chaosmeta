@@ -1,6 +1,7 @@
-import EmptyState from '@/components/EmptyState';
+import EmptyCustom from '@/components/EmptyCustom';
 import { RightOutlined } from '@ant-design/icons';
-import { Card, Space, Table, Tabs } from 'antd';
+import { history } from '@umijs/max';
+import { Button, Card, Space, Table, Tabs } from 'antd';
 
 export default () => {
   const operations = (
@@ -79,19 +80,37 @@ export default () => {
   const EditExperimental = () => {
     return (
       <Card>
-        {/* <EmptyState
-          desc="当前页面暂无最近编辑的实验"
-          title="您可以前往实验列表编辑实验"
-          btnText="前往实验列表"
-        /> */}
         <Table
+          locale={{
+            emptyText: (
+              <EmptyCustom
+                desc="当前页面暂无最近编辑的实验"
+                title="您可以前往实验列表编辑实验"
+                // btnText="前往实验列表"
+                // btnOperate={() => {
+                //   history?.push('/space/experiment');
+                // }}
+                btns={
+                  <Button
+                    type="primary"
+                    onClick={() => {
+                      history?.push('/space/experiment');
+                    }}
+                  >
+                    前往实验列表
+                  </Button>
+                }
+              />
+            ),
+          }}
           showHeader={false}
           columns={columns}
           rowKey={'id'}
-          dataSource={[
-            { name: '999', id: '1' },
-            { name: '999', id: '5' },
-          ]}
+          // dataSource={[
+          //   { name: '999', id: '1' },
+          //   { name: '999', id: '5' },
+          // ]}
+          dataSource={[]}
           pagination={false}
           scroll={{ x: 760 }}
         />

@@ -1,3 +1,4 @@
+import { useParamChange } from '@/utils/useParamChange';
 import { PageContainer } from '@ant-design/pro-components';
 import { history } from '@umijs/max';
 import { Tabs } from 'antd';
@@ -11,6 +12,7 @@ import { Container } from './style';
 
 const SpaceSetting: React.FC<unknown> = () => {
   const [activeKey, setActiveKey] = useState<string>('basic');
+  const tabKeyChange = useParamChange('tabKey');
   const tabItems = [
     {
       label: '基本信息',
@@ -38,7 +40,8 @@ const SpaceSetting: React.FC<unknown> = () => {
     if (history.location.query.tabKey) {
       setActiveKey(history.location.query.tabKey as string);
     }
-  }, []);
+  }, [tabKeyChange]);
+
   return (
     <PageContainer title="空间设置">
       <Container>

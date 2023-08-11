@@ -1,6 +1,7 @@
 import { querySpaceList } from '@/services/chaosmeta/SpaceController';
+import { getSpaceUserList } from '@/services/chaosmeta/UserController';
 import { DownOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
-import { history, useRequest } from '@umijs/max';
+import { history, useModel, useRequest } from '@umijs/max';
 import { Dropdown, Empty, Input } from 'antd';
 import React, { useEffect, useState } from 'react';
 import AddSpaceDrawer from '../AddSpaceDrawer';
@@ -10,6 +11,25 @@ export default () => {
   const [curSpace, setCurSpace] = useState<string[]>(['1']);
   const [addSpaceOpen, setAddSpaceOpen] = useState<boolean>(false);
   const [spaceList, setSpaceList] = useState<any>([]);
+  const { userInfo, setSpacePermission } = useModel('global');
+
+  /**
+   * 根据成员名称和空间id获取成员空间内权限信息
+   */
+  const getUserSpaceAuth = useRequest(getSpaceUserList, {
+    manual: true,
+    formatResult: (res) => res,
+    onSuccess: (res) => {
+      if (res.code === 200) {
+        // 存储用户空间权限
+        const curUserName = userInfo?.name || localStorage.getItem('userName');
+        const curUserInfo = res?.data?.users?.filter(
+          (item: { name: string }) => item.name === curUserName,
+        )[0];
+        setSpacePermission(curUserInfo?.permission);
+      }
+    },
+  });
 
   /**
    * 更新地址栏空间id，并保存
@@ -63,6 +83,7 @@ export default () => {
   useEffect(() => {
     getSpaceList?.run({ page: 1, page_size: 10 });
   }, []);
+
   useEffect(() => {
     // 地址栏中存在空间id，需要将空间列表选项更新，并保存当前id
     if (history.location.query.spaceId) {
@@ -71,6 +92,10 @@ export default () => {
         'spaceId',
         history.location.query.spaceId as string,
       );
+      getUserSpaceAuth?.run({
+        id: history.location.query.spaceId,
+        name: userInfo?.name || localStorage.getItem('userName'),
+      });
     }
   }, [history.location.query.spaceId]);
 

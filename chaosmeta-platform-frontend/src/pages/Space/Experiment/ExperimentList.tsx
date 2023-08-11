@@ -1,5 +1,8 @@
 import { LightArea } from '@/components/CommonStyle';
+import EmptyCustom from '@/components/EmptyCustom';
+import TimeTypeRangeSelect from '@/components/Select/TimeTypeRangeSelect';
 import { QuestionCircleOutlined } from '@ant-design/icons';
+import { history } from '@umijs/max';
 import {
   Badge,
   Button,
@@ -8,6 +11,7 @@ import {
   Input,
   Popover,
   Row,
+  Select,
   Space,
   Table,
   Tag,
@@ -15,12 +19,28 @@ import {
 } from 'antd';
 import { ColumnsType } from 'antd/es/table';
 import React from 'react';
+
 /**
  * 实验列表
  * @returns
  */
 const ExperimentList: React.FC<unknown> = () => {
   const [form] = Form.useForm();
+
+  const triggerMode = [
+    {
+      text: '手动',
+      value: 'shoudong',
+    },
+    {
+      text: '单次定时',
+      value: 'danci',
+    },
+    {
+      text: '周期性',
+      value: 'zhouqi',
+    },
+  ];
 
   const columns: ColumnsType<any> = [
     {
@@ -103,16 +123,7 @@ const ExperimentList: React.FC<unknown> = () => {
       title: '触发方式',
       width: 120,
       dataIndex: 'chuf',
-      filters: [
-        {
-          text: '手动',
-          value: 'shoudong',
-        },
-        {
-          text: '周期性',
-          value: 'zhouqi',
-        },
-      ],
+      filters: triggerMode,
       render: () => {
         return (
           <div>
@@ -160,7 +171,7 @@ const ExperimentList: React.FC<unknown> = () => {
     <div className="experiment-list ">
       <LightArea className="search">
         <Form form={form} labelCol={{ span: 6 }}>
-          <Row>
+          <Row gutter={16} style={{ whiteSpace: 'nowrap', overflow: 'hidden' }}>
             <Col span={8}>
               <Form.Item name={'name'} label="名称">
                 <Input placeholder="请输入" />
@@ -173,15 +184,19 @@ const ExperimentList: React.FC<unknown> = () => {
             </Col>
             <Col span={8}>
               <Form.Item name={'type'} label="触发方式">
-                <Input placeholder="请输入" />
+                <Select placeholder="请选择">
+                  {triggerMode?.map((item) => {
+                    return (
+                      <Select.Option key={item.value} value={item.value}>
+                        {item.text}
+                      </Select.Option>
+                    );
+                  })}
+                </Select>
               </Form.Item>
             </Col>
-            <Col span={8}>
-              <Form.Item name={'time'} label="时间类型">
-                <Input placeholder="请输入" />
-              </Form.Item>
-            </Col>
-            <Col style={{ textAlign: 'right' }} span={16}>
+            <TimeTypeRangeSelect />
+            <Col style={{ textAlign: 'right', flex: 1 }}>
               <Space>
                 <Button>重置</Button>
                 <Button type="primary">查询</Button>
@@ -195,15 +210,60 @@ const ExperimentList: React.FC<unknown> = () => {
           <div className="area-operate">
             <div className="title">成员列表</div>
             <Space>
-              <Button type="primary" onClick={() => {}}>
+              <Button
+                type="primary"
+                onClick={() => {
+                  history.push('/space/experiment/choose');
+                }}
+              >
                 创建实验
               </Button>
             </Space>
           </div>
           <Table
             columns={columns}
+            locale={{
+              emptyText: (
+                <EmptyCustom
+                  desc="请先创建实验，您可选择自己创建实验也可以通过推荐实验来快速构建实验场景，来验证应用系统的可靠性。"
+                  topTitle="当前空间还没有实验数据"
+                  btns={
+                    <Space>
+                      <Button
+                        type="primary"
+                        onClick={() => {
+                          history.push({
+                            pathname: '/space/setting',
+                            query: {
+                              tabKey: 'user',
+                              spaceId: history?.location?.query?.spaceId,
+                            },
+                          });
+                        }}
+                      >
+                        创建实验
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          history.push({
+                            pathname: '/space/setting',
+                            query: {
+                              tabKey: 'user',
+                              spaceId: history?.location?.query?.spaceId,
+                            },
+                          });
+                        }}
+                      >
+                        推荐实验
+                      </Button>
+                    </Space>
+                  }
+                />
+              ),
+            }}
             rowKey={'id'}
-            dataSource={[{ id: '1', account: 'hlt', auth: 'admain' }]}
+            // dataSource={[{ id: '1', account: 'hlt', auth: 'admain' }]}
+            dataSource={[]}
             pagination={{
               showQuickJumper: true,
               total: 200,

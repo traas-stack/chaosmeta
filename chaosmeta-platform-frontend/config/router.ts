@@ -11,6 +11,12 @@ export default [
     layout: false,
   },
   {
+    name: '创建实验',
+    path: '/space/experiment/add',
+    component: './Space/AddExperiment',
+    layout: false,
+  },
+  {
     name: '空间',
     path: '/space',
     hideInBreadcrumb: true,
@@ -31,6 +37,19 @@ export default [
         component: './Space/Experiment',
         icon: 'https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*LTdSQbHlFP8AAAAAAAAAAAAADmKmAQ/original',
       },
+      {
+        name: '创建实验',
+        path: '/space/experiment/choose',
+        component: './Space/ChooseExperiment',
+        hideInMenu: true,
+      },
+      // {
+      //   name: '创建实验',
+      //   path: '/space/experiment/add',
+      //   component: './Space/AddExperiment',
+      //   hideInMenu: true,
+      //   // layout: false,
+      // },
       {
         name: '实验结果',
         path: '/space/result',
@@ -58,19 +77,16 @@ export default [
         name: '账号管理',
         path: '/setting/account',
         component: './GlobalSetting/Account',
-        icon: 'https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*ySleT74WnD4AAAAAAAAAAAAADmKmAQ/original',
       },
       {
         name: '空间管理',
         path: '/setting/space',
         component: './GlobalSetting/Space',
-        icon: 'https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*ySleT74WnD4AAAAAAAAAAAAADmKmAQ/original',
       },
       {
         name: 'Agent管理',
         path: '/setting/agent',
         component: './GlobalSetting/Agent',
-        icon: 'https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*ySleT74WnD4AAAAAAAAAAAAADmKmAQ/original',
       },
     ],
   },

@@ -1,51 +1,18 @@
-import {
-  EllipsisOutlined,
-  ExclamationCircleFilled,
-  SearchOutlined,
-} from '@ant-design/icons';
-import {
-  Alert,
-  Col,
-  Dropdown,
-  Input,
-  Modal,
-  Pagination,
-  Row,
-  Space,
-  Tooltip,
-  message,
-} from 'antd';
+import { formatTime } from '@/utils/format';
+import { EllipsisOutlined } from '@ant-design/icons';
+import { Col, Dropdown, Row, Tooltip } from 'antd';
 import React from 'react';
 import { SpaceCard } from './style';
 
 interface IProps {
-  listType: 'my' | 'all';
-  title: string;
+  pageData: any;
+  handleDelete: (id: number) => void;
 }
 
 const SpaceList: React.FC<IProps> = (props) => {
-  const { title, listType } = props;
+  const { pageData, handleDelete } = props;
 
-  /**
-   * 删除空间
-   */
-  const handleDeleteAccount = () => {
-    console.log('====');
-    Modal.confirm({
-      title: '确认要删除当前所选账号吗？',
-      icon: <ExclamationCircleFilled />,
-      content: '删除账号用户将无法登录平台，要再次使用只能重新注册！',
-      onOk() {
-        return new Promise((resolve, reject) => {
-          setTimeout(Math.random() > 0.5 ? resolve : reject, 1000);
-          message.success('您已成功删除所选成员');
-        }).catch(() => console.log('Oops errors!'));
-      },
-      onCancel() {},
-    });
-  };
-
-  const items = [
+  const items = (spaceId: number) => [
     {
       label: <div>空间设置</div>,
       key: 'spaceSetting',
@@ -54,11 +21,11 @@ const SpaceList: React.FC<IProps> = (props) => {
       label: (
         <div
           onClick={() => {
-            console.log('click');
-            handleDeleteAccount();
+            console.log(spaceId, 'spaceId');
+            handleDelete(spaceId);
           }}
         >
-          删除1
+          删除
         </div>
       ),
       key: 'delete',
@@ -66,98 +33,76 @@ const SpaceList: React.FC<IProps> = (props) => {
   ];
 
   return (
-    <div className="space-list">
-      <div className="area-operate">
-        <div className="title">{title}</div>
-        <Space>
-          <Input
-            placeholder="请输入空间名称、空间成员"
-            suffix={<SearchOutlined onClick={() => {}} />}
-          />
-        </Space>
-      </div>
-      {listType === 'all' && (
-        <Alert
-          message="可联系空间内具有读写权限的成员添加为空间成员"
-          type="info"
-          showIcon
-          closable
-        />
-      )}
-      <div>
-        <Row gutter={[16, 16]}>
-          {[1, 2, 3, 4, 5].map((item, index) => {
-            return (
-              <Col span={6} key={index}>
-                <SpaceCard>
-                  <div className="header">
+    <Row gutter={[16, 16]}>
+      {pageData?.namespaces?.map((item: any, index: number) => {
+        return (
+          <Col span={6} key={index}>
+            <SpaceCard style={{ background: 'rgba(0,0,0,0.05)' }}>
+              <div className="header">
+                <div>
+                  {/* {listType === 'all' ? (
+                <Tooltip title="未加入">
+                  <img src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*5OzsS5d_il8AAAAAAAAAAAAADmKmAQ/original" />
+                </Tooltip>
+              ) : (
+                <img src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*3rVvS7yMa38AAAAAAAAAAAAADmKmAQ/original" />
+              )} */}
+                  <img src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*3rVvS7yMa38AAAAAAAAAAAAADmKmAQ/original" />
+                  <Tooltip title="你没有该空间的权限，请联系读写成员">
                     <div>
-                      {listType === 'all' ? (
-                        <Tooltip title="未加入">
-                          <img src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*5OzsS5d_il8AAAAAAAAAAAAADmKmAQ/original" />
-                        </Tooltip>
-                      ) : (
-                        <img src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*3rVvS7yMa38AAAAAAAAAAAAADmKmAQ/original" />
-                      )}
-                      <div>
-                        <div className="title">工作空间</div>
-                        <span className="time">2022-01-01 10:11:22</span>
-                      </div>
+                      <div className="title">{item.namespaceInfo?.name}</div>
+                      <span className="time">
+                        {formatTime(item?.namespaceInfo?.create_time)}
+                      </span>
                     </div>
-                    <Dropdown
-                      // open
-                      disabled
-                      placement="bottomRight"
-                      menu={{
-                        items,
-                      }}
-                    >
-                      <Tooltip title="您不具有该空间的读写权限，暂无法使用此功能">
-                        <EllipsisOutlined />
-                      </Tooltip>
-                    </Dropdown>
-                  </div>
-                  <div className="desc">
-                    <div>描述：</div>
-                    <span>
-                      对这个空间进行简短的描述，Lorem ipsum dolor sit, amet
-                      consectetur adipisicing elit. Iste consequuntur non,
-                      eligendi exercitationem, nihil ex architecto ea, explicabo
-                      tenetur a corporis ipsum cupiditate. Vero modi quae saepe
-                      iure dolor recusandae.
-                    </span>
-                  </div>
-                  <div className="footer">
-                    <div>
-                      <Tooltip title="具有读写权限的成员">
-                        <img src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*_TiCQ6O9B_oAAAAAAAAAAAAADmKmAQ/original" />
-                        <span>张三、李四</span>
-                      </Tooltip>
-                    </div>
-                    <div>
-                      <img src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*lps4TYQ9p4MAAAAAAAAAAAAADmKmAQ/original" />
-                      <span>12</span>
-                    </div>
-                    <div>
-                      <img src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*GLyEQrfTN68AAAAAAAAAAAAADmKmAQ/original" />
-                      <span>13</span>
-                    </div>
-                  </div>
-                </SpaceCard>
-              </Col>
-            );
-          })}
-        </Row>
-      </div>
-      <Pagination
-        showQuickJumper
-        defaultCurrent={2}
-        total={500}
-        onChange={(page, pageSize) => {
-          console.log(page, pageSize, 'page, pageSize');
-        }}
-      />
-    </div>
+                  </Tooltip>
+                </div>
+                <Dropdown
+                  // open
+                  // disabled
+                  placement="bottomRight"
+                  menu={{
+                    items: items(item.namespaceInfo?.namespaceInfo?.id),
+                  }}
+                >
+                  <Tooltip title="您不具有该空间的读写权限，暂无法使用此功能">
+                    <EllipsisOutlined />
+                  </Tooltip>
+                </Dropdown>
+              </div>
+              <div className="desc">
+                <div>描述：</div>
+                <Tooltip title="haoduohaoduo">
+                  <span>{item?.namespaceInfo?.description}</span>
+                </Tooltip>
+              </div>
+              <div className="footer">
+                <div>
+                  <Tooltip title="具有读写权限的成员">
+                    <img src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*_TiCQ6O9B_oAAAAAAAAAAAAADmKmAQ/original" />
+                    <span>张三、李四</span>
+                  </Tooltip>
+                </div>
+
+                <div>
+                  <Tooltip title="实验数量">
+                    <img src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*lps4TYQ9p4MAAAAAAAAAAAAADmKmAQ/original" />
+                    <span>12</span>
+                  </Tooltip>
+                </div>
+
+                <div>
+                  <Tooltip title="空间成员">
+                    <img src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*GLyEQrfTN68AAAAAAAAAAAAADmKmAQ/original" />
+                    <span>13</span>
+                  </Tooltip>
+                </div>
+              </div>
+            </SpaceCard>
+          </Col>
+        );
+      })}
+    </Row>
   );
 };
 

@@ -9,6 +9,7 @@ import { ExclamationCircleFilled, SearchOutlined } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
 import { useModel, useRequest } from '@umijs/max';
 import {
+  Alert,
   Button,
   Form,
   Input,
@@ -35,6 +36,7 @@ const Account: React.FC<unknown> = () => {
   const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
   const { userInfo } = useModel('global');
   const [baseColumns, setColumns] = useState<ColumnsType<DataType>>([]);
+  const [batchState, setBatchState] = useState<boolean>(false);
 
   /**
    * 分页查询
@@ -43,7 +45,6 @@ const Account: React.FC<unknown> = () => {
     manual: true,
     formatResult: (res) => res,
     onSuccess: (res: any) => {
-      console.log(res, 'res=====999999');
       if (res?.data) {
         setPageData(res?.data);
       }
@@ -71,8 +72,6 @@ const Account: React.FC<unknown> = () => {
       pageSize,
       role,
     };
-    console.log(queryParam, 'value===');
-    // return;
     queryByPage.run(queryParam);
   };
 
@@ -161,7 +160,6 @@ const Account: React.FC<unknown> = () => {
               style={{ minWidth: '80px' }}
               optionLabelProp="label"
               onChange={(value: string) => {
-                console.log(value, 'value');
                 handleChangeRole?.run({ user_ids: [record.id], role: value });
               }}
             >
@@ -208,8 +206,6 @@ const Account: React.FC<unknown> = () => {
         onOk() {
           handleBatchDelete?.run({ user_ids: ids });
           handleSearch();
-          //   return new Promise((resolve, reject) => {
-          // }).catch(() => console.log('Oops errors!'));
         },
         onCancel() {},
       });
@@ -269,17 +265,54 @@ const Account: React.FC<unknown> = () => {
                 </Form.Item>
                 {userInfo?.role === 'admin' && (
                   <Button
-                    disabled={selectedRowKeys?.length === 0}
+                    className={batchState ? 'batch-active' : ''}
                     onClick={() => {
-                      handleDeleteAccount(selectedRowKeys);
+                      setBatchState(!batchState);
                     }}
                   >
-                    批量删除
+                    批量操作
                   </Button>
                 )}
               </Space>
             </div>
             <div className="area-content">
+              {(selectedRowKeys?.length > 0 || batchState) && (
+                <Alert
+                  message={
+                    <>
+                      已选择 <a>{selectedRowKeys.length}</a> 项
+                      <a
+                        style={{ paddingLeft: '16px' }}
+                        onClick={() => {
+                          setSelectedRowKeys([]);
+                        }}
+                      >
+                        清空
+                      </a>
+                    </>
+                  }
+                  style={{ marginBottom: '16px' }}
+                  type="info"
+                  action={
+                    <Button
+                      type="link"
+                      disabled={selectedRowKeys?.length === 0}
+                      style={{
+                        color:
+                          selectedRowKeys?.length > 0
+                            ? 'rgba(255,77,79,1)'
+                            : 'rgba(0,10,26,0.26)',
+                      }}
+                      onClick={() => {
+                        handleDeleteAccount(selectedRowKeys);
+                      }}
+                    >
+                      批量删除
+                    </Button>
+                  }
+                  showIcon
+                />
+              )}
               <Table
                 columns={baseColumns}
                 loading={queryByPage?.loading}
@@ -314,7 +347,6 @@ const Account: React.FC<unknown> = () => {
                     : false
                 }
                 onChange={(pagination: any, filters, sorter: any) => {
-                  console.log(pagination, 'filters');
                   const { current, pageSize } = pagination;
                   let sort;
                   if (sorter.order) {

@@ -70,6 +70,33 @@ export async function getUserList(
 }
 
 /**
+ * 获取用户列表带空间信息
+ * @param params
+ * @param options
+ * @returns
+ */
+export async function getSpaceUserList(
+  params?: {
+    id: number | string;
+    sort?: string;
+    name?: string;
+    role?: string;
+    page?: number;
+    page_size?: number;
+  },
+  options?: { [key: string]: any },
+) {
+  return request<any>(
+    `/chaosmeta/api/v1/users/namespace/${params?.id}/user_list`,
+    {
+      method: 'GET',
+      params,
+      ...(options || {}),
+    },
+  );
+}
+
+/**
  * 获取单个用户信息
  * @param params
  * @param options
@@ -114,6 +141,7 @@ export async function updateToken(
 export async function updatePassword(
   body?: {
     password: string;
+    oldPassword: string;
   },
   options?: { [key: string]: any },
 ) {

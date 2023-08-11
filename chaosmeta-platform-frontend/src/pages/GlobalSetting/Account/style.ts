@@ -8,9 +8,9 @@ export const Container = styled.div`
 `;
 
 export const Role = styled.div`
-  div:last-child {
+  span:last-child {
     font-size: 12px;
-    margin-top: 4px;
+    padding-left: 4px;
     color: rgba(0, 0, 0, 0.4);
   }
 `;
