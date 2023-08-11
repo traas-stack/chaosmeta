@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022-2023 Chaos Meta Authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package namespace
 
 import (
@@ -9,8 +25,8 @@ import (
 )
 
 func init() {
-	if err := config.InitConfigWithFilePath("/Users/samson/GolandProjects/chaosmeta/chaosmeta-platform/config"); err != nil {
-		panic("config init failed")
+	if err := config.InitConfigWithFilePath("/Users/samson/GolandProjects/chaosmeta/chaosmeta-platform/conf"); err != nil {
+		panic(err)
 	}
 	config.Setup()
 }
@@ -59,13 +75,44 @@ func TestNamespaceService_AddUsers(t *testing.T) {
 	}
 }
 
-func TestNamespaceService_GetUsers(t *testing.T) {
+func TestNamespaceService_GroupedUserNamespaces(t *testing.T) {
 	s := &NamespaceService{}
-	users, count, err := s.GetUsers(context.Background(), 0, "liusongshan.lss", -1, "create_time", 0, 5)
+	total, userList, err := s.GroupedUserInNamespaces(context.Background(), 1, "", "", -1, "create_time", 1, 10)
 	if err != nil {
-		t.Fatal("CreateNamespace() error", err)
+		t.Fatal(err)
 	}
-	fmt.Println(users, count)
+	fmt.Println("total", total)
+	fmt.Println("userList", userList)
+}
+
+func TestNamespaceService_GroupUserNotInNamespaces(t *testing.T) {
+	s := &NamespaceService{}
+	total, namespaceList, err := s.GroupNamespacesUserNotIn(context.Background(), 3, "", "", "-create_time", 1, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("total", total)
+	fmt.Println("namespaceList", namespaceList)
+}
+
+func TestNamespaceService_GroupNamespacesByUsername(t *testing.T) {
+	s := &NamespaceService{}
+	total, namespaceList, err := s.GroupNamespacesByUsername(context.Background(), -1, "liusongshan", "", 0, "-create_time", 1, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("total", total)
+	fmt.Println("namespaceList", namespaceList)
+}
+
+func TestNamespaceService_GroupAllNamespaces(t *testing.T) {
+	s := &NamespaceService{}
+	total, namespaceList, err := s.GroupAllNamespaces(context.Background(), "", "liusongshan", "create_time", 1, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("total", total)
+	fmt.Println("namespaceList", namespaceList)
 }
 
 func TestNamespaceService_RemoveUsers(t *testing.T) {
@@ -75,6 +122,7 @@ func TestNamespaceService_RemoveUsers(t *testing.T) {
 		t.Fatal("CreateNamespace() error", err)
 	}
 }
+
 func TestNamespaceService_ChangeUsersPermission(t *testing.T) {
 	s := &NamespaceService{}
 	err := s.ChangeUsersPermission(context.Background(), "", []int{2, 3, 4}, 1, namespace.AdminPermission)

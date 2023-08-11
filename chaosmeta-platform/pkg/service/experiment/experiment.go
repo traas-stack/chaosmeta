@@ -1,12 +1,27 @@
+/*
+ * Copyright 2022-2023 Chaos Meta Authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package experiment
 
 import (
 	"chaosmeta-platform/pkg/models/experiment"
-	"chaosmeta-platform/pkg/models/user"
 	"chaosmeta-platform/util/snowflake"
-	"context"
 	"errors"
 	"fmt"
+	"time"
 )
 
 type ExperimentService struct{}
@@ -28,14 +43,6 @@ type WorkflowNode struct {
 	experiment.WorkflowNode
 	ArgsValue  []*experiment.ArgsValue `json:"args_value,omitempty"`
 	FaultRange *experiment.FaultRange  `json:"exec_range,omitempty"`
-}
-
-func (es *ExperimentService) GetCreator(name string) (int, error) {
-	userGet := user.User{Email: name}
-	if err := user.GetUser(context.Background(), &userGet); err != nil {
-		return 0, err
-	}
-	return userGet.ID, nil
 }
 
 func (es *ExperimentService) CreateExperiment(creator int, experimentParam *Experiment) (string, error) {
@@ -231,10 +238,9 @@ func (es *ExperimentService) GetWorkflowNodesByExperiment(uuid string, experimen
 	return nil
 }
 
-// SearchExperiments 搜索实验
-func (es *ExperimentService) SearchExperiments(lastInstance string, namespaceId int, name string, scheduleType string, orderBy string, page, pageSize int) (int64, []Experiment, error) {
+func (es *ExperimentService) SearchExperiments(lastInstance string, namespaceId int, creator int, name string, scheduleType string, timeType string, recentDays int, startTime, endTime time.Time, orderBy string, page, pageSize int) (int64, []Experiment, error) {
 	var experimentList []Experiment
-	total, experiments, err := experiment.SearchExperiments(lastInstance, namespaceId, name, scheduleType, orderBy, page, pageSize)
+	total, experiments, err := experiment.SearchExperiments(lastInstance, namespaceId, creator, name, scheduleType, timeType, recentDays, startTime, endTime, orderBy, page, pageSize)
 	if err != nil {
 		return 0, nil, err
 	}

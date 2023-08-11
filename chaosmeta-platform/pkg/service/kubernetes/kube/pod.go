@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022-2023 Chaos Meta Authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package kube
 
 import (
@@ -496,7 +512,8 @@ func (p *podService) CopyToPod(namespace, name, container string, srcPath, destP
 
 	exec, err := remotecommand.NewSPDYExecutor(p.kubernetesParam.RestConfig, "POST", req.URL())
 	if err != nil {
-		log.Fatalf("error %v\n", err)
+		log.Fatalf("error %v
+", err)
 		return err
 	}
 	err = exec.Stream(remotecommand.StreamOptions{
@@ -506,7 +523,8 @@ func (p *podService) CopyToPod(namespace, name, container string, srcPath, destP
 		Tty:    false,
 	})
 	if err != nil {
-		log.Fatalf("error %v\n", err)
+		log.Fatalf("error %v
+", err)
 		return err
 	}
 	return nil
@@ -534,7 +552,8 @@ func (p *podService) CopyFromPod(namespace, name, container string, srcPath, des
 
 	exec, err := remotecommand.NewSPDYExecutor(p.kubernetesParam.RestConfig, "POST", req.URL())
 	if err != nil {
-		log.Fatalf("error %s\n", err)
+		log.Fatalf("error %s
+", err)
 		return err
 	}
 	go func() {
@@ -889,7 +908,8 @@ func (p *podService) LogFilePaths(namespace, name, container, filePath string) (
 	if err != nil {
 		return nil, err
 	}
-	return strings.Split(out, "\n"), nil
+	return strings.Split(out, "
+"), nil
 }
 
 func (p *podService) LogPreview(namespace, name, container, file string, offset, size int) (string, error) {

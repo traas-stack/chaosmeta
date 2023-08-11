@@ -1,12 +1,31 @@
+/*
+ * Copyright 2022-2023 Chaos Meta Authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package cluster
 
 import (
 	"chaosmeta-platform/config"
 	"chaosmeta-platform/pkg/models/cluster"
+	"chaosmeta-platform/pkg/service/kubernetes/clientset"
 	"chaosmeta-platform/util/enc_dec"
 	"context"
 	"encoding/base64"
 	"errors"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 )
 
 type ClusterService struct{}
@@ -31,6 +50,18 @@ func (c *ClusterService) Create(ctx context.Context, name, kubeConfig string) (i
 	}
 
 	return cluster.InsertCluster(ctx, &insertCluster)
+}
+
+func (c *ClusterService) GetKubeConf(ctx context.Context, id int) (string, error) {
+	clusterGet := cluster.Cluster{ID: id}
+	if err := cluster.GetClusterById(ctx, &clusterGet); err != nil {
+		return "", err
+	}
+	kubeConf, err := enc_dec.Decrypt([]byte(clusterGet.KubeConfig), []byte(config.DefaultRunOptIns.SecretKey))
+	if err != nil {
+		return "", err
+	}
+	return string(kubeConf), nil
 }
 
 func (c *ClusterService) Get(ctx context.Context, id int) (*cluster.Cluster, error) {
@@ -91,4 +122,20 @@ func (c *ClusterService) DeleteList(ctx context.Context, ids []int) error {
 
 func (c *ClusterService) GetList(ctx context.Context, name, orderBy string, page, pageSize int) (int64, []cluster.Cluster, error) {
 	return cluster.QueryCluster(ctx, name, "", orderBy, page, pageSize)
+}
+
+func (c *ClusterService) GetRestConfig(ctx context.Context, id int) (*kubernetes.Clientset, *rest.Config, error) {
+	cluster, err := c.Get(ctx, id)
+	if err != nil {
+		return nil, nil, err
+	}
+	restConfig, err := clientset.GetKubeRestConf(clientset.KubeLoadFromBase64Stream, cluster.KubeConfig)
+	if err != nil {
+		return nil, nil, err
+	}
+	clientSet, err := kubernetes.NewForConfig(restConfig)
+	if err != nil {
+		return nil, restConfig, err
+	}
+	return clientSet, restConfig, err
 }

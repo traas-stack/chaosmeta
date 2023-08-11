@@ -21,6 +21,7 @@ import (
 	"chaosmeta-platform/pkg/models/cluster"
 	modelCommon "chaosmeta-platform/pkg/models/common"
 	"chaosmeta-platform/pkg/models/experiment"
+	"chaosmeta-platform/pkg/models/experiment_instance"
 	"chaosmeta-platform/pkg/models/inject/basic"
 	"chaosmeta-platform/pkg/models/namespace"
 	"chaosmeta-platform/pkg/models/user"
@@ -31,12 +32,12 @@ import (
 
 func Setup() {
 	orm.RegisterModel(
-		new(namespace.ClusterNamespace), new(namespace.Label), new(namespace.Namespace), new(namespace.UserNamespace),
-		new(user.User),
+		new(namespace.ClusterNamespace), new(namespace.Label), new(namespace.Namespace), new(namespace.UserNamespace), new(user.User),
 		new(cluster.Cluster),
 		new(agent.Agent),
 		new(basic.Scope), new(basic.Target), new(basic.Fault), new(basic.Args),
 		new(experiment.WorkflowNode), new(experiment.LabelExperiment), new(experiment.FaultRange), new(experiment.Experiment), new(experiment.ArgsValue),
+		new(experiment_instance.WorkflowNodeInstance), new(experiment_instance.LabelExperimentInstance), new(experiment_instance.FaultRangeInstance), new(experiment_instance.ExperimentInstance), new(experiment_instance.ArgsValueInstance),
 	)
 
 	if err := orm.RegisterDataBase("default", "mysql", fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8&loc=Local", DefaultRunOptIns.DB.User, DefaultRunOptIns.DB.Passwd, DefaultRunOptIns.DB.Url, DefaultRunOptIns.DB.Name), orm.MaxIdleConnections(DefaultRunOptIns.DB.MaxIdle), orm.MaxOpenConnections(DefaultRunOptIns.DB.MaxConn)); err != nil {

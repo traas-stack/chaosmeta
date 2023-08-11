@@ -1,11 +1,29 @@
+/*
+ * Copyright 2022-2023 Chaos Meta Authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package experiment
 
 import (
 	"chaosmeta-platform/pkg/gateway/apiserver/v1alpha1"
 	"chaosmeta-platform/pkg/service/experiment"
+	"chaosmeta-platform/pkg/service/user"
 	"encoding/json"
 	"errors"
 	beego "github.com/beego/beego/v2/server/web"
+	"time"
 )
 
 type ExperimentController struct {
@@ -18,13 +36,17 @@ func (c *ExperimentController) GetExperimentList() {
 	scheduleType := c.GetString("schedule_type")
 	namespaceID, _ := c.GetInt("namespace_id")
 	name := c.GetString("name")
+	creator, _ := c.GetInt("creator", 0)
+	timeType := c.GetString("time_type")
+	recentDays, _ := c.GetInt("recent_days", 0)
+	startTime, _ := time.Parse("2006-01-02 15:04:05", c.GetString("start_time"))
+	endTime, _ := time.Parse("2006-01-02 15:04:05", c.GetString("end_time"))
+	orderBy := c.GetString("sort")
 	page, _ := c.GetInt("page", 1)
 	pageSize, _ := c.GetInt("page_size", 10)
-	orderBy := c.GetString("sort")
-
 	experimentService := experiment.ExperimentService{}
 
-	total, experimentList, err := experimentService.SearchExperiments(lastInstanceStatus, namespaceID, name, scheduleType, orderBy, page, pageSize)
+	total, experimentList, err := experimentService.SearchExperiments(lastInstanceStatus, namespaceID, creator, name, scheduleType, timeType, recentDays, startTime, endTime, orderBy, page, pageSize)
 	if err != nil {
 		c.Error(&c.Controller, err)
 		return
@@ -56,7 +78,8 @@ func (c *ExperimentController) GetExperimentDetail() {
 func (c *ExperimentController) CreateExperiment() {
 	username := c.Ctx.Input.GetData("userName").(string)
 	experimentService := experiment.ExperimentService{}
-	creatorId, err := experimentService.GetCreator(username)
+	creatorId, err := user.GetIdByName(username)
+
 	if err != nil {
 		c.Error(&c.Controller, err)
 		return

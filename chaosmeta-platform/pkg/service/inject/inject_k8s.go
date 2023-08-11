@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022-2023 Chaos Meta Authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package inject
 
 import (
@@ -86,25 +102,25 @@ func InitPodFault(ctx context.Context, podTarget basic.Target) error {
 }
 
 func InitPodTargetArgsLabel(ctx context.Context, podFault basic.Fault) error {
-	argsAdd := basic.Args{InjectId: podFault.ID, ExecType: ExecInject, Key: "add", KeyCn: "增加的标签", UnitCn: "逗号分隔的键值对列表", Unit: "comma-separated key-value pair list", ValueType: "string", DefaultValue: "", Description: "added labels", DescriptionCn: "增加的标签"}
-	argsDelete := basic.Args{InjectId: podFault.ID, ExecType: ExecInject, Key: "delete", KeyCn: "删除的标签key", UnitCn: "逗号分隔的字符串列表", Unit: "comma-separated string list", ValueType: "string", DefaultValue: "", Description: "deleted lebel key", DescriptionCn: "删除的标签"}
+	argsAdd := basic.Args{InjectId: podFault.ID, ExecType: ExecInject, Key: "add", KeyCn: "增加的标签", ValueType: "string", Description: "added labels;comma-separated key-value pair list", DescriptionCn: "增加的标签; 逗号分隔的键值对列表"}
+	argsDelete := basic.Args{InjectId: podFault.ID, ExecType: ExecInject, Key: "delete", KeyCn: "删除的标签key", ValueType: "string", Description: "deleted label key; comma-separated key-value pair list", DescriptionCn: "删除的标签"}
 	return basic.InsertArgsMulti(ctx, []*basic.Args{&argsAdd, &argsDelete})
 }
 
 func InitPodTargetArgsFinalizer(ctx context.Context, podFault basic.Fault) error {
-	argsAdd := basic.Args{InjectId: podFault.ID, ExecType: ExecInject, Key: "add", KeyCn: "增加的finalizer", UnitCn: "逗号分隔的finalizer名称列表", Unit: "comma-separated key-value pair list", ValueType: "string", DefaultValue: "", Description: "added finalizers", DescriptionCn: "增加的finalizer"}
-	argsDelete := basic.Args{InjectId: podFault.ID, ExecType: ExecInject, Key: "delete", KeyCn: "删除的标签finalizer", UnitCn: "逗号分隔的finalizer名称列表", Unit: "comma-separated string list", ValueType: "string", DefaultValue: "", Description: "deleted finalizer key", DescriptionCn: "删除的finalizer"}
+	argsAdd := basic.Args{InjectId: podFault.ID, ExecType: ExecInject, Key: "add", KeyCn: "增加的finalizer", ValueType: "string", Description: "added finalizers; comma-separated key-value pair list", DescriptionCn: "增加的finalizer; 逗号分隔的字符串列表"}
+	argsDelete := basic.Args{InjectId: podFault.ID, ExecType: ExecInject, Key: "delete", KeyCn: "删除的标签finalizer", ValueType: "string", Description: "deleted finalizer key; comma-separated key-value pair list", DescriptionCn: "删除的finalizer; 逗号分隔的字符串列表"}
 	return basic.InsertArgsMulti(ctx, []*basic.Args{&argsAdd, &argsDelete})
 }
 
 func InitPodTargetArgsContainerKillAndPause(ctx context.Context, podFault basic.Fault) error {
-	argsContainerName := basic.Args{InjectId: podFault.ID, ExecType: ExecInject, Key: "containername", KeyCn: "目标容器名称", UnitCn: "具体的容器名称，或者“firstcontainer”，表示pod中第一个容器", Unit: "Specific container name, or 'firstcontainer' which represents the first container in the pod", ValueType: "string", DefaultValue: "", Description: "target container name", DescriptionCn: "目标容器名称"}
+	argsContainerName := basic.Args{InjectId: podFault.ID, ExecType: ExecInject, Key: "containername", KeyCn: "目标容器名称", ValueType: "string", DefaultValue: "", Description: "target container name; specific container name, or 'firstcontainer' which represents the first container in the pod", DescriptionCn: "目标容器名称; 具体的容器名称，或者“firstcontainer”，表示pod中第一个容器"}
 	return basic.InsertArgs(ctx, &argsContainerName)
 }
 
 func InitPodTargetArgsContainerImage(ctx context.Context, podFault basic.Fault) error {
-	argsContainerName := basic.Args{InjectId: podFault.ID, ExecType: ExecInject, Key: "containername", KeyCn: "目标容器名称", UnitCn: "具体的容器名称，或者“firstcontainer”，表示pod中第一个容器", Unit: "Specific container name, or 'firstcontainer' which represents the first container in the pod", ValueType: "string", DefaultValue: "", Description: "target container name", DescriptionCn: "目标容器名称"}
-	argsImage := basic.Args{InjectId: podFault.ID, ExecType: ExecInject, Key: "image", KeyCn: "镜像名称", UnitCn: "目标镜像名称", Unit: "Target image name", ValueType: "string", DefaultValue: "", Description: "Target image name", DescriptionCn: "目标镜像名称"}
+	argsContainerName := basic.Args{InjectId: podFault.ID, ExecType: ExecInject, Key: "containername", KeyCn: "目标容器名称", ValueType: "string", Description: "target container name; specific container name, or 'firstcontainer' which represents the first container in the pod", DescriptionCn: "目标容器名称; 具体的容器名称, 或者“firstcontainer”，表示pod中第一个容器"}
+	argsImage := basic.Args{InjectId: podFault.ID, ExecType: ExecInject, Key: "image", KeyCn: "镜像名称", UnitCn: "目标镜像名称", ValueType: "string", DefaultValue: "", Description: "target image name", DescriptionCn: "目标镜像名称"}
 	return basic.InsertArgsMulti(ctx, []*basic.Args{&argsContainerName, &argsImage})
 }
 
@@ -145,20 +161,20 @@ func InitDeploymentDeleteArgs(ctx context.Context, deploymentFault basic.Fault) 
 }
 
 func InitDeploymentLabelArgs(ctx context.Context, deploymentFault basic.Fault) error {
-	argsAdd := basic.Args{InjectId: deploymentFault.ID, ExecType: ExecInject, Key: "add", KeyCn: "增加的标签", Unit: "A comma-separated list of key-value pairs in the format: k1=v1,k2=v2", UnitCn: "逗号分隔的键值对列表，格式为：k1=v1,k2=v2", ValueType: "string", DefaultValue: "", Description: "added labels", DescriptionCn: "增加的标签"}
-	argsDelete := basic.Args{InjectId: deploymentFault.ID, ExecType: ExecInject, Key: "delete", KeyCn: "删除的标签", Unit: "a comma-separated list of strings in the format: k1,k2", UnitCn: "逗号分隔的字符串列表，格式为：k1,k2", ValueType: "string", DefaultValue: "", Description: "deleted label", DescriptionCn: "删除的标签"}
+	argsAdd := basic.Args{InjectId: deploymentFault.ID, ExecType: ExecInject, Key: "add", KeyCn: "增加的标签", ValueType: "string", Description: "added labels; a comma-separated list of key-value pairs in the format: k1=v1,k2=v2", DescriptionCn: "增加的标签; 逗号分隔的键值对列表，比如：k1=v1,k2=v2"}
+	argsDelete := basic.Args{InjectId: deploymentFault.ID, ExecType: ExecInject, Key: "delete", KeyCn: "删除的标签", ValueType: "string", Description: "deleted label; a comma-separated list of strings in the format: k1,k2", DescriptionCn: "删除的标签;逗号分隔的字符串列表，比如：k1,k2"}
 	return basic.InsertArgsMulti(ctx, []*basic.Args{&argsAdd, &argsDelete})
 }
 
 func InitDeploymentFinalizerArgs(ctx context.Context, deploymentFault basic.Fault) error {
-	argsAdd := basic.Args{InjectId: deploymentFault.ID, ExecType: ExecInject, Key: "add", KeyCn: "增加finalizer", Unit: "A comma-separated list of finalizer names in the format: c/1,c/2", UnitCn: "逗号分隔的finalizer名称列表，格式为：c/1,c/2", ValueType: "string", DefaultValue: "", Description: "added finalizer", DescriptionCn: "增加的finalizer"}
-	argsDelete := basic.Args{InjectId: deploymentFault.ID, ExecType: ExecInject, Key: "delete", KeyCn: "删除finalizer", Unit: "逗号分隔的finalizer名称列表，格式为：c/1,c/2", UnitCn: "逗号分隔的finalizer名称列表，格式为：c/1,c/2", ValueType: "string", DefaultValue: "", Description: "removed finalizers", DescriptionCn: "删除的finalizer"}
+	argsAdd := basic.Args{InjectId: deploymentFault.ID, ExecType: ExecInject, Key: "add", KeyCn: "增加finalizer", ValueType: "string", Description: "added finalizer; A comma-separated list of finalizer names in the format: c/1,c/2", DescriptionCn: "增加的finalizer;逗号分隔的finalizer名称列表，格式为：c/1,c/2"}
+	argsDelete := basic.Args{InjectId: deploymentFault.ID, ExecType: ExecInject, Key: "delete", KeyCn: "删除finalizer", ValueType: "string", DefaultValue: "", Description: "removed finalizers; a comma-separated list of strings in the format: c/1,c/2", DescriptionCn: "删除的finalizer;逗号分隔的finalizer名称列表，格式为：c/1,c/2"}
 	return basic.InsertArgsMulti(ctx, []*basic.Args{&argsAdd, &argsDelete})
 }
 
 func InitDeploymentReplicasArgs(ctx context.Context, deploymentFault basic.Fault) error {
-	argsMode := basic.Args{InjectId: deploymentFault.ID, ExecType: ExecInject, Key: "mode", KeyCn: "模式", Unit: "absolutecount、relativecount、relativepercent", UnitCn: "absolutecount、relativecount、relativepercent", ValueType: "string", DefaultValue: "", Description: "scaling mode", DescriptionCn: "扩缩容模式"}
-	argsValue := basic.Args{InjectId: deploymentFault.ID, ExecType: ExecInject, Key: "value", KeyCn: "扩所容值", UnitCn: "数值，在三种模式下表示不同含义。absolutecount：最终目标副本数；relativecount：相对旧副本数增加或减少了多少个；relativepercent：相对旧副本数增加或减少了百分之多少", Unit: "Numerical values, with different meanings in the three modes\nabsolutecount: the final target number of copies\nrelativecount: how much has been increased or decreased relative to the number of old copies\nrelativepercent: the percentage increase or decrease relative to the number of old copies", ValueType: "string", DefaultValue: "", Description: "scale size", DescriptionCn: "扩缩容大小"}
+	argsMode := basic.Args{InjectId: deploymentFault.ID, ExecType: ExecInject, Key: "mode", KeyCn: "模式", ValueType: "string", DefaultValue: "", Description: "scaling mode", DescriptionCn: "扩缩容模式", ValueRule: "absolutecount,relativecount,relativepercent"}
+	argsValue := basic.Args{InjectId: deploymentFault.ID, ExecType: ExecInject, Key: "value", KeyCn: "扩所容值", DescriptionCn: "数值，在三种模式下表示不同含义。absolutecount：最终目标副本数；relativecount：相对旧副本数增加或减少了多少个；relativepercent：相对旧副本数增加或减少了百分之多少", Description: "Numerical values, with different meanings in the three modes, absolutecount: the final target number of copies, relativecount: how much has been increased or decreased relative to the number of old copies, relativepercent: the percentage increase or decrease relative to the number of old copies", ValueType: "string", DefaultValue: "", ValueRule: ""}
 	return basic.InsertArgsMulti(ctx, []*basic.Args{&argsMode, &argsValue})
 }
 
@@ -181,17 +197,24 @@ func InitNodeFault(ctx context.Context, nodeTarget basic.Target) error {
 }
 
 func InitNodeLabelArgs(ctx context.Context, nodeFault basic.Fault) error {
-	return InitDeploymentLabelArgs(ctx, nodeFault)
-}
-
-func InitNodeTaintArgs(ctx context.Context, nodeFault basic.Fault) error {
-	argsAdd := basic.Args{InjectId: nodeFault.ID, ExecType: ExecInject, Key: "add", KeyCn: "增加的taint", Unit: "a comma-separated list of taints in the format: k1=v1:NoSchedule,k2=v2:NoSchedule", UnitCn: "逗号分隔的taint列表，格式为：k1=v1:NoSchedule,k2=v2:NoSchedule", ValueType: "string", DefaultValue: "", Description: "increased taint", DescriptionCn: "增加的taint"}
-	argsDelete := basic.Args{InjectId: nodeFault.ID, ExecType: ExecInject, Key: "delete", KeyCn: "删除的taint", Unit: "A comma-separated list of taints in the format: k1=v1:NoSchedule,k2=v2:NoSchedule", UnitCn: "逗号分隔的taint列表，格式为：k1=v1:NoSchedule,k2=v2:NoSchedule", ValueType: "string", DefaultValue: "", Description: "removed taint", DescriptionCn: "删除的taint"}
+	argsAdd := basic.Args{InjectId: nodeFault.ID, ExecType: ExecInject, Key: "add", KeyCn: "增加的标签", ValueType: "string", Description: "increased label; a comma-separated list of labels in the format: k1=v1:NoSchedule,k2=v2:NoSchedule", DescriptionCn: "增加的label,逗号分隔的label列表，格式为：k1=v1:NoSchedule,k2=v2:NoSchedule"}
+	argsDelete := basic.Args{InjectId: nodeFault.ID, ExecType: ExecInject, Key: "delete", KeyCn: "删除的标签", ValueType: "string", Description: "removed label; a comma-separated list of labels in the format: k1=v1:NoSchedule,k2=v2:NoSchedule", DescriptionCn: "删除的label,逗号分隔的label列表，格式为：k1=v1:NoSchedule,k2=v2:NoSchedule"}
 	return basic.InsertArgsMulti(ctx, []*basic.Args{&argsAdd, &argsDelete})
 }
 
-//cluster
+func InitNodeTaintArgs(ctx context.Context, nodeFault basic.Fault) error {
+	argsAdd := basic.Args{InjectId: nodeFault.ID, ExecType: ExecInject, Key: "add", KeyCn: "增加的taint", ValueType: "string", DefaultValue: "", Description: "increased taint； a comma-separated list of taints in the format: k1=v1:NoSchedule,k2=v2:NoSchedule", DescriptionCn: "增加的taint； 逗号分隔的taint列表，格式为：k1=v1:NoSchedule,k2=v2:NoSchedule"}
+	argsDelete := basic.Args{InjectId: nodeFault.ID, ExecType: ExecInject, Key: "delete", KeyCn: "删除的taint", ValueType: "string", DefaultValue: "", Description: "removed taint; a comma-separated list of taints in the format: k1=v1:NoSchedule,k2=v2:NoSchedule", DescriptionCn: "删除的taint;逗号分隔的taint列表，格式为：k1=v1:NoSchedule,k2=v2:NoSchedule"}
+	return basic.InsertArgsMulti(ctx, []*basic.Args{&argsAdd, &argsDelete})
+}
 
+//func GetSelectorArgs(selectorTypeName string, fault basic.Fault) []*basic.Args {
+//	argsNamespace := basic.Args{InjectId: fault.ID, ExecType: ExecInject, Key: "namespace", KeyCn: "命名空间", ValueType: "string", DefaultValue: "", Description: "removed taint; a comma-separated list of taints in the format: k1=v1:NoSchedule,k2=v2:NoSchedule", DescriptionCn: "删除的taint;逗号分隔的taint列表，格式为：k1=v1:NoSchedule,k2=v2:NoSchedule"}
+//
+//	return []*basic.Args{&NetworkArgsInterface, &NetworkArgsDstIP, &NetworkArgsSrcIP, &NetworkArgsDstPort, &NetworkArgsSrcPort, &NetworkArgsMode, &NetworkArgsForce}
+//}
+
+// cluster
 func InitClusterFault(ctx context.Context, clusterTarget basic.Target) error {
 	var (
 		clusterFaultPendingPod   = basic.Fault{TargetId: clusterTarget.ID, Name: "pendingpod", NameCn: "堆积pending状态的pod", Description: "accumulate a large number of pods in the pending state for the cluster in batches\"", DescriptionCn: "给集群批量堆积大量pending状态的pod"}
@@ -214,8 +237,8 @@ func InitClusterPendingPodArgs(ctx context.Context, clusterFault basic.Fault) er
 }
 
 func InitClusterCompletedJobArgs(ctx context.Context, clusterFault basic.Fault) error {
-	argsCount := basic.Args{InjectId: clusterFault.ID, ExecType: ExecInject, Key: "count", KeyCn: "数量", Unit: "number greater than 0", UnitCn: "大于0的数字", ValueType: "int", DefaultValue: "", Description: "count", DescriptionCn: "数量"}
-	argsNamespace := basic.Args{InjectId: clusterFault.ID, ExecType: ExecInject, Key: "namespace", KeyCn: "命名空间", Unit: "a namespace that does not exist in the current cluster, for example: \"pendingattack\"", UnitCn: "当前集群不存在的namespace，比如：“pendingattack”", ValueType: "string", DefaultValue: "", Description: "namespace", DescriptionCn: "命名空间"}
-	argsName := basic.Args{InjectId: clusterFault.ID, ExecType: ExecInject, Key: "name", KeyCn: "pod名称前缀", Unit: "the name prefix of the injected completed job, for example: \"attack-test”", UnitCn: "注入的completed job的名称前缀，比如：“attack-test”", ValueType: "string", DefaultValue: "", Description: "pod name prefix", DescriptionCn: "pod名称前缀"}
+	argsCount := basic.Args{InjectId: clusterFault.ID, ExecType: ExecInject, Key: "count", KeyCn: "数量", ValueType: "int", DefaultValue: "", Required: true, Description: "count", DescriptionCn: "数量", ValueRule: ">0"}
+	argsNamespace := basic.Args{InjectId: clusterFault.ID, ExecType: ExecInject, Key: "namespace", KeyCn: "命名空间", ValueType: "string", DefaultValue: "", Required: true, Description: "namespace", DescriptionCn: "命名空间"}
+	argsName := basic.Args{InjectId: clusterFault.ID, ExecType: ExecInject, Key: "name", KeyCn: "pod名称前缀", ValueType: "string", DefaultValue: "", Required: true, Description: "pod name prefix", DescriptionCn: "pod名称前缀"}
 	return basic.InsertArgsMulti(ctx, []*basic.Args{&argsCount, &argsNamespace, &argsName})
 }

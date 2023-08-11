@@ -60,7 +60,7 @@ func Init() {
 
 type UserService struct{}
 
-func (a *UserService) InitAdmin(ctx context.Context, name, password string) error {
+func (a *UserService) InitAdmin(ctx context.Context) error {
 	user, err := a.Get(ctx, Admin)
 	if err == nil && user != nil {
 		return nil
@@ -255,4 +255,12 @@ func VerifyPassword(password string, hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	fmt.Println(err)
 	return err == nil
+}
+
+func GetIdByName(name string) (int, error) {
+	userGet := user.User{Email: name}
+	if err := user.GetUser(context.Background(), &userGet); err != nil {
+		return 0, err
+	}
+	return userGet.ID, nil
 }

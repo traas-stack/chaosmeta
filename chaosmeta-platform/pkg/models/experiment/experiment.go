@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022-2023 Chaos Meta Authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package experiment
 
 import (
@@ -55,7 +71,7 @@ func DeleteExperimentByUUID(uuid string) error {
 	return err
 }
 
-func SearchExperiments(lastInstance string, namespaceId int, name string, scheduleType string, orderBy string, page, pageSize int) (int64, []*Experiment, error) {
+func SearchExperiments(lastInstance string, namespaceId int, creator int, name string, scheduleType string, timeType string, recentDays int, startTime, endTime time.Time, orderBy string, page, pageSize int) (int64, []*Experiment, error) {
 	o := models.GetORM()
 	experiments := []*Experiment{}
 	qs := o.QueryTable(new(Experiment).TableName())
@@ -65,6 +81,9 @@ func SearchExperiments(lastInstance string, namespaceId int, name string, schedu
 		return 0, nil, err
 	}
 
+	if creator > 0 {
+		experimentQuery.Filter("creator", models.NEGLECT, false, creator)
+	}
 	if lastInstance != "" {
 		experimentQuery.Filter("last_instance", models.NEGLECT, false, lastInstance)
 	}
@@ -76,6 +95,17 @@ func SearchExperiments(lastInstance string, namespaceId int, name string, schedu
 	}
 	if name != "" {
 		experimentQuery.Filter("name", models.CONTAINS, true, name)
+	}
+	if timeType != "" {
+		if recentDays > 0 {
+			start := time.Now().Add(time.Duration(-recentDays*24) * time.Hour).Format("2006-01-02 15:04:05")
+			experimentQuery.Filter("create_time", models.GTE, false, start)
+		}
+
+		if !startTime.IsZero() && !endTime.IsZero() {
+			experimentQuery.Filter("create_time", models.GTE, false, startTime)
+			experimentQuery.Filter("create_time", models.LTE, false, endTime)
+		}
 	}
 
 	var totalCount int64
