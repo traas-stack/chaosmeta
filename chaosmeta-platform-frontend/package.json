@@ -15,7 +15,6 @@
     "@dnd-kit/core": "^6.0.8",
     "@dnd-kit/sortable": "^7.0.2",
     "@umijs/max": "^4.0.72",
-    "ahooks": "^3.7.8",
     "antd": "^5.4.0",
     "crypto-js": "^4.1.1",
     "moment": "^2.29.4",
