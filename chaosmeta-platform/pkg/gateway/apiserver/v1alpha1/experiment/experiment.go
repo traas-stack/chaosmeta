@@ -39,8 +39,8 @@ func (c *ExperimentController) GetExperimentList() {
 	creator, _ := c.GetInt("creator", 0)
 	timeType := c.GetString("time_type")
 	recentDays, _ := c.GetInt("recent_days", 0)
-	startTime, _ := time.Parse("2006-01-02 15:04:05", c.GetString("start_time"))
-	endTime, _ := time.Parse("2006-01-02 15:04:05", c.GetString("end_time"))
+	startTime, _ := time.Parse(experiment.TimeLayout, c.GetString("start_time"))
+	endTime, _ := time.Parse(experiment.TimeLayout, c.GetString("end_time"))
 	orderBy := c.GetString("sort")
 	page, _ := c.GetInt("page", 1)
 	pageSize, _ := c.GetInt("page_size", 10)
@@ -90,14 +90,15 @@ func (c *ExperimentController) CreateExperiment() {
 		c.Error(&c.Controller, err)
 		return
 	}
+	createExperimentRequest.Creator = creatorId
 
-	uuid, err := experimentService.CreateExperiment(creatorId, &createExperimentRequest)
+	uuid, err := experimentService.CreateExperiment(&createExperimentRequest)
 	if err != nil {
 		c.Error(&c.Controller, err)
 		return
 	}
 	c.Success(&c.Controller, CreateExperimentResponse{
-		Uuid: uuid,
+		UUID: uuid,
 	})
 }
 

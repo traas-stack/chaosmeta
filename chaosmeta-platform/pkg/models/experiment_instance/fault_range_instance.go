@@ -61,16 +61,16 @@ func GetFaultRangeInstanceById(f *FaultRangeInstance) error {
 	return models.GetORM().Read(f)
 }
 
-func ListFaultRangeInstancesByWorkflowNodeInstanceUUID(workflowNodeInstanceUUID string) ([]*FaultRangeInstance, error) {
-	faultRanges := []*FaultRangeInstance{}
-	_, err := models.GetORM().QueryTable(new(FaultRangeInstance).TableName()).Filter("workflow_node_instance_uuid", workflowNodeInstanceUUID).OrderBy("id").All(&faultRanges)
+func GetFaultRangeInstancesByWorkflowNodeInstanceUUID(workflowNodeInstanceUUID string) (*FaultRangeInstance, error) {
+	var faultRange FaultRangeInstance
+	err := models.GetORM().QueryTable(new(FaultRangeInstance).TableName()).Filter("workflow_node_instance_uuid", workflowNodeInstanceUUID).OrderBy("row", "column").One(&faultRange)
 	if err == orm.ErrNoRows {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	return faultRanges, nil
+	return &faultRange, nil
 }
 
 func ClearFaultRangeInstancesByWorkflowNodeInstanceUUID(workflowNodeInstanceUUID string) error {

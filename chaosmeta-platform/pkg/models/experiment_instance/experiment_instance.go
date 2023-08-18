@@ -18,12 +18,18 @@ package experiment_instance
 
 import (
 	models "chaosmeta-platform/pkg/models/common"
+	"errors"
 	"github.com/beego/beego/v2/client/orm"
 	"time"
 )
 
+type ExperimentInstanceStatus string
+
 const (
 	TablePrefix = "experiment_"
+
+	Pending = ExperimentInstanceStatus("Pending") //待执行
+	Running = ExperimentInstanceStatus("Running") //执行中
 )
 
 type ExperimentInstance struct {
@@ -33,8 +39,9 @@ type ExperimentInstance struct {
 	Description    string `json:"description" orm:"column(description);size(1024)"`
 	ExperimentUUID string `json:"experiment_uuid,omitempty" orm:"column(experiment_uuid);size(128);index"`
 	Creator        int    `json:"creator" orm:"index;column(creator)"`
-	Status         string `json:"status" orm:"column(status);size(32);index"`
+	Status         string `json:"status" orm:"column(status);default('to_be_executed');size(32);index"`
 	Message        string `json:"message" orm:"column(message);size(1024)"`
+	Version        int    `json:"-" orm:"column(version);default(0);version"`
 	models.BaseTimeModel
 }
 
@@ -48,8 +55,45 @@ func CreateExperimentInstance(experiment *ExperimentInstance) error {
 }
 
 func UpdateExperimentInstance(experiment *ExperimentInstance) error {
-	_, err := models.GetORM().Update(experiment)
-	return err
+	o := models.GetORM()
+	tx, err := o.Begin()
+	if err != nil {
+		return err
+	}
+
+	existing := ExperimentInstance{UUID: experiment.UUID}
+	err = tx.Read(&existing)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if experiment.Version != existing.Version {
+		tx.Rollback()
+		return errors.New("Concurrent modification detected")
+	}
+
+	experiment.Version = existing.Version + 1
+	if _, err = tx.Update(experiment); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err = tx.Commit(); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return nil
+}
+
+func UpdateExperimentInstanceStatus(uuid string, status string) error {
+	experimentInstance, err := GetExperimentInstanceByUUID(uuid)
+	if err != nil {
+		return err
+	}
+	experimentInstance.Status = status
+	return UpdateExperimentInstance(experimentInstance)
 }
 
 func GetExperimentInstanceByUUID(uuid string) (*ExperimentInstance, error) {
@@ -109,6 +153,9 @@ func SearchExperimentInstances(lastInstance string, namespaceId int, creator int
 
 	var totalCount int64
 	totalCount, err = experimentQuery.GetOamQuerySeter().Count()
+	if err != nil {
+		return 0, nil, err
+	}
 
 	orderByList := []string{"uuid"}
 	if len(orderBy) > 0 {
@@ -120,5 +167,29 @@ func SearchExperimentInstances(lastInstance string, namespaceId int, creator int
 	}
 
 	_, err = experimentQuery.GetOamQuerySeter().All(experiments)
+	return totalCount, experiments, err
+}
+
+func ListExperimentsInstancesByStatus(experimentStatus []ExperimentInstanceStatus) (int64, []*ExperimentInstance, error) {
+	o := models.GetORM()
+	experiments := []*ExperimentInstance{}
+	qs := o.QueryTable(new(ExperimentInstance).TableName())
+
+	experimentQuery, err := models.NewDataSelectQuery(&qs)
+	if err != nil {
+		return 0, nil, err
+	}
+	if experimentStatus != nil {
+		experimentQuery.Filter("status", models.IN, false, experimentStatus)
+	}
+	var totalCount int64
+	totalCount, err = experimentQuery.GetOamQuerySeter().Count()
+	if err != nil {
+		return 0, nil, err
+	}
+
+	experimentQuery.OrderBy("create_time")
+	_, err = experimentQuery.GetOamQuerySeter().All(experiments)
+
 	return totalCount, experiments, err
 }

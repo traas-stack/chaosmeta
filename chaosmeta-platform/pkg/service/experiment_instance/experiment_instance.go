@@ -19,6 +19,7 @@ package experiment_instance
 import (
 	"chaosmeta-platform/pkg/models/experiment_instance"
 	"chaosmeta-platform/pkg/models/namespace"
+	"chaosmeta-platform/util/snowflake"
 	"context"
 	"errors"
 	"fmt"
@@ -28,6 +29,85 @@ import (
 
 type ExperimentInstanceService struct{}
 
+type ExperimentInstance struct {
+	ExperimentInstanceInfo
+	Labels        []int                                   `json:"labels,omitempty"`
+	WorkflowNodes []*WorkflowNodesDetail                  `json:"workflow_nodes,omitempty"`
+	FaultRange    *experiment_instance.FaultRangeInstance `json:"exec_range,omitempty"`
+}
+
+func (s *ExperimentInstanceService) CreateExperimentInstance(experimentParam *ExperimentInstance) (string, error) {
+	node, err := snowflake.NewNode(1)
+	if err != nil {
+		return "", err
+	}
+	experimentCreate := experiment_instance.ExperimentInstance{
+		UUID:           fmt.Sprintf("%d-%d-%s-experiment", node.Generate(), experimentParam.Creator, time.Now().String()),
+		Name:           experimentParam.Name,
+		NamespaceID:    experimentParam.NamespaceId,
+		Description:    experimentParam.Description,
+		ExperimentUUID: experimentParam.UUID,
+		Creator:        experimentParam.Creator,
+		Message:        experimentParam.Message,
+	}
+
+	// experiment
+	if err := experiment_instance.CreateExperimentInstance(&experimentCreate); err != nil {
+		return "", err
+	}
+
+	//label
+	if err := experiment_instance.AddLabelIDsToExperiment(experimentCreate.UUID, experimentParam.Labels); err != nil {
+		return experimentCreate.UUID, err
+	}
+	//workflow_nodes
+	for _, node := range experimentParam.WorkflowNodes {
+		nodeSnow, err := snowflake.NewNode(1)
+		if err != nil {
+			return "", err
+		}
+		workflowNodeCreate := experiment_instance.WorkflowNodeInstance{
+			UUID:           fmt.Sprintf("%d-%d-%s-node", nodeSnow.Generate(), experimentParam.Creator, time.Now().String()),
+			ExperimentUUID: experimentParam.UUID,
+			Row:            node.Row,
+			Column:         node.Column,
+			Duration:       node.Duration,
+			ScopeId:        node.ScopeId,
+			TargetId:       node.TargetId,
+			ExecType:       node.ExecType,
+			ExecID:         node.ExecId,
+			Message:        node.Message,
+		}
+		if err := experiment_instance.CreateWorkflowNodeInstance(&workflowNodeCreate); err != nil {
+			return experimentCreate.UUID, err
+		}
+
+		var argsValues []*experiment_instance.ArgsValueInstance
+		for _, argsValue := range node.ArgsValues {
+			argsValues = append(argsValues, &experiment_instance.ArgsValueInstance{
+				ArgsID: argsValue.ArgsId,
+				Value:  argsValue.Value,
+			})
+		}
+
+		//args_value
+		if len(argsValues) > 0 {
+			if err := experiment_instance.BatchInsertArgsValueInstances(workflowNodeCreate.UUID, argsValues); err != nil {
+				return experimentCreate.UUID, err
+			}
+		}
+
+		//exec_range
+		if node.Subtasks != nil {
+			node.Subtasks.WorkflowNodeInstanceUUID = node.UUID
+			if err := experiment_instance.CreateFaultRangeInstance(node.Subtasks); err != nil {
+				return experimentCreate.UUID, err
+			}
+		}
+	}
+	return experimentCreate.UUID, nil
+}
+
 type LabelInfo struct {
 	Id         int    `json:"id"`
 	Name       string `json:"name"`
@@ -35,7 +115,7 @@ type LabelInfo struct {
 }
 
 type ExperimentInstanceInfo struct {
-	Uuid        string      `json:"uuid"`
+	UUID        string      `json:"uuid"`
 	Name        string      `json:"name"`
 	Description string      `json:"description"`
 	Creator     int         `json:"creator"`
@@ -61,14 +141,14 @@ func (s *ExperimentInstanceService) GetExperimentInstanceByUUID(uuid string) (*E
 	}
 
 	expData := ExperimentInstanceInfo{
-		Uuid:        exp.UUID,
+		UUID:        exp.UUID,
 		Name:        exp.Name,
 		Description: exp.Description,
 		Creator:     exp.Creator,
 		NamespaceId: exp.NamespaceID,
 		CreateTime:  exp.CreateTime.Format(time.RFC3339),
 		UpdateTime:  exp.UpdateTime.Format(time.RFC3339),
-		Status:      exp.Status,
+		Status:      string(exp.Status),
 		Message:     exp.Message,
 	}
 
@@ -87,10 +167,12 @@ func (s *ExperimentInstanceService) GetExperimentInstanceByUUID(uuid string) (*E
 }
 
 type WorkflowNodesInfo struct {
-	Uuid       string `json:"uuid"`
+	UUID       string `json:"uuid"`
 	Row        int    `json:"row"`
 	Column     int    `json:"column"`
 	Duration   string `json:"duration"`
+	ScopeId    int    `json:"scope_id"`
+	TargetId   int    `json:"target_id"`
 	ExecType   string `json:"exec_type"`
 	ExecId     int    `json:"exec_id"`
 	Status     string `json:"status"`
@@ -99,15 +181,15 @@ type WorkflowNodesInfo struct {
 	UpdateTime string `json:"update_time"`
 }
 
-func (s *ExperimentInstanceService) GetWorkflowNodesInstanceByUUID(uuid string) (int, []WorkflowNodesInfo, error) {
-	experiment, err := s.GetExperimentInstanceByUUID(uuid)
+func (s *ExperimentInstanceService) GetWorkflowNodesInstanceInfoByUUID(experimentUUID string) (int, []WorkflowNodesInfo, error) {
+	experiment, err := s.GetExperimentInstanceByUUID(experimentUUID)
 	if err != nil {
 		return 0, nil, err
 	}
 	if experiment == nil {
 		return 0, nil, errors.New("experiment not found")
 	}
-	nodes, err := experiment_instance.GetWorkflowNodeInstancesByExperimentUUID(uuid)
+	nodes, err := experiment_instance.GetWorkflowNodeInstancesByExperimentUUID(experimentUUID)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -117,10 +199,12 @@ func (s *ExperimentInstanceService) GetWorkflowNodesInstanceByUUID(uuid string) 
 
 	for _, workflowNodeGet := range nodes {
 		workflowNodesInfos = append(workflowNodesInfos, WorkflowNodesInfo{
-			Uuid:       workflowNodeGet.UUID,
+			UUID:       workflowNodeGet.UUID,
 			Row:        workflowNodeGet.Row,
 			Column:     workflowNodeGet.Column,
 			Duration:   workflowNodeGet.Duration,
+			ScopeId:    workflowNodeGet.ScopeId,
+			TargetId:   workflowNodeGet.TargetId,
 			ExecType:   workflowNodeGet.ExecType,
 			ExecId:     workflowNodeGet.ExecID,
 			Status:     workflowNodeGet.Status,
@@ -132,8 +216,8 @@ func (s *ExperimentInstanceService) GetWorkflowNodesInstanceByUUID(uuid string) 
 	return total, workflowNodesInfos, nil
 }
 
-func (s *ExperimentInstanceService) GetWorkflowNodeInstanceByUUIDAndNodeId(uuid, nodeId string) (*WorkflowNodesInfo, error) {
-	experiment, err := s.GetExperimentInstanceByUUID(uuid)
+func (s *ExperimentInstanceService) GetWorkflowNodeInstanceByUUIDAndNodeId(experimentUUID, nodeId string) (*WorkflowNodesInfo, error) {
+	experiment, err := s.GetExperimentInstanceByUUID(experimentUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -145,10 +229,12 @@ func (s *ExperimentInstanceService) GetWorkflowNodeInstanceByUUIDAndNodeId(uuid,
 		return nil, err
 	}
 	return &WorkflowNodesInfo{
-		Uuid:       node.UUID,
+		UUID:       node.UUID,
 		Row:        node.Row,
 		Column:     node.Column,
 		Duration:   node.Duration,
+		ScopeId:    node.ScopeId,
+		TargetId:   node.TargetId,
 		ExecType:   node.ExecType,
 		ExecId:     node.ExecID,
 		Status:     node.Status,
@@ -164,12 +250,12 @@ type ArgsValue struct {
 
 type WorkflowNodesDetail struct {
 	WorkflowNodesInfo
-	ArgsValue []ArgsValue                               `json:"args_value"`
-	Subtasks  []*experiment_instance.FaultRangeInstance `json:"subtasks"`
+	ArgsValues []ArgsValue                             `json:"args_value"`
+	Subtasks   *experiment_instance.FaultRangeInstance `json:"subtasks"`
 }
 
-func (s *ExperimentInstanceService) GetWorkflowNodeInstanceDetailByUUIDAndNodeId(uuid, nodeId string) (*WorkflowNodesDetail, error) {
-	workflowNode, err := s.GetWorkflowNodeInstanceByUUIDAndNodeId(uuid, nodeId)
+func (s *ExperimentInstanceService) GetWorkflowNodeInstanceDetailByUUIDAndNodeId(experimentUUID, nodeId string) (*WorkflowNodesDetail, error) {
+	workflowNode, err := s.GetWorkflowNodeInstanceByUUIDAndNodeId(experimentUUID, nodeId)
 	if err != nil {
 		return nil, err
 	}
@@ -184,15 +270,40 @@ func (s *ExperimentInstanceService) GetWorkflowNodeInstanceDetailByUUIDAndNodeId
 		return &workflowNodesDetail, err
 	}
 	for _, argsValue := range argsValues {
-		workflowNodesDetail.ArgsValue = append(workflowNodesDetail.ArgsValue, ArgsValue{ArgsId: argsValue.ArgsID, Value: argsValue.Value})
+		workflowNodesDetail.ArgsValues = append(workflowNodesDetail.ArgsValues, ArgsValue{ArgsId: argsValue.ArgsID, Value: argsValue.Value})
 	}
 
-	faultRanges, err := experiment_instance.ListFaultRangeInstancesByWorkflowNodeInstanceUUID(nodeId)
+	faultRange, err := experiment_instance.GetFaultRangeInstancesByWorkflowNodeInstanceUUID(nodeId)
 	if err != nil {
 		return &workflowNodesDetail, err
 	}
-	workflowNodesDetail.Subtasks = faultRanges
+	workflowNodesDetail.Subtasks = faultRange
 	return &workflowNodesDetail, nil
+}
+
+func (s *ExperimentInstanceService) GetWorkflowNodeInstanceDetailList(experimentUUID string) ([]*WorkflowNodesDetail, error) {
+	experiment, err := s.GetExperimentInstanceByUUID(experimentUUID)
+	if err != nil {
+		return nil, err
+	}
+	if experiment == nil {
+		return nil, errors.New("experiment not found")
+	}
+	nodes, err := experiment_instance.GetWorkflowNodeInstancesByExperimentUUID(experimentUUID)
+	if err != nil {
+		return nil, err
+	}
+
+	var workflowNodesDetails = []*WorkflowNodesDetail{}
+	for _, workflowNodeGet := range nodes {
+		workflowNodesDetail, err := s.GetWorkflowNodeInstanceDetailByUUIDAndNodeId(experimentUUID, workflowNodeGet.UUID)
+		if err != nil {
+			return nil, err
+		}
+		workflowNodesDetails = append(workflowNodesDetails, workflowNodesDetail)
+
+	}
+	return workflowNodesDetails, nil
 }
 
 func (s *ExperimentInstanceService) GetFaultRangeInstanceByWorkflowNodeInstanceUUID(uuid, nodeId, subtaskId string) (*experiment_instance.FaultRangeInstance, error) {

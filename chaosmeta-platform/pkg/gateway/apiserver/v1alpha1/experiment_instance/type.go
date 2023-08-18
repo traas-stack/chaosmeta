@@ -30,7 +30,7 @@ type GetExperimentInstanceResponse struct {
 }
 
 type DeleteExperimentInstanceRequest struct {
-	ResultUuids []string `json:"result_uuids"`
+	ResultUUIDs []string `json:"result_uuids"`
 }
 
 type ExperimentInstanceListResponse struct {

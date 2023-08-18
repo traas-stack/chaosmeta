@@ -18,6 +18,7 @@ package app
 
 import (
 	"chaosmeta-platform/config"
+	"chaosmeta-platform/pkg/service/experiment"
 	"chaosmeta-platform/pkg/service/inject"
 	"chaosmeta-platform/pkg/service/namespace"
 	"chaosmeta-platform/pkg/service/user"
@@ -65,6 +66,7 @@ func initConfig() {
 	if err := inject.Init(); err != nil {
 		log.Panic(err)
 	}
+	experiment.Init()
 	//if err := clientset.Init(); err != nil {
 	//	log.Panic(err)
 	//}

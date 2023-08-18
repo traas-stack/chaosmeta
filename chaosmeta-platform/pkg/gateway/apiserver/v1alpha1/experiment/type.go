@@ -21,7 +21,7 @@ import (
 )
 
 type CreateExperimentResponse struct {
-	Uuid string `json:"uuid"`
+	UUID string `json:"uuid"`
 }
 
 type GetExperimentResponse struct {

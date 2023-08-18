@@ -125,6 +125,17 @@ func (c *ClusterService) GetList(ctx context.Context, name, orderBy string, page
 }
 
 func (c *ClusterService) GetRestConfig(ctx context.Context, id int) (*kubernetes.Clientset, *rest.Config, error) {
+	if id < 0 {
+		restConfig, err := clientset.GetKubeRestConf(clientset.KubeLoadInCluster, "")
+		if err != nil {
+			return nil, nil, err
+		}
+		clientSet, err := kubernetes.NewForConfig(restConfig)
+		if err != nil {
+			return nil, restConfig, err
+		}
+		return clientSet, restConfig, err
+	}
 	cluster, err := c.Get(ctx, id)
 	if err != nil {
 		return nil, nil, err

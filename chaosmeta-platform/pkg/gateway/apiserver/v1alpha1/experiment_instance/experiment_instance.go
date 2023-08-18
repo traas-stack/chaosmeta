@@ -18,6 +18,7 @@ package experiment_instance
 
 import (
 	"chaosmeta-platform/pkg/gateway/apiserver/v1alpha1"
+	"chaosmeta-platform/pkg/service/experiment"
 	"chaosmeta-platform/pkg/service/experiment_instance"
 	"encoding/json"
 	beego "github.com/beego/beego/v2/server/web"
@@ -37,8 +38,8 @@ func (c *ExperimentInstanceController) GetExperimentInstances() {
 	creator, _ := c.GetInt("creator", 0)
 	timeType := c.GetString("time_type")
 	recentDays, _ := c.GetInt("recent_days", 0)
-	startTime, _ := time.Parse("2006-01-02 15:04:05", c.GetString("start_time"))
-	endTime, _ := time.Parse("2006-01-02 15:04:05", c.GetString("end_time"))
+	startTime, _ := time.Parse(experiment.TimeLayout, c.GetString("start_time"))
+	endTime, _ := time.Parse(experiment.TimeLayout, c.GetString("end_time"))
 	orderBy := c.GetString("sort")
 	page, _ := c.GetInt("page", 1)
 	pageSize, _ := c.GetInt("page_size", 10)
@@ -120,7 +121,7 @@ func (c *ExperimentInstanceController) DeleteExperimentInstances() {
 		return
 	}
 	es := experiment_instance.ExperimentInstanceService{}
-	if err := es.DeleteExperimentInstancesByUUID(reqBody.ResultUuids); err != nil {
+	if err := es.DeleteExperimentInstancesByUUID(reqBody.ResultUUIDs); err != nil {
 		c.Error(&c.Controller, err)
 		return
 	}

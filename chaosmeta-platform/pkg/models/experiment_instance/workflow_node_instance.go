@@ -18,6 +18,7 @@ package experiment_instance
 
 import (
 	models "chaosmeta-platform/pkg/models/common"
+	"errors"
 	"github.com/beego/beego/v2/client/orm"
 )
 
@@ -27,10 +28,13 @@ type WorkflowNodeInstance struct {
 	Row            int    `json:"row" orm:"column(row)"`
 	Column         int    `json:"column" orm:"column(column)"`
 	Duration       string `json:"duration" orm:"column(duration);size(32)"`
+	ScopeId        int    `json:"scope_id" orm:"column(scope_id); int(11)"`
+	TargetId       int    `json:"target_id" orm:"column(target_id); int(11)"`
 	ExecType       string `json:"exec_type" orm:"column(exec_type);size(32)"`
 	ExecID         int    `json:"exec_id" orm:"column(exec_id)"`
-	Status         string `json:"status" orm:"column(status);size(32);index"`
+	Status         string `json:"status" orm:"column(status);size(32);default('to_be_executed');index"`
 	Message        string `json:"message" orm:"column(message);size(1024)"`
+	Version        int    `json:"-" orm:"column(version);default(0);version"`
 	models.BaseTimeModel
 }
 
@@ -48,6 +52,48 @@ func GetWorkflowNodeInstanceByUUID(uuid string) (*WorkflowNodeInstance, error) {
 		return nil, err
 	}
 	return workflowNode, nil
+}
+
+func UpdateWorkflowNodeInstance(workflowNodeInstance *WorkflowNodeInstance) error {
+	o := models.GetORM()
+	tx, err := o.Begin()
+	if err != nil {
+		return err
+	}
+
+	existing := WorkflowNodeInstance{UUID: workflowNodeInstance.UUID}
+	err = tx.Read(&existing)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if workflowNodeInstance.Version != existing.Version {
+		tx.Rollback()
+		return errors.New("Concurrent modification detected")
+	}
+
+	workflowNodeInstance.Version = existing.Version + 1
+	if _, err = tx.Update(workflowNodeInstance); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err = tx.Commit(); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return nil
+}
+
+func UpdateWorkflowNodeInstanceStatus(uuid string, status string) error {
+	nodeInstance, err := GetWorkflowNodeInstanceByUUID(uuid)
+	if err != nil {
+		return err
+	}
+	nodeInstance.Status = status
+	return UpdateWorkflowNodeInstance(nodeInstance)
 }
 
 func GetWorkflowNodeInstancesByExperimentUUID(experimentUUID string) ([]*WorkflowNodeInstance, error) {

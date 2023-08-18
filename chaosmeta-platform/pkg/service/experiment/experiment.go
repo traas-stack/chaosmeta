@@ -19,18 +19,30 @@ package experiment
 import (
 	"chaosmeta-platform/pkg/models/experiment"
 	"chaosmeta-platform/util/snowflake"
+	"context"
 	"errors"
 	"fmt"
 	"time"
 )
 
+func Init() {
+	er := ExperimentRoutine{context: context.Background()}
+	go er.Start()
+}
+
+const TimeLayout = "2006-01-02 15:04:05"
+
 type ExperimentService struct{}
 
 type ExperimentInfo struct {
+	UUID         string `json:"uuid,omitempty"`
 	Name         string `json:"name"`
 	Description  string `json:"description"`
 	ScheduleType string `json:"schedule_type"`
 	ScheduleRule string `json:"schedule_rule"`
+	NamespaceID  int    `json:"namespace_id"`
+	Creator      int    `json:"creator,omitempty"`
+	Status       int    `json:"status"`
 }
 
 type Experiment struct {
@@ -45,18 +57,20 @@ type WorkflowNode struct {
 	FaultRange *experiment.FaultRange  `json:"exec_range,omitempty"`
 }
 
-func (es *ExperimentService) CreateExperiment(creator int, experimentParam *Experiment) (string, error) {
+func (es *ExperimentService) CreateExperiment(experimentParam *Experiment) (string, error) {
 	node, err := snowflake.NewNode(1)
 	if err != nil {
 		return "", err
 	}
 
 	experimentCreate := experiment.Experiment{
-		UUID:         fmt.Sprintf("%d-%d", node.Generate(), creator),
+		UUID:         fmt.Sprintf("%d-%d", node.Generate(), experimentParam.Creator),
 		Name:         experimentParam.Name,
+		NamespaceID:  experimentParam.NamespaceID,
 		Description:  experimentParam.Description,
 		ScheduleType: experimentParam.ScheduleType,
 		ScheduleRule: experimentParam.ScheduleRule,
+		Creator:      experimentParam.Creator,
 	}
 
 	// experiment
@@ -76,6 +90,8 @@ func (es *ExperimentService) CreateExperiment(creator int, experimentParam *Expe
 			Row:      node.Row,
 			Column:   node.Column,
 			Duration: node.Duration,
+			ScopeId:  node.ScopeId,
+			TargetId: node.TargetId,
 			ExecType: node.ExecType,
 			ExecID:   node.ExecID,
 		}
@@ -105,14 +121,14 @@ func (es *ExperimentService) UpdateExperiment(uuid string, experimentParam *Expe
 	if experimentParam == nil {
 		return errors.New("experimentParam is nil")
 	}
-	experiment, err := experiment.GetExperimentByUUID(uuid)
+	_, err := experiment.GetExperimentByUUID(uuid)
 	if err != nil {
 		return err
 	}
 	if err := es.DeleteExperimentByUUID(uuid); err != nil {
 		return err
 	}
-	_, err = es.CreateExperiment(experiment.Creator, experimentParam)
+	_, err = es.CreateExperiment(experimentParam)
 	return err
 }
 
@@ -150,10 +166,14 @@ func (es *ExperimentService) GetExperimentByUUID(uuid string) (*Experiment, erro
 
 	experimentReturn := Experiment{
 		ExperimentInfo: ExperimentInfo{
+			UUID:         experimentGet.UUID,
 			Name:         experimentGet.Name,
 			Description:  experimentGet.Description,
 			ScheduleType: experimentGet.ScheduleType,
 			ScheduleRule: experimentGet.ScheduleRule,
+			NamespaceID:  experimentGet.NamespaceID,
+			Creator:      experimentGet.Creator,
+			Status:       int(experimentGet.Status),
 		},
 	}
 
@@ -177,6 +197,7 @@ func (es *ExperimentService) GetExperimentByModelExperiment(experimentGet *exper
 			Description:  experimentGet.Description,
 			ScheduleType: experimentGet.ScheduleType,
 			ScheduleRule: experimentGet.ScheduleRule,
+			NamespaceID:  experimentGet.NamespaceID,
 		},
 	}
 
