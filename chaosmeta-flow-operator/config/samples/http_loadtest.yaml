@@ -1,0 +1,24 @@
+apiVersion: chaosmeta.io/v1alpha1
+kind: LoadTest
+metadata:
+  name: loadtest-sample1
+  namespace: chaosmeta-flow
+spec:
+  flowType: HTTP
+  duration: 1m
+  parallelism: 4
+  source: 2
+  stopped: false
+  args:
+    - key: host
+      value: '192.168.2.189'
+    - key: port
+      value: '8080'
+    - key: path
+      value: '/testpost'
+    - key: header
+      value: 'Content-Type:application/json,Host:chaosmeta.io'
+    - key: method
+      value: 'POST'
+    - key: body
+      value: '{"name":"tester", "age": 50}'
