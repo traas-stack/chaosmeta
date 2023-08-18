@@ -1,0 +1,20 @@
+apiVersion: chaosmeta.io/v1alpha1
+kind: CommonMeasure
+metadata:
+  name: measure-ip-true
+  namespace: chaosmeta-measure
+spec:
+  measureType: udp
+  duration: 1m
+  interval: 3s
+  successCount: 3
+  failedCount: 0
+  stopped: false
+  judgement:
+    judgeType: connectivity
+    judgeValue: 'true'
+  args:
+    - key: ip
+      value: '192.168.2.189'
+    - key: timeout
+      value: '5'

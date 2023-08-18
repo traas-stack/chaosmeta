@@ -1,0 +1,18 @@
+apiVersion: chaosmeta.io/v1alpha1
+kind: CommonMeasure
+metadata:
+  name: measure-monitor-relativepercent-larger
+  namespace: chaosmeta-measure
+spec:
+  measureType: monitor
+  duration: 2m
+  interval: 10s
+  successCount: 3
+  failedCount: 0
+  stopped: false
+  judgement:
+    judgeType: relativepercent
+    judgeValue: ',-15'
+  args:
+    - key: query
+      value: 'node_memory_MemAvailable_bytes{instance="192.168.2.189:9100"}'

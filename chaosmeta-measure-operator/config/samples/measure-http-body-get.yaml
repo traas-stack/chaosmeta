@@ -1,0 +1,30 @@
+apiVersion: chaosmeta.io/v1alpha1
+kind: CommonMeasure
+metadata:
+  name: measure-http-body-get
+  namespace: chaosmeta-measure
+spec:
+  measureType: http
+  duration: 1m
+  interval: 3s
+  successCount: 3
+  failedCount: 0
+  stopped: false
+  judgement:
+    judgeType: body
+    judgeValue: '{"test":{"status":1}}'
+  args:
+    - key: host
+      value: '192.168.2.189'
+    - key: port
+      value: '8080'
+    - key: path
+      value: '/testget'
+    - key: header
+      value: 'Content-Type:application/json,Host:chaosmeta.io'
+    - key: scheme
+      value: 'HTTP'
+    - key: method
+      value: 'GET'
+    - key: timeout
+      value: '5'

@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: chaosmeta-daemonset
-  namespace: chaosmeta
+  namespace: chaosmeta-inject
 spec:
   selector:
     matchLabels:

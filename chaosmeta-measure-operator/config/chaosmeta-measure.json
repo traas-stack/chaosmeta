@@ -1,0 +1,7 @@
+{
+  "monitor": {
+    "engine": "prometheus",
+    "url": "http://127.0.0.1:9090"
+  },
+  "tasklimit": 10
+}

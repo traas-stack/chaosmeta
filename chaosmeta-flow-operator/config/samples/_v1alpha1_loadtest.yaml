@@ -1,0 +1,12 @@
+apiVersion: chaosmeta.io/v1alpha1
+kind: LoadTest
+metadata:
+  labels:
+    app.kubernetes.io/name: loadtest
+    app.kubernetes.io/instance: loadtest-sample
+    app.kubernetes.io/part-of: chaosmeta-flow-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: chaosmeta-flow-operator
+  name: loadtest-sample
+spec:
+  # TODO(user): Add fields here
