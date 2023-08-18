@@ -1,0 +1,27 @@
+# permissions for end users to view loadtests.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: loadtest-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: chaosmeta-flow-operator
+    app.kubernetes.io/part-of: chaosmeta-flow-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: loadtest-viewer-role
+rules:
+- apiGroups:
+  - chaosmeta.io
+  resources:
+  - loadtests
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - chaosmeta.io
+  resources:
+  - loadtests/status
+  verbs:
+  - get

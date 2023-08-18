@@ -113,7 +113,7 @@ func (r *CommonMeasure) ValidateUpdate(old runtime.Object) error {
 		return nil
 	}
 
-	if oldIns.Spec.Stopped == true || r.Spec.Stopped == false {
+	if oldIns.Spec.Stopped != r.Spec.Stopped && r.Spec.Stopped == false {
 		return fmt.Errorf("only support update spec.stopped from false to true")
 	}
 
