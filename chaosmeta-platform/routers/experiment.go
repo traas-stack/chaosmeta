@@ -27,4 +27,7 @@ func experimentInit() {
 	beego.Router(NewWebServicePath("experiments"), &experiment.ExperimentController{}, "post:CreateExperiment")
 	beego.Router(NewWebServicePath("experiments/:uuid"), &experiment.ExperimentController{}, "post:UpdateExperiment")
 	beego.Router(NewWebServicePath("experiments/:uuid"), &experiment.ExperimentController{}, "delete:DeleteExperiment")
+
+	beego.Router(NewWebServicePath("experiments/:uuid/start"), &experiment.ExperimentController{}, "post:StartExperiment")
+	beego.Router(NewWebServicePath("experiments/:uuid/stop"), &experiment.ExperimentController{}, "post:StopExperiment")
 }

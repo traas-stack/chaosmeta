@@ -36,7 +36,6 @@ type ArgoWorkFlowService interface {
 	Update(wf v1alpha1.Workflow) (*v1alpha1.Workflow, error)
 	Delete(workflowName string) error
 	Patch(name string, pt types.PatchType, data []byte) error
-	GetStepsStatus(workflowName string) (*v1alpha1.Workflow, error)
 	DeleteExpiredList() error
 	ListPendingAndRecentWorkflows() (*v1alpha1.WorkflowList, []*v1alpha1.Workflow, error)
 }
@@ -112,18 +111,6 @@ func (a *argoWorkFlowService) Patch(name string, pt types.PatchType, data []byte
 	}
 	log.Errorf("Workflow %s patched", updatedWorkflow.Name)
 	return nil
-}
-
-func (a *argoWorkFlowService) GetStepsStatus(workflowName string) (*v1alpha1.Workflow, error) {
-	wfClient := versioned.NewForConfigOrDie(a.Config).ArgoprojV1alpha1().Workflows(a.Namespace)
-	workflow, err := wfClient.Get(context.Background(), workflowName, metav1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
-	for _, node := range workflow.Status.Nodes {
-		fmt.Printf("Step %s status: %s\n", node.DisplayName, node.Phase)
-	}
-	return workflow, nil
 }
 
 func (a *argoWorkFlowService) GetAllRunningWorkflows() ([]v1alpha1.Workflow, error) {

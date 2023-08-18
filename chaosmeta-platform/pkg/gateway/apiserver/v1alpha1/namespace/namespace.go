@@ -105,7 +105,7 @@ func (c *NamespaceController) QueryList() {
 	namespaceService := &namespace.NamespaceService{}
 	var (
 		total         int64
-		namespaceList []namespace.NamespaceInfoWithUsers
+		namespaceList []namespace.NamespaceData
 		err           error
 	)
 
@@ -341,54 +341,4 @@ func (c *NamespaceController) ChangePermissions() {
 		return
 	}
 	c.Success(&c.Controller, "ok")
-}
-
-func (c *NamespaceController) SetAttackableCluster() {
-	namespaceId, err := c.GetInt(":id")
-	if err != nil {
-		c.Error(&c.Controller, err)
-		return
-	}
-
-	var reqBody SetAttackableClusterRequest
-	if err = json.Unmarshal(c.Ctx.Input.RequestBody, &reqBody); err != nil {
-		c.Error(&c.Controller, err)
-		return
-	}
-
-	username := c.Ctx.Input.GetData("userName").(string)
-	namespace := &namespace.NamespaceService{}
-	if err := namespace.SetAttackableCluster(context.Background(), namespaceId, username, reqBody.ClusterID); err != nil {
-		c.Error(&c.Controller, err)
-		return
-	}
-	c.Success(&c.Controller, "ok")
-}
-
-func (c *NamespaceController) ListAttackableCluster() {
-	namespaceId, err := c.GetInt(":id")
-	if err != nil {
-		c.Error(&c.Controller, err)
-		return
-	}
-	page, _ := c.GetInt("page", 1)
-	pageSize, _ := c.GetInt("page_size", 10)
-	sort := c.GetString("sort")
-
-	namespace := &namespace.NamespaceService{}
-	total, clusterList, err := namespace.GetAttackableClustersByNamespaceID(context.Background(), namespaceId, sort, page, pageSize)
-	if err != nil {
-		c.Error(&c.Controller, err)
-		return
-	}
-	getAttackableClusterResponse := GetAttackableClusterResponse{Total: total, Page: page, PageSize: pageSize}
-	for _, cluster := range clusterList {
-		getAttackableClusterResponse.Clusters = append(getAttackableClusterResponse.Clusters, ClusterNamespaceInfo{
-			ID:         cluster.ID,
-			Name:       cluster.Name,
-			CreateTime: cluster.CreateTime,
-			UpdateTime: cluster.UpdateTime,
-		})
-	}
-	c.Success(&c.Controller, getAttackableClusterResponse)
 }

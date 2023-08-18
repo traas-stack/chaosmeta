@@ -17,6 +17,7 @@
 package namespace
 
 import (
+	"chaosmeta-platform/pkg/models/experiment_instance"
 	namespaceModel "chaosmeta-platform/pkg/models/namespace"
 	"chaosmeta-platform/pkg/models/user"
 	"chaosmeta-platform/util/log"
@@ -160,69 +161,123 @@ func (s *NamespaceService) GroupedUserInNamespaces(ctx context.Context, namespac
 	return namespaceModel.GroupedUserInNamespaces(namespaceId, namespaceName, userName, permission, orderBy, page, pageSize)
 }
 
-type NamespaceInfoWithUsers struct {
-	NamespaceInfo namespaceModel.NamespaceInfo   `json:"namespaceInfo"`
-	users         []namespaceModel.NamespaceData `json:"users"`
+type NamespaceData struct {
+	NamespaceInfo  namespaceModel.NamespaceInfo      `json:"namespaceInfo"`
+	users          []namespaceModel.NamespaceData    `json:"users"`
+	UserData       UserDataInNamespace               `json:"userData"`
+	ExperimentData ExperimentInstanceDataInNamespace `json:"experimentrData"`
+}
+
+type UserDataInNamespace struct {
+	Permission int                                `json:"permission"`
+	ToTal      int                                `json:"toTal"`
+	Users      []namespaceModel.UserDataNamespace `json:"users"`
+}
+
+func (s *NamespaceService) getUserData(ctx context.Context, userId int, namespaceId int) (UserDataInNamespace, error) {
+	userDataInNamespace := UserDataInNamespace{}
+	permission, err := namespaceModel.IsUserInNamespace(userId, namespaceId)
+	if err != nil {
+		return userDataInNamespace, err
+	}
+	userDataInNamespace.Permission = int(permission)
+
+	total, users, err := namespaceModel.GetUsersFromNamespace(ctx, namespaceId)
+	userDataInNamespace.ToTal = int(total)
+	userDataInNamespace.Users = append(userDataInNamespace.Users, users...)
+	return userDataInNamespace, err
+}
+
+type ExperimentInstanceDataInNamespace struct {
+	ToTal     int64            `json:"toTal"`
+	StatusMap map[string]int64 `json:"statusCount"`
+}
+
+func (s *NamespaceService) getExperimentInstanceData(ctx context.Context, namespaceId int) (ExperimentInstanceDataInNamespace, error) {
+	statusMap, total, err := experiment_instance.CountExperimentInstance(namespaceId, 0)
+	return ExperimentInstanceDataInNamespace{ToTal: total, StatusMap: statusMap}, err
+}
+
+func (s *NamespaceService) getUserAndExperimentInstanceData(ctx context.Context, users []namespaceModel.NamespaceData, namespaceData *NamespaceData) error {
+	if users == nil {
+		return nil
+	}
+	if namespaceData == nil {
+		return errors.New("namespaceData is nil")
+	}
+	var err error
+	for _, user := range users {
+		namespaceData.UserData, err = s.getUserData(ctx, user.Id, namespaceData.NamespaceInfo.ID)
+		if err != nil {
+			return err
+		}
+		namespaceData.ExperimentData, err = s.getExperimentInstanceData(ctx, namespaceData.NamespaceInfo.ID)
+		if err != nil {
+			return err
+		}
+	}
+	return err
 }
 
 // 未加入
-func (s *NamespaceService) GroupNamespacesUserNotIn(ctx context.Context, userId int, namespaceName string, userName string, orderBy string, page, pageSize int) (int64, []NamespaceInfoWithUsers, error) {
+func (s *NamespaceService) GroupNamespacesUserNotIn(ctx context.Context, userId int, namespaceName string, userName string, orderBy string, page, pageSize int) (int64, []NamespaceData, error) {
 	total, namesapceList, err := namespaceModel.GroupNamespacesUserNotIn(userId, namespaceName, userName, orderBy, page, pageSize)
 	if err != nil {
 		return 0, nil, err
 	}
-	var namespaceInfoWithUsersList []NamespaceInfoWithUsers
-	for _, namesapce := range namesapceList {
-		_, userList, err := namespaceModel.GroupedUserInNamespaces(namesapce.ID, "", "", -1, "", 1, 20)
+	var namespaceDataList []NamespaceData
+	for _, namespace := range namesapceList {
+		namespaceData := NamespaceData{NamespaceInfo: namespace}
+		_, userList, err := namespaceModel.GroupedUserInNamespaces(namespace.ID, "", "", -1, "", 1, 20)
 		if err != nil {
 			continue
 		}
-		namespaceInfoWithUsersList = append(namespaceInfoWithUsersList, NamespaceInfoWithUsers{
-			NamespaceInfo: namesapce,
-			users:         userList,
-		})
+		if err := s.getUserAndExperimentInstanceData(ctx, userList, &namespaceData); err == nil {
+			namespaceDataList = append(namespaceDataList, namespaceData)
+		}
 	}
-	return total, namespaceInfoWithUsersList, nil
+	return total, namespaceDataList, nil
 }
 
 // 全部
-func (s *NamespaceService) GroupAllNamespaces(ctx context.Context, namespaceName string, userName string, orderBy string, page, pageSize int) (int64, []NamespaceInfoWithUsers, error) {
+func (s *NamespaceService) GroupAllNamespaces(ctx context.Context, namespaceName string, userName string, orderBy string, page, pageSize int) (int64, []NamespaceData, error) {
 	total, namesapceList, err := namespaceModel.GroupAllNamespaces(namespaceName, userName, orderBy, page, pageSize)
 	if err != nil {
 		return 0, nil, err
 	}
-	var namespaceInfoWithUsersList []NamespaceInfoWithUsers
-	for _, namesapce := range namesapceList {
-		_, userList, err := namespaceModel.GroupedUserInNamespaces(namesapce.ID, "", "", -1, "", 1, 20)
+	var namespaceDataList []NamespaceData
+	for _, namespace := range namesapceList {
+		namespaceData := NamespaceData{NamespaceInfo: namespace}
+		var err error
+		_, userList, err := namespaceModel.GroupedUserInNamespaces(namespace.ID, "", "", -1, "", 1, 20)
 		if err != nil {
 			continue
 		}
-		namespaceInfoWithUsersList = append(namespaceInfoWithUsersList, NamespaceInfoWithUsers{
-			NamespaceInfo: namesapce,
-			users:         userList,
-		})
+		if err := s.getUserAndExperimentInstanceData(ctx, userList, &namespaceData); err == nil {
+			namespaceDataList = append(namespaceDataList, namespaceData)
+		}
 	}
-	return total, namespaceInfoWithUsersList, nil
+	return total, namespaceDataList, nil
 }
 
 // 已加入
-func (s *NamespaceService) GroupNamespacesByUsername(ctx context.Context, userId int, namespace string, userName string, permission int, orderBy string, page, pageSize int) (int64, []NamespaceInfoWithUsers, error) {
+func (s *NamespaceService) GroupNamespacesByUsername(ctx context.Context, userId int, namespace string, userName string, permission int, orderBy string, page, pageSize int) (int64, []NamespaceData, error) {
 	total, namesapceList, err := namespaceModel.GroupAllNamespacesByUserName(userId, namespace, userName, permission, orderBy, page, pageSize)
 	if err != nil {
 		return 0, nil, err
 	}
-	var namespaceInfoWithUsersList []NamespaceInfoWithUsers
-	for _, namesapce := range namesapceList {
-		_, userList, err := namespaceModel.GroupedUserInNamespaces(namesapce.ID, "", "", -1, "", 1, 20)
+	var namespaceDataList []NamespaceData
+	for _, namespace := range namesapceList {
+		namespaceData := NamespaceData{NamespaceInfo: namespace}
+		_, userList, err := namespaceModel.GroupedUserInNamespaces(namespace.ID, "", "", -1, "", 1, 20)
 		if err != nil {
 			continue
 		}
-		namespaceInfoWithUsersList = append(namespaceInfoWithUsersList, NamespaceInfoWithUsers{
-			NamespaceInfo: namesapce,
-			users:         userList,
-		})
+		if err := s.getUserAndExperimentInstanceData(ctx, userList, &namespaceData); err == nil {
+			namespaceDataList = append(namespaceDataList, namespaceData)
+		}
 	}
-	return total, namespaceInfoWithUsersList, nil
+	return total, namespaceDataList, nil
 }
 
 func (s *NamespaceService) DefaultAddUsers(ctx context.Context, addUsersParam namespaceModel.AddUsersParam) error {

@@ -121,9 +121,13 @@ const (
 	WaitExecType    ExecType = "wait"
 )
 
-func GetWorkWorkflow(experimentInstanceId string, nodes []*experiment_instance.WorkflowNodesDetail) *v1alpha1.Workflow {
+func getWorFlowName(experimentInstanceId string) string {
+	return fmt.Sprintf("chaosmeta-inject-%s", experimentInstanceId)
+}
+
+func GetWorkflowStruct(experimentInstanceId string, nodes []*experiment_instance.WorkflowNodesDetail) *v1alpha1.Workflow {
 	newWorkflow := workflow
-	newWorkflow.Name = fmt.Sprintf("chaosmeta-inject-%s", experimentInstanceId)
+	newWorkflow.Name = getWorFlowName(experimentInstanceId)
 	newWorkflow.Spec.Templates = append(newWorkflow.Spec.Templates, v1alpha1.Template{
 		Name:  WorkflowMainStep,
 		Steps: convertToSteps(experimentInstanceId, nodes),
@@ -131,9 +135,13 @@ func GetWorkWorkflow(experimentInstanceId string, nodes []*experiment_instance.W
 	return &newWorkflow
 }
 
+func getWaitStepName(experimentInstanceUUID string, nodeId string) string {
+	return fmt.Sprintf("before-wait-%s-%s", experimentInstanceUUID, nodeId)
+}
+
 func getWaitStep(time string, experimentInstanceUUID string, nodeId string) *v1alpha1.WorkflowStep {
 	waitStep := v1alpha1.WorkflowStep{
-		Name:     fmt.Sprintf("before-wait-%s-%s", experimentInstanceUUID, nodeId),
+		Name:     getWaitStepName(experimentInstanceUUID, nodeId),
 		Template: string(RawSuspend),
 		Arguments: v1alpha1.Arguments{
 			Parameters: []v1alpha1.Parameter{
@@ -145,6 +153,10 @@ func getWaitStep(time string, experimentInstanceUUID string, nodeId string) *v1a
 		},
 	}
 	return &waitStep
+}
+
+func getInjectStepName(scopeName, targetName, experimentInstanceUUID, nodeID string) string {
+	return fmt.Sprintf("inject-%s-%s-%s-%s", scopeName, targetName, experimentInstanceUUID, nodeID)
 }
 
 func getInjectStep(experimentInstanceUUID string, node *experiment_instance.WorkflowNodesDetail, phaseType PhaseType) *v1alpha1.WorkflowStep {
@@ -174,8 +186,6 @@ func getInjectStep(experimentInstanceUUID string, node *experiment_instance.Work
 		return nil
 	}
 
-	injectStep.Name = fmt.Sprintf("%s-%s-experiment-%s", scope.Name, target.Name, node.ExecType)
-
 	experimentTemplate := ExperimentInjectStruct{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "inject.chaosmeta.io/v1alpha1",
@@ -183,7 +193,7 @@ func getInjectStep(experimentInstanceUUID string, node *experiment_instance.Work
 		},
 
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("inject-%s-%s-%s-%s", scope.Name, target.Name, experimentInstanceUUID, node.UUID),
+			Name:      getInjectStepName(scope.Name, target.Name, experimentInstanceUUID, node.UUID),
 			Namespace: WorkflowNamespace,
 		},
 
@@ -287,58 +297,6 @@ func getMaxRowAndColumn(nodes []*experiment_instance.WorkflowNodesDetail) (int, 
 	}
 	return maxRow, maxColumn
 }
-
-func getNodeStatus(node v1alpha1.NodeStatus) string {
-	switch node.Phase {
-	case v1alpha1.NodePending:
-		return "Pending"
-	case v1alpha1.NodeRunning:
-		return "Running"
-	case v1alpha1.NodeSucceeded:
-		return "Succeeded"
-	case v1alpha1.NodeSkipped:
-		return "Skipped"
-	case v1alpha1.NodeFailed:
-		return "Failed"
-	case v1alpha1.NodeError:
-		return "Error"
-	case v1alpha1.NodeOmitted:
-		return "Omitted"
-	default:
-		return ""
-	}
-}
-
-//func syncWorkflowNodeStatus(workflow *v1alpha1.Workflow, nodes []*WorkflowNode) []*WorkflowNode {
-//	updatedNodes := make([]*WorkflowNode, len(nodes))
-//	nodeMap := make(map[string]*WorkflowNode)
-//	for _, node := range nodes {
-//		nodeMap[node.UUID] = node
-//	}
-//	for _, node := range workflow.Status.Nodes {
-//		if node.Type == v1alpha1.NodeTypePod {
-//			// 根据Pod节点的名称和结束时间，确定对应的WorkflowNode的执行状态
-//			nodeName := getNodeName(node.Name)
-//			if wNode, ok := nodeMap[nodeName]; ok {
-//				wNode.Status = getNodeStatus(node)
-//				updatedNodes = append(updatedNodes, wNode)
-//			}
-//		}
-//	}
-//	// 将更新后的WorkflowNode保存到数据库中
-//	for _, node := range updatedNodes {
-//		_, err := orm.NewOrm().Update(node)
-//		if err != nil {
-//			log.Errorf("Failed to update workflow node: %v", err)
-//		}
-//	}
-//	return updatedNodes
-//}
-//
-//func convertToWorkflowNode(workflowNode *v1alpha1.Nodes) *experiment.WorkflowNode {
-//
-//	return nil
-//}
 
 func getExperimentInstanceIdFromWorkflowName(workflowName string) (string, error) {
 	reg := regexp.MustCompile(`chaosmeta-inject-(\w+)`)

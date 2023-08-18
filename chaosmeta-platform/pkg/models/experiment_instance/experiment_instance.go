@@ -30,6 +30,8 @@ const (
 
 	Pending = ExperimentInstanceStatus("Pending") //待执行
 	Running = ExperimentInstanceStatus("Running") //执行中
+
+	TimeLayout = "2006-01-02 15:04:05"
 )
 
 type ExperimentInstance struct {
@@ -192,4 +194,39 @@ func ListExperimentsInstancesByStatus(experimentStatus []ExperimentInstanceStatu
 	_, err = experimentQuery.GetOamQuerySeter().All(experiments)
 
 	return totalCount, experiments, err
+}
+
+func CountExperimentInstance(namespaceId, day int) (map[string]int64, int64, error) {
+	o := models.GetORM()
+
+	var (
+		counts []orm.Params
+		result = make(map[string]int64)
+		total  int64
+		sql    string
+		args   []interface{}
+	)
+
+	if day == 0 {
+		sql = "SELECT status, COUNT(*) as count FROM experiment_instance WHERE namespace_id = ? GROUP BY status"
+		args = []interface{}{namespaceId}
+	} else {
+		startTime := time.Now().AddDate(0, 0, -day).Format(TimeLayout)
+		sql = "SELECT status, COUNT(*) as count FROM experiment_instance WHERE namespace_id = ? AND create_time > ? GROUP BY status"
+		args = []interface{}{namespaceId, startTime}
+	}
+
+	_, err := o.Raw(sql, args...).Values(&counts)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	for _, c := range counts {
+		status := c["status"].(string)
+		count := c["count"].(int64)
+		result[status] = count
+		total += count
+	}
+
+	return result, total, nil
 }

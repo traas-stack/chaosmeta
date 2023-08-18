@@ -23,6 +23,7 @@ import (
 	"chaosmeta-platform/pkg/service/experiment_instance"
 	"chaosmeta-platform/util/log"
 	"context"
+	"errors"
 	"github.com/argoproj/argo-workflows/v3/pkg/apis/workflow/v1alpha1"
 	"github.com/robfig/cron"
 	"time"
@@ -82,7 +83,7 @@ func convertToExperimentInstance(experiment *Experiment, status string) *experim
 	return experimentInstance
 }
 
-func (e *ExperimentRoutine) DoExperiment(experimentID string) error {
+func StartExperiment(experimentID string) error {
 	experimentService := ExperimentService{}
 	experimentGet, err := experimentService.GetExperimentByUUID(experimentID)
 	if err != nil {
@@ -114,8 +115,70 @@ func (e *ExperimentRoutine) DoExperiment(experimentID string) error {
 		return err
 	}
 
-	_, err = argoWorkFlowCtl.Create(*GetWorkWorkflow(experimentInstanceId, nodes))
+	_, err = argoWorkFlowCtl.Create(*GetWorkflowStruct(experimentInstanceId, nodes))
 	return err
+}
+
+func StopExperiment(experimentInstanceID string) error {
+	experimentInstanceInfo, err := experimentInstanceModel.GetExperimentInstanceByUUID(experimentInstanceID)
+	if err != nil {
+		return err
+	}
+
+	clusterService := cluster.ClusterService{}
+	_, restConfig, err := clusterService.GetRestConfig(context.Background(), -1)
+	if err != nil {
+		return err
+	}
+
+	argoWorkFlowCtl, err := NewArgoWorkFlowService(restConfig, WorkflowNamespace)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+
+	workFlowGet, status, err := argoWorkFlowCtl.Get(getWorFlowName(experimentInstanceID))
+	if err != nil {
+		return err
+	}
+	if status == "Succeeded" || status == "Failed" || status == "Error" {
+		return errors.New("experiment has ended")
+	}
+
+	chaosmetaService := NewChaosmetaService(restConfig)
+
+	for _, node := range workFlowGet.Status.Nodes {
+		if isInjectStepName(node.DisplayName) {
+			chaosmetaCR, err := chaosmetaService.Get(context.Background(), node.DisplayName)
+			if err != nil {
+				log.Error(err)
+				return err
+			}
+			chaosmetaCR.Status.Phase = "recover"
+			if _, err := chaosmetaService.Update(context.Background(), chaosmetaCR); err != nil {
+				return err
+			}
+			_, nodeId, err := getExperimentUUIDAndNodeIDFromStepName(node.DisplayName)
+			if err != nil {
+				log.Error(err)
+				continue
+			}
+
+			if err := experimentInstanceModel.UpdateWorkflowNodeInstanceStatus(nodeId, "Succeeded"); err != nil {
+				log.Error(err)
+				continue
+			}
+		}
+
+	}
+
+	if err := argoWorkFlowCtl.Delete(getWorFlowName(experimentInstanceID)); err != nil {
+		log.Error(err)
+		return err
+	}
+
+	experimentInstanceInfo.Status = "Succeeded"
+	return experimentInstanceModel.UpdateExperimentInstance(experimentInstanceInfo)
 }
 
 func (e *ExperimentRoutine) DealOnceExperiment() {
@@ -129,7 +192,7 @@ func (e *ExperimentRoutine) DealOnceExperiment() {
 		nextExec, _ := time.Parse(DefaultFormat, experimentGet.ScheduleRule)
 		if time.Now().After(nextExec) {
 			log.Error("create an experiment")
-			if err := e.DoExperiment(experimentGet.UUID); err != nil {
+			if err := StartExperiment(experimentGet.UUID); err != nil {
 				log.Error(err)
 				continue
 			}
@@ -175,7 +238,7 @@ func (e *ExperimentRoutine) DealCronExperiment() {
 				continue
 			}
 
-			if err := e.DoExperiment(experimentGet.UUID); err != nil {
+			if err := StartExperiment(experimentGet.UUID); err != nil {
 				log.Error(err)
 				continue
 			}

@@ -119,6 +119,24 @@ func (c *ExperimentController) UpdateExperiment() {
 	c.Success(&c.Controller, "ok")
 }
 
+func (c *ExperimentController) StartExperiment() {
+	uuid := c.Ctx.Input.Param(":uuid")
+	if err := experiment.StartExperiment(uuid); err != nil {
+		c.Error(&c.Controller, err)
+		return
+	}
+	c.Success(&c.Controller, "ok")
+}
+
+func (c *ExperimentController) StopExperiment() {
+	uuid := c.Ctx.Input.Param(":uuid")
+	if err := experiment.StopExperiment(uuid); err != nil {
+		c.Error(&c.Controller, err)
+		return
+	}
+	c.Success(&c.Controller, "ok")
+}
+
 func (c *ExperimentController) DeleteExperiment() {
 	uuid := c.Ctx.Input.Param(":uuid")
 	if uuid == "" {

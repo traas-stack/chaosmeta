@@ -22,6 +22,8 @@ import (
 	"errors"
 )
 
+const TimeLayout = "2006-01-02 15:04:05"
+
 type Label struct {
 	Id          int    `json:"id" orm:"pk;auto;column(id)"`
 	Name        string `json:"name" orm:"column(name);size(255);unique;index"`

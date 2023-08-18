@@ -28,6 +28,7 @@ import (
 type Permission int
 
 const (
+	NoPermission     = Permission(-1)
 	NormalPermission = Permission(0) //只读
 	AdminPermission  = Permission(1) //管理员
 )
@@ -83,6 +84,8 @@ type UserNamespaceData struct {
 type UserDataNamespace struct {
 	UserId     int        `json:"userId"`
 	Permission Permission `json:"permission"`
+	CreateTime string     `json:"create_time"`
+	UpdateTime string     `json:"update_time"`
 }
 
 func GetNamespacesFromUser(ctx context.Context, userId int, permission int, orderBy string, page, pageSize int) (int64, []UserNamespaceData, error) {
@@ -124,7 +127,7 @@ func GetUsersFromNamespace(ctx context.Context, namespaceId int) (int64, []UserD
 		userNamespaces []*UserNamespace
 		userDataList   []UserDataNamespace
 	)
-	qs := models.GetORM().QueryTable(u.TableName()).Filter("namespace_id", namespaceId)
+	qs := models.GetORM().QueryTable(u.TableName()).Filter("namespace_id", namespaceId).OrderBy("id")
 
 	totalCount, err := qs.Count()
 	if err != nil {
@@ -138,6 +141,8 @@ func GetUsersFromNamespace(ctx context.Context, namespaceId int) (int64, []UserD
 		userDataList = append(userDataList, UserDataNamespace{
 			UserId:     userNamespace.UserId,
 			Permission: userNamespace.Permission,
+			CreateTime: userNamespace.CreateTime.Format(TimeLayout),
+			UpdateTime: userNamespace.UpdateTime.Format(TimeLayout),
 		})
 	}
 	return totalCount, userDataList, nil
@@ -483,4 +488,16 @@ func UserClearNamespace(userId int) error {
 		return err
 	}
 	return nil
+}
+
+func IsUserInNamespace(userId, namespaceId int) (Permission, error) {
+	userNamespace := UserNamespace{}
+	err := models.GetORM().QueryTable("user_namespace").Filter("user_id", userId).Filter("namespace_id", namespaceId).One(&userNamespace)
+	if err != nil {
+		if err == orm.ErrNoRows {
+			return NoPermission, nil
+		}
+		return NoPermission, err
+	}
+	return userNamespace.Permission, nil
 }

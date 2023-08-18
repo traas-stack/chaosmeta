@@ -47,10 +47,10 @@ type ListNamespaceResponse struct {
 }
 
 type QueryNamespaceResponse struct {
-	Page       int                                       `json:"page"`
-	PageSize   int                                       `json:"pageSize"`
-	Total      int64                                     `json:"total"`
-	NameSpaces []namespaceService.NamespaceInfoWithUsers `json:"namespaces"`
+	Page       int                              `json:"page"`
+	PageSize   int                              `json:"pageSize"`
+	Total      int64                            `json:"total"`
+	NameSpaces []namespaceService.NamespaceData `json:"namespaces"`
 }
 
 type UpdateNamespaceRequest struct {
