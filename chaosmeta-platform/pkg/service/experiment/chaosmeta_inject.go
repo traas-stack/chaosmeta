@@ -33,7 +33,7 @@ import (
 )
 
 type ChaosmetaInterface interface {
-	Get(ctx context.Context, name string) (result *ExperimentInjectStruct, err error)
+	Get(ctx context.Context, namespace, name string) (result *ExperimentInjectStruct, err error)
 	List(ctx context.Context) (*ExperimentInjectStructList, error)
 	Create(ctx context.Context, chaosmeta *ExperimentInjectStruct) (*ExperimentInjectStruct, error)
 	Update(ctx context.Context, chaosmeta *ExperimentInjectStruct) (*ExperimentInjectStruct, error)
@@ -48,15 +48,15 @@ type ChaosmetaService struct {
 }
 
 var gvr = schema.GroupVersionResource{
-	Group:    "inject.chaosmeta.io",
+	Group:    "chaosmeta.io",
 	Version:  "v1alpha1",
 	Resource: "experiments",
 }
 
 var gvk = schema.GroupVersionKind{
-	Group:   "inject.chaosmeta.io",
+	Group:   "chaosmeta.io",
 	Version: "v1alpha1",
-	Kind:    "ExperimentInjectStruct",
+	Kind:    "Experiment",
 }
 
 func NewChaosmetaService(config *rest.Config) ChaosmetaInterface {
@@ -70,8 +70,8 @@ func NewChaosmetaService(config *rest.Config) ChaosmetaInterface {
 	}
 }
 
-func (c *ChaosmetaService) Get(ctx context.Context, name string) (result *ExperimentInjectStruct, err error) {
-	cb, err := c.Client.Resource(gvr).Get(ctx, name, v1.GetOptions{})
+func (c *ChaosmetaService) Get(ctx context.Context, namespace, name string) (result *ExperimentInjectStruct, err error) {
+	cb, err := c.Client.Resource(gvr).Namespace(namespace).Get(ctx, name, v1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -206,7 +206,7 @@ func (c *ChaosmetaService) DeleteExpiredList(ctx context.Context) error {
 		if experiment.Status.Status == SuccessStatusType && experiment.Status.CreateTime != "" && experimentCreateTime.Before(expirationTime) {
 			err := c.Delete(ctx, experiment.Name)
 			if err != nil {
-				log.Error("failed to delete chaosmeta experiment %s: %s", experiment.Name, err.Error())
+				log.Errorf("failed to delete chaosmeta experiment %s: %v", experiment.Name, err.Error())
 				return err
 			} else {
 				log.Errorf("chaosmeta experiment %s deleted", experiment.Name)

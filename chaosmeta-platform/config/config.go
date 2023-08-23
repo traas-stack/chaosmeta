@@ -25,6 +25,24 @@ import (
 
 var DefaultRunOptIns *Config
 
+type RunMode string
+
+const (
+	RunModeKubeConfig     RunMode = "KubeConfig"
+	RunModeServiceAccount RunMode = "ServiceAccount"
+)
+
+func (r RunMode) Int() int {
+	switch r {
+	case RunModeKubeConfig:
+		return -1
+	case RunModeServiceAccount:
+		return 0
+	default:
+		return 0
+	}
+}
+
 type Config struct {
 	SecretKey string `yaml:"secretkey"`
 	DB        struct {
@@ -34,11 +52,13 @@ type Config struct {
 		Url     string `yaml:"url"`
 		MaxIdle int    `yaml:"maxidle"`
 		MaxConn int    `yaml:"maxconn"`
+		Debug   bool   `yaml:"debug"`
 	} `yaml:"db"`
 	Log struct {
 		Path  string `yaml:"path"`
 		Level string `yaml:"level"`
 	} `yaml:"log"`
+	RunMode RunMode `yaml:"runmode"`
 }
 
 func InitConfigWithFilePath(filePath string) error {

@@ -25,9 +25,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/argoproj/argo-workflows/v3/pkg/apis/workflow/v1alpha1"
-	"gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"regexp"
+	"sigs.k8s.io/yaml"
 	"strings"
 )
 
@@ -39,10 +39,16 @@ var (
 )
 
 const (
-	WorkflowNamespace = "chaosmeta"
-	WorkflowMainStep  = "main"
+	ArgoWorkflowNamespace = "default"
+	WorkflowNamespace     = "chaosmeta-inject"
+	WorkflowMainStep      = "main"
 )
 
+var Manifest = `
+- op: replace
+  path: /spec/targetPhase
+  value: recover
+`
 var workflow = v1alpha1.Workflow{
 	TypeMeta: metav1.TypeMeta{
 		APIVersion: "argoproj.io/v1alpha1",
@@ -50,7 +56,7 @@ var workflow = v1alpha1.Workflow{
 	},
 	ObjectMeta: metav1.ObjectMeta{
 		Name:      "",
-		Namespace: "chaosmeta",
+		Namespace: ArgoWorkflowNamespace,
 	},
 	Spec: v1alpha1.WorkflowSpec{
 		ServiceAccountName: kubernetes.ServiceAccount,
@@ -100,12 +106,10 @@ var workflow = v1alpha1.Workflow{
 					SuccessCondition: "status.phase == recover,status.status == success",
 					MergeStrategy:    "json",
 					Flags: []string{
-						"experiments.inject.chaosmeta.io",
+						"experiments.chaosmeta.io",
 						"{{inputs.parameters.experiment}}",
 					},
-					Manifest: `- op: replace
-								path: /spec/targetPhase
-  								value: recover`,
+					Manifest: Manifest,
 				},
 			},
 		},
@@ -122,7 +126,7 @@ const (
 )
 
 func getWorFlowName(experimentInstanceId string) string {
-	return fmt.Sprintf("chaosmeta-inject-%s", experimentInstanceId)
+	return fmt.Sprintf("%s", experimentInstanceId)
 }
 
 func GetWorkflowStruct(experimentInstanceId string, nodes []*experiment_instance.WorkflowNodesDetail) *v1alpha1.Workflow {
@@ -132,6 +136,7 @@ func GetWorkflowStruct(experimentInstanceId string, nodes []*experiment_instance
 		Name:  WorkflowMainStep,
 		Steps: convertToSteps(experimentInstanceId, nodes),
 	})
+
 	return &newWorkflow
 }
 
@@ -185,15 +190,15 @@ func getInjectStep(experimentInstanceUUID string, node *experiment_instance.Work
 		log.Error(err)
 		return nil
 	}
-
+	injectStep.Name = getInjectStepName(scope.Name, target.Name, experimentInstanceUUID, node.UUID)
 	experimentTemplate := ExperimentInjectStruct{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "inject.chaosmeta.io/v1alpha1",
+			APIVersion: "chaosmeta.io/v1alpha1",
 			Kind:       "Experiment",
 		},
 
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      getInjectStepName(scope.Name, target.Name, experimentInstanceUUID, node.UUID),
+			Name:      injectStep.Name,
 			Namespace: WorkflowNamespace,
 		},
 
@@ -249,12 +254,12 @@ func getInjectStep(experimentInstanceUUID string, node *experiment_instance.Work
 		log.Error(err)
 		return nil
 	}
-
+	log.Error("-------experimentTemplate", string(experimentTemplateBytes))
 	injectStep.Arguments = v1alpha1.Arguments{
 		Parameters: []v1alpha1.Parameter{
 			{
 				Name:  "experiment",
-				Value: v1alpha1.AnyStringPtr(experimentTemplateBytes),
+				Value: v1alpha1.AnyStringPtr(string(experimentTemplateBytes)),
 			},
 		},
 	}
@@ -299,15 +304,19 @@ func getMaxRowAndColumn(nodes []*experiment_instance.WorkflowNodesDetail) (int, 
 }
 
 func getExperimentInstanceIdFromWorkflowName(workflowName string) (string, error) {
-	reg := regexp.MustCompile(`chaosmeta-inject-(\w+)`)
-	match := reg.FindStringSubmatch(workflowName)
-	if len(match) < 2 {
-		return "", fmt.Errorf("Failed to extract experimentInstanceId from workflowName")
+	parts := strings.Split(workflowName, "-")
+	experimentID := ""
+	for i := len(parts) - 1; i >= 0; i-- {
+		if strings.HasSuffix(parts[i], "experiment") {
+			experimentID = parts[i]
+			break
+		}
 	}
-	return match[1], nil
+	return experimentID, nil
 }
 
 func getExperimentUUIDAndNodeIDFromStepName(name string) (string, string, error) {
+	log.Error("ExperimentUUIDAndNodeIDFromStepName:", name)
 	var reg *regexp.Regexp
 	var match []string
 

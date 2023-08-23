@@ -22,10 +22,15 @@ import (
 )
 
 type ArgsValueInstance struct {
+	Id                       int    `json:"id" orm:"pk;auto;column(id)"`
 	ArgsID                   int    `json:"args_id" orm:"column(args_id);index"`
 	WorkflowNodeInstanceUUID string `json:"workflow_node_instance_uuid,omitempty" orm:"column(workflow_node_instance_uuid);index"`
 	Value                    string `json:"value" orm:"column(value);size(1024)"`
 	models.BaseTimeModel
+}
+
+func (a *ArgsValueInstance) TableUnique() [][]string {
+	return [][]string{{"args_id", "workflow_node_instance_uuid"}}
 }
 
 func (av *ArgsValueInstance) TableName() string {
@@ -60,7 +65,7 @@ func ClearArgsValueInstancesByWorkflowNodeUUID(workflowNodeInstanceUUID string) 
 
 func GetArgsValueInstancesByWorkflowNodeUUID(workflowNodeInstanceUUID string) ([]*ArgsValueInstance, error) {
 	var argsValues []*ArgsValueInstance
-	_, err := models.GetORM().QueryTable(new(ArgsValueInstance).TableName()).Filter("workflow_node_instance_uuid", workflowNodeInstanceUUID).OrderBy("-created_at").All(&argsValues)
+	_, err := models.GetORM().QueryTable(new(ArgsValueInstance).TableName()).Filter("workflow_node_instance_uuid", workflowNodeInstanceUUID).OrderBy("-create_time").All(&argsValues)
 	if err != nil {
 		return nil, err
 	}

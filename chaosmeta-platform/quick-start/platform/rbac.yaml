@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: chaosmeta-platform
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: chaosmeta-platform
+rules:
+  - apiGroups: ["apps", "batch", "", "extensions", "networking.k8s.io", "rbac.authorization.k8s.io", "apiextensions.k8s.io"]
+    resources: ["nodes", "pods", "services", "deployments", "jobs", "ingresses", "configmaps",
+                "pods/exec", "replicasets", "statefulsets", "namespaces", "pods/log", "events", "serviceaccounts",
+                "secrets", "clusterroles", "clusterrolebindings", "customresourcedefinitions", "pods/ephemeralcontainers",
+                "daemonsets"]
+    verbs: ["*"]
+  - apiGroups: ["inject.chaosmeta.io"]
+    resources: ["*"]
+    verbs: ["*"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs:
+      - create
+      - update
+      - patch
+  - apiGroups: ["monitoring.coreos.com"]
+    resources: ["*"]
+    verbs: ["*"]
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["*"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind:  ClusterRoleBinding
+metadata:
+  name: chaosmeta-platform
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind:  ClusterRole
+  name: chaosmeta-platform
+subjects:
+  - kind: ServiceAccount
+    name: chaosmeta-platform
+    namespace: default

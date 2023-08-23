@@ -105,7 +105,7 @@ func InitTarget(ctx context.Context, scope basic.Scope) error {
 	if err := basic.InsertTarget(ctx, &MemTarget); err != nil {
 		return err
 	}
-	if err := InitMemFault(ctx, CpuTarget); err != nil {
+	if err := InitMemFault(ctx, MemTarget); err != nil {
 		return err
 	}
 	DiskTarget.ScopeId = scope.ID

@@ -23,18 +23,18 @@ import (
 )
 
 type WorkflowNodeInstance struct {
-	UUID           string `json:"uuid,omitempty" orm:"column(uuid);pk"`
-	ExperimentUUID string `json:"experiment_uuid" orm:"index;column(experiment_uuid);size(64)"`
-	Row            int    `json:"row" orm:"column(row)"`
-	Column         int    `json:"column" orm:"column(column)"`
-	Duration       string `json:"duration" orm:"column(duration);size(32)"`
-	ScopeId        int    `json:"scope_id" orm:"column(scope_id); int(11)"`
-	TargetId       int    `json:"target_id" orm:"column(target_id); int(11)"`
-	ExecType       string `json:"exec_type" orm:"column(exec_type);size(32)"`
-	ExecID         int    `json:"exec_id" orm:"column(exec_id)"`
-	Status         string `json:"status" orm:"column(status);size(32);default('to_be_executed');index"`
-	Message        string `json:"message" orm:"column(message);size(1024)"`
-	Version        int    `json:"-" orm:"column(version);default(0);version"`
+	UUID                   string `json:"uuid,omitempty" orm:"column(uuid);pk"`
+	ExperimentInstanceUUID string `json:"experiment_instance_uuid" orm:"index;column(experiment_instance_uuid);size(64)"`
+	Row                    int    `json:"row" orm:"column(row)"`
+	Column                 int    `json:"column" orm:"column(column)"`
+	Duration               string `json:"duration" orm:"column(duration);size(32)"`
+	ScopeId                int    `json:"scope_id" orm:"column(scope_id); int(11)"`
+	TargetId               int    `json:"target_id" orm:"column(target_id); int(11)"`
+	ExecType               string `json:"exec_type" orm:"column(exec_type);size(32)"`
+	ExecID                 int    `json:"exec_id" orm:"column(exec_id)"`
+	Status                 string `json:"status" orm:"column(status);size(32);default(to_be_executed);index"`
+	Message                string `json:"message" orm:"column(message);size(1024)"`
+	Version                int    `json:"-" orm:"column(version);default(0);column(version)"`
 	models.BaseTimeModel
 }
 
@@ -87,18 +87,21 @@ func UpdateWorkflowNodeInstance(workflowNodeInstance *WorkflowNodeInstance) erro
 	return nil
 }
 
-func UpdateWorkflowNodeInstanceStatus(uuid string, status string) error {
+func UpdateWorkflowNodeInstanceStatus(uuid string, status, message string) error {
 	nodeInstance, err := GetWorkflowNodeInstanceByUUID(uuid)
 	if err != nil {
 		return err
 	}
 	nodeInstance.Status = status
+	if message != "" {
+		nodeInstance.Message = message
+	}
 	return UpdateWorkflowNodeInstance(nodeInstance)
 }
 
 func GetWorkflowNodeInstancesByExperimentUUID(experimentUUID string) ([]*WorkflowNodeInstance, error) {
 	workflowNodes := []*WorkflowNodeInstance{}
-	_, err := models.GetORM().QueryTable(new(WorkflowNodeInstance).TableName()).Filter("experiment_uuid", experimentUUID).OrderBy("row", "column").All(&workflowNodes)
+	_, err := models.GetORM().QueryTable(new(WorkflowNodeInstance).TableName()).Filter("experiment_instance_uuid", experimentUUID).OrderBy("row", "column").All(&workflowNodes)
 	if err == orm.ErrNoRows {
 		return nil, nil
 	}

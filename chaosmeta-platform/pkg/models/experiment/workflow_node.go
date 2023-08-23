@@ -22,7 +22,8 @@ import (
 )
 
 type WorkflowNode struct {
-	UUID           string `json:"uuid,omitempty" orm:"column(uuid);pk"`
+	Id             int    `json:"id, omitempty" orm:"pk;auto;column(id)"`
+	UUID           string `json:"uuid,omitempty" orm:"column(uuid);index"`
 	ExperimentUUID string `json:"experiment_uuid" orm:"index;column(experiment_uuid);size(64)"`
 	Row            int    `json:"row" orm:"column(row)"`
 	Column         int    `json:"column" orm:"column(column)"`
@@ -36,6 +37,10 @@ type WorkflowNode struct {
 
 func (wn *WorkflowNode) TableName() string {
 	return TablePrefix + "workflow_node"
+}
+
+func (wn *WorkflowNode) TableUnique() [][]string {
+	return [][]string{{"uuid", "experiment_uuid"}}
 }
 
 func GetWorkflowNodeByUUID(uuid string) (*WorkflowNode, error) {
@@ -68,8 +73,12 @@ func CreateWorkflowNode(workflowNode *WorkflowNode) error {
 }
 
 func DeleteWorkflowNodeByUUID(uuid string) error {
-	workflowNode := &WorkflowNode{UUID: uuid}
-	_, err := models.GetORM().Delete(workflowNode)
+	_, err := models.GetORM().QueryTable(new(WorkflowNode).TableName()).Filter("uuid", uuid).Delete()
+	return err
+}
+
+func DeleteWorkflowNodeByExperimentUUID(uuid string) error {
+	_, err := models.GetORM().QueryTable(new(WorkflowNode).TableName()).Filter("experiment_uuid", uuid).Delete()
 	return err
 }
 

@@ -18,10 +18,13 @@ package experiment
 
 import (
 	models "chaosmeta-platform/pkg/models/common"
+	"chaosmeta-platform/util/log"
+	"fmt"
 	"github.com/beego/beego/v2/client/orm"
 )
 
 type ArgsValue struct {
+	Id               int    `json:"id" orm:"pk;auto;column(id)"`
 	ArgsID           int    `json:"args_id" orm:"column(args_id);index"`
 	WorkflowNodeUUID string `json:"workflow_node_uuid,omitempty" orm:"column(workflow_node_uuid);index"`
 	Value            string `json:"value" orm:"column(value);size(1024)"`
@@ -32,21 +35,42 @@ func (av *ArgsValue) TableName() string {
 	return TablePrefix + "args_value"
 }
 
+func (av *ArgsValue) TableUnique() [][]string {
+	return [][]string{{"args_id", "workflow_node_uuid"}}
+}
+
+func InsertArgsValue(arg *ArgsValue) error {
+	_, err := models.GetORM().Insert(arg)
+	return err
+}
+
 func BatchInsertArgsValues(workflowNodeUUID string, argsValues []*ArgsValue) error {
 	o := models.GetORM()
+	if workflowNodeUUID == "" {
+		return fmt.Errorf("workflowNodeUUID is empty")
+	}
+	if argsValues == nil {
+		return fmt.Errorf("argsValues is nil")
+	}
+
 	oldValues := []*ArgsValue{}
-	_, err := o.QueryTable(new(ArgsValue)).Filter("workflow_node_uuid", workflowNodeUUID).All(&oldValues)
+	_, err := o.QueryTable(new(ArgsValue).TableName()).Filter("workflow_node_uuid", workflowNodeUUID).All(&oldValues)
 	if err != nil {
+		log.Error(err)
 		return err
 	}
 	if len(oldValues) > 0 {
-		if _, err = o.QueryTable(new(ArgsValue)).Filter("workflow_node_uuid", workflowNodeUUID).Delete(); err != nil {
+		if _, err = o.QueryTable(new(ArgsValue).TableName()).Filter("workflow_node_uuid", workflowNodeUUID).Delete(); err != nil {
+			log.Error(err)
 			return err
 		}
 	}
 	for _, argsValue := range argsValues {
+		if argsValue == nil {
+			return fmt.Errorf("argsValue is nil")
+		}
 		argsValue.WorkflowNodeUUID = workflowNodeUUID
-		if _, err := o.Insert(argsValue); err != nil {
+		if err := InsertArgsValue(argsValue); err != nil {
 			return err
 		}
 	}
@@ -61,9 +85,8 @@ func ClearArgsValuesByWorkflowNodeUUID(workflowNodeUUID string) error {
 
 func GetArgsValuesByWorkflowNodeUUID(workflowNodeUUID string) ([]*ArgsValue, error) {
 	o := models.GetORM()
-
 	var argsValues []*ArgsValue
-	_, err := o.QueryTable(new(ArgsValue).TableName()).Filter("workflow_node_uuid", workflowNodeUUID).OrderBy("-created_at").All(&argsValues)
+	_, err := o.QueryTable(new(ArgsValue).TableName()).Filter("workflow_node_uuid", workflowNodeUUID).OrderBy("-create_time").All(&argsValues)
 	if err != nil {
 		return nil, err
 	}

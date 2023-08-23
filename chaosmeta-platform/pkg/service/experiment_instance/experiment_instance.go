@@ -19,6 +19,7 @@ package experiment_instance
 import (
 	"chaosmeta-platform/pkg/models/experiment_instance"
 	"chaosmeta-platform/pkg/models/namespace"
+	"chaosmeta-platform/util/log"
 	"chaosmeta-platform/util/snowflake"
 	"context"
 	"errors"
@@ -26,6 +27,8 @@ import (
 	"github.com/spf13/cast"
 	"time"
 )
+
+const TimeLayout = "2006-01-02 15:04:05"
 
 type ExperimentInstanceService struct{}
 
@@ -36,13 +39,18 @@ type ExperimentInstance struct {
 	FaultRange    *experiment_instance.FaultRangeInstance `json:"exec_range,omitempty"`
 }
 
-func (s *ExperimentInstanceService) CreateExperimentInstance(experimentParam *ExperimentInstance) (string, error) {
-	node, err := snowflake.NewNode(1)
+func (s *ExperimentInstanceService) createUUID(creator int, typeStr string) string {
+	nodeSnow, err := snowflake.NewNode(1)
 	if err != nil {
-		return "", err
+		log.Error(err)
+		return ""
 	}
+	return fmt.Sprintf("%d%d%d%s", nodeSnow.Generate(), creator, time.Now().Unix(), typeStr)
+}
+
+func (s *ExperimentInstanceService) CreateExperimentInstance(experimentParam *ExperimentInstance) (string, error) {
 	experimentCreate := experiment_instance.ExperimentInstance{
-		UUID:           fmt.Sprintf("%d-%d-%s-experiment", node.Generate(), experimentParam.Creator, time.Now().String()),
+		UUID:           s.createUUID(experimentParam.Creator, "experiment"),
 		Name:           experimentParam.Name,
 		NamespaceID:    experimentParam.NamespaceId,
 		Description:    experimentParam.Description,
@@ -62,21 +70,17 @@ func (s *ExperimentInstanceService) CreateExperimentInstance(experimentParam *Ex
 	}
 	//workflow_nodes
 	for _, node := range experimentParam.WorkflowNodes {
-		nodeSnow, err := snowflake.NewNode(1)
-		if err != nil {
-			return "", err
-		}
 		workflowNodeCreate := experiment_instance.WorkflowNodeInstance{
-			UUID:           fmt.Sprintf("%d-%d-%s-node", nodeSnow.Generate(), experimentParam.Creator, time.Now().String()),
-			ExperimentUUID: experimentParam.UUID,
-			Row:            node.Row,
-			Column:         node.Column,
-			Duration:       node.Duration,
-			ScopeId:        node.ScopeId,
-			TargetId:       node.TargetId,
-			ExecType:       node.ExecType,
-			ExecID:         node.ExecId,
-			Message:        node.Message,
+			UUID:                   s.createUUID(experimentParam.Creator, "node"),
+			ExperimentInstanceUUID: experimentCreate.UUID,
+			Row:                    node.Row,
+			Column:                 node.Column,
+			Duration:               node.Duration,
+			ScopeId:                node.ScopeId,
+			TargetId:               node.TargetId,
+			ExecType:               node.ExecType,
+			ExecID:                 node.ExecId,
+			Message:                node.Message,
 		}
 		if err := experiment_instance.CreateWorkflowNodeInstance(&workflowNodeCreate); err != nil {
 			return experimentCreate.UUID, err
@@ -99,7 +103,7 @@ func (s *ExperimentInstanceService) CreateExperimentInstance(experimentParam *Ex
 
 		//exec_range
 		if node.Subtasks != nil {
-			node.Subtasks.WorkflowNodeInstanceUUID = node.UUID
+			node.Subtasks.WorkflowNodeInstanceUUID = workflowNodeCreate.UUID
 			if err := experiment_instance.CreateFaultRangeInstance(node.Subtasks); err != nil {
 				return experimentCreate.UUID, err
 			}
@@ -115,16 +119,17 @@ type LabelInfo struct {
 }
 
 type ExperimentInstanceInfo struct {
-	UUID        string      `json:"uuid"`
-	Name        string      `json:"name"`
-	Description string      `json:"description"`
-	Creator     int         `json:"creator"`
-	NamespaceId int         `json:"namespace_id"`
-	CreateTime  string      `json:"create_time"`
-	UpdateTime  string      `json:"update_time"`
-	Status      string      `json:"status"`
-	Message     string      `json:"message"`
-	Labels      []LabelInfo `json:"labels"`
+	UUID        string `json:"uuid"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Creator     int    `json:"creator"`
+	NamespaceId int    `json:"namespace_id"`
+
+	CreateTime string      `json:"create_time"`
+	UpdateTime string      `json:"update_time"`
+	Status     string      `json:"status"`
+	Message    string      `json:"message"`
+	Labels     []LabelInfo `json:"labels"`
 }
 
 func (s *ExperimentInstanceService) GetExperimentInstanceByUUID(uuid string) (*ExperimentInstanceInfo, error) {
@@ -310,7 +315,7 @@ func (s *ExperimentInstanceService) GetFaultRangeInstanceByWorkflowNodeInstanceU
 	if _, err := s.GetWorkflowNodeInstanceByUUIDAndNodeId(uuid, nodeId); err != nil {
 		return nil, err
 	}
-	faultRangeInstance := experiment_instance.FaultRangeInstance{ID: cast.ToInt(subtaskId)}
+	faultRangeInstance := experiment_instance.FaultRangeInstance{Id: cast.ToInt(subtaskId)}
 	err := experiment_instance.GetFaultRangeInstanceById(&faultRangeInstance)
 	return &faultRangeInstance, err
 }

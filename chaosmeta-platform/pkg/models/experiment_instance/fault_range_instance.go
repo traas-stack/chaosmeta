@@ -22,7 +22,7 @@ import (
 )
 
 type FaultRangeInstance struct {
-	ID                       int    `json:"id,omitempty" orm:"column(id);pk"`
+	Id                       int    `json:"id" orm:"pk;auto;column(id)"`
 	WorkflowNodeInstanceUUID string `json:"workflow_node_instance_uuid" orm:"index;column(workflow_node_instance_uuid);size(64)"`
 	TargetName               string `json:"target_name" orm:"column(target_name);size(255)"`
 	TargetIP                 string `json:"target_ip" orm:"column(target_ip);size(32)"`
@@ -52,7 +52,7 @@ func UpdateFaultRangeInstance(faultRange *FaultRangeInstance) error {
 }
 
 func DeleteFaultRangeInstanceByID(id int) error {
-	faultRange := &FaultRangeInstance{ID: id}
+	faultRange := &FaultRangeInstance{Id: id}
 	_, err := models.GetORM().Delete(faultRange)
 	return err
 }
@@ -63,7 +63,7 @@ func GetFaultRangeInstanceById(f *FaultRangeInstance) error {
 
 func GetFaultRangeInstancesByWorkflowNodeInstanceUUID(workflowNodeInstanceUUID string) (*FaultRangeInstance, error) {
 	var faultRange FaultRangeInstance
-	err := models.GetORM().QueryTable(new(FaultRangeInstance).TableName()).Filter("workflow_node_instance_uuid", workflowNodeInstanceUUID).OrderBy("row", "column").One(&faultRange)
+	err := models.GetORM().QueryTable(new(FaultRangeInstance).TableName()).Filter("workflow_node_instance_uuid", workflowNodeInstanceUUID).OrderBy("id").One(&faultRange)
 	if err == orm.ErrNoRows {
 		return nil, nil
 	}

@@ -17,12 +17,14 @@
 package experiment
 
 import (
+	"chaosmeta-platform/config"
 	"chaosmeta-platform/pkg/models/experiment"
 	experimentInstanceModel "chaosmeta-platform/pkg/models/experiment_instance"
 	"chaosmeta-platform/pkg/service/cluster"
 	"chaosmeta-platform/pkg/service/experiment_instance"
 	"chaosmeta-platform/util/log"
 	"context"
+	"encoding/json"
 	"errors"
 	"github.com/argoproj/argo-workflows/v3/pkg/apis/workflow/v1alpha1"
 	"github.com/robfig/cron"
@@ -80,6 +82,8 @@ func convertToExperimentInstance(experiment *Experiment, status string) *experim
 		experimentInstance.WorkflowNodes = append(experimentInstance.WorkflowNodes, workflowNodeDetail)
 	}
 
+	experimentInstanceBytes, _ := json.Marshal(experimentInstance)
+	log.Error("convertToExperimentInstance------------", string(experimentInstanceBytes))
 	return experimentInstance
 }
 
@@ -99,12 +103,12 @@ func StartExperiment(experimentID string) error {
 	}
 
 	clusterService := cluster.ClusterService{}
-	_, restConfig, err := clusterService.GetRestConfig(context.Background(), -1)
+	_, restConfig, err := clusterService.GetRestConfig(context.Background(), config.DefaultRunOptIns.RunMode.Int())
 	if err != nil {
 		return err
 	}
 
-	argoWorkFlowCtl, err := NewArgoWorkFlowService(restConfig, WorkflowNamespace)
+	argoWorkFlowCtl, err := NewArgoWorkFlowService(restConfig, ArgoWorkflowNamespace)
 	if err != nil {
 		return err
 	}
@@ -126,7 +130,7 @@ func StopExperiment(experimentInstanceID string) error {
 	}
 
 	clusterService := cluster.ClusterService{}
-	_, restConfig, err := clusterService.GetRestConfig(context.Background(), -1)
+	_, restConfig, err := clusterService.GetRestConfig(context.Background(), config.DefaultRunOptIns.RunMode.Int())
 	if err != nil {
 		return err
 	}
@@ -149,7 +153,7 @@ func StopExperiment(experimentInstanceID string) error {
 
 	for _, node := range workFlowGet.Status.Nodes {
 		if isInjectStepName(node.DisplayName) {
-			chaosmetaCR, err := chaosmetaService.Get(context.Background(), node.DisplayName)
+			chaosmetaCR, err := chaosmetaService.Get(context.Background(), WorkflowNamespace, node.DisplayName)
 			if err != nil {
 				log.Error(err)
 				return err
@@ -164,7 +168,7 @@ func StopExperiment(experimentInstanceID string) error {
 				continue
 			}
 
-			if err := experimentInstanceModel.UpdateWorkflowNodeInstanceStatus(nodeId, "Succeeded"); err != nil {
+			if err := experimentInstanceModel.UpdateWorkflowNodeInstanceStatus(nodeId, "Succeeded", ""); err != nil {
 				log.Error(err)
 				continue
 			}
@@ -217,38 +221,42 @@ func (e *ExperimentRoutine) DealCronExperiment() {
 	for _, experimentGet := range experiments {
 		cronExpr, err := cron.Parse(experimentGet.ScheduleRule)
 		if err != nil {
-			log.Error("parsing cron expression failed parsing cron table parsing cron expression failed:", err)
 			continue
 		}
+		now := time.Now().Add(time.Minute)
 		if experimentGet.NextExec.IsZero() {
-			experimentGet.NextExec = cronExpr.Next(time.Now())
+			experimentGet.NextExec = cronExpr.Next(now)
 			if err := experiment.UpdateExperiment(experimentGet); err != nil {
 				log.Error(err)
 			}
 			continue
 		}
 
-		nextExec := cronExpr.Next(experimentGet.NextExec)
-
-		if time.Now().After(nextExec) {
+		if time.Now().After(experimentGet.NextExec) {
 			experimentGet.Status = experiment.Executed
-			experimentGet.NextExec = cronExpr.Next(time.Now())
+			experimentGet.NextExec = cronExpr.Next(now)
+			log.Error(experimentGet.UUID, " next exec time", experimentGet.NextExec)
 			if err := experiment.UpdateExperiment(experimentGet); err != nil {
 				log.Error(err)
 				continue
 			}
 
+			log.Error(6)
 			if err := StartExperiment(experimentGet.UUID); err != nil {
 				log.Error(err)
+				experimentGet.Status = experiment.ToBeExecuted
+				if err := experiment.UpdateExperiment(experimentGet); err != nil {
+					log.Error(err)
+					continue
+				}
 				continue
 			}
-
+			log.Error(7)
 			experimentGet.Status = experiment.ToBeExecuted
 			if err := experiment.UpdateExperiment(experimentGet); err != nil {
 				log.Error(err)
 				continue
 			}
-
 		}
 
 	}
@@ -256,42 +264,45 @@ func (e *ExperimentRoutine) DealCronExperiment() {
 }
 
 func (e *ExperimentRoutine) syncExperimentStatus(workflow v1alpha1.Workflow) error {
+	log.Info("syncExperimentStatus.Name:", workflow.Name)
 	experimentInstanceId, err := getExperimentInstanceIdFromWorkflowName(workflow.Name)
 	if err != nil {
 		log.Error(err)
 		return err
 	}
 
-	if err := experimentInstanceModel.UpdateExperimentInstanceStatus(experimentInstanceId, string(workflow.Status.Phase)); err != nil {
+	if err := experimentInstanceModel.UpdateExperimentInstanceStatus(experimentInstanceId, string(workflow.Status.Phase), workflow.Status.Message); err != nil {
+		log.Error("UpdateExperimentInstanceStatus err:", err)
 		return err
 	}
 
 	for _, node := range workflow.Status.Nodes {
-		_, nodeId, err := getExperimentUUIDAndNodeIDFromStepName(node.DisplayName)
-		if err != nil {
-			log.Error(err)
-			continue
-		}
+		if node.TemplateName == string(ExperimentInject) || node.TemplateName == string(RawSuspend) {
+			_, nodeId, err := getExperimentUUIDAndNodeIDFromStepName(node.DisplayName)
+			if err != nil {
+				log.Error("getExperimentUUIDAndNodeIDFromStepName", err)
+				continue
+			}
 
-		if err := experimentInstanceModel.UpdateWorkflowNodeInstanceStatus(nodeId, string(node.Phase)); err != nil {
-			log.Error(err)
-			continue
+			if err := experimentInstanceModel.UpdateWorkflowNodeInstanceStatus(nodeId, string(node.Phase), node.Message); err != nil {
+				log.Error("UpdateWorkflowNodeInstanceStatus", err)
+				continue
+			}
 		}
 	}
-
 	return nil
 }
 
 func (e *ExperimentRoutine) SyncExperimentsStatus() {
 	clusterService := cluster.ClusterService{}
-	_, restConfig, err := clusterService.GetRestConfig(context.Background(), -1)
+	_, restConfig, err := clusterService.GetRestConfig(context.Background(), config.DefaultRunOptIns.RunMode.Int())
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
-	argoWorkFlowCtl, err := NewArgoWorkFlowService(restConfig, WorkflowNamespace)
-	pendingArgos, finishArgos, err := argoWorkFlowCtl.ListPendingAndRecentWorkflows()
+	argoWorkFlowCtl, err := NewArgoWorkFlowService(restConfig, ArgoWorkflowNamespace)
+	pendingArgos, finishArgos, err := argoWorkFlowCtl.ListPendingAndFinishWorkflows()
 	if err != nil {
 		log.Error(err)
 		return
@@ -299,12 +310,12 @@ func (e *ExperimentRoutine) SyncExperimentsStatus() {
 
 	errCh, doneCh := make(chan error), make(chan struct{})
 	go func() {
-		for _, pendingArgo := range pendingArgos.Items {
+		for _, pendingArgo := range pendingArgos {
 			go func(argo v1alpha1.Workflow) {
 				if err := e.syncExperimentStatus(argo); err != nil {
 					errCh <- err
 				}
-			}(pendingArgo)
+			}(*pendingArgo)
 		}
 	}()
 
@@ -322,7 +333,7 @@ func (e *ExperimentRoutine) SyncExperimentsStatus() {
 	}()
 
 	go func() {
-		for range pendingArgos.Items {
+		for range pendingArgos {
 			<-doneCh
 		}
 		for range finishArgos {
@@ -340,7 +351,7 @@ func (e *ExperimentRoutine) SyncExperimentsStatus() {
 
 func (e *ExperimentRoutine) DeleteExecutedInstanceCR() {
 	clusterService := cluster.ClusterService{}
-	_, restConfig, err := clusterService.GetRestConfig(context.Background(), -1)
+	_, restConfig, err := clusterService.GetRestConfig(context.Background(), config.DefaultRunOptIns.RunMode.Int())
 	if err != nil {
 		log.Error(err)
 		return

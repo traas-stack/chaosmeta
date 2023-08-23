@@ -49,7 +49,6 @@ func initKubeClient() (*kubernetes.Clientset, *rest.Config) {
 	} else {
 		kubeconfig = flag.String("k8sconfig", "", "absolute path to the kubeconfig file")
 	}
-	fmt.Println("--------------", *kubeconfig)
 	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	if err != nil {
 		panic(err.Error())
@@ -87,7 +86,7 @@ func Test_podService_List(t *testing.T) {
 	//param.Factory = factory
 
 	podCtrl := NewPodService(&param)
-	podDetail, err := podCtrl.Get("chaosmeta", "chaosmeta-inject-controller-manager-c8d699557-bw6x7")
+	podDetail, err := podCtrl.Get("chaosmeta", "chaosmeta-inject-controller-manager-6fdc8685d4-dhrsb")
 	if err != nil {
 		t.Fatal(err)
 	}

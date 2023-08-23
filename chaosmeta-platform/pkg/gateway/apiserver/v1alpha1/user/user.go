@@ -136,16 +136,16 @@ func (c *UserController) Login() {
 		return
 	}
 	a := &user.UserService{}
-	tocken, refreshToken, err := a.Login(context.Background(), UserLoginRequest.Name, UserLoginRequest.Password)
+	token, refreshToken, err := a.Login(context.Background(), UserLoginRequest.Name, UserLoginRequest.Password)
 	if err != nil {
 		c.Error(&c.Controller, err)
 		return
 	}
 
-	c.Ctx.Output.Cookie("TOKEN", tocken)
+	c.Ctx.Output.Cookie("TOKEN", token)
 	c.Ctx.Output.Cookie("REFRESH_TOKEN", refreshToken)
 	c.Success(&c.Controller, UserLoginResponse{
-		Token:        tocken,
+		Token:        token,
 		RefreshToken: refreshToken,
 	})
 }
@@ -251,7 +251,7 @@ func (c *UserController) GetNamespaceList() {
 	page, _ := c.GetInt("page", 1)
 	pageSize, _ := c.GetInt("page_size", 10)
 	sort := c.GetString("sort")
-	permission, err := c.GetInt("permission")
+	permission, err := c.GetInt("permission", -1)
 
 	a := &user.UserService{}
 	total, namespaceList, err := a.GetNamespaceList(context.Background(), userName, permission, sort, page, pageSize)

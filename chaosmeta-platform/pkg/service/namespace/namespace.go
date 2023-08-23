@@ -34,7 +34,7 @@ func Init() {
 	}
 
 	defaultNamespace := &namespaceModel.Namespace{
-		Name:        "default",
+		Name:        "default namespace",
 		Description: "This is the default namespace",
 		Creator:     1,
 		IsDefault:   true,

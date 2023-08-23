@@ -49,7 +49,7 @@ type Experiment struct {
 	NamespaceID  int              `json:"namespace_id" orm:"index;column(namespace_id)"`
 	ScheduleType string           `json:"schedule_type" orm:"column(schedule_type);size(32);default(manual)"`
 	ScheduleRule string           `json:"schedule_rule" orm:"column(schedule_rule);size(64)"`
-	NextExec     time.Time        `json:"next_exec" orm:"column(next_exec);type(datetime)"`
+	NextExec     time.Time        `json:"next_exec,omitempty" orm:"null;column(next_exec);type(datetime)"`
 	Status       ExperimentStatus `json:"-" orm:"index;column(status);type:tinyint(1)"`
 	LastInstance string           `json:"last_instance" orm:"column(last_instance);size(64)"`
 	Version      int              `json:"-" orm:"column(version);default(0);version"`
@@ -127,12 +127,10 @@ func ListExperimentsByScheduleTypeAndStatus(scheduleType ScheduleType, experimen
 		return 0, nil, err
 	}
 	if scheduleType != "" {
-		fmt.Println("1")
 		experimentQuery.Filter("schedule_type", models.NEGLECT, false, scheduleType)
 	}
 
 	if experimentStatus >= 0 {
-		fmt.Println("2")
 		experimentQuery.Filter("status", models.NEGLECT, false, experimentStatus)
 	}
 	var totalCount int64
@@ -199,7 +197,7 @@ func SearchExperiments(lastInstance string, namespaceId int, creator int, name s
 		return 0, nil, err
 	}
 
-	_, err = experimentQuery.GetOamQuerySeter().All(experiments)
+	_, err = experimentQuery.GetOamQuerySeter().All(&experiments)
 	return totalCount, experiments, err
 }
 

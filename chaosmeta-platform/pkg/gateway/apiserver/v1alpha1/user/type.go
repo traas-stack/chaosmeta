@@ -17,7 +17,7 @@
 package user
 
 import (
-	namespace2 "chaosmeta-platform/pkg/models/namespace"
+	"chaosmeta-platform/pkg/service/user"
 	"time"
 )
 
@@ -75,8 +75,8 @@ type UserUpdateRoleRequest struct {
 }
 
 type NameSpaceListResponse struct {
-	Page       int                            `json:"page"`
-	PageSize   int                            `json:"pageSize"`
-	Total      int64                          `json:"total"`
-	Namespaces []namespace2.UserNamespaceData `json:"namespaces"`
+	Page       int                      `json:"page"`
+	PageSize   int                      `json:"pageSize"`
+	Total      int64                    `json:"total"`
+	Namespaces []user.UserNamespaceData `json:"namespaces"`
 }

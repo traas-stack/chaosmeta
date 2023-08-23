@@ -26,6 +26,9 @@ import (
 	"errors"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+	"os"
+	"path/filepath"
 )
 
 type ClusterService struct{}
@@ -125,17 +128,47 @@ func (c *ClusterService) GetList(ctx context.Context, name, orderBy string, page
 }
 
 func (c *ClusterService) GetRestConfig(ctx context.Context, id int) (*kubernetes.Clientset, *rest.Config, error) {
-	if id < 0 {
-		restConfig, err := clientset.GetKubeRestConf(clientset.KubeLoadInCluster, "")
+	if id == 0 {
+		return c.getRestConfigInCluster()
+	}
+	if id == -1 {
+		return c.getRestConfigFromKubeConfig("")
+	}
+	return c.getRestConfigFromClusterId(ctx, id)
+}
+
+func (c *ClusterService) getRestConfigInCluster() (*kubernetes.Clientset, *rest.Config, error) {
+	restConfig, err := clientset.GetKubeRestConf(clientset.KubeLoadInCluster, "")
+	if err != nil {
+		return nil, nil, err
+	}
+	clientSet, err := kubernetes.NewForConfig(restConfig)
+	if err != nil {
+		return nil, restConfig, err
+	}
+	return clientSet, restConfig, err
+}
+
+func (c *ClusterService) getRestConfigFromKubeConfig(kubeConfigPath string) (*kubernetes.Clientset, *rest.Config, error) {
+	if kubeConfigPath == "" {
+		homeDir, err := os.UserHomeDir()
 		if err != nil {
 			return nil, nil, err
 		}
-		clientSet, err := kubernetes.NewForConfig(restConfig)
-		if err != nil {
-			return nil, restConfig, err
-		}
-		return clientSet, restConfig, err
+		kubeConfigPath = filepath.Join(homeDir, ".kube", "config")
 	}
+	config, err := clientcmd.BuildConfigFromFlags("", kubeConfigPath)
+	if err != nil {
+		return nil, nil, err
+	}
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return nil, config, err
+	}
+	return clientset, config, nil
+}
+
+func (c *ClusterService) getRestConfigFromClusterId(ctx context.Context, id int) (*kubernetes.Clientset, *rest.Config, error) {
 	cluster, err := c.Get(ctx, id)
 	if err != nil {
 		return nil, nil, err

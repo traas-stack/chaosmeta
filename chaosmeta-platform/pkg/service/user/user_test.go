@@ -110,3 +110,12 @@ func TestUser_Get(t *testing.T) {
 	fmt.Println(usr)
 
 }
+
+func TestUser_GetNamespaceList(t *testing.T) {
+	a := &UserService{}
+	total, data, err := a.GetNamespaceList(context.Background(), "hlttest3", 1, "", 1, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println(total, data)
+}

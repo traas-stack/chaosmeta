@@ -19,7 +19,9 @@ package experiment_instance
 import (
 	models "chaosmeta-platform/pkg/models/common"
 	"errors"
+	"fmt"
 	"github.com/beego/beego/v2/client/orm"
+	"strconv"
 	"time"
 )
 
@@ -41,7 +43,7 @@ type ExperimentInstance struct {
 	Description    string `json:"description" orm:"column(description);size(1024)"`
 	ExperimentUUID string `json:"experiment_uuid,omitempty" orm:"column(experiment_uuid);size(128);index"`
 	Creator        int    `json:"creator" orm:"index;column(creator)"`
-	Status         string `json:"status" orm:"column(status);default('to_be_executed');size(32);index"`
+	Status         string `json:"status" orm:"column(status);default(to_be_executed);size(32);index"`
 	Message        string `json:"message" orm:"column(message);size(1024)"`
 	Version        int    `json:"-" orm:"column(version);default(0);version"`
 	models.BaseTimeModel
@@ -89,12 +91,15 @@ func UpdateExperimentInstance(experiment *ExperimentInstance) error {
 	return nil
 }
 
-func UpdateExperimentInstanceStatus(uuid string, status string) error {
+func UpdateExperimentInstanceStatus(uuid string, status, message string) error {
 	experimentInstance, err := GetExperimentInstanceByUUID(uuid)
-	if err != nil {
-		return err
+	if err != nil || experimentInstance == nil {
+		return fmt.Errorf("error:%v", err)
 	}
 	experimentInstance.Status = status
+	if message != "" {
+		experimentInstance.Message = message
+	}
 	return UpdateExperimentInstance(experimentInstance)
 }
 
@@ -223,7 +228,11 @@ func CountExperimentInstance(namespaceId, day int) (map[string]int64, int64, err
 
 	for _, c := range counts {
 		status := c["status"].(string)
-		count := c["count"].(int64)
+		countStr := c["count"].(string)
+		count, err := strconv.ParseInt(countStr, 10, 64)
+		if err != nil {
+			return nil, 0, err
+		}
 		result[status] = count
 		total += count
 	}

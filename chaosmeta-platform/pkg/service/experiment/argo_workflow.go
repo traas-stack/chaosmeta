@@ -37,7 +37,7 @@ type ArgoWorkFlowService interface {
 	Delete(workflowName string) error
 	Patch(name string, pt types.PatchType, data []byte) error
 	DeleteExpiredList() error
-	ListPendingAndRecentWorkflows() (*v1alpha1.WorkflowList, []*v1alpha1.Workflow, error)
+	ListPendingAndFinishWorkflows() ([]*v1alpha1.Workflow, []*v1alpha1.Workflow, error)
 }
 
 type argoWorkFlowService struct {
@@ -145,28 +145,22 @@ func (a *argoWorkFlowService) DeleteExpiredList() error {
 	return nil
 }
 
-func (a *argoWorkFlowService) ListPendingAndRecentWorkflows() (*v1alpha1.WorkflowList, []*v1alpha1.Workflow, error) {
-	wfClient := versioned.NewForConfigOrDie(a.Config).ArgoprojV1alpha1().Workflows(a.Namespace)
-
-	pendingWorkflows, err := wfClient.List(context.Background(), metav1.ListOptions{FieldSelector: "status.phase=Pending"})
+func (a *argoWorkFlowService) ListPendingAndFinishWorkflows() ([]*v1alpha1.Workflow, []*v1alpha1.Workflow, error) {
+	workflows, err := a.List()
 	if err != nil {
 		return nil, nil, err
 	}
-
-	//List the Workflows whose status is WorkflowSucceeded and WorkflowFailed within 10 minutes
-	//expirationTime := time.Now().Add(-5 * time.Minute)
-	recentListOpts := metav1.ListOptions{FieldSelector: "status.phase=Succeeded,status.phase=Failed"}
-	recentWorkflows, err := wfClient.List(context.Background(), recentListOpts)
-	if err != nil {
-		return nil, nil, err
+	var (
+		finishWorkflows  []*v1alpha1.Workflow
+		pendingWorkflows []*v1alpha1.Workflow
+	)
+	for _, workflow := range workflows.Items {
+		if workflow.Status.Phase == v1alpha1.WorkflowPending || workflow.Status.Phase == v1alpha1.WorkflowRunning {
+			pendingWorkflows = append(pendingWorkflows, &workflow)
+		}
+		if workflow.Status.Phase == v1alpha1.WorkflowSucceeded || workflow.Status.Phase == v1alpha1.WorkflowFailed || workflow.Status.Phase == v1alpha1.WorkflowError {
+			finishWorkflows = append(finishWorkflows, &workflow)
+		}
 	}
-
-	filteredWorkflows := make([]*v1alpha1.Workflow, 0)
-	for _, workflow := range recentWorkflows.Items {
-		//if workflow.CreationTimestamp.Time.After(expirationTime) {
-		filteredWorkflows = append(filteredWorkflows, &workflow)
-		//}
-	}
-
-	return pendingWorkflows, filteredWorkflows, nil
+	return pendingWorkflows, finishWorkflows, nil
 }

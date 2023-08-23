@@ -44,7 +44,8 @@ func Setup() {
 		panic(any(fmt.Sprintf("connect database error: %s", err.Error())))
 	}
 
-	orm.Debug = true // TODO: only open in dev, should not open in prod
+	orm.Debug = DefaultRunOptIns.DB.Debug
+
 	if err := orm.RunSyncdb("default", false, true); err != nil {
 		panic(any(fmt.Sprintf("sync database error: %s", err.Error())))
 	}

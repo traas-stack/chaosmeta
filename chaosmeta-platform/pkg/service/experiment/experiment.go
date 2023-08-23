@@ -18,6 +18,7 @@ package experiment
 
 import (
 	"chaosmeta-platform/pkg/models/experiment"
+	"chaosmeta-platform/util/log"
 	"chaosmeta-platform/util/snowflake"
 	"context"
 	"errors"
@@ -57,14 +58,24 @@ type WorkflowNode struct {
 	FaultRange *experiment.FaultRange  `json:"exec_range,omitempty"`
 }
 
-func (es *ExperimentService) CreateExperiment(experimentParam *Experiment) (string, error) {
-	node, err := snowflake.NewNode(1)
+func (es *ExperimentService) createUUID(creator int, typeStr string) string {
+	nodeSnow, err := snowflake.NewNode(1)
 	if err != nil {
-		return "", err
+		log.Error(err)
+		return ""
 	}
+	if typeStr != "" {
+		return fmt.Sprintf("%d%d%s", nodeSnow.Generate(), creator, typeStr)
+	}
+	return fmt.Sprintf("%d%d", nodeSnow.Generate(), creator)
+}
 
+func (es *ExperimentService) CreateExperiment(experimentParam *Experiment) (string, error) {
+	if experimentParam == nil {
+		return "", errors.New("experimentParam is nil")
+	}
 	experimentCreate := experiment.Experiment{
-		UUID:         fmt.Sprintf("%d-%d", node.Generate(), experimentParam.Creator),
+		UUID:         es.createUUID(experimentParam.Creator, ""),
 		Name:         experimentParam.Name,
 		NamespaceID:  experimentParam.NamespaceID,
 		Description:  experimentParam.Description,
@@ -79,21 +90,25 @@ func (es *ExperimentService) CreateExperiment(experimentParam *Experiment) (stri
 	}
 
 	//label
-	if err := experiment.AddLabelIDsToExperiment(experimentCreate.UUID, experimentParam.Labels); err != nil {
-		return experimentCreate.UUID, err
+	if len(experimentParam.Labels) > 0 {
+		if err := experiment.AddLabelIDsToExperiment(experimentCreate.UUID, experimentParam.Labels); err != nil {
+			return experimentCreate.UUID, err
+		}
 	}
+
 	//workflow_nodes
 	for _, node := range experimentParam.WorkflowNodes {
 		node.ExperimentUUID = experimentCreate.UUID
 		workflowNodeCreate := experiment.WorkflowNode{
-			UUID:     node.UUID,
-			Row:      node.Row,
-			Column:   node.Column,
-			Duration: node.Duration,
-			ScopeId:  node.ScopeId,
-			TargetId: node.TargetId,
-			ExecType: node.ExecType,
-			ExecID:   node.ExecID,
+			UUID:           node.UUID,
+			ExperimentUUID: experimentCreate.UUID,
+			Row:            node.Row,
+			Column:         node.Column,
+			Duration:       node.Duration,
+			ScopeId:        node.ScopeId,
+			TargetId:       node.TargetId,
+			ExecType:       node.ExecType,
+			ExecID:         node.ExecID,
 		}
 		if err := experiment.CreateWorkflowNode(&workflowNodeCreate); err != nil {
 			return experimentCreate.UUID, err
@@ -235,6 +250,8 @@ func (es *ExperimentService) GetWorkflowNodesByExperiment(uuid string, experimen
 				Row:      workflowNodeGet.Row,
 				Column:   workflowNodeGet.Column,
 				Duration: workflowNodeGet.Duration,
+				ScopeId:  workflowNodeGet.ScopeId,
+				TargetId: workflowNodeGet.TargetId,
 				ExecType: workflowNodeGet.ExecType,
 				ExecID:   workflowNodeGet.ExecID,
 			},

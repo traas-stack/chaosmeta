@@ -83,7 +83,7 @@ func (a *UserService) IsAdmin(ctx context.Context, name string) bool {
 func (a *UserService) Login(ctx context.Context, name, password string) (string, string, error) {
 	userGet := user.User{Email: name}
 	if err := user.GetUser(ctx, &userGet); err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf("user not registered")
 	}
 	if userGet.Disabled || userGet.IsDeleted {
 		return "", "", errors.ErrUnauthorized()
@@ -117,10 +117,14 @@ func (a *UserService) Create(ctx context.Context, name, password, role string) (
 	}
 
 	userGet, err := a.Get(ctx, name)
-	if err == nil && userGet.IsDeleted {
-		userGet.IsDeleted = false
-		userGet.Password = hash
-		return userGet.ID, user.UpdateUser(ctx, userGet)
+	if err == nil {
+		if userGet.IsDeleted {
+			userGet.IsDeleted = false
+			userGet.Password = hash
+			return userGet.ID, user.UpdateUser(ctx, userGet)
+		} else {
+			return userGet.ID, fmt.Errorf("user already exists")
+		}
 	}
 
 	userCreate := user.User{
@@ -167,12 +171,57 @@ func (a *UserService) GetListWithNamespaceInfo(ctx context.Context, namespaceId 
 	return total, userInfoList, err
 }
 
-func (a *UserService) GetNamespaceList(ctx context.Context, name string, permission int, orderBy string, page, pageSize int) (int64, []namespace2.UserNamespaceData, error) {
+type UserNamespaceData struct {
+	namespace2.Namespace
+	Permission int `json:"permission"`
+}
+
+func (a *UserService) getUserNamespaceList(ctx context.Context, userId int, permission int, orderBy string, page, pageSize int) (int64, []UserNamespaceData, error) {
+	var userNamespaceDatas []UserNamespaceData
+	total, namespaces, err := namespace2.GetNamespacesFromUser(ctx, userId, permission, orderBy, page, pageSize)
+	if err != nil {
+		return 0, nil, err
+	}
+	for _, namespaceData := range namespaces {
+		namespace := namespace2.Namespace{Id: namespaceData.NamespaceId}
+		if err := namespace2.GetNamespaceById(ctx, &namespace); err != nil {
+			return 0, nil, err
+		}
+		userNamespaceDatas = append(userNamespaceDatas, UserNamespaceData{
+			Namespace:  namespace,
+			Permission: int(namespaceData.Permission),
+		})
+	}
+	return total, userNamespaceDatas, nil
+}
+
+func (a *UserService) getAdminNamespaceList(ctx context.Context, permission int, orderBy string, page, pageSize int) (int64, []UserNamespaceData, error) {
+	if permission == 0 {
+		return 0, nil, nil
+	}
+	var userNamespaceDatas []UserNamespaceData
+	total, namespaces, err := namespace2.QueryNamespaces(ctx, "", "", orderBy, page, pageSize)
+	if err != nil {
+		return 0, nil, err
+	}
+	for _, namespaceData := range namespaces {
+		userNamespaceDatas = append(userNamespaceDatas, UserNamespaceData{
+			Namespace:  namespaceData,
+			Permission: 1,
+		})
+	}
+	return total, userNamespaceDatas, nil
+}
+
+func (a *UserService) GetNamespaceList(ctx context.Context, name string, permission int, orderBy string, page, pageSize int) (int64, []UserNamespaceData, error) {
 	userGet, err := a.Get(ctx, name)
 	if err != nil {
 		return 0, nil, err
 	}
-	return namespace2.GetNamespacesFromUser(ctx, userGet.ID, permission, orderBy, page, pageSize)
+	if a.IsAdmin(ctx, name) {
+		return a.getAdminNamespaceList(ctx, permission, orderBy, page, pageSize)
+	}
+	return a.getUserNamespaceList(ctx, userGet.ID, permission, orderBy, page, pageSize)
 }
 
 func (a *UserService) DeleteList(ctx context.Context, name string, deleteIds []int) error {

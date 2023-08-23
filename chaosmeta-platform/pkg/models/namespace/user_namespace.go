@@ -100,6 +100,8 @@ func GetNamespacesFromUser(ctx context.Context, userId int, permission int, orde
 	}
 	if orderBy != "" {
 		qs = qs.OrderBy(orderBy)
+	} else {
+		qs = qs.OrderBy("create_time")
 	}
 
 	totalCount, err := qs.Count()

@@ -22,8 +22,8 @@ import (
 )
 
 type FaultRange struct {
-	ID                       int    `json:"id,omitempty" orm:"column(id);pk"`
-	WorkflowNodeInstanceUUID string `json:"workflow_node_instance_uuid" orm:"index;column(workflow_node_instance_uuid);size(64)"`
+	Id                       int    `json:"id,omitempty" orm:"pk;auto;column(id)"`
+	WorkflowNodeInstanceUUID string `json:"workflow_node_instance_uuid,omitempty" orm:"index;column(workflow_node_instance_uuid);size(64)"`
 	TargetName               string `json:"target_name" orm:"column(target_name);size(255)"`
 	TargetIP                 string `json:"target_ip" orm:"column(target_ip);size(32)"`
 	TargetHostname           string `json:"target_hostname" orm:"column(target_hostname);size(255)"`
@@ -49,7 +49,7 @@ func UpdateFaultRange(faultRange *FaultRange) error {
 }
 
 func DeleteFaultRangeByID(id int) error {
-	faultRange := &FaultRange{ID: id}
+	faultRange := &FaultRange{Id: id}
 	_, err := models.GetORM().Delete(faultRange)
 	return err
 }
