@@ -172,8 +172,7 @@ func SearchExperimentInstances(lastInstance string, namespaceId int, creator int
 	if err := experimentQuery.Limit(pageSize, (page-1)*pageSize); err != nil {
 		return 0, nil, err
 	}
-
-	_, err = experimentQuery.GetOamQuerySeter().All(experiments)
+	_, err = experimentQuery.GetOamQuerySeter().All(&experiments)
 	return totalCount, experiments, err
 }
 

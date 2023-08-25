@@ -1,19 +1,36 @@
-/*
- * Copyright 2022-2023 Chaos Meta Authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: chaosmeta-platform
+  namespace: chaosmeta-platform
+data:
+  app.conf: |-
+    appname = "chaosmeta-platform"
+    httpaddr =  ""
+    httpport = 8082
+    runmode = "dev"
+    level = INFO
+    EnableDocs = true
+    copyrequestbody = true
+  app.yaml: |-
+    secretkey: chaosmeta1234567
+    db:
+      name: chaosmeta
+      user: root
+      passwd: chaosmeta
+      url: mysql:3306
+      maxidle: 30
+      maxconn: 30
+    log:
+      path: ./chaosmeta-platform.log
+      level: info
 
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: chaosmeta-platform
+  namespace: default
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -53,5 +70,155 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: chaosmeta-platform
-    namespace: chaosmeta-platform
-  {{- end -}}
+    namespace: default
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  namespace: chaosmeta-platform
+spec:
+  ports:
+    - port: 3306
+  selector:
+    app: mysql
+  clusterIP: None
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  namespace: chaosmeta-platform
+spec:
+  selector:
+    matchLabels:
+      app: mysql
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      serviceAccountName: chaosmeta-platform
+      containers:
+        - image: mysql:8.0
+          name: mysql
+          env:
+            - name: MYSQL_DATABASE
+              value: "chaosmeta"
+            - name: MYSQL_ROOT_PASSWORD
+              value: "chaosmeta"
+          ports:
+            - containerPort: 3306
+              name: mysql
+          volumeMounts:
+            - name: mysql-persistent-storage
+              mountPath: /var/lib/mysql
+      volumes:
+        - name: mysql-persistent-storage
+          persistentVolumeClaim:
+            claimName: mysql-pv-claim
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mysql-pv-volume
+  labels:
+    type: local
+spec:
+  capacity:
+    storage: 20Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/data"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pv-claim
+  namespace: chaosmeta-platform
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chaosmeta-platform
+  namespace: chaosmeta-platform
+  labels:
+    release: chaosmeta-platform
+    app: chaosmeta-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chaosmeta-platform
+  template:
+    metadata:
+      labels:
+        app: chaosmeta-platform
+    spec:
+      serviceAccountName: chaosmeta-platform
+      containers:
+        - name: chaosmeta-platform
+          imagePullPolicy: Always
+          image:  registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-platform:v0.0.2
+          resources:
+            requests:
+              cpu: "1"
+              memory: "2Gi"
+            limits:
+              cpu: "2"
+              memory: "4Gi"
+          volumeMounts:
+            - name: chaosmeta-config
+              mountPath: /home/admin/conf
+      volumes:
+        - name: chaosmeta-config
+          configMap:
+            name: chaosmeta-platform
+            items:
+              - key: app.conf
+                path: app.conf
+              - key: app.yaml
+                path: app.yaml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: chaosmeta-platform-mysql
+  name: chaosmeta-platform-mysql
+  namespace: chaosmeta-platform
+spec:
+  ports:
+    - port: 3306
+      protocol: TCP
+      targetPort: 3306
+  selector:
+    app: chaosmeta-platform-mysql
+  sessionAffinity: None
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: chaosmeta-platform
+  name: chaosmeta-platform
+  namespace: chaosmeta-platform
+spec:
+  ports:
+    - name: http
+      port: 7001
+      targetPort: 7001
+  selector:
+    app: chaosmeta-platform
+  sessionAffinity: None
+  type: LoadBalancer

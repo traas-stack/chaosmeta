@@ -127,7 +127,7 @@ func ListExperimentsByScheduleTypeAndStatus(scheduleType ScheduleType, experimen
 		return 0, nil, err
 	}
 	if scheduleType != "" {
-		experimentQuery.Filter("schedule_type", models.NEGLECT, false, scheduleType)
+		experimentQuery.Filter("schedule_type", models.NEGLECT, false, string(scheduleType))
 	}
 
 	if experimentStatus >= 0 {

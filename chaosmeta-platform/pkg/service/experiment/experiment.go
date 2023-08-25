@@ -18,6 +18,8 @@ package experiment
 
 import (
 	"chaosmeta-platform/pkg/models/experiment"
+	"chaosmeta-platform/pkg/models/namespace"
+	"chaosmeta-platform/pkg/models/user"
 	"chaosmeta-platform/util/log"
 	"chaosmeta-platform/util/snowflake"
 	"context"
@@ -36,19 +38,42 @@ const TimeLayout = "2006-01-02 15:04:05"
 type ExperimentService struct{}
 
 type ExperimentInfo struct {
-	UUID         string `json:"uuid,omitempty"`
-	Name         string `json:"name"`
-	Description  string `json:"description"`
-	ScheduleType string `json:"schedule_type"`
-	ScheduleRule string `json:"schedule_rule"`
-	NamespaceID  int    `json:"namespace_id"`
-	Creator      int    `json:"creator,omitempty"`
-	Status       int    `json:"status"`
+	UUID         string    `json:"uuid,omitempty"`
+	Name         string    `json:"name"`
+	Description  string    `json:"description"`
+	ScheduleType string    `json:"schedule_type"`
+	ScheduleRule string    `json:"schedule_rule"`
+	NamespaceID  int       `json:"namespace_id"`
+	Creator      int       `json:"creator,omitempty"`
+	CreatorName  string    `json:"creator_name,omitempty"`
+	Status       int       `json:"status"`
+	CreateTime   time.Time `json:"create_time,omitempty"`
+	UpdateTime   time.Time `json:"update_time,omitempty"`
+}
+
+type Label struct {
+	Id          int    `json:"id"`
+	Name        string `json:"name"`
+	Color       string `json:"color"`
+	NamespaceId int    `json:"namespaceId"`
 }
 
 type Experiment struct {
 	ExperimentInfo
-	Labels        []int           `json:"labels,omitempty"`
+	Labels        []Label         `json:"labels,omitempty"`
+	WorkflowNodes []*WorkflowNode `json:"workflow_nodes,omitempty"`
+}
+
+type ExperimentGet struct {
+	UUID          string          `json:"uuid,omitempty"`
+	Name          string          `json:"name"`
+	Description   string          `json:"description"`
+	ScheduleType  string          `json:"schedule_type"`
+	ScheduleRule  string          `json:"schedule_rule"`
+	NamespaceID   int             `json:"namespace_id"`
+	Creator       string          `json:"creator,omitempty"`
+	Status        int             `json:"status"`
+	Labels        []Label         `json:"labels,omitempty"`
 	WorkflowNodes []*WorkflowNode `json:"workflow_nodes,omitempty"`
 }
 
@@ -68,6 +93,14 @@ func (es *ExperimentService) createUUID(creator int, typeStr string) string {
 		return fmt.Sprintf("%d%d%s", nodeSnow.Generate(), creator, typeStr)
 	}
 	return fmt.Sprintf("%d%d", nodeSnow.Generate(), creator)
+}
+
+func getLabelIdsFromExperiment(labels []Label) []int {
+	labelIds := make([]int, len(labels))
+	for i, label := range labels {
+		labelIds[i] = label.Id
+	}
+	return labelIds
 }
 
 func (es *ExperimentService) CreateExperiment(experimentParam *Experiment) (string, error) {
@@ -91,7 +124,7 @@ func (es *ExperimentService) CreateExperiment(experimentParam *Experiment) (stri
 
 	//label
 	if len(experimentParam.Labels) > 0 {
-		if err := experiment.AddLabelIDsToExperiment(experimentCreate.UUID, experimentParam.Labels); err != nil {
+		if err := experiment.AddLabelIDsToExperiment(experimentCreate.UUID, getLabelIdsFromExperiment(experimentParam.Labels)); err != nil {
 			return experimentCreate.UUID, err
 		}
 	}
@@ -101,6 +134,7 @@ func (es *ExperimentService) CreateExperiment(experimentParam *Experiment) (stri
 		node.ExperimentUUID = experimentCreate.UUID
 		workflowNodeCreate := experiment.WorkflowNode{
 			UUID:           node.UUID,
+			Name:           node.Name,
 			ExperimentUUID: experimentCreate.UUID,
 			Row:            node.Row,
 			Column:         node.Column,
@@ -175,8 +209,13 @@ func (es *ExperimentService) DeleteExperimentByUUID(uuid string) error {
 
 func (es *ExperimentService) GetExperimentByUUID(uuid string) (*Experiment, error) {
 	experimentGet, err := experiment.GetExperimentByUUID(uuid)
-	if err != nil {
-		return nil, err
+	if err != nil || experimentGet == nil {
+		return nil, fmt.Errorf("no experiment")
+	}
+
+	userGet := user.User{ID: experimentGet.Creator}
+	if err := user.GetUserById(context.Background(), &userGet); err != nil {
+		log.Error(err)
 	}
 
 	experimentReturn := Experiment{
@@ -188,7 +227,10 @@ func (es *ExperimentService) GetExperimentByUUID(uuid string) (*Experiment, erro
 			ScheduleRule: experimentGet.ScheduleRule,
 			NamespaceID:  experimentGet.NamespaceID,
 			Creator:      experimentGet.Creator,
+			CreatorName:  userGet.Email,
 			Status:       int(experimentGet.Status),
+			CreateTime:   experimentGet.CreateTime,
+			UpdateTime:   experimentGet.UpdateTime,
 		},
 	}
 
@@ -206,13 +248,24 @@ func (es *ExperimentService) GetExperimentByModelExperiment(experimentGet *exper
 	if experimentGet.UUID == "" {
 		return nil, errors.New("experiment uuid is empty")
 	}
+	userGet := user.User{ID: experimentGet.Creator}
+	if err := user.GetUserById(context.Background(), &userGet); err != nil {
+		log.Error(err)
+	}
+
 	experimentReturn := Experiment{
 		ExperimentInfo: ExperimentInfo{
+			UUID:         experimentGet.UUID,
 			Name:         experimentGet.Name,
 			Description:  experimentGet.Description,
 			ScheduleType: experimentGet.ScheduleType,
 			ScheduleRule: experimentGet.ScheduleRule,
 			NamespaceID:  experimentGet.NamespaceID,
+			Creator:      experimentGet.Creator,
+			CreatorName:  userGet.Email,
+			Status:       int(experimentGet.Status),
+			CreateTime:   experimentGet.CreateTime,
+			UpdateTime:   experimentGet.UpdateTime,
 		},
 	}
 
@@ -228,7 +281,20 @@ func (es *ExperimentService) GetLabelByExperiment(uuid string, experimentReturn 
 	if err != nil {
 		return err
 	}
-	experimentReturn.Labels = append(experimentReturn.Labels, labelList...)
+
+	for _, labelId := range labelList {
+		getLabel := namespace.Label{Id: labelId}
+		if err := namespace.GetLabelById(context.Background(), &getLabel); err != nil {
+			log.Error(err)
+			continue
+		}
+		experimentReturn.Labels = append(experimentReturn.Labels, Label{
+			Id:          labelId,
+			Name:        getLabel.Name,
+			Color:       getLabel.Color,
+			NamespaceId: getLabel.NamespaceId,
+		})
+	}
 	return nil
 }
 
@@ -247,6 +313,7 @@ func (es *ExperimentService) GetWorkflowNodesByExperiment(uuid string, experimen
 		nodeResult := WorkflowNode{
 			WorkflowNode: experiment.WorkflowNode{
 				UUID:     workflowNodeGet.UUID,
+				Name:     workflowNodeGet.Name,
 				Row:      workflowNodeGet.Row,
 				Column:   workflowNodeGet.Column,
 				Duration: workflowNodeGet.Duration,

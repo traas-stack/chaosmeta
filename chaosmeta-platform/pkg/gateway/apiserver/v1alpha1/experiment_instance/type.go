@@ -22,6 +22,7 @@ import (
 )
 
 type GetExperimentInstancesResponse struct {
+	Total         int                                     `json:"total"`
 	WorkflowNodes []experiment_instance.WorkflowNodesInfo `json:"workflow_nodes"`
 }
 
@@ -37,7 +38,7 @@ type ExperimentInstanceListResponse struct {
 	Page        int                                           `json:"page"`
 	PageSize    int                                           `json:"pageSize"`
 	Total       int64                                         `json:"total"`
-	Experiments []*experimentInstanceModel.ExperimentInstance `json:"results"`
+	Experiments []*experiment_instance.ExperimentInstanceInfo `json:"results"`
 }
 
 type GetFaultRangeInstanceResponse struct {

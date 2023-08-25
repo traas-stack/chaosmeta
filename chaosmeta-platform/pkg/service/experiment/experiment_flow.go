@@ -254,7 +254,7 @@ func getInjectStep(experimentInstanceUUID string, node *experiment_instance.Work
 		log.Error(err)
 		return nil
 	}
-	log.Error("-------experimentTemplate", string(experimentTemplateBytes))
+	log.Info("experimentTemplate", string(experimentTemplateBytes))
 	injectStep.Arguments = v1alpha1.Arguments{
 		Parameters: []v1alpha1.Parameter{
 			{
@@ -263,7 +263,6 @@ func getInjectStep(experimentInstanceUUID string, node *experiment_instance.Work
 			},
 		},
 	}
-
 	return &injectStep
 }
 

@@ -72,6 +72,7 @@ func (s *ExperimentInstanceService) CreateExperimentInstance(experimentParam *Ex
 	for _, node := range experimentParam.WorkflowNodes {
 		workflowNodeCreate := experiment_instance.WorkflowNodeInstance{
 			UUID:                   s.createUUID(experimentParam.Creator, "node"),
+			Name:                   node.Name,
 			ExperimentInstanceUUID: experimentCreate.UUID,
 			Row:                    node.Row,
 			Column:                 node.Column,
@@ -153,7 +154,7 @@ func (s *ExperimentInstanceService) GetExperimentInstanceByUUID(uuid string) (*E
 		NamespaceId: exp.NamespaceID,
 		CreateTime:  exp.CreateTime.Format(time.RFC3339),
 		UpdateTime:  exp.UpdateTime.Format(time.RFC3339),
-		Status:      string(exp.Status),
+		Status:      exp.Status,
 		Message:     exp.Message,
 	}
 
@@ -173,6 +174,7 @@ func (s *ExperimentInstanceService) GetExperimentInstanceByUUID(uuid string) (*E
 
 type WorkflowNodesInfo struct {
 	UUID       string `json:"uuid"`
+	Name       string `json:"name"`
 	Row        int    `json:"row"`
 	Column     int    `json:"column"`
 	Duration   string `json:"duration"`
@@ -205,6 +207,7 @@ func (s *ExperimentInstanceService) GetWorkflowNodesInstanceInfoByUUID(experimen
 	for _, workflowNodeGet := range nodes {
 		workflowNodesInfos = append(workflowNodesInfos, WorkflowNodesInfo{
 			UUID:       workflowNodeGet.UUID,
+			Name:       workflowNodeGet.Name,
 			Row:        workflowNodeGet.Row,
 			Column:     workflowNodeGet.Column,
 			Duration:   workflowNodeGet.Duration,
@@ -235,6 +238,7 @@ func (s *ExperimentInstanceService) GetWorkflowNodeInstanceByUUIDAndNodeId(exper
 	}
 	return &WorkflowNodesInfo{
 		UUID:       node.UUID,
+		Name:       node.Name,
 		Row:        node.Row,
 		Column:     node.Column,
 		Duration:   node.Duration,
@@ -353,6 +357,42 @@ func (s *ExperimentInstanceService) DeleteExperimentInstancesByUUID(uuids []stri
 	return nil
 }
 
-func (s *ExperimentInstanceService) SearchExperimentInstances(lastInstance string, namespaceId int, creator int, name string, scheduleType string, timeType string, recentDays int, startTime, endTime time.Time, orderBy string, page, pageSize int) (int64, []*experiment_instance.ExperimentInstance, error) {
-	return experiment_instance.SearchExperimentInstances(lastInstance, namespaceId, creator, name, scheduleType, timeType, recentDays, startTime, endTime, orderBy, page, pageSize)
+func (s *ExperimentInstanceService) SearchExperimentInstances(lastInstance string, namespaceId int, creator int, name string, scheduleType string, timeType string, recentDays int, startTime, endTime time.Time, orderBy string, page, pageSize int) (int64, []*ExperimentInstanceInfo, error) {
+	var experimentInstanceInfoList []*ExperimentInstanceInfo
+	total, experiments, err := experiment_instance.SearchExperimentInstances(lastInstance, namespaceId, creator, name, scheduleType, timeType, recentDays, startTime, endTime, orderBy, page, pageSize)
+	if err != nil {
+		return 0, nil, err
+	}
+	for _, experiment := range experiments {
+		labels, err := experiment_instance.ListLabelsByExperimentInstanceUUID(experiment.UUID)
+		if err != nil {
+			log.Error(err)
+		}
+
+		expData := ExperimentInstanceInfo{
+			UUID:        experiment.UUID,
+			Name:        experiment.Name,
+			Description: experiment.Description,
+			Creator:     experiment.Creator,
+			NamespaceId: experiment.NamespaceID,
+			CreateTime:  experiment.CreateTime.Format(time.RFC3339),
+			UpdateTime:  experiment.UpdateTime.Format(time.RFC3339),
+			Status:      experiment.Status,
+			Message:     experiment.Message,
+		}
+
+		for _, label := range labels {
+			labelModel := namespace.Label{Id: label.LabelID, NamespaceId: expData.NamespaceId}
+			if err := namespace.GetLabelByIdAndNamespaceId(context.Background(), &labelModel); err != nil {
+				log.Error(err)
+			}
+			expData.Labels = append(expData.Labels, LabelInfo{
+				Id:         label.LabelID,
+				Name:       labelModel.Name,
+				CreateTime: label.CreateTime.String(),
+			})
+		}
+		experimentInstanceInfoList = append(experimentInstanceInfoList, &expData)
+	}
+	return total, experimentInstanceInfoList, nil
 }

@@ -26,6 +26,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/argoproj/argo-workflows/v3/pkg/apis/workflow/v1alpha1"
 	"github.com/robfig/cron"
 	"time"
@@ -50,13 +51,14 @@ func convertToExperimentInstance(experiment *Experiment, status string) *experim
 			NamespaceId: experiment.NamespaceID,
 			Status:      status,
 		},
-		Labels: experiment.Labels,
+		Labels: getLabelIdsFromExperiment(experiment.Labels),
 	}
 
 	for _, node := range experiment.WorkflowNodes {
 		workflowNodeDetail := &experiment_instance.WorkflowNodesDetail{
 			WorkflowNodesInfo: experiment_instance.WorkflowNodesInfo{
 				UUID:     node.UUID,
+				Name:     node.Name,
 				Row:      node.Row,
 				Column:   node.Column,
 				Duration: node.Duration,
@@ -90,8 +92,8 @@ func convertToExperimentInstance(experiment *Experiment, status string) *experim
 func StartExperiment(experimentID string) error {
 	experimentService := ExperimentService{}
 	experimentGet, err := experimentService.GetExperimentByUUID(experimentID)
-	if err != nil {
-		return err
+	if err != nil || experimentGet == nil {
+		return fmt.Errorf("error %v", err)
 	}
 
 	experimentInstance := convertToExperimentInstance(experimentGet, string(experimentInstanceModel.Running))
@@ -128,6 +130,9 @@ func StopExperiment(experimentInstanceID string) error {
 	if err != nil {
 		return err
 	}
+	if experimentInstanceInfo.Status == "Succeeded" || experimentInstanceInfo.Status == "Failed" || experimentInstanceInfo.Status == "Error" {
+		return errors.New("walkthrough is over")
+	}
 
 	clusterService := cluster.ClusterService{}
 	_, restConfig, err := clusterService.GetRestConfig(context.Background(), config.DefaultRunOptIns.RunMode.Int())
@@ -143,14 +148,14 @@ func StopExperiment(experimentInstanceID string) error {
 
 	workFlowGet, status, err := argoWorkFlowCtl.Get(getWorFlowName(experimentInstanceID))
 	if err != nil {
-		return err
+		log.Error(err)
+		return nil
 	}
 	if status == "Succeeded" || status == "Failed" || status == "Error" {
 		return errors.New("experiment has ended")
 	}
 
 	chaosmetaService := NewChaosmetaService(restConfig)
-
 	for _, node := range workFlowGet.Status.Nodes {
 		if isInjectStepName(node.DisplayName) {
 			chaosmetaCR, err := chaosmetaService.Get(context.Background(), WorkflowNamespace, node.DisplayName)

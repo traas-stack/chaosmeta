@@ -22,7 +22,8 @@ import (
 )
 
 type WorkflowNode struct {
-	Id             int    `json:"id, omitempty" orm:"pk;auto;column(id)"`
+	Id             int    `json:"id,omitempty" orm:"pk;auto;column(id)"`
+	Name           string `json:"name" orm:"index;column(name);size(255)"`
 	UUID           string `json:"uuid,omitempty" orm:"column(uuid);index"`
 	ExperimentUUID string `json:"experiment_uuid" orm:"index;column(experiment_uuid);size(64)"`
 	Row            int    `json:"row" orm:"column(row)"`

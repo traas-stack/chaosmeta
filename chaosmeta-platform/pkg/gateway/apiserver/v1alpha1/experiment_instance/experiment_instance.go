@@ -71,12 +71,12 @@ func (c *ExperimentInstanceController) GetExperimentInstanceDetail() {
 func (c *ExperimentInstanceController) GetExperimentInstanceNodes() {
 	uuid := c.GetString(":uuid")
 	es := experiment_instance.ExperimentInstanceService{}
-	experiment, err := es.GetExperimentInstanceByUUID(uuid)
+	total, nodes, err := es.GetWorkflowNodesInstanceInfoByUUID(uuid)
 	if err != nil {
 		c.Error(&c.Controller, err)
 		return
 	}
-	c.Success(&c.Controller, experiment)
+	c.Success(&c.Controller, GetExperimentInstancesResponse{Total: total, WorkflowNodes: nodes})
 }
 
 func (c *ExperimentInstanceController) GetExperimentInstanceNode() {

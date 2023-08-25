@@ -24,6 +24,7 @@ import (
 
 type WorkflowNodeInstance struct {
 	UUID                   string `json:"uuid,omitempty" orm:"column(uuid);pk"`
+	Name                   string `json:"name" orm:"index;column(name);size(255)"`
 	ExperimentInstanceUUID string `json:"experiment_instance_uuid" orm:"index;column(experiment_instance_uuid);size(64)"`
 	Row                    int    `json:"row" orm:"column(row)"`
 	Column                 int    `json:"column" orm:"column(column)"`

@@ -21,7 +21,7 @@ COPY --from=builder /home/admin/chaosmeta .
 
 EXPOSE 8080
 
-ADD /conf/app.yaml /home/admin
-ADD /conf/app.conf /home/admin
+#ADD /conf/app.yaml /home/admin
+#ADD /conf/app.conf /home/admin
 
-ENTRYPOINT  ["./chaosmeta", "server", "start", "--config=./app.yaml"]
+ENTRYPOINT  ["./chaosmeta", "server", "start", "--config=conf/app.yaml"]
