@@ -25,11 +25,11 @@ if [ "${VERSION}" != "local" ]; then
     ROOT_PATH=${NOW_DIR}/chaosmeta_build
     echo "${ROOT_PATH}"
     mkdir -p "${ROOT_PATH}"/yamls
-    filename="${ROOT_PATH}"/yamls/chaosmeta.yaml
+    filename="${ROOT_PATH}"/yamls/chaosmeta-inject.yaml
 
     if [ ! -e "${filename}" ]; then
-        downloadfile https://raw.githubusercontent.com/traas-stack/chaosmeta/"${VERSION}"/chaosmeta-inject-operator/build/yamls/chaosmeta.yaml "${filename}"
+        downloadfile https://raw.githubusercontent.com/traas-stack/chaosmeta/"${VERSION}"/chaosmeta-inject-operator/build/yamls/chaosmeta-inject.yaml "${filename}"
     fi
 fi
 
-kubectl delete -f "${ROOT_PATH}"/yamls/chaosmeta.yaml
+kubectl delete -f "${ROOT_PATH}"/yamls/chaosmeta-inject.yaml

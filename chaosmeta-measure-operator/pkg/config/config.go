@@ -49,6 +49,7 @@ func LoadConfig(path string) error {
 	}
 
 	globalConfig = &mainConfig
+	fmt.Println(string(configBytes))
 	return nil
 }
 

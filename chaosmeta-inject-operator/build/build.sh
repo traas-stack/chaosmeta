@@ -22,6 +22,6 @@ else
     exit 1
 fi
 
-kubectl create secret tls webhook-server-cert --cert=tls.crt --key=tls.key -n ${ns}
+kubectl create secret tls chaosmeta-inject-webhook-server-cert --cert=tls.crt --key=tls.key -n ${ns}
 kubectl patch MutatingWebhookConfiguration chaosmeta-inject-mutating-webhook-configuration --type='json' -p='[{"op": "add", "path": "/webhooks/0/clientConfig/caBundle", "value": "'"${caBundle}"'"}]'
 kubectl patch ValidatingWebhookConfiguration chaosmeta-inject-validating-webhook-configuration --type='json' -p='[{"op": "add", "path": "/webhooks/0/clientConfig/caBundle", "value": "'"${caBundle}"'"}]'

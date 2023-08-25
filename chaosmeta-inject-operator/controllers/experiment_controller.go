@@ -91,6 +91,13 @@ func (r *ExperimentReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 				return ctrl.Result{}, r.Update(ctx, instance)
 			}
 		}
+	} else {
+		if instance.Status.Phase == v1alpha1.RecoverPhaseType && (instance.Status.Status == v1alpha1.SuccessStatusType ||
+			instance.Status.Status == v1alpha1.FailedStatusType || instance.Status.Status == v1alpha1.PartSuccessStatusType) {
+			solveFinalizer(instance)
+			logger.Info(fmt.Sprintf("update Finalizer of %s/%s to: %s", instance.Namespace, instance.Name, instance.ObjectMeta.Finalizers))
+			return ctrl.Result{}, r.Update(ctx, instance)
+		}
 	}
 
 	if instance.Status.Phase == "" {
