@@ -1,15 +1,13 @@
-import { Link, Outlet } from 'umi';
-import styles from './index.less';
+import { ConfigProvider } from 'antd';
+import { Outlet } from 'umi';
+import { Container } from './style';
 
-export default function Layout() {
+export default function Layout(props: any) {
   return (
-    <div className={styles.navs}>
-      <ul>
-        <li>
-          <Link to="/">Home</Link>
-        </li>
-      </ul>
-      <Outlet />
-    </div>
+    <ConfigProvider>
+      <Container>
+        <Outlet />
+      </Container>
+    </ConfigProvider>
   );
 }
