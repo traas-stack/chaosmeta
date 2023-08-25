@@ -5,5 +5,9 @@
 /src/.umi
 /src/.umi-production
 /src/.umi-test
+/.umi
+/.umi-production
+/.umi-test
 /dist
+/.mfsu
 .swc
