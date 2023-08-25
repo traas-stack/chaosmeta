@@ -1,16 +1,3 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  labels:
-    app.kubernetes.io/component: manager
-    app.kubernetes.io/created-by: chaosmeta-inject-operator
-    app.kubernetes.io/instance: system
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: namespace
-    app.kubernetes.io/part-of: chaosmeta-inject-operator
-    control-plane: controller-manager
-  name: chaosmeta-inject
----
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
@@ -24,7 +11,7 @@ spec:
       clientConfig:
         service:
           name: chaosmeta-inject-webhook-service
-          namespace: chaosmeta-inject
+          namespace: DEPLOYNAMESPACE
           path: /convert
       conversionReviewVersions:
       - v1
@@ -200,7 +187,7 @@ metadata:
     app.kubernetes.io/name: serviceaccount
     app.kubernetes.io/part-of: chaosmeta-inject-operator
   name: chaosmeta-inject-controller-manager
-  namespace: chaosmeta-inject
+  namespace: DEPLOYNAMESPACE
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -213,7 +200,7 @@ metadata:
     app.kubernetes.io/name: role
     app.kubernetes.io/part-of: chaosmeta-inject-operator
   name: chaosmeta-inject-leader-election-role
-  namespace: chaosmeta-inject
+  namespace: DEPLOYNAMESPACE
 rules:
 - apiGroups:
   - ""
@@ -316,7 +303,7 @@ metadata:
     app.kubernetes.io/name: rolebinding
     app.kubernetes.io/part-of: chaosmeta-inject-operator
   name: chaosmeta-inject-leader-election-rolebinding
-  namespace: chaosmeta-inject
+  namespace: DEPLOYNAMESPACE
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -324,7 +311,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: chaosmeta-inject-controller-manager
-  namespace: chaosmeta-inject
+  namespace: DEPLOYNAMESPACE
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -344,7 +331,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: chaosmeta-inject-controller-manager
-  namespace: chaosmeta-inject
+  namespace: DEPLOYNAMESPACE
 ---
 apiVersion: v1
 kind: Service
@@ -357,7 +344,7 @@ metadata:
     app.kubernetes.io/name: service
     app.kubernetes.io/part-of: chaosmeta-inject-operator
   name: chaosmeta-inject-webhook-service
-  namespace: chaosmeta-inject
+  namespace: DEPLOYNAMESPACE
 spec:
   ports:
   - port: 443
@@ -378,7 +365,7 @@ metadata:
     app.kubernetes.io/part-of: chaosmeta-inject-operator
     control-plane: controller-manager
   name: chaosmeta-inject-controller-manager
-  namespace: chaosmeta-inject
+  namespace: DEPLOYNAMESPACE
 spec:
   replicas: 1
   selector:
@@ -396,7 +383,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-inject-controller:v0.0.5
+        image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-inject-controller:v0.1.0
         livenessProbe:
           httpGet:
             path: /healthz
@@ -441,7 +428,7 @@ spec:
       - name: cert
         secret:
           defaultMode: 420
-          secretName: webhook-server-cert
+          secretName: chaosmeta-inject-webhook-server-cert
       - configMap:
           name: chaosmeta-inject-config
         name: config-volume
@@ -457,7 +444,7 @@ webhooks:
   clientConfig:
     service:
       name: chaosmeta-inject-webhook-service
-      namespace: chaosmeta-inject
+      namespace: DEPLOYNAMESPACE
       path: /mutate-chaosmeta-io-v1alpha1-experiment
   failurePolicy: Fail
   name: mexperiment.kb.io
@@ -483,7 +470,7 @@ webhooks:
   clientConfig:
     service:
       name: chaosmeta-inject-webhook-service
-      namespace: chaosmeta-inject
+      namespace: DEPLOYNAMESPACE
       path: /validate-chaosmeta-io-v1alpha1-experiment
   failurePolicy: Fail
   name: vexperiment.kb.io
@@ -499,3 +486,34 @@ webhooks:
     resources:
     - experiments
   sideEffects: None
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: chaosmeta-inject-config
+  namespace: DEPLOYNAMESPACE
+data:
+  chaosmeta-inject.json: |-
+    {
+      "worker": {
+        "poolCount": 16
+      },
+      "ticker": {
+        "autoCheckInterval": 2
+      },
+      "executor": {
+        "mode": "daemonset",
+        "executor": "chaosmetad",
+        "version": "0.1.1",
+        "agentConfig": {
+          "agentPort": 29595
+        },
+        "daemonsetConfig": {
+          "localExecPath": "/tmp",
+          "daemonNs": "DEPLOYNAMESPACE",
+          "daemonLabel": {
+            "app.chaosmeta.io": "chaosmeta-daemon"
+          }
+        }
+      }
+    }

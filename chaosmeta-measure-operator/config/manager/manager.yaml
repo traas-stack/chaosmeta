@@ -91,6 +91,10 @@ spec:
           periodSeconds: 10
         # TODO(user): Configure the resources accordingly based on the project requirements.
         # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+        volumeMounts:
+          - name: config-volume
+            mountPath: /workspace/config/chaosmeta-measure.json
+            subPath: chaosmeta-measure.json
         resources:
           limits:
             cpu: 500m
@@ -100,3 +104,7 @@ spec:
             memory: 64Mi
       serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10
+      volumes:
+        - name: config-volume
+          configMap:
+            name: chaosmeta-measure-config

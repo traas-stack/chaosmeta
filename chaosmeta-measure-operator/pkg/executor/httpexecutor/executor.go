@@ -37,7 +37,7 @@ const (
 	MethodArgsKey  = "method"
 	PathArgsKey    = "path"
 	HeaderArgsKey  = "header"
-	DataArgsKey    = "data"
+	BodyArgsKey    = "body"
 	TimeoutArgsKey = "timeout"
 
 	SchemeHTTP  = "HTTP"
@@ -144,12 +144,12 @@ func (e *HTTPExecutor) Measure(ctx context.Context, args []v1alpha1.MeasureArgs,
 	scheme, _ := utils.GetArgsValueStr(args, SchemeArgsKey)
 	method, _ := utils.GetArgsValueStr(args, MethodArgsKey)
 	headers, _ := utils.GetArgsValueStr(args, HeaderArgsKey)
-	data, _ := utils.GetArgsValueStr(args, DataArgsKey)
+	body, _ := utils.GetArgsValueStr(args, BodyArgsKey)
 	path, _ := utils.GetArgsValueStr(args, PathArgsKey)
 	timeoutStr, _ := utils.GetArgsValueStr(args, TimeoutArgsKey)
 
 	timeout, _ := strconv.Atoi(timeoutStr)
-	code, res, err := sendRequest(scheme, host, port, path, method, data, headers, timeout)
+	code, res, err := sendRequest(scheme, host, port, path, method, body, headers, timeout)
 	switch judgement.JudgeType {
 	case v1alpha1.CodeJudgeType:
 		if err != nil {

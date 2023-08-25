@@ -28,5 +28,5 @@ spec:
       value: 'POST'
     - key: timeout
       value: '5'
-    - key: data
+    - key: body
       value: '{"name":"a","age":201}'
