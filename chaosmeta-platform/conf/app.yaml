@@ -1,0 +1,13 @@
+secretkey: chaosmeta1234567
+db:
+  name: chaosmeta
+  user: root
+  passwd: chaosmeta
+  url: chaosmeta-platform:3306
+  maxidle: 30
+  maxconn: 30
+  debug: false
+log:
+  path: ./chaosmeta-platform.log
+  level: info
+runmode: KubeConfig #(ServiceAccount,KubeConfig)Connect through ServiceAccoun in the cluster; connect through kubeconfig outside the cluster

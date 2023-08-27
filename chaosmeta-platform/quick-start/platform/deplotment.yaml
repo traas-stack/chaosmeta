@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chaosmeta-platform
+  namespace: chaosmeta
+  labels:
+    release: chaosmeta-platform
+    app: chaosmeta-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chaosmeta-platform
+  template:
+    metadata:
+      labels:
+        app: chaosmeta-platform
+    spec:
+      serviceAccountName: galaxy
+      containers:
+        - name: chaosmeta-platform
+          imagePullPolicy: Always
+          image:  {{ .Values.depend.image.registry }}:{{ .Values.depend.image.tag }}
+          resources:
+            requests:
+              cpu: "1"
+              memory: "2Gi"
+            limits:
+              cpu: "2"
+              memory: "4Gi"
+          volumeMounts:
+            - name: chaosmeta-config
+              mountPath: /home/admin/conf
+      volumes:
+        - name: chaosmeta-config
+          configmap:
+            name: chaosmeta-platform
+            items:
+            - key: app.conf
+              path: app.conf
+            - key: app.yaml
+              path: app.yaml

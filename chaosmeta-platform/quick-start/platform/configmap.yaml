@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: chaosmeta-platform
+  namespace: chaosmeta-platform
+data:
+  app.conf: |-
+    appname = "chaosmeta-platform"
+    httpaddr =  ""
+    httpport = 8082
+    runmode = "dev"
+    level = INFO
+    EnableDocs = true
+    copyrequestbody = true
+  app.yaml: |-
+    secretkey: chaosmeta1234567
+    db:
+      name: chaosmeta
+      user: root
+      passwd: chaosmeta
+      url: mysql:3306
+      maxidle: 30
+      maxconn: 30
+    log:
+      path: ./chaosmeta-platform.log
+      level: info
