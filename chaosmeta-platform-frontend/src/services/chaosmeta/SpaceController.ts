@@ -1,6 +1,29 @@
 import request from '@/utils/request';
 
 /**
+ * 获取空间概览
+ * @param params
+ * @param options
+ * @returns
+ */
+export async function querySpaceOverview(
+  params?: {
+    spaceId?: number | string;
+    recent_day: number;
+  },
+  options?: { [key: string]: any },
+) {
+  return request<any>(
+    `/chaosmeta/api/v1/namespaces/${params?.spaceId}/overview`,
+    {
+      method: 'GET',
+      params,
+      ...(options || {}),
+    },
+  );
+}
+
+/**
  * 创建空间
  * @param body
  * @param options
@@ -57,6 +80,7 @@ export async function queryClassSpaceList(
     page?: number;
     page_size?: number;
     namespaceClass?: string;
+    userName?: string;
   },
   options?: { [key: string]: any },
 ) {

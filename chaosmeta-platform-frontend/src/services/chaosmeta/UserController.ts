@@ -69,6 +69,31 @@ export async function getUserList(
   });
 }
 
+
+/**
+ * 获取用户所属空间
+ * @param params
+ * @param options
+ * @returns
+ */
+export async function getUserSpaceList(
+  params?: {
+    name?: string;
+    page?: number;
+    page_size?: number;
+  },
+  options?: { [key: string]: any },
+) {
+  return request<any>(
+    `/chaosmeta/api/v1/users/namespace/list`,
+    {
+      method: 'GET',
+      params,
+      ...(options || {}),
+    },
+  );
+}
+
 /**
  * 获取用户列表带空间信息
  * @param params
@@ -79,7 +104,7 @@ export async function getSpaceUserList(
   params?: {
     id: number | string;
     sort?: string;
-    name?: string;
+    name?: any;
     role?: string;
     page?: number;
     page_size?: number;

@@ -3,6 +3,7 @@ import { InfoCircleOutlined } from '@ant-design/icons';
 import { Col, Row, Tag } from 'antd';
 import React, { useState } from 'react';
 import { RecommendContainer } from './style';
+import Thumbnail from './Thumbnail';
 /**
  * 推荐实验
  * @returns
@@ -10,6 +11,7 @@ import { RecommendContainer } from './style';
 const RecommendExperiment: React.FC<unknown> = () => {
   const [tempKey, setTempKey] = useState<string>('all');
   const [groupKey, setGroupKey] = useState('rong');
+
   const tempList = [
     {
       label: '所有模版',
@@ -163,11 +165,12 @@ const RecommendExperiment: React.FC<unknown> = () => {
                   return (
                     <Col key={index} span={8}>
                       <div className="result-item">
-                        <img
+                        <Thumbnail />
+                        {/* <img
                           style={{ width: '100%' }}
                           src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*fYqDRaaaj7gAAAAAAAAAAAAADmKmAQ/original"
                           alt=""
-                        />
+                        /> */}
                         <div className="introduce">
                           <img
                             src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*8jDfQoFH9NcAAAAAAAAAAAAADmKmAQ/original"

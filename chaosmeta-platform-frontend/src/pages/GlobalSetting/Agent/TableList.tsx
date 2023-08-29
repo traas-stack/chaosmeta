@@ -24,7 +24,6 @@ interface IProps {
 const SpaceList: React.FC<IProps> = (props) => {
   const { title, selectedRows, setSelectedRows, setUpgradationOpen } = props;
   const [form] = Form.useForm();
-  console.log(selectedRows, 'selectedRows===');
 
   /**
    * 卸载
@@ -217,7 +216,6 @@ const SpaceList: React.FC<IProps> = (props) => {
               : false
           }
           // onChange={(pagination: any, filters) => {
-          //   console.log(pagination, 'filters');
           //   const { current, pageSize } = pagination;
           //   let role;
           //   if (filters.role) {

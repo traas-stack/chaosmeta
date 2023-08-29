@@ -25,8 +25,6 @@ const UpgradationDrawer: React.FC<IProps> = (props) => {
     setNewSelectedRows([]);
   };
 
-  console.log(newSelectedRows, 'newSelectedRows===');
-
   const columns: any = [
     {
       title: 'Nodename',

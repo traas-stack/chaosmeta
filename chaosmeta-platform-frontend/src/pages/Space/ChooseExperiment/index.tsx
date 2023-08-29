@@ -62,7 +62,12 @@ const AddExperiment = () => {
         <div
           className="custom"
           onClick={() => {
-            history?.push('/space/experiment/add');
+            history?.push({
+              pathname: '/space/experiment/add',
+              query: {
+                spaceId: history?.location?.query?.spaceId || '',
+              },
+            });
           }}
         >
           <div>

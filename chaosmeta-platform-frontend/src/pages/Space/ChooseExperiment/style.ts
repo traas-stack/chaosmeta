@@ -24,6 +24,7 @@ export const Container = styled.div`
     border-radius: 6px;
     margin: 16px 0 24px 0;
     color: rgba(0, 10, 26, 0.68);
+    cursor: pointer;
     svg {
       width: 20px;
       height: 32px;

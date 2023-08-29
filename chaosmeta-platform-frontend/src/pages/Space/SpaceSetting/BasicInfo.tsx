@@ -18,7 +18,6 @@ const BasicInfo: React.FC<IProps> = () => {
   const [spaceInfo, setSpaceInfo] = useState<any>({});
   const spaceIdChange = useParamChange('spaceId');
   const { spacePermission } = useModel('global');
-  console.log(spacePermission, 'spacePermission');
 
   /**
    * 修改接口
@@ -27,7 +26,6 @@ const BasicInfo: React.FC<IProps> = () => {
     manual: true,
     formatResult: (res) => res,
     onSuccess: (res) => {
-      console.log(res, 'res');
       setSaveDisabled(true);
     },
   });
@@ -39,7 +37,6 @@ const BasicInfo: React.FC<IProps> = () => {
     manual: true,
     formatResult: (res) => res,
     onSuccess: (res) => {
-      console.log(res, 'res===');
       setSpaceInfo(res?.data?.namespace);
       form.setFieldsValue({
         ...res?.data?.namespace,
@@ -58,7 +55,6 @@ const BasicInfo: React.FC<IProps> = () => {
         description: values.description,
         name: values.name,
       };
-      console.log(params, 'values----');
       editInfo.run(params);
     });
   };
@@ -84,7 +80,7 @@ const BasicInfo: React.FC<IProps> = () => {
                 name={'name'}
                 label="空间名称"
                 rules={[{ required: true, message: '请输入空间名称' }]}
-                help="请尽量保持项目名称的简洁，不超过 64 个字符"
+                help="请尽量保持空间名称的简洁，不超过64个字符"
               >
                 <Input placeholder="请输入空间名称" maxLength={64} />
               </Form.Item>
