@@ -28,6 +28,9 @@ html {
         // 左上logo和标题
         .ant-pro-top-nav-header-logo {
           margin-right: 48px;
+          img {
+            height: 24px;
+          }
           h1 {
             opacity: 0.85;
             font-weight: 500;
@@ -59,7 +62,7 @@ html {
       }
       // 左侧菜单icon高度
       .ant-pro-base-menu-inline-item-icon {
-        height: 18px !important;
+        height: 16px !important;
       }
       // 全局默认button颜色
       .ant-btn-default {
@@ -83,6 +86,13 @@ html {
         }
       }
     }
+    .ellipsis {
+      position: relative;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      word-break: keep-all;
+    }
   }
   // a标签默认样式
   a {
@@ -92,5 +102,6 @@ html {
     outline: none;
     cursor: pointer;
     transition: color 0.3s;
+    font-weight: 400;
   }
 }

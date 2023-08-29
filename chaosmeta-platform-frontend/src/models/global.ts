@@ -15,16 +15,18 @@ const useUser = () => {
     role: 'normal',
   });
   // 空间id
-  const [spaceId, setSpaceId] = useState<string>('');
+  // const [spaceId, setSpaceId] = useState<string>('');
   // 用户相对于当前空间权限 0只读，1读写
   const [spacePermission, setSpacePermission] = useState<number>(0);
+  // 当前选中的空间id
+  const [curSpace, setCurSpace] = useState<string[]>(['1']);
   return {
     userInfo,
     setUserInfo,
-    spaceId,
-    setSpaceId,
     spacePermission,
-    setSpacePermission
+    setSpacePermission,
+    curSpace,
+    setCurSpace,
   };
 };
 

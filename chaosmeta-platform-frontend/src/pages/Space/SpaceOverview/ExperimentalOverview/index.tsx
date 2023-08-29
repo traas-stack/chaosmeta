@@ -1,77 +1,293 @@
 import EmptyCustom from '@/components/EmptyCustom';
+import { triggerTypes } from '@/constants';
+import {
+  queryExperimentList,
+  queryExperimentResultList,
+  stopExperimentResult,
+} from '@/services/chaosmeta/ExperimentController';
+import { querySpaceOverview } from '@/services/chaosmeta/SpaceController';
+import { cronTranstionCN, formatTime } from '@/utils/format';
 import { RightOutlined } from '@ant-design/icons';
-import { history } from '@umijs/max';
-import { Button, Card, Space, Table, Tabs } from 'antd';
+import { history, useRequest } from '@umijs/max';
+import {
+  Button,
+  Card,
+  Col,
+  Popconfirm,
+  Row,
+  Select,
+  Space,
+  Spin,
+  Table,
+  Tabs,
+  message,
+} from 'antd';
+import moment from 'moment';
+import { useEffect, useState } from 'react';
 
 export default () => {
+  // 实验列表数据
+  const [experimentData, setExperimentData] = useState<any>({});
+  // 总览数量展示数据
+  const [overViewInfo, setOverviewInfo] = useState<any>({});
+  // 实验结果列表数据
+  const [experimentResultData, setExperimentResultData] = useState<any>({});
+  // 选中的tabkey
+  const [tabKey, setTabkey] = useState<string>('update');
+  // 当前日期范围
+  const [curTime, setCurTime] = useState('7day');
+  /**
+   * 获取实验列表
+   */
+  const getExperimentList = useRequest(queryExperimentList, {
+    manual: true,
+    formatResult: (res) => res,
+    onSuccess: (res) => {
+      if (res?.code === 200) {
+        setExperimentData(res?.data);
+      }
+    },
+  });
+
+  /**
+   * 获取实验结果列表
+   */
+  const getExperimentResultList = useRequest(queryExperimentResultList, {
+    manual: true,
+    formatResult: (res) => res,
+    onSuccess: (res) => {
+      if (res?.code === 200) {
+        setExperimentResultData(res?.data);
+      }
+    },
+  });
+
+  /**
+   * 获取空间概览信息
+   */
+  const getSpaceOverview = useRequest(querySpaceOverview, {
+    manual: true,
+    formatResult: (res) => res,
+    onSuccess: (res) => {
+      if (res?.code === 200) {
+        setOverviewInfo(res?.data);
+      }
+    },
+  });
+
+  /**
+   * 停止实验
+   */
+  const handleStopExperiment = useRequest(
+    (params: { uuid: string; name: string }) =>
+      stopExperimentResult({ uuid: params?.uuid }),
+    {
+      manual: true,
+      formatResult: (res) => res,
+      onSuccess: (res, params) => {
+        if (res?.code === 200) {
+          message.success(`${params[0]?.name}实验已停止`);
+          getExperimentResultList?.run({
+            page: experimentResultData?.page || 1,
+            page_size: experimentResultData?.pageSize || 10,
+          });
+        }
+      },
+    },
+  );
+
   const operations = (
     <Space>
-      <span>查看全部实验</span>
+      <span
+        style={{ cursor: 'pointer' }}
+        onClick={() => {
+          history.push({
+            pathname: '/space/experiment',
+          });
+        }}
+      >
+        查看全部实验
+      </span>
       <RightOutlined />
     </Space>
   );
 
+  // 实验列表
   const columns: any[] = [
     {
       dataIndex: 'name',
-      key: 'name',
       width: 120,
-      render: () => {
+      render: (text: string, record: { update_time: string }) => {
         return (
           <>
             <div className="ellipsis row-text-gap">
               <a>
-                <span>
-                  我名字很长-我名字很长-我名字很长-我名字很长-我名字很长
-                </span>
+                <span>{text}</span>
               </a>
             </div>
-            <div className="shallow">最近编辑时间： 2021-07-11 11:20:33</div>
+            <div className="shallow">
+              最近编辑时间： {formatTime(record?.update_time)}
+            </div>
           </>
         );
       },
     },
     {
-      dataIndex: 'type',
-      key: 'type',
+      dataIndex: 'schedule_type',
       width: 110,
-      render: () => {
+      render: (text: string, record: { schedule_rule: string }) => {
+        const value = triggerTypes?.filter((item) => item?.value === text)[0]
+          ?.label;
+        if (text === 'cron') {
+          return (
+            <div>
+              <div className="shallow row-text-gap">触发方式</div>
+              <div>
+                <span>{value}</span>
+                <span className="shallow">
+                  {`（${cronTranstionCN(record?.schedule_rule)}）`}
+                </span>
+              </div>
+            </div>
+          );
+        }
         return (
           <div>
             <div className="shallow row-text-gap">触发方式</div>
             <div>
-              <span>周期性</span>
-              <span className="shallow">（2023-07-11 14:00:00）</span>
+              <span>{value}</span>
             </div>
           </div>
         );
       },
     },
     {
-      dataIndex: 'count',
-      key: 'count',
+      dataIndex: 'number',
       width: 60,
-      render: () => {
+      render: (text: number, record: { uuid: string }) => {
         return (
           <div>
             <div className="shallow row-text-gap">实验次数</div>
-            <div>22</div>
+            {text > 0 ? (
+              <a
+                onClick={() => {
+                  history?.push({
+                    pathname: '/space/space/experiment-result',
+                    query: {
+                      experimentId: record?.uuid,
+                    },
+                  });
+                }}
+              >
+                {text}
+              </a>
+            ) : (
+              <span>0</span>
+            )}
           </div>
         );
       },
     },
     {
-      dataIndex: 'action',
-      key: 'action',
       width: 50,
       fixed: 'right',
-      render: () => {
+      render: (record: { uuid: string }) => {
         return (
           <Space>
-            <a>运行</a>
-            <a>编辑</a>
+            <a
+              onClick={() => {
+                history.push({
+                  pathname: '/space/experiment/add',
+                  query: {
+                    experimentId: record?.uuid,
+                  },
+                });
+              }}
+            >
+              编辑
+            </a>
           </Space>
         );
+      },
+    },
+  ];
+
+  // 实验结果列表
+  const resultColumns: any[] = [
+    {
+      dataIndex: 'name',
+      width: 160,
+      render: (text: string) => {
+        return (
+          <>
+            <div className="ellipsis row-text-gap">
+              <a>
+                <span>{text}</span>
+              </a>
+            </div>
+          </>
+        );
+      },
+    },
+    {
+      dataIndex: 'create_time',
+      width: 160,
+      render: (text: string) => {
+        return (
+          <>
+            <div className="shallow row-text-gap">发起时间</div>
+            {formatTime(text)}
+          </>
+        );
+      },
+    },
+    {
+      dataIndex: 'update_time',
+      width: 160,
+      render: (text: string) => {
+        return (
+          <>
+            <div className="shallow row-text-gap">结束时间</div>
+            {formatTime(text)}
+          </>
+        );
+      },
+    },
+    {
+      dataIndex: 'status',
+      width: 100,
+      render: (text: string) => {
+        return (
+          <>
+            <div className="shallow row-text-gap">实验状态</div>
+            {text || '-'}
+          </>
+        );
+      },
+    },
+    {
+      dataIndex: 'name',
+      width: 120,
+      render: (record: { uuid: string; status: string; name: string }) => {
+        // 运行中才可以停止
+        if (record?.status === 'Running') {
+          return (
+            <Space>
+              <Popconfirm
+                title="你确定要停止吗？"
+                onConfirm={() => {
+                  handleStopExperiment?.run({
+                    uuid: record?.uuid,
+                    name: record?.name,
+                  });
+                }}
+              >
+                <a>停止</a>
+              </Popconfirm>
+            </Space>
+          );
+        }
+        return null;
       },
     },
   ];
@@ -86,10 +302,6 @@ export default () => {
               <EmptyCustom
                 desc="当前页面暂无最近编辑的实验"
                 title="您可以前往实验列表编辑实验"
-                // btnText="前往实验列表"
-                // btnOperate={() => {
-                //   history?.push('/space/experiment');
-                // }}
                 btns={
                   <Button
                     type="primary"
@@ -105,29 +317,17 @@ export default () => {
           }}
           showHeader={false}
           columns={columns}
-          rowKey={'id'}
-          // dataSource={[
-          //   { name: '999', id: '1' },
-          //   { name: '999', id: '5' },
-          // ]}
-          dataSource={[]}
-          pagination={false}
-          scroll={{ x: 760 }}
-        />
-      </Card>
-    );
-  };
-
-  // 即将运行的实验
-  const SoonRunExperimental = () => {
-    return (
-      <Card>
-        <Table
-          showHeader={false}
-          columns={columns}
-          rowKey={'id'}
-          dataSource={[]}
-          pagination={false}
+          rowKey={'uuid'}
+          loading={getExperimentList?.loading}
+          dataSource={experimentData?.experiments}
+          pagination={{
+            simple: true,
+            total: experimentData?.total,
+          }}
+          onChange={(pagination: any) => {
+            const { current, pageSize } = pagination;
+            getExperimentList?.run({ page: current, page_size: pageSize });
+          }}
           scroll={{ x: 760 }}
         />
       </Card>
@@ -140,17 +340,22 @@ export default () => {
       <Card>
         <Table
           showHeader={false}
-          columns={columns}
-          rowKey={'id'}
-          dataSource={[
-            { name: '999', id: '1' },
-            { name: '999', id: '2' },
-            { name: '999', id: '3' },
-            { name: '999', id: '4' },
-            { name: '999', id: '5' },
-          ]}
-          pagination={false}
+          columns={resultColumns}
+          rowKey={'uuid'}
+          dataSource={experimentResultData?.results || []}
+          loading={getExperimentResultList?.loading}
           scroll={{ x: 760 }}
+          pagination={{
+            simple: true,
+            total: experimentResultData?.total,
+          }}
+          onChange={(pagination: any) => {
+            const { current, pageSize } = pagination;
+            getExperimentResultList?.run({
+              page: current,
+              page_size: pageSize,
+            });
+          }}
         />
       </Card>
     );
@@ -159,20 +364,164 @@ export default () => {
   const items = [
     {
       label: '最近编辑的实验',
-      key: '1',
+      key: 'update',
       children: <EditExperimental />,
     },
     {
       label: '即将运行的实验',
-      key: '2',
-      children: <SoonRunExperimental />,
+      key: 'running',
+      children: <EditExperimental />,
     },
     {
       label: '最近运行的实验结果',
-      key: '3',
+      key: 'runningResult',
       children: <RecentlyRunExperimentalResult />,
     },
   ];
 
-  return <Tabs tabBarExtraContent={operations} items={items} />;
+  console.log(formatTime(moment().endOf('day')));
+  /**
+   * 日期转换
+   * @returns
+   */
+  const transformTime = () => {
+    let start_time, end_time;
+    if (curTime === '7day') {
+      start_time = formatTime(moment().subtract(30, 'd').startOf('day'));
+      end_time = formatTime(moment().endOf('day'));
+    }
+    if (curTime === '30day') {
+      start_time = formatTime(moment().subtract(30, 'd').startOf('day'));
+      end_time = formatTime(moment().endOf('day'));
+    }
+    return {
+      start_time,
+      end_time,
+    };
+  };
+
+  // tab栏列表检索
+  const handleTabSearch = (key?: string) => {
+    const val = key || tabKey;
+    if (val === 'runningResult') {
+      getExperimentResultList?.run({
+        page: 1,
+        page_size: 10,
+        time_search_field: 'create_time',
+        start_time: transformTime()?.start_time,
+        end_time: transformTime()?.end_time,
+      });
+    }
+    // 即将运行
+    if (val === 'running') {
+      getExperimentList?.run({
+        page: 1,
+        page_size: 10,
+        time_search_field: 'next_exec',
+        start_time: transformTime()?.start_time,
+        end_time: transformTime()?.end_time,
+      });
+    }
+    // 最近编辑
+    if (val === 'update') {
+      getExperimentList?.run({
+        page: 1,
+        page_size: 10,
+        time_search_field: 'update_time',
+        start_time: transformTime()?.start_time,
+        end_time: transformTime()?.end_time,
+      });
+    }
+  };
+
+  useEffect(() => {
+    getExperimentList?.run({
+      page: 1,
+      page_size: 10,
+      time_search_field: 'update_time',
+      start_time: transformTime()?.start_time,
+      end_time: transformTime()?.end_time,
+    });
+    getSpaceOverview?.run({
+      spaceId: history?.location?.query?.spaceId as string,
+      recent_day: 7,
+    });
+  }, []);
+
+  return (
+    <>
+      <div className="overview">
+        <div className="top">
+          <span className="title">空间总览</span>
+          <Select
+            onChange={(val) => {
+              setCurTime(val);
+              const recent_day = val === '30day' ? 30 : 7;
+              getSpaceOverview?.run({
+                spaceId: history?.location?.query?.spaceId as string,
+                recent_day,
+              });
+              handleTabSearch();
+            }}
+            defaultValue={'7day'}
+            options={[
+              { label: '最近7天', value: '7day' },
+              { label: '最近30天', value: '30day' },
+            ]}
+          />
+        </div>
+        <Spin spinning={getSpaceOverview?.loading}>
+          <div className="result">
+            <Row gutter={16} style={{ alignContent: 'center' }}>
+              <Col span={8}>
+                <Card style={{ display: 'flex', alignContent: 'center' }}>
+                  <div>
+                    <div className="shallow-65">新增实验</div>
+                    <span className="count">
+                      {overViewInfo?.total_experiments || 0}
+                    </span>
+                    <span className="unit">个</span>
+                  </div>
+                </Card>
+              </Col>
+              <Col span={16}>
+                <Card>
+                  <Row>
+                    <Col span={12}>
+                      <div style={{ position: 'relative' }}>
+                        <div className="shallow-65">执行实验</div>
+                        <span className="count">
+                          {overViewInfo?.total_experiment_instances || 0}
+                        </span>
+                        <span className="unit">次</span>
+                      </div>
+                    </Col>
+                    <Col span={12}>
+                      <div>
+                        <div className="shallow-65">执行失败</div>
+                        <span className="count-error">
+                          {overViewInfo?.failed_experiment_instances || 0}
+                        </span>
+                        <span className="unit">次</span>
+                      </div>
+                    </Col>
+                  </Row>
+                </Card>
+              </Col>
+            </Row>
+          </div>
+        </Spin>
+      </div>
+
+      <Tabs
+        tabBarExtraContent={operations}
+        items={items}
+        activeKey={tabKey}
+        onChange={(val) => {
+          setTabkey(val);
+          handleTabSearch(val);
+        }}
+      />
+    </>
+  );
 };

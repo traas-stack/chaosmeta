@@ -1,5 +1,5 @@
 import { createSpace } from '@/services/chaosmeta/SpaceController';
-import { history, useRequest } from '@umijs/max';
+import { history, useModel, useRequest } from '@umijs/max';
 import { Button, Drawer, Form, Input, Space, message } from 'antd';
 import React from 'react';
 
@@ -11,9 +11,30 @@ interface IProps {
 const AddSpaceDrawer: React.FC<IProps> = (props) => {
   const { open, setOpen } = props;
   const [form] = Form.useForm();
+  const { setCurSpace } = useModel('global');
 
   const handleCancel = () => {
     setOpen(false);
+  };
+
+  /**
+   * 更新地址栏空间id，并保存
+   * @param id
+   */
+  const handleUpdateSpaceId = (id: any) => {
+    if (id) {
+      const name = form.getFieldValue('name');
+      history.push({
+        pathname: history.location.pathname,
+        query: {
+          ...history.location.query,
+          spaceId: id,
+        },
+      });
+      setCurSpace([id]);
+      sessionStorage.setItem('spaceId', id);
+      sessionStorage.setItem('spaceName', name);
+    }
   };
 
   /**
@@ -22,11 +43,12 @@ const AddSpaceDrawer: React.FC<IProps> = (props) => {
   const create = useRequest(createSpace, {
     manual: true,
     formatResult: (res) => res,
-    onSuccess: (res) => {
-      console.log(res, '----');
+    onSuccess: async (res) => {
       if (res.code === 200) {
         message.success('创建成功');
-        setOpen(false)
+        // 更新空间信息
+        handleUpdateSpaceId(res?.data?.id);
+        setOpen(false);
         history.push('/space/setting');
       }
     },
@@ -36,8 +58,10 @@ const AddSpaceDrawer: React.FC<IProps> = (props) => {
    * 创建空间
    */
   const handleCreate = () => {
+    // setCurSpace()
+    // handleUpdateSpaceId('20', 'ceshi')
+    // return
     form.validateFields().then((values) => {
-      console.log(values, 'values');
       create?.run(values);
     });
   };
@@ -68,7 +92,7 @@ const AddSpaceDrawer: React.FC<IProps> = (props) => {
           name={'name'}
           label="空间名称"
           rules={[{ required: true, message: '请输入' }]}
-          help="请尽量保持项目名称的简洁，不超过 64 个字符"
+          help="请尽量保持空间名称的简洁，不超过64个字符"
         >
           <Input placeholder="请输入空间名称" maxLength={64} />
         </Form.Item>

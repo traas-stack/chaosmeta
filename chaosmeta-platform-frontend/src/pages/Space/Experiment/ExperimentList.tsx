@@ -1,44 +1,224 @@
 import { LightArea } from '@/components/CommonStyle';
 import EmptyCustom from '@/components/EmptyCustom';
 import TimeTypeRangeSelect from '@/components/Select/TimeTypeRangeSelect';
-import { QuestionCircleOutlined } from '@ant-design/icons';
-import { history } from '@umijs/max';
+import { experimentStatus, triggerTypes } from '@/constants';
+import {
+  createExperiment,
+  deleteExperiment,
+  queryExperimentList,
+} from '@/services/chaosmeta/ExperimentController';
+import {
+  copyExperimentFormatData,
+  cronTranstionCN,
+  formatTime,
+} from '@/utils/format';
+import { renderTags } from '@/utils/renderItem';
+import {
+  EllipsisOutlined,
+  ExclamationCircleFilled,
+  QuestionCircleOutlined,
+} from '@ant-design/icons';
+import { history, useRequest } from '@umijs/max';
 import {
   Badge,
   Button,
   Col,
+  Dropdown,
   Form,
   Input,
+  Modal,
   Popover,
   Row,
   Select,
   Space,
   Table,
-  Tag,
   Tooltip,
+  message,
 } from 'antd';
 import { ColumnsType } from 'antd/es/table';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
+interface PageData {
+  experiments: any[];
+  page: number;
+  pageSize: number;
+  total: number;
+}
 /**
  * 实验列表
  * @returns
  */
 const ExperimentList: React.FC<unknown> = () => {
   const [form] = Form.useForm();
+  const [pageData, setPageData] = useState<PageData>({
+    page: 1,
+    pageSize: 10,
+    total: 0,
+    experiments: [],
+  });
 
+  // 时间类型
+  const timeTypes = [
+    // 最近实验时间后端暂没有提供该字段，暂时使用update_time -- todo
+    {
+      value: 'update_time',
+      label: '最近实验时间',
+    },
+    {
+      value: 'update_time',
+      label: '最近编辑时间',
+    },
+    {
+      value: 'next_exec',
+      label: '即将运行时间',
+    },
+  ];
+
+  /**
+   * 分页接口
+   */
+  const queryByPage = useRequest(queryExperimentList, {
+    manual: true,
+    formatResult: (res) => res,
+    onSuccess: (res) => {
+      if (res?.code === 200) {
+        setPageData(res?.data);
+      }
+    },
+  });
+
+  /**
+   * 分页查询
+   * @param params
+   */
+  const handleSearch = (params?: {
+    sort?: string;
+    page?: number;
+    pageSize?: number;
+  }) => {
+    const { name, creator, schedule_type, time, timeType } =
+      form.getFieldsValue();
+    const page = params?.page || pageData.page || 1;
+    const pageSize = params?.pageSize || pageData.pageSize || 10;
+    let start_time, end_time;
+    if (time?.length > 0) {
+      start_time = formatTime(time[0]?.format());
+      end_time = formatTime(time[1]?.format());
+    }
+    console.log(timeType, 'timeType');
+    const queryParam = {
+      sort: params?.sort,
+      name,
+      page,
+      page_size: pageSize,
+      creator,
+      schedule_type,
+      start_time,
+      end_time,
+      time_search_field: timeType,
+    };
+    queryByPage.run(queryParam);
+  };
+
+  /**
+   * 删除实验接口
+   */
+  const handleDeleteExperiment = useRequest(deleteExperiment, {
+    manual: true,
+    formatResult: (res) => res,
+    onSuccess: (res) => {
+      if (res?.code === 200) {
+        message.success('删除成功！');
+        handleSearch();
+      }
+    },
+  });
+
+  /**
+   * 创建实验 -- 复制实验使用
+   */
+  const handleCreateExperiment = useRequest(createExperiment, {
+    manual: true,
+    formatResult: (res) => res,
+    onSuccess: (res) => {
+      if (res?.code === 200) {
+        message.success('复制成功');
+        handleSearch();
+      }
+    },
+  });
+
+  /**
+   * 确认删除实验
+   */
+  const handleDeleteConfirm = (uuid: string) => {
+    if (uuid) {
+      Modal.confirm({
+        title: '确认要删除这个实验吗？',
+        icon: <ExclamationCircleFilled />,
+        content: '删除实验将会删除该实验的配置，但不会删除历史实验结果！',
+        onOk() {
+          handleDeleteExperiment?.run({ uuid });
+          handleSearch();
+        },
+        onCancel() {},
+      });
+    }
+  };
+
+  /**
+   * 复制实验
+   */
+  const handleCopyExperiment = (record: any) => {
+    const params = copyExperimentFormatData(record);
+    handleCreateExperiment?.run(params);
+  };
+
+  // 触发方式
   const triggerMode = [
     {
       text: '手动',
-      value: 'shoudong',
+      value: 'manual',
     },
     {
       text: '单次定时',
-      value: 'danci',
+      value: 'once',
     },
     {
       text: '周期性',
-      value: 'zhouqi',
+      value: 'cron',
+    },
+  ];
+
+  /**
+   * 操作下拉列表
+   * @param record
+   * @returns
+   */
+  const operateItems = (record: any) => [
+    {
+      key: '1',
+      label: (
+        <div
+          onClick={() => {
+            handleCopyExperiment(record);
+          }}
+        >
+          复制
+        </div>
+      ),
+    },
+    {
+      key: '2',
+      label: (
+        <div
+          onClick={() => {
+            handleDeleteConfirm(record?.uuid);
+          }}
+        >
+          删除
+        </div>
+      ),
     },
   ];
 
@@ -47,31 +227,25 @@ const ExperimentList: React.FC<unknown> = () => {
       title: '名称',
       width: 160,
       dataIndex: 'name',
-      render: () => {
+      render: (text: string, record: { uuid: string; labels: any[] }) => {
         return (
           <>
             <div className="ellipsis row-text-gap">
-              <a>
-                <span>
-                  我名字很长-我名字很长-我名字很长-我名字很长-我名字很长
-                </span>
+              <a
+                onClick={() => {
+                  history.push({
+                    pathname: '/space/experiment/detail',
+                    query: {
+                      experimentId: record.uuid,
+                      spaceId: history?.location?.query?.spaceId,
+                    },
+                  });
+                }}
+              >
+                <span>{text}</span>
               </a>
             </div>
-            <div className="ellipsis">
-              <Popover
-                title={
-                  <div>
-                    <Tag>基础设施</Tag>
-                    <Tag>基础设施</Tag>
-                    <Tag>基础设施</Tag>
-                  </div>
-                }
-              >
-                <Tag>基础设施</Tag>
-                <Tag>基础设施</Tag>
-                <Tag>基础设施</Tag>
-              </Popover>
-            </div>
+            <div className="ellipsis">{renderTags(record?.labels)}</div>
           </>
         );
       },
@@ -79,31 +253,49 @@ const ExperimentList: React.FC<unknown> = () => {
     {
       title: '创建人',
       width: 80,
-      dataIndex: 'create',
+      dataIndex: 'creator_name',
     },
     {
       title: '实验次数',
       width: 120,
-      dataIndex: 'count',
+      dataIndex: 'number',
       sorter: true,
-      render: () => {
-        return <a>9</a>;
+      render: (text: number, record: { uuid: string }) => {
+        if (text > 0) {
+          return (
+            <a
+              onClick={() => {
+                history?.push({
+                  pathname: '/space/space/experiment-result',
+                  query: {
+                    experimentId: record?.uuid,
+                  },
+                });
+              }}
+            >
+              {text}
+            </a>
+          );
+        }
+        return 0;
       },
     },
     {
       title: (
         <>
-          <span>最近试验时间</span>
-          <Tooltip title="todo">
+          <span>最近实验时间</span>
+          <Tooltip title="最近一次实验开始的时间">
             <QuestionCircleOutlined />
           </Tooltip>
           /<span>状态</span>
         </>
       ),
       width: 180,
-      dataIndex: 'shaiy',
       sorter: true,
-      render: () => {
+      render: (record: any) => {
+        const statusTemp = experimentStatus.filter(
+          (item) => item.value === record?.status,
+        )[0];
         return (
           <div
             style={{
@@ -111,9 +303,15 @@ const ExperimentList: React.FC<unknown> = () => {
               alignItems: 'center',
             }}
           >
-            <div>2020-01-04 09:41:00</div>
-            <div style={{ flexShrink: 0 }}>
-              <Badge color="#f50" /> 成功
+            <div>
+              <Popover
+                title={statusTemp?.label}
+                overlayStyle={{ maxWidth: '80px' }}
+              >
+                <Badge color={statusTemp?.color} />{' '}
+              </Popover>
+              {/* 这里展示时间 -- 后端没有相应字段 --todo */}
+              <span>--</span>
             </div>
           </div>
         );
@@ -122,13 +320,25 @@ const ExperimentList: React.FC<unknown> = () => {
     {
       title: '触发方式',
       width: 120,
-      dataIndex: 'chuf',
-      filters: triggerMode,
-      render: () => {
+      dataIndex: 'schedule_type',
+      // filters: triggerMode,
+      render: (text: string, record: { schedule_rule: string }) => {
+        const value = triggerTypes?.filter((item) => item?.value === text)[0]
+          ?.label;
+
+        if (text === 'cron') {
+          return (
+            <div>
+              <div>{value}</div>
+              <span className="cycle">
+                {cronTranstionCN(record?.schedule_rule)}
+              </span>
+            </div>
+          );
+        }
         return (
           <div>
-            <div>周期性</div>
-            <span className="cycle">每周二14:00</span>
+            <div>{value}</div>
           </div>
         );
       },
@@ -136,37 +346,54 @@ const ExperimentList: React.FC<unknown> = () => {
     {
       title: '即将运行时间',
       width: 140,
-      dataIndex: 'jijiang',
+      dataIndex: 'next_exec',
       sorter: true,
-      render: () => {
-        return (
-          <div>
-            <div className="run-finish">2020-01-04 09:41:00</div>
-          </div>
-        );
+      render: (text: string) => {
+        return formatTime(text) || '-';
       },
     },
     {
       title: '最近编辑时间',
-      width: 140,
-      dataIndex: 'zuijin',
+      width: 180,
+      dataIndex: 'update_time',
       sorter: true,
+      render: (text: string) => {
+        return formatTime(text) || '-';
+      },
     },
     {
       title: '操作',
-      width: 140,
+      width: 90,
       fixed: 'right',
-      render: () => {
+      render: (record: any) => {
         return (
           <Space>
-            <a onClick={() => {}}>编辑</a>
-            <a onClick={() => {}}>复制</a>
-            <a onClick={() => {}}>删除</a>
+            <a
+              onClick={() => {
+                window.open(
+                  `${window.origin}/space/experiment/add?experimentId=${record?.uuid}&spaceId=${history?.location?.query?.spaceId}`,
+                );
+              }}
+            >
+              编辑
+            </a>
+            <Dropdown
+              menu={{ items: operateItems(record) }}
+              placement="bottom"
+              arrow
+            >
+              <EllipsisOutlined className="operate-icon" />
+            </Dropdown>
           </Space>
         );
       },
     },
   ];
+
+  useEffect(() => {
+    handleSearch({ sort: '-create_time' });
+  }, []);
+
   return (
     <div className="experiment-list ">
       <LightArea className="search">
@@ -183,7 +410,7 @@ const ExperimentList: React.FC<unknown> = () => {
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item name={'type'} label="触发方式">
+              <Form.Item name={'schedule_type'} label="触发方式">
                 <Select placeholder="请选择">
                   {triggerMode?.map((item) => {
                     return (
@@ -195,11 +422,25 @@ const ExperimentList: React.FC<unknown> = () => {
                 </Select>
               </Form.Item>
             </Col>
-            <TimeTypeRangeSelect />
+            <TimeTypeRangeSelect form={form} timeTypes={timeTypes} />
             <Col style={{ textAlign: 'right', flex: 1 }}>
               <Space>
-                <Button>重置</Button>
-                <Button type="primary">查询</Button>
+                <Button
+                  onClick={() => {
+                    form.resetFields();
+                    handleSearch({ page: 1, pageSize: 10 });
+                  }}
+                >
+                  重置
+                </Button>
+                <Button
+                  type="primary"
+                  onClick={() => {
+                    handleSearch();
+                  }}
+                >
+                  查询
+                </Button>
               </Space>
             </Col>
           </Row>
@@ -208,12 +449,17 @@ const ExperimentList: React.FC<unknown> = () => {
       <LightArea>
         <div className="table">
           <div className="area-operate">
-            <div className="title">成员列表</div>
+            <div className="title">实验列表</div>
             <Space>
               <Button
                 type="primary"
                 onClick={() => {
-                  history.push('/space/experiment/choose');
+                  history.push({
+                    pathname: '/space/experiment/add',
+                    query: {
+                      spaceId: history?.location?.query?.spaceId,
+                    },
+                  });
                 }}
               >
                 创建实验
@@ -221,7 +467,6 @@ const ExperimentList: React.FC<unknown> = () => {
             </Space>
           </div>
           <Table
-            columns={columns}
             locale={{
               emptyText: (
                 <EmptyCustom
@@ -233,9 +478,8 @@ const ExperimentList: React.FC<unknown> = () => {
                         type="primary"
                         onClick={() => {
                           history.push({
-                            pathname: '/space/setting',
+                            pathname: '/space/experiment/add',
                             query: {
-                              tabKey: 'user',
                               spaceId: history?.location?.query?.spaceId,
                             },
                           });
@@ -243,7 +487,7 @@ const ExperimentList: React.FC<unknown> = () => {
                       >
                         创建实验
                       </Button>
-                      <Button
+                      {/* <Button
                         onClick={() => {
                           history.push({
                             pathname: '/space/setting',
@@ -255,20 +499,42 @@ const ExperimentList: React.FC<unknown> = () => {
                         }}
                       >
                         推荐实验
-                      </Button>
+                      </Button> */}
                     </Space>
                   }
                 />
               ),
             }}
-            rowKey={'id'}
-            // dataSource={[{ id: '1', account: 'hlt', auth: 'admain' }]}
-            dataSource={[]}
-            pagination={{
-              showQuickJumper: true,
-              total: 200,
+            columns={columns}
+            loading={queryByPage?.loading}
+            rowKey={'uuid'}
+            scroll={{ x: 1000 }}
+            // dataSource={ [{uuid: 1}]}
+            dataSource={pageData?.experiments || []}
+            pagination={
+              pageData?.experiments?.length > 0
+                ? {
+                    showQuickJumper: true,
+                    total: pageData?.total,
+                    current: pageData?.page,
+                    pageSize: pageData?.pageSize,
+                  }
+                : false
+            }
+            onChange={(pagination: any, filters, sorter: any) => {
+              const { current, pageSize } = pagination;
+              let sort;
+              const sortKey = sorter?.field;
+              console.log(sorter, 'sorter');
+              if (sorter.order) {
+                sort = sorter.order === 'ascend' ? sortKey : `-${sortKey}`;
+              }
+              handleSearch({
+                pageSize: pageSize,
+                page: current,
+                sort,
+              });
             }}
-            scroll={{ x: 760 }}
           />
         </div>
       </LightArea>

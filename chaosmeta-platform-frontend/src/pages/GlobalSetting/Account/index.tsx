@@ -75,14 +75,6 @@ const Account: React.FC<unknown> = () => {
     queryByPage.run(queryParam);
   };
 
-  const dataSource = [
-    { id: '2', userName: 'ceshi' },
-    {
-      id: '1',
-      userName: 'Serati Ma',
-    },
-  ];
-
   /**
    * 修改用户角色
    */
@@ -337,7 +329,7 @@ const Account: React.FC<unknown> = () => {
                     : undefined
                 }
                 pagination={
-                  dataSource?.length > 0
+                  pageData?.users?.length > 0
                     ? {
                         showQuickJumper: true,
                         total: pageData?.total,

@@ -1,3 +1,6 @@
+import { arrangeNodeTypeColors } from '@/constants';
+import { formatDuration } from '@/utils/format';
+import { InfoCircleOutlined } from '@ant-design/icons';
 import {
   CollisionDetection,
   DndContext,
@@ -22,6 +25,7 @@ import {
 import { Form } from 'antd';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { v1 } from 'uuid';
 import Arrange from './components/Arrange';
 import DroppableItem from './components/DroppableItem';
 import NodeConfig from './components/NodeConfig';
@@ -30,17 +34,17 @@ import { DroppableCol, DroppableRow, NodeItem } from './style';
 
 interface IProps {
   arrangeList: any[];
-  leftNodeList: any[];
   setArrangeList: any;
+  disabled?: boolean;
 }
 
 const ArrangeContent: React.FC<IProps> = (props) => {
-  const { arrangeList, leftNodeList, setArrangeList } = props;
+  const { arrangeList, setArrangeList, disabled = false } = props;
   const [form] = Form.useForm();
   // 当前正在拖动元素的id
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   // 时间轴个数
-  const [timeCount, setTimeCount] = useState<number>(16);
+  const [timeCount, setTimeCount] = useState<number>(35);
   // 当前拖动元素的数据，左侧节点/右侧row/右侧row-item
   const [curDragData, setCurDragData] = useState<any>(null);
   const recentlyMovedToNewContainer = useRef(false);
@@ -48,9 +52,10 @@ const ArrangeContent: React.FC<IProps> = (props) => {
   // 当前选中的行内子元素
   const [activeCol, setActiveCol] = useState<any>({ state: false });
   // 判断数组中是否包含该项
-  const isExist = (id: any, arr: any[]) => {
-    return arr?.some((item) => item?.id === id);
+  const isExist = (dragId: any, arr: any[]) => {
+    return arr?.some((item) => item?.row === dragId);
   };
+
   /**
    * 碰撞算法 -- 参考dnd-kit多容器
    * Custom collision detection strategy optimized for multiple containers
@@ -64,8 +69,10 @@ const ArrangeContent: React.FC<IProps> = (props) => {
       if (activeId && isExist(activeId, arrangeList)) {
         return closestCenter({
           ...args,
-          droppableContainers: args.droppableContainers.filter((container) =>
-            isExist(container?.id, arrangeList),
+          droppableContainers: args.droppableContainers.filter(
+            (container: any) => {
+              return isExist(container?.id, arrangeList);
+            },
           ),
         });
       }
@@ -77,7 +84,6 @@ const ArrangeContent: React.FC<IProps> = (props) => {
             pointerIntersections
           : rectIntersection(args);
       let overId: any = getFirstCollision(intersections, 'id');
-
       if (overId !== null) {
         if (overId === 'void') {
           // If the intersecting droppable is the trash, return early
@@ -86,9 +92,8 @@ const ArrangeContent: React.FC<IProps> = (props) => {
         }
         if (isExist(activeId, arrangeList)) {
           // const containerItems = arrangeList[overId];
-
           const containerItems = arrangeList?.filter(
-            (item) => item?.id === overId,
+            (item) => item?.row === overId,
           )[0]?.children;
           // If a container is matched and it contains items (columns 'A', 'B', 'C')
           if (containerItems.length > 0) {
@@ -153,17 +158,17 @@ const ArrangeContent: React.FC<IProps> = (props) => {
    * 拖动中节点的渲染
    */
   const MoveingRender = () => {
-    const { dragtype, name, index, id, second } = curDragData || {};
+    const { dragtype, name, index, duration, nameCn, exec_type } =
+      curDragData || {};
+    const second: number = formatDuration(duration);
     let renderItem = null;
     // 左侧节点拖动
     const leftNodeRender = () => {
       return (
         <NodeItem>
           <div className="temp-item">
-            {/* <div> */}
             <img src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*rOAzRrDGQoAAAAAAAAAAAAAADmKmAQ/original" />
-            {name}
-            {/* </div> */}
+            {nameCn}
           </div>
         </NodeItem>
       );
@@ -173,7 +178,6 @@ const ArrangeContent: React.FC<IProps> = (props) => {
       return (
         <DroppableRow $isMoving={true}>
           <div className="row">
-            {/* {itemData?.id} */}
             {curDragData?.children && (
               <SortableContext
                 items={curDragData?.children}
@@ -185,8 +189,7 @@ const ArrangeContent: React.FC<IProps> = (props) => {
                       key={j}
                       index={j}
                       item={el}
-                      parentId={curDragData?.id}
-                      // curProportion={curProportion}
+                      parentId={curDragData?.row}
                     />
                   );
                 })}
@@ -201,17 +204,23 @@ const ArrangeContent: React.FC<IProps> = (props) => {
     const rowItemRender = () => {
       return (
         <DroppableCol
-          // $isMoving={isMoving}
-          $bg={'#C6F8E0'}
+          $bg={arrangeNodeTypeColors[exec_type]}
           style={{ width: `${second * 3}px` }}
         >
-          <div className="item">{id}</div>
+          <div className="item">
+            <>
+              <div className="title ellipsis">
+                {!curDragData?.nodeInfoState && (
+                  <InfoCircleOutlined
+                    style={{ color: '#FF4D4F', marginRight: '4px' }}
+                  />
+                )}
+                <span>{name}</span>
+              </div>
+              <div>{second}s</div>
+            </>
+          </div>
         </DroppableCol>
-        // <DroppableItem
-        //   index={index}
-        //   item={index}
-        //   parentId={curDragData?.id}
-        // />
       );
     };
     if (dragtype === 'node') {
@@ -245,50 +254,77 @@ const ArrangeContent: React.FC<IProps> = (props) => {
   };
 
   /**
+   * 遍历编排数组，将其中行中最长秒数对比当前默认时间轴，若时间轴宽度不够就再加长
+   * @param values
+   */
+  const handleAddTimeAxis = (values: any) => {
+    const maxSecondList: any = [];
+    values?.forEach((item: { children: any[] }) => {
+      let secondSum = 0;
+      item?.children?.forEach((el) => {
+        // 将持续时长转化为数字形式进行计算
+        const duration = formatDuration(el?.duration);
+        secondSum += duration;
+      });
+      maxSecondList.push(secondSum);
+    });
+    const maxSecond = maxSecondList.sort((a: number, b: number) => b - a)[0];
+    // 提前一段加长
+    const curSecond = timeCount * 30 - 60;
+    if (maxSecond > curSecond) {
+      setTimeCount(() => {
+        // 多加入90s
+        const newCount = Math.round(maxSecond / 30) + 3;
+        return newCount;
+      });
+    }
+  };
+
+  /**
    * 判断是否添加行
    */
   const handleAddRow = () => {
     // 第一行有子元素/最后一行有子元素，添加行
     setArrangeList((params: any) => {
       const values = JSON.parse(JSON.stringify(params));
+      let maxRow = 0;
+      // 找到当前数据中的最大行号
+      values?.forEach((el: { row: number }) => {
+        if (el?.row > maxRow) {
+          maxRow = el?.row;
+        }
+      });
       if (values[0]?.children?.length > 0) {
-        values.unshift({ id: values?.length, children: [] });
+        values.unshift({
+          id: maxRow + 1,
+          row: maxRow + 1,
+          children: [],
+        });
       }
       if (values[values?.length - 1]?.children?.length > 0) {
-        values.push({ id: values?.length, children: [] });
+        values.push({
+          id: maxRow + 1,
+          row: maxRow + 1,
+          children: [],
+        });
       }
       // 遍历编排数组，将其中行中最长秒数对比当前默认时间轴，若时间轴宽度不够就再加长
-      const maxSecondList: any = [];
-      values?.forEach((item: { children: any[] }) => {
-        let secondSum = 0;
-        item?.children?.forEach((el) => {
-          secondSum += el?.second;
-        });
-        maxSecondList.push(secondSum);
-      });
-      const maxSecond = maxSecondList.sort((a: number, b: number) => b - a)[0];
-      // 提前一段加长
-      const curSecond = timeCount * 30 - 60;
-      if (maxSecond > curSecond) {
-        setTimeCount(() => {
-          // 多加入90s
-          const newCount = Math.round(maxSecond / 30) + 3;
-          return newCount;
-        });
-      }
+      handleAddTimeAxis(values);
       return values;
     });
   };
-  // 150
 
   /**
    * 拖动至某个元素
    */
   const handleDragOver = (params: any) => {
+    console.log(params, 'parasm');
     const { active, over } = params;
     if (!active.id || !over?.id || active?.id === over?.id) {
       return;
     }
+    console.log(params, arrangeList, 'parasm============');
+
     // 拖动的元素
     const {
       index: activeIndex,
@@ -304,15 +340,15 @@ const ArrangeContent: React.FC<IProps> = (props) => {
     // 行内子元素的跨容器拖动，两种情况，
     // 1. 直接拖动到其他容器的子元素上，可利用子元素及父容器的id
     // 2. 拖动到其他容器但不在子元素上，在该容器末尾加入元素
-    if (activeType === 'item' && activeParentId) {
+    if (activeType === 'item' && (activeParentId || activeParentId === 0)) {
       setArrangeList((values: any[]) => {
         // 1. 直接拖动到其他容器的子元素上，可利用子元素及父容器的id  && activeParentId !== overParentId
         if (overType === 'item') {
           const activeParentIndex = values?.findIndex(
-            (item) => item?.id === activeParentId,
+            (item) => item?.row === activeParentId,
           );
           const overParentIndex = values?.findIndex(
-            (item) => item?.id === overParentId,
+            (item) => item?.row === overParentId,
           );
           const activeItem = values[activeParentIndex]?.children[activeIndex];
           values[activeParentIndex]?.children?.splice(activeIndex, 1);
@@ -322,9 +358,10 @@ const ArrangeContent: React.FC<IProps> = (props) => {
         // 2. 拖动到其他容器但不在子元素上，在该容器末尾加入元素
         if (overType === 'row') {
           const activeParentIndex = values?.findIndex(
-            (item) => item?.id === activeParentId,
+            (item) => item?.row === activeParentId,
           );
           const activeItem = values[activeParentIndex]?.children[activeIndex];
+
           values[activeParentIndex]?.children?.splice(activeIndex, 1);
           values[overIndex]?.children?.push(activeItem);
           recentlyMovedToNewContainer.current = true;
@@ -339,12 +376,19 @@ const ArrangeContent: React.FC<IProps> = (props) => {
         // 拖动到容器的子元素上
         if (overType === 'item') {
           const overParentIndex = values?.findIndex(
-            (item) => item?.id === overParentId,
+            (item) => item?.row === overParentId,
           );
           const activeItem = active?.data?.current;
           values[overParentIndex]?.children?.splice(overIndex, 0, {
             ...activeItem,
+            // 暂时将uuid设置为当前节点的id用于拖拽，拖拽结束后这里的uuid需要重新生成，避免拖拽绑定重复id
+            uuid: active.id,
+            duration: '30s',
             dragtype: 'item',
+            exec_id: activeItem?.id,
+            name: activeItem?.nameCn,
+            // 当前节点信息是否进行配置完成, wait类型只需要配置时长，所以这里默认为true
+            nodeInfoState: activeItem?.exec_type === 'wait',
           });
           recentlyMovedToNewContainer.current = true;
         }
@@ -353,7 +397,15 @@ const ArrangeContent: React.FC<IProps> = (props) => {
           const activeItem = active?.data?.current;
           values[overIndex]?.children?.push({
             ...activeItem,
+            uuid: active.id,
+            // 拖入时长默认15m
+            duration: '30s',
             dragtype: 'item',
+            // 将节点库id保存
+            exec_id: activeItem?.id,
+            name: activeItem?.nameCn,
+            // 当前节点信息是否进行配置完成
+            nodeInfoState: activeItem?.exec_type === 'wait',
           });
           recentlyMovedToNewContainer.current = true;
         }
@@ -404,13 +456,12 @@ const ArrangeContent: React.FC<IProps> = (props) => {
       !isNode
     ) {
       setArrangeList((values: any) => {
-        // const curList = JSON.parse(JSON.stringify(values));
         // 拖动元素后修改数据
         const parentTemp = values?.filter(
-          (item: { id: any }) => item.id === activeParentId,
+          (item: { row: any }) => item.row === activeParentId,
         )[0];
         const parentIndex = values.findIndex(
-          (item: { id: any }) => item.id === activeParentId,
+          (item: { row: any }) => item.row === activeParentId,
         );
         const newParentList = arrayMove(
           parentTemp?.children,
@@ -437,20 +488,21 @@ const ArrangeContent: React.FC<IProps> = (props) => {
         // 拖动至行内，为最后一个元素
         if (overType === 'row') {
           const newOverIndex = values[overIndex]?.children?.length - 1;
-          values[overIndex].children[newOverIndex].id = `${
-            newOverIndex + 1
-          }-move`;
+          values[overIndex].children[newOverIndex].uuid = v1().replaceAll(
+            '-',
+            '',
+          );
           values[overIndex].children[newOverIndex].isNode = false;
         }
         // 拖动至行内的子元素上
         if (overType === 'item') {
           const overParentIndex = values?.findIndex(
-            (item) => item.id === overParentId,
+            (item) => item.row === overParentId,
           );
-          const newOverIndex = values[overParentIndex]?.children?.length;
-          values[overParentIndex].children[
-            overIndex
-          ].id = `${newOverIndex}-move`;
+          values[overParentIndex].children[overIndex].uuid = v1().replaceAll(
+            '-',
+            '',
+          );
           values[overParentIndex].children[overIndex].isNode = false;
         }
         return values;
@@ -472,6 +524,7 @@ const ArrangeContent: React.FC<IProps> = (props) => {
     requestAnimationFrame(() => {
       recentlyMovedToNewContainer.current = false;
     });
+    handleAddTimeAxis(arrangeList);
   }, [arrangeList]);
 
   return (
@@ -480,13 +533,25 @@ const ArrangeContent: React.FC<IProps> = (props) => {
         collisionDetection={collisionDetectionStrategy}
         sensors={sensors}
         onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
-        onDragEnd={handleDragEnd}
+        onDragOver={(params: any) => {
+          try {
+            handleDragOver(params);
+          } catch (error) {
+            console.log(error, 'error');
+          }
+        }}
+        onDragEnd={(params: any) => {
+          try {
+            handleDragEnd(params);
+          } catch (error) {
+            console.log(error, 'error');
+          }
+        }}
         onDragCancel={onDragCancel}
       >
         <div className="content">
           {/* 节点库 */}
-          <NodeLibrary leftNodeList={leftNodeList} />
+          <NodeLibrary disabled={disabled} />
           {/* 编排区域 */}
           <Arrange
             arrangeList={arrangeList}
@@ -495,15 +560,17 @@ const ArrangeContent: React.FC<IProps> = (props) => {
             setTimeCount={setTimeCount}
             activeCol={activeCol}
             setActiveCol={setActiveCol}
+            disabled={disabled}
           />
           {/* 右侧编辑信息区域 */}
-          {activeCol?.state && (
+          {activeCol?.uuid && (
             <NodeConfig
               form={form}
               activeCol={activeCol}
               setActiveCol={setActiveCol}
               arrangeList={arrangeList}
               setArrangeList={setArrangeList}
+              disabled={disabled}
             />
           )}
         </div>

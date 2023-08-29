@@ -67,7 +67,7 @@ export default () => {
           <div className="bg"></div>
           <div className="content">
             <div className="img">
-              <img src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*p6KWQZYs_d0AAAAAAAAAAAAADmKmAQ/original" />
+              <img src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*lMXkRKmd8WcAAAAAAAAAAAAADmKmAQ/original" />
             </div>
             <div className="title">
               {operateType === 'login' ? '登录' : '注册'}
@@ -85,7 +85,14 @@ export default () => {
               rules={[{ required: true, message: '请输入密码' }]}
               help={'密码8-16位中英文大小写及下划线等特殊字符'}
             >
-              <Input.Password placeholder="密码" minLength={8} maxLength={16} />
+              <Input.Password
+                placeholder="密码"
+                minLength={8}
+                maxLength={16}
+                onPressEnter={() => {
+                  submit();
+                }}
+              />
             </Form.Item>
             {operateType === 'register' && (
               <Form.Item
@@ -105,7 +112,11 @@ export default () => {
                   },
                 ]}
               >
-                <Input.Password placeholder="确认密码" />
+                <Input.Password
+                  placeholder="确认密码"
+                  minLength={8}
+                  maxLength={16}
+                />
               </Form.Item>
             )}
 

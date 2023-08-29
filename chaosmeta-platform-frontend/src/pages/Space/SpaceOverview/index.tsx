@@ -1,7 +1,8 @@
 import { LightArea } from '@/components/CommonStyle';
 import { DownOutlined, RightOutlined, UpOutlined } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
-import { Button, Card, Col, Divider, Row, Select, Space, Tag } from 'antd';
+import { history } from '@umijs/max';
+import { Button, Card, Col, Row, Space, Tag } from 'antd';
 import React, { useState } from 'react';
 import ExperimentalOverview from './ExperimentalOverview';
 import { Container, SpaceContent, TopStep } from './style';
@@ -44,89 +45,78 @@ const MySpace: React.FC<unknown> = () => {
               </div>
             </div>
             {/* {panelState && ( */}
-              <Row gutter={16} className={panelState ?  "card" : 'card-hidden'}>
-                <Col span={8}>
-                  <Card>
-                    <Space>
-                      <img src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*h_acR7jTCrgAAAAAAAAAAAAADmKmAQ/original" />
-                      <div>
-                        <div className="title">创建实验</div>
-                        <div className="desc">
-                          可选择实验模版快速构建实验场景，进行基础资源，如cpu燃烧等实验来验证应用系统的可靠性
-                        </div>
-                        <Space className="buttons">
-                          <Button type="primary">创建实验</Button>
-                          <Button>实验模版</Button>
-                        </Space>
+            <Row gutter={16} className={panelState ? 'card' : 'card-hidden'}>
+              <Col span={8}>
+                <Card>
+                  <Space>
+                    <img src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*h_acR7jTCrgAAAAAAAAAAAAADmKmAQ/original" />
+                    <div>
+                      <div className="title">创建实验</div>
+                      <div className="desc">
+                        可选择实验模版快速构建实验场景，进行基础资源，如cpu燃烧等实验来验证应用系统的可靠性
                       </div>
-                    </Space>
-                  </Card>
-                </Col>
-                <Col span={8}>
-                  <Card>
-                    <Space>
-                      <img src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*MelqSodcfO8AAAAAAAAAAAAADmKmAQ/original" />
-                      <div>
-                        <div className="title">执行实验</div>
-                        <div className="desc">针对配置好的实验可发起攻击</div>
+                      <Space className="buttons">
+                        <Button
+                          type="primary"
+                          onClick={() => {
+                            history.push('/space/experiment/add');
+                          }}
+                        >
+                          创建实验
+                        </Button>
+                        {/* <Button>实验模版</Button> */}
+                      </Space>
+                    </div>
+                  </Space>
+                </Card>
+              </Col>
+              <Col span={8}>
+                <Card>
+                  <Space>
+                    <img src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*MelqSodcfO8AAAAAAAAAAAAADmKmAQ/original" />
+                    <div>
+                      <div className="title">执行实验</div>
+                      <div className="desc">针对配置好的实验可发起攻击</div>
+                    </div>
+                  </Space>
+                </Card>
+              </Col>
+              <Col span={8}>
+                <Card>
+                  <Space>
+                    <img src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*in2BQ4sjkicAAAAAAAAAAAAADmKmAQ/original" />
+                    <div>
+                      <div className="title">查看实验结果</div>
+                      <div className="desc">
+                        实验过程中可观测系统指标，实验完成后可查看实验结果，系统会自动度量
                       </div>
-                    </Space>
-                  </Card>
-                </Col>
-                <Col span={8}>
-                  <Card>
-                    <Space>
-                      <img src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*in2BQ4sjkicAAAAAAAAAAAAADmKmAQ/original" />
-                      <div>
-                        <div className="title">查看实验结果</div>
-                        <div className="desc">
-                          实验过程中可观测系统指标，实验完成后可查看实验结果，系统会自动度量
-                        </div>
-                        <Space className="buttons">
-                          <Button type="primary">查看实验结果</Button>
-                        </Space>
-                      </div>
-                    </Space>
-                  </Card>
-                </Col>
-              </Row>
+                      <Space className="buttons">
+                        <Button
+                          type="primary"
+                          onClick={() => {
+                            history.push('/space/experiment-result');
+                          }}
+                        >
+                          查看实验结果
+                        </Button>
+                      </Space>
+                    </div>
+                  </Space>
+                </Card>
+              </Col>
+            </Row>
             {/* )} */}
           </TopStep>
         </LightArea>
         <SpaceContent>
           <Row gutter={16}>
-            <Col span={16} className="left">
+            <Col span={24} className="left">
               <LightArea>
                 <ExperimentalOverview />
               </LightArea>
             </Col>
-            <Col span={8} className="right">
-              <LightArea className="overview">
-                <div className="top">
-                  <span className="title">空间总览</span>
-                  <Select
-                    defaultValue={'7day'}
-                    options={[{ label: '最近7天', value: '7day' }, { label: '最近30天', value: '30day' }]}
-                  />
-                </div>
-                <Card>
-                  <div className="result">
-                    <div>
-                      <span className="count">19</span>
-                      <div className="shallow-65">新增实验</div>
-                    </div>
-                    <div style={{ position: 'relative' }}>
-                      <Divider type="vertical" />
-                      <span className="count">36</span>
-                      <div className="shallow-65">执行实验</div>
-                    </div>
-                    <div>
-                      <span className="count-error">9</span>
-                      <div className="shallow-65">执行失败</div>
-                    </div>
-                  </div>
-                </Card>
-              </LightArea>
+            {/* 推荐实验暂时没有 */}
+            <Col span={8} className="right" style={{ display: 'none' }}>
               <LightArea className="recommend">
                 <div className="top">
                   <span className="title">推荐实验</span>

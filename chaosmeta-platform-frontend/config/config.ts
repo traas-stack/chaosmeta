@@ -18,17 +18,12 @@ export default defineConfig({
   styledComponents: {},
   proxy: {
     '/users': {
-      target: 'http://30.46.241.183:8082/',
+      target: 'http://30.46.242.17:8082/',
       changeOrigin: true,
       pathRewrite: { '^/api': '' },
     },
     '/chaosmeta': {
-      target: 'http://30.46.241.183:8082/',
-      changeOrigin: true,
-      pathRewrite: { '^/api': '' },
-    },
-    '/chaos': {
-      target: 'http://antchaos-gz00b-006002015020.sa128-sqa.alipay.net/',
+      target: 'http://30.46.242.17:8082/',
       changeOrigin: true,
       pathRewrite: { '^/api': '' },
     },

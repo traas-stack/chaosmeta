@@ -1,5 +1,7 @@
-import { querySpaceList } from '@/services/chaosmeta/SpaceController';
-import { getSpaceUserList } from '@/services/chaosmeta/UserController';
+import {
+  getSpaceUserList,
+  getUserSpaceList,
+} from '@/services/chaosmeta/UserController';
 import { DownOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import { history, useModel, useRequest } from '@umijs/max';
 import { Dropdown, Empty, Input } from 'antd';
@@ -8,10 +10,18 @@ import AddSpaceDrawer from '../AddSpaceDrawer';
 import { SpaceContent, SpaceMenu } from './style';
 
 export default () => {
-  const [curSpace, setCurSpace] = useState<string[]>(['1']);
   const [addSpaceOpen, setAddSpaceOpen] = useState<boolean>(false);
   const [spaceList, setSpaceList] = useState<any>([]);
-  const { userInfo, setSpacePermission } = useModel('global');
+  const { userInfo, setSpacePermission, curSpace, setCurSpace } =
+    useModel('global');
+
+  // 一级路由，切换空间时页面在以下路由时，不需要跳转，刷新页面接口即可，其他页面需要跳转回空间概览
+  const parentRoute = [
+    '/space/overview',
+    '/space/experiment',
+    '/space/experiment-result',
+    '/space/setting',
+  ];
 
   /**
    * 根据成员名称和空间id获取成员空间内权限信息
@@ -37,22 +47,32 @@ export default () => {
    */
   const handleUpdateSpaceId = (id: string, name: string) => {
     if (id) {
-      history.push({
-        pathname: history.location.pathname,
-        query: {
-          ...history.location.query,
-          spaceId: id,
-        },
-      });
+      console.log(history.location.pathname, '---');
+      if (parentRoute.includes(history.location.pathname)) {
+        history.push({
+          pathname: history.location.pathname,
+          query: {
+            ...history.location.query,
+            spaceId: id,
+          },
+        });
+      } else {
+        history.push({
+          pathname: '/space/overview',
+          query: {
+            spaceId: id,
+          },
+        });
+      }
       setCurSpace([id]);
       sessionStorage.setItem('spaceId', id);
       sessionStorage.setItem('spaceName', name);
     }
   };
   /**
-   * 获取空间列表
+   * 获取空间列表 -- 当前用户有查看权限的空间只读和读写
    */
-  const getSpaceList = useRequest(querySpaceList, {
+  const getSpaceList = useRequest(getUserSpaceList, {
     manual: true,
     formatResult: (res) => res,
     debounceInterval: 300,
@@ -81,10 +101,8 @@ export default () => {
   });
 
   useEffect(() => {
+    // 获取空间列表
     getSpaceList?.run({ page: 1, page_size: 10 });
-  }, []);
-
-  useEffect(() => {
     // 地址栏中存在空间id，需要将空间列表选项更新，并保存当前id
     if (history.location.query.spaceId) {
       setCurSpace([history.location.query.spaceId as string]);
@@ -93,7 +111,7 @@ export default () => {
         history.location.query.spaceId as string,
       );
       getUserSpaceAuth?.run({
-        id: history.location.query.spaceId,
+        id: history.location.query.spaceId as string,
         name: userInfo?.name || localStorage.getItem('userName'),
       });
     }
