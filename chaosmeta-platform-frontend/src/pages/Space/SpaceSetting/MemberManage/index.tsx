@@ -349,6 +349,7 @@ const MemberManage: React.FC<unknown> = () => {
           pagination={{
             showQuickJumper: true,
             total: pageData.total,
+            showSizeChanger: true,
           }}
           onChange={(pagination: any, filters, sorter: any) => {
             const { current, pageSize } = pagination;

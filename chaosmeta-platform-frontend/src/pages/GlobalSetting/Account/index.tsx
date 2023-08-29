@@ -19,7 +19,6 @@ import {
   Table,
   message,
 } from 'antd';
-import { ColumnsType } from 'antd/es/table';
 import React, { useEffect, useState } from 'react';
 import { Container, Role } from './style';
 
@@ -35,9 +34,7 @@ const Account: React.FC<unknown> = () => {
   // 当前选中的数据
   const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
   const { userInfo } = useModel('global');
-  const [baseColumns, setColumns] = useState<ColumnsType<DataType>>([]);
   const [batchState, setBatchState] = useState<boolean>(false);
-
   /**
    * 分页查询
    */
@@ -75,14 +72,6 @@ const Account: React.FC<unknown> = () => {
     queryByPage.run(queryParam);
   };
 
-  const dataSource = [
-    { id: '2', userName: 'ceshi' },
-    {
-      id: '1',
-      userName: 'Serati Ma',
-    },
-  ];
-
   /**
    * 修改用户角色
    */
@@ -97,13 +86,43 @@ const Account: React.FC<unknown> = () => {
     },
   });
 
+  /**
+   * 删除账号接口
+   */
+  const handleBatchDelete = useRequest(batchDeleteUser, {
+    manual: true,
+    formatResult: (res) => res,
+    onSuccess: () => {
+      message.success('您已成功删除所选成员');
+      handleSearch();
+    },
+  });
+
+  /**
+   * 删除账号
+   */
+  const handleDeleteAccount = (ids: string[]) => {
+    if (ids?.length > 0) {
+      Modal.confirm({
+        title: '确认要删除当前所选账号吗？',
+        icon: <ExclamationCircleFilled />,
+        content: '删除账号用户将无法登录平台，要再次使用只能重新注册！',
+        onOk() {
+          handleBatchDelete?.run({ user_ids: ids });
+          handleSearch();
+        },
+        onCancel() {},
+      });
+    }
+  };
+
   // 角色下拉选项
   const authOptions = [
     {
       label: (
         <Role>
           <span>管理员</span>
-          <div>拥有所有权限</div>
+          <span>拥有所有权限</span>
         </Role>
       ),
       value: 'admin',
@@ -113,7 +132,7 @@ const Account: React.FC<unknown> = () => {
       label: (
         <Role>
           <span>普通用户</span>
-          <div>可登录查看，同时叠加空间内权限</div>
+          <span>可登录查看，同时叠加空间内权限</span>
         </Role>
       ),
       value: 'normal',
@@ -150,14 +169,13 @@ const Account: React.FC<unknown> = () => {
           value: 'normal',
         },
       ],
-      render: (text: string, record: { id: number }) => {
+      render: (text: string, record: any) => {
         if (userInfo.role === 'admin') {
           return (
             <Select
-              dropdownStyle={{ minWidth: '200px' }}
-              bordered={false}
+              dropdownStyle={{ minWidth: '280px' }}
               value={text}
-              style={{ minWidth: '80px' }}
+              style={{ minWidth: '80px', width: '100%' }}
               optionLabelProp="label"
               onChange={(value: string) => {
                 handleChangeRole?.run({ user_ids: [record.id], role: value });
@@ -177,67 +195,34 @@ const Account: React.FC<unknown> = () => {
             </Select>
           );
         }
-        return authOptions?.filter((item) => item?.value === text)[0]?.name;
+        return (
+          authOptions?.filter((item) => item?.value === text)[0]?.name || text
+        );
       },
     },
   ];
 
-  /**
-   * 删除账号接口
-   */
-  const handleBatchDelete = useRequest(batchDeleteUser, {
-    manual: true,
-    formatResult: (res) => res,
-    onSuccess: () => {
-      message.success('您已成功删除所选成员');
-      handleSearch();
+  const operateColumns: any = [
+    {
+      title: '操作',
+      width: 60,
+      fixed: 'right',
+      render: (record: DataType) => {
+        return record?.userName !== userInfo?.name ? (
+          <a
+            onClick={() => {
+              handleDeleteAccount([record.id]);
+            }}
+          >
+            删除
+          </a>
+        ) : null;
+      },
     },
-  });
-
-  /**
-   * 删除账号
-   */
-  const handleDeleteAccount = (ids: string[]) => {
-    if (ids?.length > 0) {
-      Modal.confirm({
-        title: '确认要删除当前所选账号吗？',
-        icon: <ExclamationCircleFilled />,
-        content: '删除账号用户将无法登录平台，要再次使用只能重新注册！',
-        onOk() {
-          handleBatchDelete?.run({ user_ids: ids });
-          handleSearch();
-        },
-        onCancel() {},
-      });
-    }
-  };
+  ];
 
   useEffect(() => {
     handleSearch();
-    if (userInfo.role === 'admin') {
-      setColumns(() => {
-        const newColumns: any = columns;
-        newColumns.push({
-          title: '操作',
-          width: 60,
-          fixed: 'right',
-          render: (record: DataType) => {
-            return record?.userName !== userInfo?.name ? (
-              <a
-                onClick={() => {
-                  handleDeleteAccount([record.id]);
-                }}
-              >
-                删除
-              </a>
-            ) : null;
-          },
-        });
-        return newColumns;
-      });
-    } else {
-      setColumns(columns);
-    }
   }, []);
 
   return (
@@ -314,7 +299,11 @@ const Account: React.FC<unknown> = () => {
                 />
               )}
               <Table
-                columns={baseColumns}
+                columns={
+                  userInfo?.role === 'admin'
+                    ? [...columns, ...operateColumns]
+                    : columns
+                }
                 loading={queryByPage?.loading}
                 rowKey={'id'}
                 dataSource={pageData?.users || []}
@@ -337,12 +326,13 @@ const Account: React.FC<unknown> = () => {
                     : undefined
                 }
                 pagination={
-                  dataSource?.length > 0
+                  pageData?.users?.length > 0
                     ? {
                         showQuickJumper: true,
                         total: pageData?.total,
                         current: pageData?.page,
                         pageSize: pageData?.pageSize,
+                        showSizeChanger: true,
                       }
                     : false
                 }

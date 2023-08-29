@@ -63,7 +63,6 @@ const Agent: React.FC<unknown> = () => {
    * 操作tab时
    */
   const handleEditTab = (action, key) => {
-    console.log(action, key, 'key;====');
     if (key === 'add') {
       setAddColonyOpen(true);
     } else {

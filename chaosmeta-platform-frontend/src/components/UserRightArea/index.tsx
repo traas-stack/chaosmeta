@@ -31,7 +31,6 @@ const UserRightArea: React.FC<any> = () => {
     manual: true,
     formatResult: (res) => res,
     onSuccess: (res) => {
-      console.log(res);
       setUserInfo({ ...userInfo, ...res?.data });
     },
   });
@@ -164,12 +163,17 @@ const UserRightArea: React.FC<any> = () => {
               help="密码8-16位中英文大小写及下划线等特殊字符"
               label="新密码"
             >
-              <Input.Password placeholder="请输入新密码" />
+              <Input.Password
+                placeholder="请输入新密码"
+                minLength={8}
+                maxLength={16}
+              />
             </Form.Item>
             <Form.Item
               name={'confirmPassword'}
               rules={[
                 {
+                  required: true,
                   validator(rule, value) {
                     const password = form.getFieldValue('password');
                     if (!value) {
@@ -184,7 +188,7 @@ const UserRightArea: React.FC<any> = () => {
               ]}
               label="确认新密码"
             >
-              <Input.Password placeholder="请输入确认新密码" />
+              <Input.Password placeholder="请再次输入新密码" />
             </Form.Item>
           </Form>
         </Modal>

@@ -35,6 +35,10 @@ export const Container = styled.div`
       color: rgba(0, 0, 0, 0.26);
     }
   }
+  .operate-icon {
+    cursor: pointer;
+    color: #1890FF;
+  }
 `;
 
 export const RecommendContainer = styled.div`
@@ -151,4 +155,81 @@ export const RecommendContainer = styled.div`
       }
     }
   }
+`;
+
+/**
+ * 编排区域行样式
+ */
+export const DroppableRow = styled.div`
+  height: 32px;
+  overflow: hidden;
+  font-size: 12px;
+  box-sizing: border-box;
+  border-top: 1px solid rgb(232, 237, 244);
+  position: relative;
+  background-color: #f5f6f9;
+  .row {
+    height: 100%;
+    width: 100%;
+    padding: 2px;
+    display: flex;
+    align-items: center;
+    opacity: ${(props: any) => {
+      return props?.$isDragging ? 0 : 1;
+    }};
+  }
+`;
+
+/**
+ * 编排区域行内子节点样式
+ */
+export const DroppableCol = styled.div<{
+  $bg?: string;
+}>`
+  flex-shrink: 0;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  box-sizing: border-box;
+  overflow: hidden;
+  font-size: 12px;
+  margin-right: 2px;
+  color: rgba(0, 10, 26, 0.89);
+  background-color: ${(props) => {
+    let color = '#D4E3F1';
+    color = props?.$bg ?? color;
+    return color;
+  }};
+  /* transform */
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  .item {
+    width: 100%;
+    height: 100%;
+    transform: scale(0.8);
+    margin-top: -4px;
+    div {
+      height: 16px;
+    }
+  }
+`;
+
+/**
+ * 编排缩略信息展示
+ */
+export const ThumbnailContainer = styled.div`
+  height: 128px;
+  background-color: #f5f6f9;
+  overflow: hidden;
+  /* 背景行渐变，方格 */
+  background-repeat: repeat-y;
+  background-image: linear-gradient(
+    0deg,
+    transparent 31px,
+    rgb(232, 237, 244) 32px,
+    rgb(232, 237, 244) 32px,
+    transparent 32px
+  );
+  background-size: 100% 32px;
 `;

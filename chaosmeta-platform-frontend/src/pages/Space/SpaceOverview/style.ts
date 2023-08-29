@@ -31,13 +31,13 @@ export const TopStep = styled.div`
     }
   }
   .card-hidden {
-    transition: .2s all;
+    transition: 0.2s all;
     overflow: hidden;
     max-height: 0;
   }
   .card {
     /* max-height: 300px; */
-    transition: .2s all;
+    transition: 0.2s all;
     margin-top: 16px;
     .ant-col {
       display: flex;
@@ -73,25 +73,17 @@ export const SpaceContent = styled.div`
     word-break: keep-all;
   }
   .left {
-    .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
-      color: rgba(0, 0, 0, 0.85);
-    }
     .ant-tabs-nav::before {
       border: none;
-    }
-    .ant-tabs-ink-bar {
-      background-color: transparent;
-      height: 0;
     }
     .row-text-gap {
       padding-bottom: 5px;
     }
-  }
-  .right {
     .top {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      margin-bottom: 8px;
       .title {
         font-size: 16px;
         font-weight: 500;
@@ -109,33 +101,58 @@ export const SpaceContent = styled.div`
       margin-bottom: 16px;
       .ant-select-selector {
         background-color: rgba(255, 255, 255, 0.5);
-        margin-bottom: 8px;
       }
       .ant-card {
         .ant-card-body {
           height: 110px;
           padding: 0 24px;
+          display: flex;
+          align-items: center;
         }
       }
       .result {
         height: 100%;
+        width: 100%;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        .ant-row {
+          width: 100%;
+          /* .ant-col:first-child {
+            margin-right: 24px;
+          } */
+        }
         .count {
           font-size: 24px;
           font-weight: 500;
+        }
+        .unit {
+          color: rgba(0, 10, 26, 0.26);
+          padding-left: 4px;
         }
         .count-error {
           font-size: 24px;
           font-weight: 500;
           color: #ff4d4f;
         }
-        .ant-divider {
-          position: absolute;
-          left: -25px;
-          height: 100%;
-          /* background-color: rgba(0, 0, 0, 0.1); */
+      }
+    }
+  }
+  .right {
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      .title {
+        font-size: 16px;
+        font-weight: 500;
+        color: rgba(0, 0, 0, 0.85);
+      }
+      .ant-select-selector {
+        width: 100px;
+        .ant-select-selection-item {
+          font-size: 12px;
+          color: rgba(0, 0, 0, 0.65);
         }
       }
     }

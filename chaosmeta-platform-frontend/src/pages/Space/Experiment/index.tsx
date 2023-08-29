@@ -2,7 +2,7 @@ import { PageContainer } from '@ant-design/pro-components';
 import { Tabs } from 'antd';
 import React from 'react';
 import ExperimentList from './ExperimentList';
-import RecommendExperiment from './RecommendExperiment';
+// import RecommendExperiment from './RecommendExperiment';
 import { Container } from './style';
 /**
  * 实验列表页面
@@ -15,11 +15,12 @@ const Experiment: React.FC<unknown> = () => {
       key: 'list',
       children: <ExperimentList />,
     },
-    {
-      label: '推荐实验',
-      key: '',
-      children: <RecommendExperiment />,
-    },
+    // 一期暂时隐藏
+    // {
+    //   label: '推荐实验',
+    //   key: '',
+    //   children: <RecommendExperiment />,
+    // },
   ];
   return (
     <>

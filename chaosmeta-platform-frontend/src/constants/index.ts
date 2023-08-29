@@ -1,5 +1,9 @@
 export const DEFAULT_NAME = 'Umi Max';
 
+// KubernetesController使用
+// -1: 开发环境，0：生产环境
+export const envType = 0;
+
 export const tagColors = [
   {
     color: '#EDEEEF',
@@ -41,6 +45,10 @@ export const arrangeNodeTypeColors: any = {
   other: '#D4E3F1',
 };
 
+export const nodeMode = {
+  fault: '故障节点',
+};
+
 // 计算会有小数问题，直接在这里列举处理了
 // secondStep 每段时间轴的间隔时间
 // 宽度对应时间，默认1s为3px
@@ -70,4 +78,78 @@ export const scaleStepMap: any = {
     secondStep: 10,
     widthSecond: 9,
   },
+};
+
+// 触发方式选项
+export const triggerTypes = [
+  { label: '手动触发', value: 'manual' },
+  { label: '单次定时', value: 'once' },
+  { label: '周期性', value: 'cron' },
+];
+
+// 实验结果状态
+export const experimentResultStatus = [
+  {
+    value: 'Pending',
+    label: '等待中',
+    color: 'blue',
+    type: 'info',
+  },
+  {
+    value: 'Running',
+    label: '运行中',
+    color: 'blue',
+    type: 'info',
+  },
+  {
+    value: 'Succeeded',
+    label: '成功',
+    color: 'green',
+    type: 'success',
+  },
+
+  {
+    value: 'Failed',
+    label: '失败',
+    color: 'red',
+    type: 'error',
+  },
+  {
+    value: 'error',
+    label: '错误',
+    color: 'red',
+    type: 'error',
+  },
+];
+
+// 实验状态
+export const experimentStatus = [
+  {
+    value: 0,
+    label: '待执行',
+    color: 'blue',
+  },
+  {
+    value: 1,
+    label: '执行成功',
+    color: 'green',
+  },
+  {
+    value: 2,
+    label: '执行失败',
+    color: 'red',
+  },
+  {
+    value: 3,
+    label: '执行中',
+    color: 'blue',
+  },
+];
+
+// 节点类型
+export const nodeTypeMap: any = {
+  fault: '故障节点',
+  measure: '度量引擎',
+  flow: '流量注入',
+  wait: '等待时长',
 };

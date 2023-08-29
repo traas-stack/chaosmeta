@@ -21,9 +21,14 @@ export const Container = styled.div`
   }
 `;
 
-export const SpaceCard = styled.div`
+export const SpaceCard = styled.div<{ $permission: number }>`
   /* height: 175px; */
-  background-color: #fff;
+  background-color: ${(props) => {
+    if (props?.$permission === 1) {
+      return '#fff';
+    }
+    return 'rgba(0,0,0,0.05)';
+  }};
   border-radius: 6px;
   padding: 16px;
   padding-bottom: 0;

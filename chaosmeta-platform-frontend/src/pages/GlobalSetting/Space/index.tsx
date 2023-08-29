@@ -56,7 +56,6 @@ const SpaceManage: React.FC<unknown> = () => {
     manual: true,
     formatResult: (res) => res,
     onSuccess: (res) => {
-      console.log(res, 'res----');
       if (res?.code === 200) {
         setPageData(res?.data || {});
       }
@@ -75,12 +74,22 @@ const SpaceManage: React.FC<unknown> = () => {
   }) => {
     const { page, pageSize, sort, namespaceClass } = values || {};
     const { searchType, name, member } = form.getFieldsValue();
+    let userName, spaceName;
+    if (searchType === 'spaceMember') {
+      userName = member;
+      spaceName = undefined;
+    }
+    if (searchType === 'spaceName') {
+      userName = undefined;
+      spaceName = name;
+    }
     const params = {
       page: page || pageData.page || 1,
       page_size: pageSize || pageData.pageSize || 10,
       sort,
-      name,
+      name: spaceName,
       namespaceClass: namespaceClass || spaceType,
+      userName: userName,
     };
     getSpaceList?.run(params);
   };
@@ -156,6 +165,7 @@ const SpaceManage: React.FC<unknown> = () => {
   useEffect(() => {
     handlePageSearch();
   }, []);
+  
   return (
     <PageContainer title="空间管理">
       <Container>
@@ -165,6 +175,8 @@ const SpaceManage: React.FC<unknown> = () => {
             activeKey={tabKey}
             onChange={(val) => {
               setTabKey(val);
+              const namespaceClass = val === 'myAdmin' ? 'write' : undefined;
+              handlePageSearch({ namespaceClass });
             }}
             tabBarExtraContent={
               <Space>
@@ -271,6 +283,7 @@ const SpaceManage: React.FC<unknown> = () => {
                 <SpaceList pageData={pageData} handleDelete={handleDelete} />
                 <Pagination
                   showQuickJumper
+                  showSizeChanger
                   pageSize={pageData.pageSize}
                   current={pageData.page}
                   total={pageData.total}

@@ -17,7 +17,7 @@ export const Container = styled.div`
     border-bottom: 1px solid #dadde7;
     box-shadow: inset 0 -1px 0 0 rgba(6, 17, 120, 0.1);
     background-color: #fff;
-    z-index: 9999;
+    z-index: 11;
     /* title部分 */
     .ant-page-header-heading {
       .ant-form-item {
@@ -31,11 +31,13 @@ export const Container = styled.div`
       }
       .ant-page-header-heading-title {
         width: 300px;
-        color: rgba(4, 24, 94, 0.85);
-        font-size: 16px;
+        .ant-form-item-control-input-content {
+          color: rgba(4, 24, 94, 0.85);
+          font-size: 16px;
+        }
         font-weight: 500;
         .ellipsis {
-          width: 260px;
+          max-width: 260px;
         }
         .cancel {
           color: #ff4d4f;
@@ -81,7 +83,7 @@ export const Container = styled.div`
  */
 export const NodeLibraryContainer = styled.div`
   .wrap {
-    min-width: 220px;
+    width: 240px;
     position: relative;
     background-color: #f7f9fb;
     min-height: calc(100vh - 72px);
@@ -104,39 +106,28 @@ export const NodeLibraryContainer = styled.div`
         background-color: #eef0f5;
         margin-bottom: 12px;
       }
-      /* 外层折叠面板header */
-      .ant-collapse-header {
-        padding: 4px;
-        color: #293a76;
-      }
-      .collapse-second {
-        /* 内层层折叠面板header */
-        .ant-collapse-header {
-          padding: 8px 16px;
+      /* 树节点样式 */
+      .ant-tree {
+        background-color: transparent;
+        .ant-tree-title {
+          color: #293a76;
         }
-      }
-      .ant-collapse-content-box {
-        padding: 0;
-      }
-      /* 节点库下拖拽节点 */
-      .temp-item {
-        padding: 6px 16px;
-        background-color: #fff;
-        border-radius: 6px;
-        border: 1px solid #dadde7;
-        box-shadow: 0 2px 4px 0 rgba(4, 24, 94, 0.04);
-        margin-bottom: 8px;
-        font-weight: 400;
-        color: #293a76;
-        cursor: pointer;
-        img {
-          vertical-align: middle;
-          margin-right: 6px;
-          margin-top: -4px;
+        .ant-tree-switcher-icon {
+          color: #293a76;
+          font-size: 12px;
         }
-      }
-      .temp-item:hover {
-        border: 1px solid #1890ff;
+        .ant-tree-treenode-disabled {
+          color: rgba(0, 0, 0, 0.25) !important;
+        }
+        .ant-tree-indent-unit {
+          width: 8px;
+        }
+        .ant-tree-node-content-wrapper {
+          background-color: transparent;
+        }
+        .tree-node {
+          transform: translateX(-24px);
+        }
       }
     }
     .fold-icon {
@@ -157,10 +148,7 @@ export const NodeLibraryContainer = styled.div`
 export const ArrangeContainer = styled.div<{ $activeColState?: boolean }>`
   flex: 1;
   overflow: hidden;
-  /* position: absolute; */
   .flow {
-    /* height: calc(100vh - 115px); */
-    /* width: 100%; */
     height: calc(100% - 40px);
     overflow: auto;
     border-left: 1px solid rgba(0, 10, 26, 0.26);
@@ -212,11 +200,10 @@ export const ArrangeContainer = styled.div<{ $activeColState?: boolean }>`
   }
   .footer {
     width: calc(
-      100vw - 220px -
+      100vw - 240px -
         (
           ${(props) => {
-            console.log(props?.$activeColState, 'props?.$activeColState---');
-            return props?.$activeColState ? '280px' : '0px';
+            return props?.$activeColState ? '279px' : '0px';
           }}
         )
     );
@@ -225,6 +212,7 @@ export const ArrangeContainer = styled.div<{ $activeColState?: boolean }>`
     position: fixed;
     bottom: 0;
     display: flex;
+    z-index: 11;
     justify-content: space-between;
     align-items: center;
     border: 1px solid #dadde7;
@@ -257,10 +245,17 @@ export const ArrangeContainer = styled.div<{ $activeColState?: boolean }>`
  */
 export const NodeConfigContainer = styled.div`
   width: 280px;
+  position: relative;
   flex-shrink: 0;
   border-left: 1px solid #e2e3ee;
   padding: 0 12px;
   background-color: #fff;
+  padding-bottom: 40px;
+  .ant-form-item-label {
+    label {
+      color: #5c6996;
+    }
+  }
   .header {
     height: 40px;
     display: flex;
@@ -270,16 +265,53 @@ export const NodeConfigContainer = styled.div`
     padding: 0 12px;
     border-bottom: 1px solid #e2e3ee;
     margin-bottom: 16px;
+    color: #5c6996;
+  }
+  .range {
+    height: 38px;
+    line-height: 38px;
+    border-top: 1px solid #e2e3ee;
+    border-bottom: 1px solid #e2e3ee;
+    margin: 0 -12px 16px -12px;
+    padding: 0 12px;
+    color: #5c6996;
+    font-weight: 500;
+  }
+  .config-footer {
+    width: 279px;
+    height: 40px;
+    border-top: 1px solid #e2e3ee;
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    background-color: #fff;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding-right: 16px;
+    z-index: 13;
   }
 `;
 
 /**
  * 节点库单个节点样式
  */
-export const NodeItem = styled.div<{ $isDragging?: boolean }>`
+export const NodeItem = styled.div<{
+  $isDragging?: boolean;
+  $disabledItem?: boolean;
+}>`
+  width: 180px;
+  /* height: 36px; */
   /* 节点库下拖拽节点 */
   background-color: ${(props) => {
-    return props?.$isDragging ? '#edeff2' : '#fff';
+    let color = '#fff';
+    if (props?.$disabledItem) {
+      color = '#f5f5f5';
+    }
+    if (props?.$isDragging) {
+      color = '#edeff2';
+    }
+    return color;
   }};
   border-radius: 6px;
   .temp-item {
@@ -302,7 +334,9 @@ export const NodeItem = styled.div<{ $isDragging?: boolean }>`
     }
   }
   .temp-item:hover {
-    border: 1px solid #1890ff;
+    border: ${(props) => {
+      return props?.$disabledItem ? '' : '1px solid #1890ff';
+    }};
   }
 `;
 
@@ -317,8 +351,8 @@ export const HandleMove = styled.div<{
 }>`
   display: flex;
   position: absolute;
-  z-index: 999;
-  left: 240px;
+  z-index: 9;
+  left: 258px;
   cursor: pointer;
   transition: all 0.3s;
   top: ${(props) => {
@@ -416,7 +450,7 @@ export const DroppableRow = styled.div<{
     position: absolute;
     left: -30px;
     top: 6px;
-    z-index: 9999;
+    /* z-index: 9; */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -453,15 +487,20 @@ export const DroppableCol = styled.div<{
   $bg?: string;
   $transform?: any;
   $activeState?: boolean;
+  $nodeState?: string;
 }>`
   height: 100%;
   position: relative;
   box-sizing: border-box;
+  overflow: hidden;
   font-size: 14px;
   margin-right: 2px;
-  padding: 6px;
+  /* padding: 6px; */
   border: ${(props) => {
     let border = 'none';
+    if (!props?.$nodeState) {
+      border = '1px solid #FF4D4F';
+    }
     if (props?.$activeState) {
       border = '2px solid #597EF7';
     }
@@ -471,14 +510,14 @@ export const DroppableCol = styled.div<{
     return border;
   }};
   background-color: ${(props) => {
-    let color = '#fff';
+    let color = '#D4E3F1';
     color = props?.$bg ?? color;
     if (props?.$isDragging) {
       color = '#d2e1f8';
     }
     return color;
   }};
-  transition: 0.5s;
+  transition: 0.3s;
   transform: ${(props) => {
     const { $transform } = props;
     return `translate3d(${Math.round($transform?.x)}px, ${Math.round(
@@ -489,9 +528,13 @@ export const DroppableCol = styled.div<{
   .item {
     width: 100%;
     height: 100%;
+    margin: 6px;
     opacity: ${(props) => {
       return props?.$isDragging ? 0 : 1;
     }};
+    .title {
+      margin: 12px 4px 6px 0;
+    }
   }
   /* 拖拽宽度 */
   .scale {
@@ -499,10 +542,97 @@ export const DroppableCol = styled.div<{
     right: -4px;
     top: 16px;
     height: 24px;
+    z-index: 15;
     width: 6px;
     background-color: #597ef7;
     border-radius: 3px;
     cursor: col-resize;
-    
+  }
+`;
+
+/**
+ * 节点悬浮展示内容样式
+ */
+export const NodeItemHover = styled.div`
+  width: 160px;
+  font-weight: 400;
+  .title {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 400;
+    font-size: 14px;
+    .icon {
+      color: #ff4d4f;
+      margin-right: 6px;
+    }
+    .name {
+      font-weight: 500;
+    }
+  }
+`;
+
+/**
+ * 编辑&查看基本信息抽屉
+ */
+export const InfoEditDrawer = styled.div`
+  .trigger-type {
+    background-color: #f5f5f6;
+    border-radius: 6px;
+    padding: 16px;
+  }
+`;
+
+// 标签管理-添加标签抽屉
+export const AddTagDrawerContainer = styled.div`
+  margin-bottom: 24px;
+  .label {
+    margin-bottom: 12px;
+  }
+  .tag {
+    border-radius: 6px;
+    border: 1px solid rgba(0, 10, 26, 0.16);
+    padding: 4px 4px 0 4px;
+    .ant-tag {
+      font-size: 12px;
+      color: rgba(0, 10, 26, 0.68);
+      white-space: break-spaces;
+      margin-bottom: 4px;
+      span {
+        color: rgba(0, 10, 26, 0.68);
+      }
+      span:hover {
+        color: #000;
+      }
+    }
+    .add {
+      border-style: dashed;
+      cursor: pointer;
+    }
+  }
+`;
+
+// 标签管理-添加标签抽屉-pop
+export const AddTagPopContent = styled.div`
+  width: 180px;
+  .tip {
+    margin-top: 4px;
+    font-size: 12px;
+    color: rgba(255, 77, 79, 1);
+  }
+  .ant-form-item {
+    margin: 0;
+  }
+  .tags {
+    margin: 8px 0 12px 0;
+    span {
+      width: 20px;
+      height: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 0;
+      color: #707070;
+      cursor: pointer;
+    }
   }
 `;

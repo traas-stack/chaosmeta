@@ -22,7 +22,6 @@ import errorHandler from './utils/errorHandler';
 //   // 获取当前用户信息
 //   const userName = localStorage.getItem('userName') || undefined;
 //   if (userName && history.location.pathname !== '/login') {
-//     console.log(userName, 'userName');
 //     // const userResult = await getUserInfo({ name: userName });
 //     userInfo = {
 //       ...userInfo,
@@ -90,8 +89,8 @@ export const request: RequestConfig = {
 
 export const layout = () => {
   return {
-    logo: 'https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*AH-NT5UMv3UAAAAAAAAAAAAADmKmAQ/original',
-    title: 'Chaosmeta',
+    logo: 'https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*lMXkRKmd8WcAAAAAAAAAAAAADmKmAQ/original',
+    title: '',
     menu: {
       locale: false,
     },
@@ -100,7 +99,6 @@ export const layout = () => {
     // breakpoint: false,
     splitMenus: true,
     // collapsedButtonRender: (porps) => {
-    //   console.log
     //   return null;
     // },
     // collapsed: false,

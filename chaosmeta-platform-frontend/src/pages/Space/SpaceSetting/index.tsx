@@ -3,7 +3,6 @@ import { PageContainer } from '@ant-design/pro-components';
 import { history } from '@umijs/max';
 import { Tabs } from 'antd';
 import React, { useEffect, useState } from 'react';
-import AttackRange from './AttackRange';
 import BasicInfo from './BasicInfo';
 import MemberManage from './MemberManage';
 import TagManage from './TagManage';
@@ -29,11 +28,11 @@ const SpaceSetting: React.FC<unknown> = () => {
       key: 'tag',
       children: <TagManage />,
     },
-    {
-      label: '实验攻击范围配置',
-      key: 'range',
-      children: <AttackRange />,
-    },
+    // {
+    //   label: '实验攻击范围配置',
+    //   key: 'range',
+    //   children: <AttackRange />,
+    // },
   ];
 
   useEffect(() => {
@@ -49,7 +48,6 @@ const SpaceSetting: React.FC<unknown> = () => {
           items={tabItems}
           activeKey={activeKey}
           onChange={(val) => {
-            console.log(val, 'val===');
             setActiveKey(val);
             history.push({
               pathname: history.location.pathname,
