@@ -94,54 +94,70 @@ const AddExperiment = () => {
   };
 
   const headerExtra = () => {
-    return (
-      <Space>
-        <Button
-          loading={handleCreateExperiment?.loading}
-          onClick={() => {
-            handleCopyExperiment();
-          }}
-        >
-          复制
-        </Button>
-        <Button
-          onClick={() => {
-            history.push({
-              pathname: '/space/experiment-result',
-              query: {
-                experimentId: history?.location?.query?.experimentId,
-              },
-            });
-          }}
-        >
-          实验结果（3）
-        </Button>
-        <Button
-          onClick={() => {
-            history.push({
-              pathname: '/space/experiment/add',
-              query: history?.location?.query,
-            });
-          }}
-        >
-          编辑
-        </Button>
-        {/* 手动时才展示 */}
-        {baseInfo?.schedule_type === 'manual' && (
+    if (spacePermission === 1) {
+      return (
+        <Space>
           <Button
-            type="primary"
-            // status === 3 为运行中
-            loading={handleRunExperiment?.loading || baseInfo?.status === 3}
+            loading={handleCreateExperiment?.loading}
             onClick={() => {
-              handleRunExperiment?.run({
-                uuid: history?.location?.query?.experimentId as string,
+              handleCopyExperiment();
+            }}
+          >
+            复制
+          </Button>
+          <Button
+            onClick={() => {
+              history.push({
+                pathname: '/space/experiment-result',
+                query: {
+                  experimentId: history?.location?.query?.experimentId,
+                },
               });
             }}
           >
-            运行
+            实验结果（3）
           </Button>
-        )}
-      </Space>
+          <Button
+            onClick={() => {
+              history.push({
+                pathname: '/space/experiment/add',
+                query: history?.location?.query,
+              });
+            }}
+          >
+            编辑
+          </Button>
+          {/* 手动时才展示 */}
+          {baseInfo?.schedule_type === 'manual' && (
+            <Button
+              type="primary"
+              // status === 3 为运行中
+              loading={handleRunExperiment?.loading || baseInfo?.status === 3}
+              onClick={() => {
+                handleRunExperiment?.run({
+                  uuid: history?.location?.query?.experimentId as string,
+                });
+              }}
+            >
+              运行
+            </Button>
+          )}
+        </Space>
+      );
+    }
+    return (
+      <Button
+        onClick={() => {
+          history.push({
+            pathname: '/space/experiment-result',
+            query: {
+              experimentId: history?.location?.query?.experimentId,
+            },
+          });
+        }}
+      >
+        实验结果
+      </Button>
     );
   };
 

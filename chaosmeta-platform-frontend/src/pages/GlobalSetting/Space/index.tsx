@@ -83,7 +83,6 @@ const SpaceManage: React.FC<unknown> = () => {
       userName = undefined;
       spaceName = name;
     }
-    console.log(userName, spaceName, searchType, 'spaceName');
     const params = {
       page: page || pageData.page || 1,
       page_size: pageSize || pageData.pageSize || 10,
@@ -284,6 +283,7 @@ const SpaceManage: React.FC<unknown> = () => {
                 <SpaceList pageData={pageData} handleDelete={handleDelete} />
                 <Pagination
                   showQuickJumper
+                  showSizeChanger
                   pageSize={pageData.pageSize}
                   current={pageData.page}
                   total={pageData.total}

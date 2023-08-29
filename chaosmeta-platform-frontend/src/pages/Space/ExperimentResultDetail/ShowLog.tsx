@@ -37,7 +37,9 @@ const ShowLog = (props: Props) => {
             },
           }}
         >
-          {markdown}
+          {`
+          ${markdown}
+          `}
         </ReactMarkdown>
       </div>
     </LogConainer>

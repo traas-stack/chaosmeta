@@ -7,7 +7,7 @@ export const Container = styled.div`
     padding: 16px 24px;
     border-radius: 8px;
     .content-title {
-      div {
+      > div:first-child {
         font-weight: 500;
         font-size: 16px;
         color: #1c2533;

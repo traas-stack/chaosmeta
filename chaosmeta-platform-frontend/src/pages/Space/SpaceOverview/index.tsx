@@ -1,7 +1,7 @@
 import { LightArea } from '@/components/CommonStyle';
 import { DownOutlined, RightOutlined, UpOutlined } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
-import { history } from '@umijs/max';
+import { history, useModel } from '@umijs/max';
 import { Button, Card, Col, Row, Space, Tag } from 'antd';
 import React, { useState } from 'react';
 import ExperimentalOverview from './ExperimentalOverview';
@@ -9,6 +9,7 @@ import { Container, SpaceContent, TopStep } from './style';
 
 const MySpace: React.FC<unknown> = () => {
   const [panelState, setPanelState] = useState<boolean>(true);
+  const { spacePermission } = useModel('global');
   return (
     <Container>
       <PageContainer title="工作台">
@@ -55,17 +56,19 @@ const MySpace: React.FC<unknown> = () => {
                       <div className="desc">
                         可选择实验模版快速构建实验场景，进行基础资源，如cpu燃烧等实验来验证应用系统的可靠性
                       </div>
-                      <Space className="buttons">
-                        <Button
-                          type="primary"
-                          onClick={() => {
-                            history.push('/space/experiment/add');
-                          }}
-                        >
-                          创建实验
-                        </Button>
-                        {/* <Button>实验模版</Button> */}
-                      </Space>
+                      {spacePermission === 1 && (
+                        <Space className="buttons">
+                          <Button
+                            type="primary"
+                            onClick={() => {
+                              history.push('/space/experiment/add');
+                            }}
+                          >
+                            创建实验
+                          </Button>
+                          {/* <Button>实验模版</Button> */}
+                        </Space>
+                      )}
                     </div>
                   </Space>
                 </Card>
@@ -90,16 +93,18 @@ const MySpace: React.FC<unknown> = () => {
                       <div className="desc">
                         实验过程中可观测系统指标，实验完成后可查看实验结果，系统会自动度量
                       </div>
-                      <Space className="buttons">
-                        <Button
-                          type="primary"
-                          onClick={() => {
-                            history.push('/space/experiment-result');
-                          }}
-                        >
-                          查看实验结果
-                        </Button>
-                      </Space>
+                      {spacePermission === 1 && (
+                        <Space className="buttons">
+                          <Button
+                            type="primary"
+                            onClick={() => {
+                              history.push('/space/experiment-result');
+                            }}
+                          >
+                            查看实验结果
+                          </Button>
+                        </Space>
+                      )}
                     </div>
                   </Space>
                 </Card>

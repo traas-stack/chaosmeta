@@ -13,12 +13,13 @@ import {
   formatTime,
 } from '@/utils/format';
 import { renderTags } from '@/utils/renderItem';
+import { useParamChange } from '@/utils/useParamChange';
 import {
   EllipsisOutlined,
   ExclamationCircleFilled,
   QuestionCircleOutlined,
 } from '@ant-design/icons';
-import { history, useRequest } from '@umijs/max';
+import { history, useModel, useRequest } from '@umijs/max';
 import {
   Badge,
   Button,
@@ -56,6 +57,8 @@ const ExperimentList: React.FC<unknown> = () => {
     total: 0,
     experiments: [],
   });
+  const spaceIdChange = useParamChange('spaceId');
+  const { spacePermission } = useModel('global');
 
   // 时间类型
   const timeTypes = [
@@ -105,9 +108,10 @@ const ExperimentList: React.FC<unknown> = () => {
       start_time = formatTime(time[0]?.format());
       end_time = formatTime(time[1]?.format());
     }
-    console.log(timeType, 'timeType');
+    // 默认使用更新时间倒序
+    const sort = params?.sort || '-update_time';
     const queryParam = {
-      sort: params?.sort,
+      sort,
       name,
       page,
       page_size: pageSize,
@@ -116,6 +120,7 @@ const ExperimentList: React.FC<unknown> = () => {
       start_time,
       end_time,
       time_search_field: timeType,
+      namespace_id: history?.location?.query?.spaceId as string,
     };
     queryByPage.run(queryParam);
   };
@@ -361,6 +366,10 @@ const ExperimentList: React.FC<unknown> = () => {
         return formatTime(text) || '-';
       },
     },
+  ];
+
+  // 操作项columns，管理员才展示
+  const operateColumn: any[] = [
     {
       title: '操作',
       width: 90,
@@ -391,8 +400,8 @@ const ExperimentList: React.FC<unknown> = () => {
   ];
 
   useEffect(() => {
-    handleSearch({ sort: '-create_time' });
-  }, []);
+    handleSearch();
+  }, [spaceIdChange]);
 
   return (
     <div className="experiment-list ">
@@ -450,21 +459,23 @@ const ExperimentList: React.FC<unknown> = () => {
         <div className="table">
           <div className="area-operate">
             <div className="title">实验列表</div>
-            <Space>
-              <Button
-                type="primary"
-                onClick={() => {
-                  history.push({
-                    pathname: '/space/experiment/add',
-                    query: {
-                      spaceId: history?.location?.query?.spaceId,
-                    },
-                  });
-                }}
-              >
-                创建实验
-              </Button>
-            </Space>
+            {spacePermission === 1 && (
+              <Space>
+                <Button
+                  type="primary"
+                  onClick={() => {
+                    history.push({
+                      pathname: '/space/experiment/add',
+                      query: {
+                        spaceId: history?.location?.query?.spaceId,
+                      },
+                    });
+                  }}
+                >
+                  创建实验
+                </Button>
+              </Space>
+            )}
           </div>
           <Table
             locale={{
@@ -505,7 +516,9 @@ const ExperimentList: React.FC<unknown> = () => {
                 />
               ),
             }}
-            columns={columns}
+            columns={
+              spacePermission === 1 ? [...columns, ...operateColumn] : columns
+            }
             loading={queryByPage?.loading}
             rowKey={'uuid'}
             scroll={{ x: 1000 }}
@@ -518,6 +531,7 @@ const ExperimentList: React.FC<unknown> = () => {
                     total: pageData?.total,
                     current: pageData?.page,
                     pageSize: pageData?.pageSize,
+                    showSizeChanger: true,
                   }
                 : false
             }
@@ -525,7 +539,6 @@ const ExperimentList: React.FC<unknown> = () => {
               const { current, pageSize } = pagination;
               let sort;
               const sortKey = sorter?.field;
-              console.log(sorter, 'sorter');
               if (sorter.order) {
                 sort = sorter.order === 'ascend' ? sortKey : `-${sortKey}`;
               }

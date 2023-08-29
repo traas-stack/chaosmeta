@@ -47,7 +47,6 @@ export default () => {
    */
   const handleUpdateSpaceId = (id: string, name: string) => {
     if (id) {
-      console.log(history.location.pathname, '---');
       if (parentRoute.includes(history.location.pathname)) {
         history.push({
           pathname: history.location.pathname,

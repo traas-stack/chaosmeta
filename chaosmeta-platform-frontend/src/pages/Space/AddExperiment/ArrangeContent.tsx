@@ -318,12 +318,10 @@ const ArrangeContent: React.FC<IProps> = (props) => {
    * 拖动至某个元素
    */
   const handleDragOver = (params: any) => {
-    console.log(params, 'parasm');
     const { active, over } = params;
     if (!active.id || !over?.id || active?.id === over?.id) {
       return;
     }
-    console.log(params, arrangeList, 'parasm============');
 
     // 拖动的元素
     const {

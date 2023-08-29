@@ -9,6 +9,7 @@ import {
   Space,
   Tabs,
   TabsProps,
+  Tag,
   message,
 } from 'antd';
 import { useEffect, useState } from 'react';
@@ -484,6 +485,15 @@ const AddExperiment = () => {
     error: '运行结束，实验错误。错误原因：',
   };
 
+  const renderTitle = () => {
+    return (
+      <div>
+        {resultDetail?.name}{' '}
+        <Tag color={handleMateStatus()?.color}>{handleMateStatus()?.label}</Tag>
+      </div>
+    );
+  };
+
   useEffect(() => {
     const { resultId } = history?.location?.query || {};
     if (resultId) {
@@ -498,7 +508,7 @@ const AddExperiment = () => {
     <Container>
       <PageContainer
         header={{
-          title: resultDetail?.name || '',
+          title: renderTitle(),
           onBack: () => {
             history.push('/space/experiment');
           },
@@ -518,26 +528,28 @@ const AddExperiment = () => {
               </span>
             )}
           </div>
-          {resultDetail?.status && resultDetail?.status !== 'Running' && (
-            <Alert
-              message={
-                <>{`${statusText[resultDetail?.status]}${
-                  resultDetail?.message || ''
-                }`}</>
-              }
-              style={{ marginBottom: '16px' }}
-              type={handleMateStatus()?.type}
-              action={
-                (resultDetail?.status === 'error' ||
-                  resultDetail?.status === 'Failed') && (
-                  <Button type="link" onClick={() => {}}>
-                    查看详情
-                  </Button>
-                )
-              }
-              showIcon
-            />
-          )}
+          {resultDetail?.status &&
+            resultDetail?.status !== 'Running' &&
+            resultDetail?.status !== 'Pending' && (
+              <Alert
+                message={
+                  <>{`${statusText[resultDetail?.status]}${
+                    resultDetail?.message || ''
+                  }`}</>
+                }
+                style={{ marginBottom: '16px' }}
+                type={handleMateStatus()?.type}
+                action={
+                  (resultDetail?.status === 'error' ||
+                    resultDetail?.status === 'Failed') && (
+                    <Button type="link" onClick={() => {}}>
+                      查看详情
+                    </Button>
+                  )
+                }
+                showIcon
+              />
+            )}
 
           {/* 编排信息的展示 */}
           <ArrangeInfoShow

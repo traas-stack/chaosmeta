@@ -1,4 +1,6 @@
 import DynamicForm from '@/components/DynamicForm';
+import KubernetesNamespaceSelect from '@/components/Select/KubernetesNamespaceSelect';
+import KubernetesPodSelect from '@/components/Select/KubernetesPodSelect';
 import ShowText from '@/components/ShowText';
 import { queryFaultNodeFields } from '@/services/chaosmeta/ExperimentController';
 import { formatDuration } from '@/utils/format';
@@ -48,8 +50,6 @@ const NodeConfig: React.FC<IProps> = (props) => {
   const [editTitleState, setEditTitleState] = useState<boolean>(false);
   const [fieldList, setFieldList] = useState<any[]>([]);
   const [durationType, setDurationType] = useState<string>('second');
-
-  console.log(activeCol, 'activeCol');
 
   /**
    * 更新节点属性的方法
@@ -140,9 +140,16 @@ const NodeConfig: React.FC<IProps> = (props) => {
         setFieldList(res?.data?.args || []);
         // 初始化给表单赋值
         const initSecond = formatDuration(activeCol?.duration);
+        const target_name = activeCol?.exec_range?.target_name
+          ? activeCol?.exec_range?.target_name?.split(',')
+          : undefined;
         form.setFieldsValue({
           ...activeCol,
           duration: initSecond,
+          exec_range: {
+            ...activeCol?.exec_range,
+            target_name,
+          },
         });
       }
     },
@@ -184,9 +191,16 @@ const NodeConfig: React.FC<IProps> = (props) => {
       }
       // 初始化给表单赋值
       const initSecond = formatDuration(activeCol?.duration);
+      const target_name = activeCol?.exec_range?.target_name
+        ? activeCol?.exec_range?.target_name?.split(',')
+        : undefined;
       form.setFieldsValue({
         ...activeCol,
         duration: initSecond,
+        exec_range: {
+          ...activeCol?.exec_range,
+          target_name,
+        },
       });
     }
   }, [activeCol?.uuid]);
@@ -305,7 +319,7 @@ const NodeConfig: React.FC<IProps> = (props) => {
                   name={['exec_range', 'target_namespace']}
                   rules={[{ required: true, message: '请输入' }]}
                 >
-                  <Input placeholder="请输入" />
+                  <KubernetesNamespaceSelect />
                 </Form.Item>
                 <Form.Item
                   label="Kubernetes Label"
@@ -313,11 +327,11 @@ const NodeConfig: React.FC<IProps> = (props) => {
                 >
                   <Input placeholder="请输入" />
                 </Form.Item>
-                <Form.Item label="应用" name={['exec_range', 'target_app']}>
+                {/* <Form.Item label="应用" name={['exec_range', 'target_app']}>
                   <Input placeholder="请输入" />
-                </Form.Item>
+                </Form.Item> */}
                 <Form.Item label="name" name={['exec_range', 'target_name']}>
-                  <Input placeholder="请输入" />
+                  <KubernetesPodSelect mode="multiple" />
                 </Form.Item>
                 <Form.Item
                   label="Kubernetes Ip"

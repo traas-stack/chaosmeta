@@ -7,8 +7,9 @@ import {
 } from '@/services/chaosmeta/ExperimentController';
 import { querySpaceOverview } from '@/services/chaosmeta/SpaceController';
 import { cronTranstionCN, formatTime } from '@/utils/format';
+import { useParamChange } from '@/utils/useParamChange';
 import { RightOutlined } from '@ant-design/icons';
-import { history, useRequest } from '@umijs/max';
+import { history, useModel, useRequest } from '@umijs/max';
 import {
   Button,
   Card,
@@ -36,6 +37,9 @@ export default () => {
   const [tabKey, setTabkey] = useState<string>('update');
   // 当前日期范围
   const [curTime, setCurTime] = useState('7day');
+  const namespaceId = history?.location?.query?.spaceId as string;
+  const spaceIdChange = useParamChange('spaceId');
+  const { spacePermission } = useModel('global');
   /**
    * 获取实验列表
    */
@@ -90,6 +94,7 @@ export default () => {
           getExperimentResultList?.run({
             page: experimentResultData?.page || 1,
             page_size: experimentResultData?.pageSize || 10,
+            namespace_id: namespaceId,
           });
         }
       },
@@ -188,6 +193,10 @@ export default () => {
         );
       },
     },
+  ];
+
+  // 实验的操作列，有权限才展示
+  const experimentOperate = [
     {
       width: 50,
       fixed: 'right',
@@ -265,6 +274,10 @@ export default () => {
         );
       },
     },
+  ];
+
+  // 实验结果的操作列，有权限才展示
+  const operateResultColumns: any[] = [
     {
       dataIndex: 'name',
       width: 120,
@@ -300,8 +313,10 @@ export default () => {
           locale={{
             emptyText: (
               <EmptyCustom
-                desc="当前页面暂无最近编辑的实验"
-                title="您可以前往实验列表编辑实验"
+                desc={`当前页面暂无${
+                  tabKey === 'running' ? '即将运行' : '最近编辑'
+                }的实验`}
+                title="您可以前往实验列表查看实验"
                 btns={
                   <Button
                     type="primary"
@@ -316,7 +331,9 @@ export default () => {
             ),
           }}
           showHeader={false}
-          columns={columns}
+          columns={
+            spacePermission === 1 ? [...columns, ...experimentOperate] : columns
+          }
           rowKey={'uuid'}
           loading={getExperimentList?.loading}
           dataSource={experimentData?.experiments}
@@ -326,7 +343,11 @@ export default () => {
           }}
           onChange={(pagination: any) => {
             const { current, pageSize } = pagination;
-            getExperimentList?.run({ page: current, page_size: pageSize });
+            getExperimentList?.run({
+              page: current,
+              page_size: pageSize,
+              namespace_id: namespaceId,
+            });
           }}
           scroll={{ x: 760 }}
         />
@@ -339,8 +360,30 @@ export default () => {
     return (
       <Card>
         <Table
+          locale={{
+            emptyText: (
+              <EmptyCustom
+                desc="当前暂无最近运行的实验结果"
+                title="您可以前往实验结果列表查看实验"
+                btns={
+                  <Button
+                    type="primary"
+                    onClick={() => {
+                      history?.push('/space/experiment-result');
+                    }}
+                  >
+                    前往实验结果列表
+                  </Button>
+                }
+              />
+            ),
+          }}
           showHeader={false}
-          columns={resultColumns}
+          columns={
+            spacePermission === 1
+              ? [...resultColumns, ...operateResultColumns]
+              : resultColumns
+          }
           rowKey={'uuid'}
           dataSource={experimentResultData?.results || []}
           loading={getExperimentResultList?.loading}
@@ -354,6 +397,7 @@ export default () => {
             getExperimentResultList?.run({
               page: current,
               page_size: pageSize,
+              namespace_id: namespaceId,
             });
           }}
         />
@@ -379,7 +423,6 @@ export default () => {
     },
   ];
 
-  console.log(formatTime(moment().endOf('day')));
   /**
    * 日期转换
    * @returns
@@ -410,6 +453,7 @@ export default () => {
         time_search_field: 'create_time',
         start_time: transformTime()?.start_time,
         end_time: transformTime()?.end_time,
+        namespace_id: namespaceId,
       });
     }
     // 即将运行
@@ -420,6 +464,7 @@ export default () => {
         time_search_field: 'next_exec',
         start_time: transformTime()?.start_time,
         end_time: transformTime()?.end_time,
+        namespace_id: namespaceId,
       });
     }
     // 最近编辑
@@ -430,23 +475,18 @@ export default () => {
         time_search_field: 'update_time',
         start_time: transformTime()?.start_time,
         end_time: transformTime()?.end_time,
+        namespace_id: namespaceId,
       });
     }
   };
 
   useEffect(() => {
-    getExperimentList?.run({
-      page: 1,
-      page_size: 10,
-      time_search_field: 'update_time',
-      start_time: transformTime()?.start_time,
-      end_time: transformTime()?.end_time,
-    });
+    handleTabSearch();
     getSpaceOverview?.run({
-      spaceId: history?.location?.query?.spaceId as string,
+      spaceId: namespaceId,
       recent_day: 7,
     });
-  }, []);
+  }, [spaceIdChange]);
 
   return (
     <>

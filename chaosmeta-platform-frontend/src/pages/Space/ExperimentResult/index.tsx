@@ -12,8 +12,9 @@ import {
   stopExperimentResult,
 } from '@/services/chaosmeta/ExperimentController';
 import { formatTime } from '@/utils/format';
+import { useParamChange } from '@/utils/useParamChange';
 import { PageContainer } from '@ant-design/pro-components';
-import { history, useRequest } from '@umijs/max';
+import { history, useModel, useRequest } from '@umijs/max';
 import {
   Badge,
   Button,
@@ -45,6 +46,8 @@ const ExperimentResult: React.FC<unknown> = () => {
     total: 0,
     results: [],
   });
+  const spaceIdChange = useParamChange('spaceId');
+  const { spacePermission } = useModel('global');
 
   // 时间类型
   const timeTypes = [
@@ -89,7 +92,10 @@ const ExperimentResult: React.FC<unknown> = () => {
       start_time = formatTime(time[0]?.format());
       end_time = formatTime(time[1]?.format());
     }
+    // 默认使用更新时间倒序
+    const sort = params?.sort || '-update_time';
     const queryParam = {
+      sort,
       name,
       page,
       page_size: pageSize,
@@ -99,6 +105,7 @@ const ExperimentResult: React.FC<unknown> = () => {
       time_search_field: timeType,
       start_time,
       end_time,
+      namespace_id: history?.location?.query?.spaceId as string,
     };
     queryByPage.run(queryParam);
   };
@@ -184,6 +191,10 @@ const ExperimentResult: React.FC<unknown> = () => {
         return '-';
       },
     },
+  ];
+
+  // 操作column，有权限才可查看
+  const operateColumn: any[] = [
     {
       title: '操作',
       width: 60,
@@ -211,10 +222,9 @@ const ExperimentResult: React.FC<unknown> = () => {
       },
     },
   ];
-
   useEffect(() => {
     handleSearch();
-  }, []);
+  }, [spaceIdChange]);
 
   return (
     <>
@@ -302,7 +312,11 @@ const ExperimentResult: React.FC<unknown> = () => {
                       />
                     ),
                   }}
-                  columns={columns}
+                  columns={
+                    spacePermission === 1
+                      ? [...columns, ...operateColumn]
+                      : columns
+                  }
                   loading={queryByPage?.loading}
                   rowKey={'uuid'}
                   scroll={{ x: 1000 }}
@@ -314,6 +328,7 @@ const ExperimentResult: React.FC<unknown> = () => {
                           total: pageData?.total,
                           current: pageData?.page,
                           pageSize: pageData?.pageSize,
+                          showSizeChanger: true,
                         }
                       : false
                   }

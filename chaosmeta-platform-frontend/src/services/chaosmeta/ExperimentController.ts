@@ -17,6 +17,7 @@ export async function queryExperimentList(
     time_search_field?: string;
     start_time?: string;
     end_time?: string;
+    namespace_id: string;
   },
   options?: { [key: string]: any },
 ) {
@@ -138,6 +139,7 @@ export async function queryExperimentResultList(
     time_search_field?: string;
     start_time?: string;
     end_time?: string;
+    namespace_id: string;
   },
   options?: { [key: string]: any },
 ) {

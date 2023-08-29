@@ -1,5 +1,9 @@
 export const DEFAULT_NAME = 'Umi Max';
 
+// KubernetesController使用
+// -1: 开发环境，0：生产环境
+export const envType = 0;
+
 export const tagColors = [
   {
     color: '#EDEEEF',
@@ -89,32 +93,32 @@ export const experimentResultStatus = [
     value: 'Pending',
     label: '等待中',
     color: 'blue',
-    type: 'info'
+    type: 'info',
   },
   {
     value: 'Running',
     label: '运行中',
     color: 'blue',
-    type: 'info'
+    type: 'info',
   },
   {
     value: 'Succeeded',
     label: '成功',
     color: 'green',
-    type: 'success'
+    type: 'success',
   },
 
   {
     value: 'Failed',
     label: '失败',
     color: 'red',
-    type: 'error'
+    type: 'error',
   },
   {
     value: 'error',
     label: '错误',
     color: 'red',
-    type: 'error'
+    type: 'error',
   },
 ];
 
@@ -141,3 +145,11 @@ export const experimentStatus = [
     color: 'blue',
   },
 ];
+
+// 节点类型
+export const nodeTypeMap: any = {
+  fault: '故障节点',
+  measure: '度量引擎',
+  flow: '流量注入',
+  wait: '等待时长',
+};

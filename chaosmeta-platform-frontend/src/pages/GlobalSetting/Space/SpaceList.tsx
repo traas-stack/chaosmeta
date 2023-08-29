@@ -23,7 +23,6 @@ const SpaceList: React.FC<IProps> = (props) => {
       label: (
         <div
           onClick={() => {
-            console.log(spaceId, 'spaceId');
             handleDelete(spaceId);
           }}
         >
@@ -54,7 +53,7 @@ const SpaceList: React.FC<IProps> = (props) => {
         (item) => item?.user_id === userInfo?.id,
       )[0]?.permission;
     }
-    return permission;
+    return permission || permission === 0 ? permission : 2;
   };
 
   // const handleUpdateSpaceId = (id: any) => {
@@ -96,7 +95,6 @@ const SpaceList: React.FC<IProps> = (props) => {
     <Row gutter={[16, 16]}>
       {pageData?.namespaces?.map((item: any, index: number) => {
         const permission = getPermission(item?.userData);
-        console.log(permission, 'permission');
         return (
           <Col span={6} key={index}>
             <SpaceCard $permission={permission}>
@@ -114,8 +112,12 @@ const SpaceList: React.FC<IProps> = (props) => {
 
                     <div
                       onClick={() => {
-                        handleClickSpace(item?.namespaceInfo);
+                        // 未加入不允许进入
+                        if (permission !== 2) {
+                          handleClickSpace(item?.namespaceInfo);
+                        }
                       }}
+                      style={{ cursor: 'pointer' }}
                     >
                       <div className="title">{item.namespaceInfo?.name}</div>
                       <span className="time">

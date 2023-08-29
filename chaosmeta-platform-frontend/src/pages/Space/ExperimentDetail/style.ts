@@ -210,11 +210,11 @@ export const DroppableCol = styled.div<{
   color: rgba(0, 10, 26, 0.89);
   border: ${(props) => {
     let border = 'none';
-    if (props?.$activeState) {
-      border = '2px solid #597EF7';
-    }
     if (props?.$nodeStutas === 'Failed' || props?.$nodeStutas === 'error') {
       border = '2px solid #FF4D4F';
+    }
+    if (props?.$activeState) {
+      border = '2px solid #597EF7';
     }
     return border;
   }};
@@ -230,6 +230,16 @@ export const DroppableCol = styled.div<{
     margin: 6px;
     .title {
       margin: 8px 0 6px 0;
+    }
+    .duration {
+      display: flex;
+      justify-content: space-between;
+      padding-right: 10px;
+    }
+    .error-icon {
+      position: absolute;
+      top: 6px;
+      right: 0;
     }
   }
 `;

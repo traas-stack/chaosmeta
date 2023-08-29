@@ -1,6 +1,6 @@
 import DynamicForm from '@/components/DynamicForm';
 import ShowText from '@/components/ShowText';
-import { arrangeNodeTypeColors, scaleStepMap } from '@/constants';
+import { arrangeNodeTypeColors, nodeTypeMap, scaleStepMap } from '@/constants';
 import { queryFaultNodeFields } from '@/services/chaosmeta/ExperimentController';
 import { formatDuration, handleTimeTransform } from '@/utils/format';
 import { ZoomInOutlined, ZoomOutOutlined } from '@ant-design/icons';
@@ -106,6 +106,15 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
     if (activeCol?.uuid === el?.uuid) {
       setActiveCol({});
     } else {
+      // wait类型不需要请求接口
+      if (el?.exec_type === 'wait') {
+        // 为配置信息赋值，实验详情的操作
+        configForm.setFieldsValue(el);
+        setActiveCol({
+          ...el,
+        });
+        return;
+      }
       // 获取节点动态表单部分
       getFaultNodeFields?.run({ id: el?.exec_id });
       // 结果详情中需要通过接口获取节点信息，实验详情中则在详情中直接返回了
@@ -158,6 +167,8 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
             {/* 行内子元素 */}
             {item?.children?.map((el: any, j: number) => {
               const curDuration = formatDuration(el?.duration);
+              // 失败或者错误状态
+              const isError = el?.status === 'Failed' || el?.status === 'error';
               return (
                 <DroppableCol
                   key={j}
@@ -182,18 +193,25 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
                     {curDuration *
                       (scaleStepMap[curProportion]?.widthSecond || 3) >
                     30 ? (
-                      // <div style={{ display: 'flex' }}>
-                        <div>
-                          <div className="title ellipsis">
-                            <span>{el.name}</span>
-                            {/* <span>
-                              测试测试测试测试测试测试测试测试测试测试测试测试
-                            </span> */}
-                          </div>
-                          <div>{curDuration}s</div>
+                      <div>
+                        <div
+                          className="title ellipsis"
+                          style={{ paddingRight: isError ? '12px' : '4px' }}
+                        >
+                          <span>{el.name}</span>
                         </div>
-                        // <div>x</div>
-                      // </div>
+                        <div className="duration">
+                          <span>{curDuration}s</span>
+                        </div>
+                        {isError && (
+                          <span className="error-icon">
+                            <img
+                              src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*Qp1MT7UkGCQAAAAAAAAAAAAADmKmAQ/original"
+                              alt=""
+                            />
+                          </span>
+                        )}
+                      </div>
                     ) : (
                       <>
                         <div>...</div>
@@ -273,48 +291,64 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
                   <ShowText ellipsis />
                 </Form.Item>
                 <Form.Item label="节点类型" name={'exec_type'}>
+                  <ShowText
+                    value={
+                      nodeTypeMap[activeCol?.exec_type] || activeCol?.exec_type
+                    }
+                  />
+                </Form.Item>
+                <Form.Item
+                  label={`${
+                    activeCol?.exec_type === 'wait' ? '等待时长' : '持续时长'
+                  }`}
+                  name={'duration'}
+                >
                   <ShowText />
                 </Form.Item>
-                <Form.Item label="持续时长" name={'duration'}>
-                  <ShowText />
-                </Form.Item>
-                {/* 动态表单部分 */}
-                <DynamicForm
-                  fieldList={fieldList}
-                  parentName={'args_value'}
-                  readonly
-                />
-                <div className="subtitle range">攻击范围</div>
-                <Form.Item
-                  label="Kubernetes Namespace"
-                  name={['exec_range', 'target_namespace']}
-                >
-                  <ShowText ellipsis />
-                </Form.Item>
-                <Form.Item
-                  label="Kubernetes Label"
-                  name={['exec_range', 'target_label']}
-                >
-                  <ShowText ellipsis />
-                </Form.Item>
-                <Form.Item label="应用" name={['exec_range', 'target_app']}>
-                  <ShowText ellipsis />
-                </Form.Item>
-                <Form.Item label="name" name={['exec_range', 'target_name']}>
-                  <ShowText ellipsis />
-                </Form.Item>
-                <Form.Item
-                  label="Kubernetes Ip"
-                  name={['exec_range', 'target_ip']}
-                >
-                  <ShowText ellipsis />
-                </Form.Item>
-                <Form.Item
-                  label="Kubernetes Hostname"
-                  name={['exec_range', 'target_hostname']}
-                >
-                  <ShowText ellipsis />
-                </Form.Item>
+                {activeCol?.exec_type !== 'wait' && (
+                  <>
+                    {/* 动态表单部分 */}
+                    <DynamicForm
+                      fieldList={fieldList}
+                      parentName={'args_value'}
+                      readonly
+                    />
+                    <div className="subtitle range">攻击范围</div>
+                    <Form.Item
+                      label="Kubernetes Namespace"
+                      name={['exec_range', 'target_namespace']}
+                    >
+                      <ShowText ellipsis />
+                    </Form.Item>
+                    <Form.Item
+                      label="Kubernetes Label"
+                      name={['exec_range', 'target_label']}
+                    >
+                      <ShowText ellipsis />
+                    </Form.Item>
+                    <Form.Item label="应用" name={['exec_range', 'target_app']}>
+                      <ShowText ellipsis />
+                    </Form.Item>
+                    <Form.Item
+                      label="name"
+                      name={['exec_range', 'target_name']}
+                    >
+                      <ShowText ellipsis />
+                    </Form.Item>
+                    <Form.Item
+                      label="Kubernetes Ip"
+                      name={['exec_range', 'target_ip']}
+                    >
+                      <ShowText ellipsis />
+                    </Form.Item>
+                    <Form.Item
+                      label="Kubernetes Hostname"
+                      name={['exec_range', 'target_hostname']}
+                    >
+                      <ShowText ellipsis />
+                    </Form.Item>
+                  </>
+                )}
               </Form>
             </Spin>
           </div>

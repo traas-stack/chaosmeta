@@ -107,11 +107,9 @@ const NodeLibrary: React.FC<IProps> = (props) => {
 
   const onLoadData = (params: any) => {
     const { key, id, scopeId } = params;
-    console.log(key, 'key---');
     if (key === 'other') {
       return Promise.resolve();
     }
-    console.log(params, 'params00---');
     // 故障节点 - 一级节点list查询
     if (key === 'fault') {
       return queryFaultNodeScopes()?.then((res: any) => {

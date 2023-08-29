@@ -152,7 +152,7 @@ const AddExperiment = () => {
         message.info('请完善节点信息');
         return;
       }
-      const newLabels = values?.labels?.map((item) => item?.id);
+      const newLabels = values?.labels?.map((item: { id: number }) => item?.id);
       const newList = arrangeResult?.map((item) => {
         const {
           args_value,
@@ -167,10 +167,14 @@ const AddExperiment = () => {
           exec_type,
           name,
         } = item;
+        const newExecRange = {
+          ...exec_range,
+          target_name: exec_range?.target_name?.join(',') || undefined,
+        };
         return {
           name,
           args_value,
-          exec_range,
+          exec_range: newExecRange,
           exec_id,
           row,
           column,
@@ -271,7 +275,7 @@ const AddExperiment = () => {
           <ArrangeContent
             arrangeList={arrangeList}
             setArrangeList={setArrangeList}
-            // disabled={spacePermission === 0}
+            disabled={spacePermission !== 1}
           />
           {infoDrawerOpen && (
             <InfoDrawer
