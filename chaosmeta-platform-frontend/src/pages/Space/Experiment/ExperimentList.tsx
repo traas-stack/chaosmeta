@@ -264,7 +264,7 @@ const ExperimentList: React.FC<unknown> = () => {
       title: '实验次数',
       width: 120,
       dataIndex: 'number',
-      sorter: true,
+      // sorter: true,
       render: (text: number, record: { uuid: string }) => {
         if (text > 0) {
           return (
