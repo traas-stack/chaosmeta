@@ -14,30 +14,28 @@
  * limitations under the License.
  */
 
-package kube
+package namespace
 
 import (
-	"chaosmeta-platform/pkg/models/common/page"
-	"chaosmeta-platform/pkg/service/cluster"
-	kubernetesService "chaosmeta-platform/pkg/service/kubernetes"
-	"chaosmeta-platform/pkg/service/kubernetes/kube"
+	"chaosmeta-platform/pkg/service/namespace"
 	"context"
 )
 
-func (c *KubeController) ListPods() {
-	id, _ := c.GetInt(":id", 0)
-	nsName := c.GetString(":ns_name")
-	clusterService := cluster.ClusterService{}
-	kubeClient, restConfig, err := clusterService.GetRestConfig(context.Background(), id)
+func (c *NamespaceController) GetOverview() {
+	recentDays, err := c.GetInt("recent_day", 7)
 	if err != nil {
 		c.Error(&c.Controller, err)
 		return
 	}
-	ns := kube.NewPodService(&kubernetesService.KubernetesParam{KubernetesClient: kubeClient, RestConfig: restConfig})
-	resp, err := ns.List(nsName, page.ParseDataSelectPathParameter(&c.Controller))
+	namespaceId, _ := c.GetInt(":id", 0)
+
+	namespace := &namespace.NamespaceService{}
+	totalExperimentCount, totalExperimentInstancesCount, failedExperimentInstancesCount, err := namespace.GetOverview(context.Background(), namespaceId, recentDays)
 	if err != nil {
 		c.Error(&c.Controller, err)
 		return
 	}
-	c.Success(&c.Controller, resp)
+
+	response := GetOverviewResponse{TotalExperiments: totalExperimentCount, TotalExperimentInstances: totalExperimentInstancesCount, FailedExperimentInstances: failedExperimentInstancesCount}
+	c.Success(&c.Controller, response)
 }

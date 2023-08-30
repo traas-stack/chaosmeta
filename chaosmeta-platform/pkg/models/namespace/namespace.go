@@ -20,6 +20,7 @@ import (
 	"chaosmeta-platform/pkg/models/common"
 	"context"
 	"errors"
+	"github.com/beego/beego/v2/client/orm"
 )
 
 type Namespace struct {
@@ -73,6 +74,9 @@ func GetDefaultNamespace(ctx context.Context, namespace *Namespace) error {
 func GetAllNamespaces() ([]*Namespace, error) {
 	var namespaces []*Namespace
 	_, err := models.GetORM().QueryTable("namespace").All(&namespaces)
+	if err == orm.ErrNoRows {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -108,5 +112,47 @@ func QueryNamespaces(ctx context.Context, name, creator, orderBy string, page, p
 	}
 
 	totalCount, err := namespaceQuery.GetOamQuerySeter().All(namespaceList)
+	if err == orm.ErrNoRows {
+		return 0, nil, nil
+	}
+	return totalCount, *namespaceList, err
+}
+
+func ListNamespaces(ctx context.Context, namespaceId []int, name string, creator, orderBy string, page, pageSize int) (int64, []Namespace, error) {
+	ns, namespaceList := Namespace{}, new([]Namespace)
+	querySeter := models.GetORM().QueryTable(ns.TableName())
+	namespaceQuery, err := models.NewDataSelectQuery(&querySeter)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	if len(namespaceId) > 0 {
+		namespaceQuery.Filter("id", models.IN, false, namespaceId)
+	}
+	if len(name) > 0 {
+		namespaceQuery.Filter("name", models.CONTAINS, true, name)
+	}
+
+	if len(creator) > 0 {
+		namespaceQuery.Filter("creator", models.NEGLECT, false, creator)
+	}
+
+	orderByList := []string{}
+	if orderBy != "" {
+		orderByList = append(orderByList, orderBy)
+	} else {
+		orderByList = append(orderByList, "id")
+	}
+	namespaceQuery.OrderBy(orderByList...)
+
+	if err := namespaceQuery.Limit(pageSize, (page-1)*pageSize); err != nil {
+		return 0, nil, err
+	}
+	totalCount, _ := namespaceQuery.GetOamQuerySeter().Count()
+
+	_, err = namespaceQuery.GetOamQuerySeter().All(namespaceList)
+	if err == orm.ErrNoRows {
+		return 0, nil, nil
+	}
 	return totalCount, *namespaceList, err
 }

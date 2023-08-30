@@ -24,6 +24,8 @@ import (
 func nameSpaceInit() {
 	beego.Router(NewWebServicePath("namespaces"), &namespace.NamespaceController{}, "post:Create")
 	beego.Router(NewWebServicePath("namespaces/:id"), &namespace.NamespaceController{}, "get:Get")
+	beego.Router(NewWebServicePath("namespaces/:id/permission"), &namespace.NamespaceController{}, "get:GetPermission")
+	beego.Router(NewWebServicePath("namespaces/:id/overview"), &namespace.NamespaceController{}, "get:GetOverview")
 	beego.Router(NewWebServicePath("namespaces/list"), &namespace.NamespaceController{}, "get:GetList")
 	beego.Router(NewWebServicePath("namespaces/query"), &namespace.NamespaceController{}, "get:QueryList")
 	beego.Router(NewWebServicePath("namespaces/:id"), &namespace.NamespaceController{}, "post:Update")

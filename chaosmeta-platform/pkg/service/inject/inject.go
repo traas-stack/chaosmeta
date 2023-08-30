@@ -33,12 +33,13 @@ const (
 	KubernetesScopeType ScopeType = "kubernetes"
 
 	ExecInject = "inject"
+	ExecFlow   = "flow"
 )
 
 var (
-	PodScope        = basic.Scope{Name: string(PodScopeType), NameCn: "容器组", Description: "fault injection can be performed on any Pod in the Kubernetes cluster", DescriptionCn: "可以对 Kubernetes 集群中的任意 Pod 进行故障注入"}
-	NodeScope       = basic.Scope{Name: string(NodeScopeType), NameCn: "节点", Description: "fault injection can be performed on any Node in the Kubernetes cluster", DescriptionCn: "可以对 Kubernetes 集群中的任意 Node 进行故障注入"}
-	KubernetesScope = basic.Scope{Name: string(KubernetesScopeType), NameCn: "节点", Description: "faults can be injected into Kubernetes resource instances such as pod, deployment, and node to achieve the exception of the Kubernetes cluster itself or the exception of the operator application", DescriptionCn: "可以对 pod、deployment、node 等Kubernetes资源实例注入故障，达到 Kubernetes 集群自身的异常或者 operator 应用的异常"}
+	PodScope        = basic.Scope{Name: string(PodScopeType), NameCn: "Pod", Description: "fault injection can be performed on any Pod in the Kubernetes cluster", DescriptionCn: "可以对 Kubernetes 集群中的任意 Pod 进行故障注入"}
+	NodeScope       = basic.Scope{Name: string(NodeScopeType), NameCn: "Node", Description: "fault injection can be performed on any Node in the Kubernetes cluster", DescriptionCn: "可以对 Kubernetes 集群中的任意 Node 进行故障注入"}
+	KubernetesScope = basic.Scope{Name: string(KubernetesScopeType), NameCn: "Kubernetes", Description: "faults can be injected into Kubernetes resource instances such as pod, deployment, and node to achieve the exception of the Kubernetes cluster itself or the exception of the operator application", DescriptionCn: "可以对 pod、deployment、node 等Kubernetes资源实例注入故障，达到 Kubernetes 集群自身的异常或者 operator 应用的异常"}
 )
 
 func Init() error {
@@ -185,8 +186,8 @@ func InitCpuFault(ctx context.Context, cpuTarget basic.Target) error {
 func InitCpuTargetArgsBurn(ctx context.Context, cpuFault basic.Fault) error {
 	var (
 		CpuArgsPercent = basic.Args{InjectId: cpuFault.ID, ExecType: ExecInject, Key: "percent", KeyCn: "使用率", Unit: "%", UnitCn: "%", Description: "target cpu usage", DescriptionCn: "目标cpu使用率", ValueType: "int", Required: true, ValueRule: "1-100"}
-		CpuArgsCount   = basic.Args{InjectId: cpuFault.ID, ExecType: ExecInject, Key: "count", KeyCn: "核", Unit: "core", UnitCn: "大于等于0的整数，0表示全部核", DefaultValue: "0", Description: "number of faulty CPU cores", DescriptionCn: "故障cpu核数", ValueType: "int", ValueRule: ">0"}
-		CpuArgsList    = basic.Args{InjectId: cpuFault.ID, ExecType: ExecInject, Key: "list", KeyCn: "列表", Unit: "", UnitCn: "", Description: "cpu fault list", DescriptionCn: "故障cpu列表,逗号分隔的核编号列表，可以从/proc/cpuinfo确认", ValueType: "stringlist"}
+		CpuArgsCount   = basic.Args{InjectId: cpuFault.ID, ExecType: ExecInject, Key: "count", KeyCn: "核", Unit: "core", UnitCn: "大于等于0的整数，0表示全部核", DefaultValue: "0", Description: "number of faulty CPU cores", DescriptionCn: "故障cpu核数", ValueType: "int", ValueRule: ">=0"}
+		CpuArgsList    = basic.Args{InjectId: cpuFault.ID, ExecType: ExecInject, Key: "list", KeyCn: "列表", Unit: "", UnitCn: "", Description: "cpu fault list", DescriptionCn: "故障cpu列表,逗号分隔的核编号列表，可以从/proc/cpuinfo确认", ValueType: "string"}
 	)
 	return basic.InsertArgsMulti(ctx, []*basic.Args{&CpuArgsPercent, &CpuArgsCount, &CpuArgsList})
 }

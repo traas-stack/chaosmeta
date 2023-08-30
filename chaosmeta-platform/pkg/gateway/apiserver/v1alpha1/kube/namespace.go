@@ -25,7 +25,7 @@ import (
 )
 
 func (c *KubeController) ListNamespaces() {
-	id, _ := c.GetInt(":id")
+	id, _ := c.GetInt(":id", 0)
 	clusterService := cluster.ClusterService{}
 	kubeClient, _, err := clusterService.GetRestConfig(context.Background(), id)
 	if err != nil {

@@ -26,7 +26,7 @@ import (
 )
 
 func (c *KubeController) ListDeployments() {
-	id, _ := c.GetInt(":id")
+	id, _ := c.GetInt(":id", 0)
 	nsName := c.GetString(":ns_name")
 	clusterService := cluster.ClusterService{}
 	kubeClient, restConfig, err := clusterService.GetRestConfig(context.Background(), id)

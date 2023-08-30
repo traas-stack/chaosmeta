@@ -14,6 +14,8 @@ data:
     copyrequestbody = true
   app.yaml: |-
     secretkey: chaosmeta1234567
+    argoWorkflowNamespace: default
+    workflowNamespace: chaosmeta-inject
     db:
       name: chaosmeta
       user: root
@@ -24,3 +26,4 @@ data:
     log:
       path: ./chaosmeta-platform.log
       level: info
+    runmode: ServiceAccount

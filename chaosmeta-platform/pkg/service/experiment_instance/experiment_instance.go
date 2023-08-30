@@ -19,6 +19,7 @@ package experiment_instance
 import (
 	"chaosmeta-platform/pkg/models/experiment_instance"
 	"chaosmeta-platform/pkg/models/namespace"
+	"chaosmeta-platform/pkg/models/user"
 	"chaosmeta-platform/util/log"
 	"chaosmeta-platform/util/snowflake"
 	"context"
@@ -48,7 +49,7 @@ func (s *ExperimentInstanceService) createUUID(creator int, typeStr string) stri
 	return fmt.Sprintf("%d%d%d%s", nodeSnow.Generate(), creator, time.Now().Unix(), typeStr)
 }
 
-func (s *ExperimentInstanceService) CreateExperimentInstance(experimentParam *ExperimentInstance) (string, error) {
+func (s *ExperimentInstanceService) CreateExperimentInstance(experimentParam *ExperimentInstance, status string) (string, error) {
 	experimentCreate := experiment_instance.ExperimentInstance{
 		UUID:           s.createUUID(experimentParam.Creator, "experiment"),
 		Name:           experimentParam.Name,
@@ -57,6 +58,7 @@ func (s *ExperimentInstanceService) CreateExperimentInstance(experimentParam *Ex
 		ExperimentUUID: experimentParam.UUID,
 		Creator:        experimentParam.Creator,
 		Message:        experimentParam.Message,
+		Status:         status,
 	}
 
 	// experiment
@@ -124,6 +126,7 @@ type ExperimentInstanceInfo struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Creator     int    `json:"creator"`
+	CreatorName string `json:"creator_name,omitempty"`
 	NamespaceId int    `json:"namespace_id"`
 
 	CreateTime string      `json:"create_time"`
@@ -146,11 +149,17 @@ func (s *ExperimentInstanceService) GetExperimentInstanceByUUID(uuid string) (*E
 		return nil, err
 	}
 
+	userGet := user.User{ID: exp.Creator}
+	if err := user.GetUserById(context.Background(), &userGet); err != nil {
+		log.Error(err)
+	}
+
 	expData := ExperimentInstanceInfo{
 		UUID:        exp.UUID,
 		Name:        exp.Name,
 		Description: exp.Description,
 		Creator:     exp.Creator,
+		CreatorName: userGet.Email,
 		NamespaceId: exp.NamespaceID,
 		CreateTime:  exp.CreateTime.Format(time.RFC3339),
 		UpdateTime:  exp.UpdateTime.Format(time.RFC3339),
@@ -357,9 +366,16 @@ func (s *ExperimentInstanceService) DeleteExperimentInstancesByUUID(uuids []stri
 	return nil
 }
 
-func (s *ExperimentInstanceService) SearchExperimentInstances(lastInstance string, namespaceId int, creator int, name string, scheduleType string, timeType string, recentDays int, startTime, endTime time.Time, orderBy string, page, pageSize int) (int64, []*ExperimentInstanceInfo, error) {
+func (s *ExperimentInstanceService) SearchExperimentInstances(lastInstance string, experimentUUID string, namespaceId int, creatorName string, name string, timeType string, timeSearchField string, status string, recentDays int, startTime, endTime time.Time, orderBy string, page, pageSize int) (int64, []*ExperimentInstanceInfo, error) {
 	var experimentInstanceInfoList []*ExperimentInstanceInfo
-	total, experiments, err := experiment_instance.SearchExperimentInstances(lastInstance, namespaceId, creator, name, scheduleType, timeType, recentDays, startTime, endTime, orderBy, page, pageSize)
+	creator := 0
+	userGet := user.User{Email: creatorName}
+	if err := user.GetUser(context.Background(), &userGet); err != nil {
+		log.Error(err)
+	} else {
+		creator = userGet.ID
+	}
+	total, experiments, err := experiment_instance.SearchExperimentInstances(lastInstance, experimentUUID, namespaceId, creator, name, timeType, timeSearchField, status, recentDays, startTime, endTime, orderBy, page, pageSize)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -368,12 +384,17 @@ func (s *ExperimentInstanceService) SearchExperimentInstances(lastInstance strin
 		if err != nil {
 			log.Error(err)
 		}
+		userGet := user.User{ID: experiment.Creator}
+		if err := user.GetUserById(context.Background(), &userGet); err != nil {
+			log.Error(err)
+		}
 
 		expData := ExperimentInstanceInfo{
 			UUID:        experiment.UUID,
 			Name:        experiment.Name,
 			Description: experiment.Description,
 			Creator:     experiment.Creator,
+			CreatorName: userGet.Email,
 			NamespaceId: experiment.NamespaceID,
 			CreateTime:  experiment.CreateTime.Format(time.RFC3339),
 			UpdateTime:  experiment.UpdateTime.Format(time.RFC3339),

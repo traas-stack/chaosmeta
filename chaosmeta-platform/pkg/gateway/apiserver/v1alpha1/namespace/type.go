@@ -136,3 +136,9 @@ type GetNamespaceListResponse struct {
 	Total      int64                         `json:"total"`
 	Namespaces []namespace.UserNamespaceData `json:"namespaces,omitempty"`
 }
+
+type GetOverviewResponse struct {
+	TotalExperiments          int64 `json:"total_experiments"`
+	TotalExperimentInstances  int64 `json:"total_experiment_instances"`
+	FailedExperimentInstances int64 `json:"failed_experiment_instances"`
+}

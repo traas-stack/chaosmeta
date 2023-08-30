@@ -57,6 +57,9 @@ func ListLabelIDsByExperimentUUID(experimentUUID string) ([]int, error) {
 }
 
 func AddLabelIDsToExperiment(experimentUUID string, labelIDs []int) error {
+	if len(labelIDs) == 0 {
+		return nil
+	}
 	o := models.GetORM()
 	labelExperiments := make([]*LabelExperiment, len(labelIDs))
 	for i, id := range labelIDs {
