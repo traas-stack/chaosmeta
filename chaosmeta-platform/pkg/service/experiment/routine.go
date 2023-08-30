@@ -174,8 +174,9 @@ func StopExperiment(experimentInstanceID string) error {
 				log.Error(err)
 				return err
 			}
-			chaosmetaCR.Status.Phase = "recover"
+			chaosmetaCR.Spec.TargetPhase = "recover"
 			if _, err := chaosmetaService.Update(context.Background(), chaosmetaCR); err != nil {
+				log.Error(err)
 				return err
 			}
 			_, nodeId, err := getExperimentUUIDAndNodeIDFromStepName(node.DisplayName)

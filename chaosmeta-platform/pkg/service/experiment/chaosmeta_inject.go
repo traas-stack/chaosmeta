@@ -161,12 +161,14 @@ func (c *ChaosmetaService) Update(ctx context.Context, chaosmeta *ExperimentInje
 		return nil, err
 	}
 
-	utd, err := c.Client.Resource(gvr).Get(ctx, obj.GetName(), v1.GetOptions{})
+	utd, err := c.Client.Resource(gvr).Namespace(obj.GetNamespace()).Get(ctx, obj.GetName(), v1.GetOptions{})
 	if err != nil {
+		log.Error(err)
 		return nil, err
 	}
+
 	obj.SetResourceVersion(utd.GetResourceVersion())
-	utd, err = c.Client.Resource(gvr).Update(ctx, obj, v1.UpdateOptions{})
+	utd, err = c.Client.Resource(gvr).Namespace(obj.GetNamespace()).Update(ctx, obj, v1.UpdateOptions{})
 	if err != nil {
 		return nil, err
 	}

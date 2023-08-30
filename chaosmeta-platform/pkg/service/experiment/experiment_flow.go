@@ -322,7 +322,7 @@ func getExperimentInstanceIdFromWorkflowName(workflowName string) (string, error
 }
 
 func getExperimentUUIDAndNodeIDFromStepName(name string) (string, string, error) {
-	log.Error("ExperimentUUIDAndNodeIDFromStepName:", name)
+	log.Info("ExperimentUUIDAndNodeIDFromStepName:", name)
 	var reg *regexp.Regexp
 	var match []string
 
