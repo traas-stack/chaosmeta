@@ -111,11 +111,12 @@ const AddExperiment = () => {
                 pathname: '/space/experiment-result',
                 query: {
                   experimentId: history?.location?.query?.experimentId,
+                  spaceId: history?.location?.query?.spaceId as string,
                 },
               });
             }}
           >
-            实验结果（3）
+            实验结果
           </Button>
           <Button
             onClick={() => {
@@ -152,6 +153,7 @@ const AddExperiment = () => {
             pathname: '/space/experiment-result',
             query: {
               experimentId: history?.location?.query?.experimentId,
+              spaceId: history?.location?.query?.spaceId as string,
             },
           });
         }}
@@ -176,7 +178,7 @@ const AddExperiment = () => {
         header={{
           title: baseInfo?.name || '',
           onBack: () => {
-            history.push('/space/experiment');
+            history.back();
           },
           extra: headerExtra(),
         }}

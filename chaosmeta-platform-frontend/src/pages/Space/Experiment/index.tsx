@@ -22,6 +22,7 @@ const Experiment: React.FC<unknown> = () => {
     //   children: <RecommendExperiment />,
     // },
   ];
+  
   return (
     <>
       <PageContainer title="实验">

@@ -158,13 +158,6 @@ const NodeLibrary: React.FC<IProps> = (props) => {
             };
             const newFaults = faults?.map((item: any) => {
               return { ...item, key: `${key}-${item.id}`, ...params };
-              // item = { ...item, key: `${key}-${item.id}`, ...params };
-              // item.key = `${key}-${item.id}`;
-              // item.isLeaf = true;
-              // item.scope_id = scopeId;
-              // item.target_id = id;
-              // item.exec_type = 'fault';
-              // item.exec_type_name = '故障节点';
             });
             setTreeData((origin) => {
               return updateTreeData(origin, key, newFaults);

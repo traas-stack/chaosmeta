@@ -381,7 +381,7 @@ const ArrangeContent: React.FC<IProps> = (props) => {
             ...activeItem,
             // 暂时将uuid设置为当前节点的id用于拖拽，拖拽结束后这里的uuid需要重新生成，避免拖拽绑定重复id
             uuid: active.id,
-            duration: '30s',
+            duration: '60s',
             dragtype: 'item',
             exec_id: activeItem?.id,
             name: activeItem?.nameCn,
@@ -397,7 +397,7 @@ const ArrangeContent: React.FC<IProps> = (props) => {
             ...activeItem,
             uuid: active.id,
             // 拖入时长默认15m
-            duration: '30s',
+            duration: '60s',
             dragtype: 'item',
             // 将节点库id保存
             exec_id: activeItem?.id,

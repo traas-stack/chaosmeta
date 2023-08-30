@@ -5,7 +5,7 @@ export const SpaceMenu = styled.div`
   border-radius: 6px;
   background-color: #fff;
   padding: 8px 0;
-  div:first-child {
+  .search {
     /* width: 180px; */
     padding: 0 16px;
   }
@@ -25,6 +25,9 @@ export const SpaceMenu = styled.div`
     span:first-child {
       color: rgba(0, 10, 26, 0.47);
     }
+  }
+  .ant-spin-container {
+    padding: 0;
   }
 `;
 

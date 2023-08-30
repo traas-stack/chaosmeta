@@ -36,41 +36,41 @@ const SpaceList: React.FC<IProps> = (props) => {
   /**
    * 渲染读写权限成员
    */
-  // const renderAdmin = (userData: any) => {
-  //   const users = userData?.user?.filter((item) => item?.permission === 1);
-  //   const text = users?.map((item) => item);
-  // };
+  const renderAdmin = (users: any) => {
+    const newUsers = users?.filter(
+      (item: { permission: number }) => item?.permission === 1,
+    );
+
+    if (newUsers?.length > 0) {
+      const renderText = newUsers?.map((item: any, index: number) => {
+        return (
+          <span key={item?.user_id}>
+            {item?.user_name}
+            {index !== newUsers?.length - 1 && ','}
+          </span>
+        );
+      });
+      return (
+        <Tooltip placement="topLeft" title={renderText}>
+          {renderText}
+        </Tooltip>
+      );
+    }
+    return '--';
+  };
 
   // 当前用户相对应某个空间是否有权限
-  const getPermission = (userData: any) => {
-    // permission 0 = 只读， 1 = 读写， 2 = 未加入
-    let permission = 2;
+  const getPermission = (userPermission: any) => {
+    // permission 0 = 只读， 1 = 读写， -1 = 未加入
+    let permission = 0;
     // 全局管理员角色，默认拥有所有空间权限
     if (userInfo?.role === 'admin') {
       permission = 1;
     } else {
-      permission = userData?.users?.filter(
-        (item) => item?.user_id === userInfo?.id,
-      )[0]?.permission;
+      permission = userPermission || 0;
     }
-    return permission || permission === 0 ? permission : 2;
+    return permission;
   };
-
-  // const handleUpdateSpaceId = (id: any) => {
-  //   if (id) {
-  //     const name = form.getFieldValue('name');
-  //     history.push({
-  //       pathname: history.location.pathname,
-  //       query: {
-  //         ...history.location.query,
-  //         spaceId: id,
-  //       },
-  //     });
-  //     setCurSpace([id]);
-  //     sessionStorage.setItem('spaceId', id);
-  //     sessionStorage.setItem('spaceName', name);
-  //   }
-  // };
 
   /**
    * 点击卡片跳转到对应空间
@@ -94,26 +94,28 @@ const SpaceList: React.FC<IProps> = (props) => {
   return (
     <Row gutter={[16, 16]}>
       {pageData?.namespaces?.map((item: any, index: number) => {
-        const permission = getPermission(item?.userData);
+        const permission = getPermission(item?.permission);
         return (
           <Col span={6} key={index}>
             <SpaceCard $permission={permission}>
               <Tooltip
                 // 未加入的提示
-                title={permission === 2 && '你没有该空间的权限，请联系读写成员'}
+                title={
+                  permission === -1 && '你没有该空间的权限，请联系读写成员'
+                }
               >
                 <div className="header">
                   <div>
-                    {permission !== 1 ? (
-                      <img src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*5OzsS5d_il8AAAAAAAAAAAAADmKmAQ/original" />
-                    ) : (
+                    {permission !== -1 ? (
                       <img src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*3rVvS7yMa38AAAAAAAAAAAAADmKmAQ/original" />
+                    ) : (
+                      <img src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*5OzsS5d_il8AAAAAAAAAAAAADmKmAQ/original" />
                     )}
 
                     <div
                       onClick={() => {
                         // 未加入不允许进入
-                        if (permission !== 2) {
+                        if (permission !== -1) {
                           handleClickSpace(item?.namespaceInfo);
                         }
                       }}
@@ -129,7 +131,7 @@ const SpaceList: React.FC<IProps> = (props) => {
                     disabled={permission !== 1}
                     placement="bottomRight"
                     menu={{
-                      items: items(item.namespaceInfo?.namespaceInfo?.id),
+                      items: items(item.namespaceInfo?.id),
                     }}
                   >
                     <Tooltip
@@ -143,32 +145,32 @@ const SpaceList: React.FC<IProps> = (props) => {
 
               <div className="desc">
                 <div>描述：</div>
-                <Tooltip title="haoduohaoduo">
+                <Tooltip title={item?.namespaceInfo?.description}>
                   <span>{item?.namespaceInfo?.description}</span>
                 </Tooltip>
               </div>
-              <div className="footer">
-                <div>
+              <Row className="footer">
+                <Col className="ellipsis" span={12}>
                   <Tooltip title="读写成员">
                     <img src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*_TiCQ6O9B_oAAAAAAAAAAAAADmKmAQ/original" />
-                    {/* <span>{renderAdmin(item?.userData)}</span> */}
                   </Tooltip>
-                </div>
+                  {renderAdmin(item?.users)}
+                </Col>
 
-                <div>
+                <Col span={6}>
                   <Tooltip title="实验数量">
                     <img src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*lps4TYQ9p4MAAAAAAAAAAAAADmKmAQ/original" />
-                    <span>{item?.experimentrData?.toTal}</span>
+                    <span>{item?.experimentTotal || 0}</span>
                   </Tooltip>
-                </div>
+                </Col>
 
-                <div>
+                <Col span={6} style={{ textAlign: 'right' }}>
                   <Tooltip title="空间成员">
                     <img src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*GLyEQrfTN68AAAAAAAAAAAAADmKmAQ/original" />
-                    <span>{item?.userData?.toTal}</span>
+                    <span>{item?.userTotal || 0}</span>
                   </Tooltip>
-                </div>
-              </div>
+                </Col>
+              </Row>
             </SpaceCard>
           </Col>
         );

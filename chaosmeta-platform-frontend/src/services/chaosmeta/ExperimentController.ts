@@ -134,7 +134,7 @@ export async function queryExperimentResultList(
     creator_name?: string;
     page?: number;
     page_size?: number;
-    experimentId?: string;
+    experiment_uuid?: string;
     status?: string;
     time_search_field?: string;
     start_time?: string;

@@ -439,7 +439,7 @@ const AddExperiment = () => {
   const headerExtra = () => {
     return (
       <Space>
-        <Button>查看实验配置</Button>
+        {/* <Button>查看实验配置</Button> */}
         {resultDetail?.status === 'Running' && (
           <Button
             type="primary"
@@ -510,7 +510,7 @@ const AddExperiment = () => {
         header={{
           title: renderTitle(),
           onBack: () => {
-            history.push('/space/experiment');
+            history.back();
           },
           extra: headerExtra(),
         }}
@@ -539,14 +539,14 @@ const AddExperiment = () => {
                 }
                 style={{ marginBottom: '16px' }}
                 type={handleMateStatus()?.type}
-                action={
-                  (resultDetail?.status === 'error' ||
-                    resultDetail?.status === 'Failed') && (
-                    <Button type="link" onClick={() => {}}>
-                      查看详情
-                    </Button>
-                  )
-                }
+                // action={
+                //   (resultDetail?.status === 'error' ||
+                //     resultDetail?.status === 'Failed') && (
+                //     <Button type="link" onClick={() => {}}>
+                //       查看详情
+                //     </Button>
+                //   )
+                // }
                 showIcon
               />
             )}

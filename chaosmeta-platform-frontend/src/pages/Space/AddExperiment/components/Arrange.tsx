@@ -222,12 +222,12 @@ const Arrange: React.FC<IProps> = (props) => {
       type: 'fault',
     },
     {
-      name: '度量节点',
+      name: '度量引擎',
       type: 'measure',
     },
     {
-      name: '压测节点',
-      type: 'pressure',
+      name: '流量注入',
+      type: 'flow',
     },
     {
       name: '其他节点',

@@ -168,7 +168,8 @@ const TagManage: React.FC<any> = () => {
 
   useEffect(() => {
     handlePageSearch();
-  }, []);
+  }, [spaceIdChange]);
+
   return (
     <LightArea>
       <div className="area-operate">
@@ -277,7 +278,7 @@ const TagManage: React.FC<any> = () => {
         <Table
           locale={{
             emptyText: () => {
-              if (spacePermission === 0) {
+              if (spacePermission === 1) {
                 return (
                   <EmptyCustom
                     desc="请新建标签，提前创建好标签在创建实验的时候可以直接选用快速为实验打上标签。"

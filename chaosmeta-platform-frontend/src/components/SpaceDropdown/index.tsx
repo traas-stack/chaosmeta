@@ -1,10 +1,10 @@
 import {
-  getSpaceUserList,
-  getUserSpaceList,
-} from '@/services/chaosmeta/UserController';
+  queryClassSpaceList,
+  querySpaceUserPermission,
+} from '@/services/chaosmeta/SpaceController';
 import { DownOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import { history, useModel, useRequest } from '@umijs/max';
-import { Dropdown, Empty, Input } from 'antd';
+import { Dropdown, Empty, Input, Spin } from 'antd';
 import React, { useEffect, useState } from 'react';
 import AddSpaceDrawer from '../AddSpaceDrawer';
 import { SpaceContent, SpaceMenu } from './style';
@@ -12,8 +12,7 @@ import { SpaceContent, SpaceMenu } from './style';
 export default () => {
   const [addSpaceOpen, setAddSpaceOpen] = useState<boolean>(false);
   const [spaceList, setSpaceList] = useState<any>([]);
-  const { userInfo, setSpacePermission, curSpace, setCurSpace } =
-    useModel('global');
+  const { setSpacePermission, curSpace, setCurSpace } = useModel('global');
 
   // 一级路由，切换空间时页面在以下路由时，不需要跳转，刷新页面接口即可，其他页面需要跳转回空间概览
   const parentRoute = [
@@ -26,17 +25,12 @@ export default () => {
   /**
    * 根据成员名称和空间id获取成员空间内权限信息
    */
-  const getUserSpaceAuth = useRequest(getSpaceUserList, {
+  const getUserSpaceAuth = useRequest(querySpaceUserPermission, {
     manual: true,
     formatResult: (res) => res,
     onSuccess: (res) => {
       if (res.code === 200) {
-        // 存储用户空间权限
-        const curUserName = userInfo?.name || localStorage.getItem('userName');
-        const curUserInfo = res?.data?.users?.filter(
-          (item: { name: string }) => item.name === curUserName,
-        )[0];
-        setSpacePermission(curUserInfo?.permission);
+        setSpacePermission(res?.data);
       }
     },
   });
@@ -68,23 +62,24 @@ export default () => {
       sessionStorage.setItem('spaceName', name);
     }
   };
+
   /**
    * 获取空间列表 -- 当前用户有查看权限的空间只读和读写
    */
-  const getSpaceList = useRequest(getUserSpaceList, {
+  const getSpaceList = useRequest(queryClassSpaceList, {
     manual: true,
     formatResult: (res) => res,
     debounceInterval: 300,
     onSuccess: (res) => {
-      if (res?.data) {
+      if (res?.code === 200) {
         const namespaceList = res.data?.namespaces?.map(
-          (item: { name: string; id: string }) => {
+          (item: { namespaceInfo: any }) => {
             // side侧边菜单的展开/收起会影响这里，暂时用icon代替，todo
             return {
-              icon: item.name,
-              key: item.id,
-              id: item.id.toString(),
-              name: item.name,
+              icon: item?.namespaceInfo?.name,
+              key: item?.namespaceInfo?.id,
+              id: item?.namespaceInfo?.id?.toString(),
+              name: item?.namespaceInfo?.name,
             };
           },
         );
@@ -101,7 +96,11 @@ export default () => {
 
   useEffect(() => {
     // 获取空间列表
-    getSpaceList?.run({ page: 1, page_size: 10 });
+    getSpaceList?.run({ page: 1, page_size: 10, namespaceClass: 'relevant' });
+  }, []);
+
+  useEffect(() => {
+    // getSpaceList?.run({ page: 1, page_size: 10, namespaceClass: 'relevant' });
     // 地址栏中存在空间id，需要将空间列表选项更新，并保存当前id
     if (history.location.query.spaceId) {
       setCurSpace([history.location.query.spaceId as string]);
@@ -111,7 +110,6 @@ export default () => {
       );
       getUserSpaceAuth?.run({
         id: history.location.query.spaceId as string,
-        name: userInfo?.name || localStorage.getItem('userName'),
       });
     }
   }, [history.location.query.spaceId]);
@@ -128,22 +126,25 @@ export default () => {
           },
           selectedKeys: curSpace,
         }}
-        overlayStyle={{ width: 'max-content', maxHeight: '400px' }}
+        overlayStyle={{ width: 'max-content', maxHeight: '300px' }}
         dropdownRender={(menu) => {
           return (
             <SpaceMenu>
-              <div>
+              <div className="search">
                 <Input
                   placeholder="请输入关键词"
                   onChange={(event) => {
                     const value = event?.target?.value;
-                    getSpaceList?.run({ name: value });
+                    getSpaceList?.run({
+                      name: value,
+                      namespaceClass: 'relevant',
+                    });
                   }}
                   suffix={
                     <SearchOutlined
                       style={{ cursor: 'pointer' }}
                       onClick={() => {
-                        getSpaceList?.run();
+                        getSpaceList?.run({ namespaceClass: 'relevant' });
                       }}
                     />
                   }
@@ -158,11 +159,16 @@ export default () => {
                   <PlusOutlined /> 新建空间
                 </a>
               </div>
-              {menu ? (
-                React.cloneElement(menu as React.ReactElement)
-              ) : (
-                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />
-              )}
+              <Spin spinning={getSpaceList?.loading}>
+                <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                  {menu ? (
+                    React.cloneElement(menu as React.ReactElement)
+                  ) : (
+                    <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                  )}
+                </div>
+              </Spin>
+
               <div className="more">
                 <span>
                   没有相关空间？查看{' '}
