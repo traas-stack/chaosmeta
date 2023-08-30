@@ -22,6 +22,7 @@ import (
 	experimentInstanceModel "chaosmeta-platform/pkg/models/experiment_instance"
 	"chaosmeta-platform/pkg/service/cluster"
 	"chaosmeta-platform/pkg/service/experiment_instance"
+	"chaosmeta-platform/pkg/service/user"
 	"chaosmeta-platform/util/log"
 	"context"
 	"encoding/json"
@@ -41,7 +42,7 @@ type ExperimentRoutine struct {
 	localCron *cron.Cron
 }
 
-func convertToExperimentInstance(experiment *Experiment, status string) *experiment_instance.ExperimentInstance {
+func convertToExperimentInstance(experiment *ExperimentGet, status string) *experiment_instance.ExperimentInstance {
 	experimentInstance := &experiment_instance.ExperimentInstance{
 		ExperimentInstanceInfo: experiment_instance.ExperimentInstanceInfo{
 			UUID:        experiment.UUID,
@@ -51,7 +52,7 @@ func convertToExperimentInstance(experiment *Experiment, status string) *experim
 			NamespaceId: experiment.NamespaceID,
 			Status:      status,
 		},
-		Labels: getLabelIdsFromExperiment(experiment.Labels),
+		Labels: getLabelIdsFromLabelGet(experiment.Labels),
 	}
 
 	for _, node := range experiment.WorkflowNodes {
@@ -69,14 +70,17 @@ func convertToExperimentInstance(experiment *Experiment, status string) *experim
 			},
 			Subtasks: &experimentInstanceModel.FaultRangeInstance{
 				WorkflowNodeInstanceUUID: node.UUID,
-				TargetName:               node.FaultRange.TargetName,
-				TargetIP:                 node.FaultRange.TargetIP,
-				TargetHostname:           node.FaultRange.TargetHostname,
-				TargetLabel:              node.FaultRange.TargetLabel,
-				TargetApp:                node.FaultRange.TargetApp,
-				TargetNamespace:          node.FaultRange.TargetNamespace,
-				RangeType:                node.FaultRange.RangeType,
 			},
+		}
+
+		if node.FaultRange != nil {
+			workflowNodeDetail.Subtasks.TargetName = node.FaultRange.TargetName
+			workflowNodeDetail.Subtasks.TargetIP = node.FaultRange.TargetIP
+			workflowNodeDetail.Subtasks.TargetHostname = node.FaultRange.TargetHostname
+			workflowNodeDetail.Subtasks.TargetLabel = node.FaultRange.TargetLabel
+			workflowNodeDetail.Subtasks.TargetApp = node.FaultRange.TargetApp
+			workflowNodeDetail.Subtasks.TargetNamespace = node.FaultRange.TargetNamespace
+			workflowNodeDetail.Subtasks.RangeType = node.FaultRange.RangeType
 		}
 		for _, arg := range node.ArgsValue {
 			workflowNodeDetail.ArgsValues = append(workflowNodeDetail.ArgsValues, experiment_instance.ArgsValue{ArgsId: arg.ArgsID, Value: arg.Value})
@@ -85,11 +89,11 @@ func convertToExperimentInstance(experiment *Experiment, status string) *experim
 	}
 
 	experimentInstanceBytes, _ := json.Marshal(experimentInstance)
-	log.Error("convertToExperimentInstance------------", string(experimentInstanceBytes))
+	log.Error("convertToExperimentInstance:", string(experimentInstanceBytes))
 	return experimentInstance
 }
 
-func StartExperiment(experimentID string) error {
+func StartExperiment(experimentID string, creatorName string) error {
 	experimentService := ExperimentService{}
 	experimentGet, err := experimentService.GetExperimentByUUID(experimentID)
 	if err != nil || experimentGet == nil {
@@ -97,9 +101,16 @@ func StartExperiment(experimentID string) error {
 	}
 
 	experimentInstance := convertToExperimentInstance(experimentGet, string(experimentInstanceModel.Running))
-
+	if creatorName != "" {
+		creatorId, err := user.GetIdByName(creatorName)
+		if err != nil {
+			log.Error(err)
+			return err
+		}
+		experimentInstance.Creator = creatorId
+	}
 	experimentInstanceService := experiment_instance.ExperimentInstanceService{}
-	experimentInstanceId, err := experimentInstanceService.CreateExperimentInstance(experimentInstance)
+	experimentInstanceId, err := experimentInstanceService.CreateExperimentInstance(experimentInstance, "Pending")
 	if err != nil {
 		return err
 	}
@@ -110,7 +121,7 @@ func StartExperiment(experimentID string) error {
 		return err
 	}
 
-	argoWorkFlowCtl, err := NewArgoWorkFlowService(restConfig, ArgoWorkflowNamespace)
+	argoWorkFlowCtl, err := NewArgoWorkFlowService(restConfig, config.DefaultRunOptIns.ArgoWorkflowNamespace)
 	if err != nil {
 		return err
 	}
@@ -127,10 +138,10 @@ func StartExperiment(experimentID string) error {
 
 func StopExperiment(experimentInstanceID string) error {
 	experimentInstanceInfo, err := experimentInstanceModel.GetExperimentInstanceByUUID(experimentInstanceID)
-	if err != nil {
-		return err
+	if err != nil || experimentInstanceInfo == nil {
+		return fmt.Errorf("can not find experimentInstance")
 	}
-	if experimentInstanceInfo.Status == "Succeeded" || experimentInstanceInfo.Status == "Failed" || experimentInstanceInfo.Status == "Error" {
+	if experimentInstanceInfo.Status == "Succeeded" {
 		return errors.New("walkthrough is over")
 	}
 
@@ -140,7 +151,7 @@ func StopExperiment(experimentInstanceID string) error {
 		return err
 	}
 
-	argoWorkFlowCtl, err := NewArgoWorkFlowService(restConfig, WorkflowNamespace)
+	argoWorkFlowCtl, err := NewArgoWorkFlowService(restConfig, config.DefaultRunOptIns.WorkflowNamespace)
 	if err != nil {
 		log.Error(err)
 		return err
@@ -151,20 +162,21 @@ func StopExperiment(experimentInstanceID string) error {
 		log.Error(err)
 		return nil
 	}
-	if status == "Succeeded" || status == "Failed" || status == "Error" {
+	if status == "Succeeded" {
 		return errors.New("experiment has ended")
 	}
 
 	chaosmetaService := NewChaosmetaService(restConfig)
 	for _, node := range workFlowGet.Status.Nodes {
 		if isInjectStepName(node.DisplayName) {
-			chaosmetaCR, err := chaosmetaService.Get(context.Background(), WorkflowNamespace, node.DisplayName)
+			chaosmetaCR, err := chaosmetaService.Get(context.Background(), config.DefaultRunOptIns.WorkflowNamespace, node.DisplayName)
 			if err != nil {
 				log.Error(err)
 				return err
 			}
-			chaosmetaCR.Status.Phase = "recover"
+			chaosmetaCR.Spec.TargetPhase = "recover"
 			if _, err := chaosmetaService.Update(context.Background(), chaosmetaCR); err != nil {
+				log.Error(err)
 				return err
 			}
 			_, nodeId, err := getExperimentUUIDAndNodeIDFromStepName(node.DisplayName)
@@ -201,11 +213,12 @@ func (e *ExperimentRoutine) DealOnceExperiment() {
 		nextExec, _ := time.Parse(DefaultFormat, experimentGet.ScheduleRule)
 		if time.Now().After(nextExec) {
 			log.Error("create an experiment")
-			if err := StartExperiment(experimentGet.UUID); err != nil {
+			if err := StartExperiment(experimentGet.UUID, ""); err != nil {
 				log.Error(err)
 				continue
 			}
 			experimentGet.Status = experiment.Executed
+			experimentGet.LastInstance = time.Now().Format(TimeLayout)
 			if err := experiment.UpdateExperiment(experimentGet); err != nil {
 				log.Error(err)
 				continue
@@ -246,18 +259,12 @@ func (e *ExperimentRoutine) DealCronExperiment() {
 				continue
 			}
 
-			log.Error(6)
-			if err := StartExperiment(experimentGet.UUID); err != nil {
+			if err := StartExperiment(experimentGet.UUID, ""); err != nil {
 				log.Error(err)
-				experimentGet.Status = experiment.ToBeExecuted
-				if err := experiment.UpdateExperiment(experimentGet); err != nil {
-					log.Error(err)
-					continue
-				}
-				continue
 			}
-			log.Error(7)
+
 			experimentGet.Status = experiment.ToBeExecuted
+			experimentGet.LastInstance = time.Now().Format(TimeLayout)
 			if err := experiment.UpdateExperiment(experimentGet); err != nil {
 				log.Error(err)
 				continue
@@ -306,7 +313,7 @@ func (e *ExperimentRoutine) SyncExperimentsStatus() {
 		return
 	}
 
-	argoWorkFlowCtl, err := NewArgoWorkFlowService(restConfig, ArgoWorkflowNamespace)
+	argoWorkFlowCtl, err := NewArgoWorkFlowService(restConfig, config.DefaultRunOptIns.ArgoWorkflowNamespace)
 	pendingArgos, finishArgos, err := argoWorkFlowCtl.ListPendingAndFinishWorkflows()
 	if err != nil {
 		log.Error(err)
@@ -330,8 +337,10 @@ func (e *ExperimentRoutine) SyncExperimentsStatus() {
 				if err := e.syncExperimentStatus(argo); err != nil {
 					errCh <- err
 				}
-				if err := argoWorkFlowCtl.Delete(argo.Name); err != nil {
-					errCh <- err
+				if argo.Status.Phase == "Succeeded" {
+					if err := argoWorkFlowCtl.Delete(argo.Name); err != nil {
+						errCh <- err
+					}
 				}
 			}(*finishArgo)
 		}
@@ -362,23 +371,19 @@ func (e *ExperimentRoutine) DeleteExecutedInstanceCR() {
 		return
 	}
 
-	//argoWorkFlowCtl, err := workflow_channel.NewArgoWorkFlowService(restConfig, WorkflowNamespace)
-	//if err != nil {
-	//	log.Error(err)
-	//	return
-	//}
-	//if err := argoWorkFlowCtl.DeleteExpiredList(); err != nil {
-	//	log.Error(err)
-	//	return
-	//}
 	log.Info("expired Workflows have been deleted successfully.")
 
+	ctx := context.Background()
 	chaosmetaService := NewChaosmetaService(restConfig)
-	if err := chaosmetaService.DeleteExpiredList(context.Background()); err != nil {
+	if err := chaosmetaService.DeleteExpiredList(ctx); err != nil {
 		log.Error(err)
-		return
 	}
 	log.Info("expired chaosmeta experiment  have been deleted successfully.")
+	chaosmetaFlowInjectService := NewChaosmetaFlowInjectService(restConfig)
+	if err := chaosmetaFlowInjectService.DeleteExpiredList(ctx); err != nil {
+		log.Error(err)
+	}
+	log.Info("expired chaosmeta flow experiment  have been deleted successfully.")
 
 }
 

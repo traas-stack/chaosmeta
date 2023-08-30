@@ -14,6 +14,8 @@ data:
     copyrequestbody = true
   app.yaml: |-
     secretkey: chaosmeta1234567
+    argoWorkflowNamespace: default
+    workflowNamespace: chaosmeta-inject
     db:
       name: chaosmeta
       user: root
@@ -24,7 +26,7 @@ data:
     log:
       path: ./chaosmeta-platform.log
       level: info
-
+    runmode: ServiceAccount
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -37,22 +39,16 @@ kind: ClusterRole
 metadata:
   name: chaosmeta-platform
 rules:
-  - apiGroups: ["apps", "batch", "", "extensions", "networking.k8s.io", "rbac.authorization.k8s.io", "apiextensions.k8s.io"]
-    resources: ["nodes", "pods", "services", "deployments", "jobs", "ingresses", "configmaps",
-                "pods/exec", "replicasets", "statefulsets", "namespaces", "pods/log", "events", "serviceaccounts",
-                "secrets", "clusterroles", "clusterrolebindings", "customresourcedefinitions", "pods/ephemeralcontainers",
-                "daemonsets"]
-    verbs: ["*"]
-  - apiGroups: ["inject.chaosmeta.io"]
+  - apiGroups: ["*"]
+    resources: ["*"]
+    verbs:
+    - get
+    - list
+    - watch
+  - apiGroups: ["argoproj.io"]
     resources: ["*"]
     verbs: ["*"]
-  - apiGroups: [""]
-    resources: ["events"]
-    verbs:
-      - create
-      - update
-      - patch
-  - apiGroups: ["monitoring.coreos.com"]
+  - apiGroups: ["chaosmeta.io"]
     resources: ["*"]
     verbs: ["*"]
   - apiGroups: ["coordination.k8s.io"]
@@ -168,7 +164,7 @@ spec:
       containers:
         - name: chaosmeta-platform
           imagePullPolicy: Always
-          image:  registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-platform:v0.0.2
+          image:  registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-platform:v0.0.3
           resources:
             requests:
               cpu: "1"
@@ -179,6 +175,11 @@ spec:
           volumeMounts:
             - name: chaosmeta-config
               mountPath: /home/admin/conf
+        - name: chaosmeta-platform-frontend
+          imagePullPolicy: Always
+          image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-platform-frontend:v0.0.1
+          ports:
+            - containerPort: 8000
       volumes:
         - name: chaosmeta-config
           configMap:
@@ -193,31 +194,14 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: chaosmeta-platform-mysql
-  name: chaosmeta-platform-mysql
-  namespace: chaosmeta-platform
-spec:
-  ports:
-    - port: 3306
-      protocol: TCP
-      targetPort: 3306
-  selector:
-    app: chaosmeta-platform-mysql
-  sessionAffinity: None
-  type: ClusterIP
----
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
     app: chaosmeta-platform
   name: chaosmeta-platform
   namespace: chaosmeta-platform
 spec:
   ports:
     - name: http
-      port: 7001
-      targetPort: 7001
+      port: 8000
+      targetPort: 8000
   selector:
     app: chaosmeta-platform
   sessionAffinity: None

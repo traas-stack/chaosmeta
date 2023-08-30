@@ -28,6 +28,7 @@ import (
 type (
 	ExperimentStatus int
 	ScheduleType     string
+	TimeType         string
 )
 
 const (
@@ -39,6 +40,11 @@ const (
 	ManualMode = ScheduleType("manual") //手动模式
 	OnceMode   = ScheduleType("once")   //自动模式
 	CronMode   = ScheduleType("cron")
+
+	RecentDayType = TimeType("recent")
+	RangeTimeType = TimeType("range")
+
+	TimeLayout = "2006-01-02 15:04:05"
 )
 
 type Experiment struct {
@@ -142,10 +148,14 @@ func ListExperimentsByScheduleTypeAndStatus(scheduleType ScheduleType, experimen
 	experimentQuery.OrderBy("create_time")
 	_, err = experimentQuery.GetOamQuerySeter().All(&experiments)
 
+	if err == orm.ErrNoRows {
+		return 0, nil, nil
+	}
+
 	return totalCount, experiments, err
 }
 
-func SearchExperiments(lastInstance string, namespaceId int, creator int, name string, scheduleType string, timeType string, recentDays int, startTime, endTime time.Time, orderBy string, page, pageSize int) (int64, []*Experiment, error) {
+func SearchExperiments(lastInstance string, namespaceId int, creator int, name string, scheduleType string, timeType string, timeSearchField string, recentDays int, startTime, endTime time.Time, orderBy string, page, pageSize int) (int64, []*Experiment, error) {
 	o := models.GetORM()
 	experiments := []*Experiment{}
 	qs := o.QueryTable(new(Experiment).TableName())
@@ -170,15 +180,19 @@ func SearchExperiments(lastInstance string, namespaceId int, creator int, name s
 	if name != "" {
 		experimentQuery.Filter("name", models.CONTAINS, true, name)
 	}
-	if timeType != "" {
+	if timeSearchField == "" {
+		timeSearchField = "create_time"
+	}
+	if timeType == string(RecentDayType) {
 		if recentDays > 0 {
-			start := time.Now().Add(time.Duration(-recentDays*24) * time.Hour).Format("2006-01-02 15:04:05")
-			experimentQuery.Filter("create_time", models.GTE, false, start)
+			start := time.Now().Add(time.Duration(-recentDays*24) * time.Hour).Format(TimeLayout)
+			experimentQuery.Filter(timeSearchField, models.GTE, false, start)
 		}
-
+	}
+	if timeType == string(RangeTimeType) {
 		if !startTime.IsZero() && !endTime.IsZero() {
-			experimentQuery.Filter("create_time", models.GTE, false, startTime)
-			experimentQuery.Filter("create_time", models.LTE, false, endTime)
+			experimentQuery.Filter(timeSearchField, models.GTE, false, startTime.Format(TimeLayout))
+			experimentQuery.Filter(timeSearchField, models.LTE, false, endTime.Format(TimeLayout))
 		}
 	}
 
@@ -188,11 +202,11 @@ func SearchExperiments(lastInstance string, namespaceId int, creator int, name s
 		return 0, nil, err
 	}
 
-	orderByList := []string{"uuid"}
-	if len(orderBy) > 0 {
-		orderByList = append(orderByList, orderBy)
+	orderByStr := "uuid"
+	if orderBy != "" {
+		orderByStr = orderBy
 	}
-	experimentQuery.OrderBy(orderByList...)
+	experimentQuery.OrderBy(orderByStr)
 	if err := experimentQuery.Limit(pageSize, (page-1)*pageSize); err != nil {
 		return 0, nil, err
 	}
@@ -214,4 +228,28 @@ func acquireLock(o orm.Ormer, uuid string) bool {
 		return false
 	}
 	return affected > 0
+}
+
+func CountExperiments(namespaceID int, status int, recentDays int) (int64, error) {
+	o := models.GetORM()
+	qs := o.QueryTable(new(Experiment).TableName())
+
+	if namespaceID != 0 {
+		qs = qs.Filter("namespace_id", namespaceID)
+	}
+
+	if status >= 0 {
+		qs = qs.Filter("status", status)
+	}
+
+	if recentDays > 0 {
+		start := time.Now().Add(time.Duration(-recentDays*24) * time.Hour).Format(TimeLayout)
+		qs = qs.Filter("create_time__gte", start)
+	}
+
+	total, err := qs.Count()
+	if err == orm.ErrNoRows {
+		return 0, nil
+	}
+	return total, err
 }

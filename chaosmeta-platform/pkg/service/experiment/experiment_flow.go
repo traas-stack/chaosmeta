@@ -17,6 +17,7 @@
 package experiment
 
 import (
+	"chaosmeta-platform/config"
 	"chaosmeta-platform/pkg/models/inject/basic"
 	"chaosmeta-platform/pkg/service/experiment_instance"
 	"chaosmeta-platform/pkg/service/kubernetes"
@@ -39,9 +40,7 @@ var (
 )
 
 const (
-	ArgoWorkflowNamespace = "default"
-	WorkflowNamespace     = "chaosmeta-inject"
-	WorkflowMainStep      = "main"
+	WorkflowMainStep = "main"
 )
 
 var Manifest = `
@@ -49,72 +48,6 @@ var Manifest = `
   path: /spec/targetPhase
   value: recover
 `
-var workflow = v1alpha1.Workflow{
-	TypeMeta: metav1.TypeMeta{
-		APIVersion: "argoproj.io/v1alpha1",
-		Kind:       "Workflow",
-	},
-	ObjectMeta: metav1.ObjectMeta{
-		Name:      "",
-		Namespace: ArgoWorkflowNamespace,
-	},
-	Spec: v1alpha1.WorkflowSpec{
-		ServiceAccountName: kubernetes.ServiceAccount,
-		Entrypoint:         WorkflowMainStep,
-		Templates: []v1alpha1.Template{
-			{
-				Name: string(ExperimentInject),
-				Inputs: v1alpha1.Inputs{
-					Parameters: []v1alpha1.Parameter{
-						{
-							Name: "experiment",
-						},
-					},
-				},
-				Resource: &v1alpha1.ResourceTemplate{
-					Action:           "create",
-					FailureCondition: "status.status == failed",
-					SuccessCondition: "status.phase == recover,status.status == success",
-					Manifest:         "{{inputs.parameters.experiment}}",
-				},
-			},
-			{
-				Name: string(RawSuspend),
-				Inputs: v1alpha1.Inputs{
-					Parameters: []v1alpha1.Parameter{
-						{
-							Name: "time",
-						},
-					},
-				},
-				Suspend: &v1alpha1.SuspendTemplate{
-					Duration: "{{inputs.parameters.time}}",
-				},
-			},
-			{
-				Name: "experiment-recover",
-				Inputs: v1alpha1.Inputs{
-					Parameters: []v1alpha1.Parameter{
-						{
-							Name: "experiment",
-						},
-					},
-				},
-				Resource: &v1alpha1.ResourceTemplate{
-					Action:           "patch",
-					FailureCondition: "status.status == failed",
-					SuccessCondition: "status.phase == recover,status.status == success",
-					MergeStrategy:    "json",
-					Flags: []string{
-						"experiments.chaosmeta.io",
-						"{{inputs.parameters.experiment}}",
-					},
-					Manifest: Manifest,
-				},
-			},
-		},
-	},
-}
 
 type ExecType string
 
@@ -130,7 +63,72 @@ func getWorFlowName(experimentInstanceId string) string {
 }
 
 func GetWorkflowStruct(experimentInstanceId string, nodes []*experiment_instance.WorkflowNodesDetail) *v1alpha1.Workflow {
-	newWorkflow := workflow
+	var newWorkflow = v1alpha1.Workflow{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "argoproj.io/v1alpha1",
+			Kind:       "Workflow",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "",
+			Namespace: config.DefaultRunOptIns.ArgoWorkflowNamespace,
+		},
+		Spec: v1alpha1.WorkflowSpec{
+			ServiceAccountName: kubernetes.ServiceAccount,
+			Entrypoint:         WorkflowMainStep,
+			Templates: []v1alpha1.Template{
+				{
+					Name: string(ExperimentInject),
+					Inputs: v1alpha1.Inputs{
+						Parameters: []v1alpha1.Parameter{
+							{
+								Name: "experiment",
+							},
+						},
+					},
+					Resource: &v1alpha1.ResourceTemplate{
+						Action:           "create",
+						FailureCondition: "status.status == failed",
+						SuccessCondition: "status.phase == recover,status.status == success",
+						Manifest:         "{{inputs.parameters.experiment}}",
+					},
+				},
+				{
+					Name: string(RawSuspend),
+					Inputs: v1alpha1.Inputs{
+						Parameters: []v1alpha1.Parameter{
+							{
+								Name: "time",
+							},
+						},
+					},
+					Suspend: &v1alpha1.SuspendTemplate{
+						Duration: "{{inputs.parameters.time}}",
+					},
+				},
+				{
+					Name: "experiment-recover",
+					Inputs: v1alpha1.Inputs{
+						Parameters: []v1alpha1.Parameter{
+							{
+								Name: "experiment",
+							},
+						},
+					},
+					Resource: &v1alpha1.ResourceTemplate{
+						Action:           "patch",
+						FailureCondition: "status.status == failed",
+						SuccessCondition: "status.phase == recover,status.status == success",
+						MergeStrategy:    "json",
+						Flags: []string{
+							"experiments.chaosmeta.io",
+							"{{inputs.parameters.experiment}}",
+						},
+						Manifest: Manifest,
+					},
+				},
+			},
+		},
+	}
 	newWorkflow.Name = getWorFlowName(experimentInstanceId)
 	newWorkflow.Spec.Templates = append(newWorkflow.Spec.Templates, v1alpha1.Template{
 		Name:  WorkflowMainStep,
@@ -199,7 +197,7 @@ func getInjectStep(experimentInstanceUUID string, node *experiment_instance.Work
 
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      injectStep.Name,
-			Namespace: WorkflowNamespace,
+			Namespace: config.DefaultRunOptIns.WorkflowNamespace,
 		},
 
 		Spec: ExperimentSpec{
@@ -266,6 +264,15 @@ func getInjectStep(experimentInstanceUUID string, node *experiment_instance.Work
 	return &injectStep
 }
 
+func getFlowInjectStepName(flowInjectName, experimentInstanceUUID, nodeID string) string {
+	return fmt.Sprintf("inject-flow-%s-%s-%s", flowInjectName, experimentInstanceUUID, nodeID)
+}
+
+func getFlowInjectStep(experimentInstanceUUID string, node *experiment_instance.WorkflowNodesDetail, phaseType PhaseType) *v1alpha1.WorkflowStep {
+
+	return nil
+}
+
 func convertToSteps(experimentInstanceId string, nodes []*experiment_instance.WorkflowNodesDetail) []v1alpha1.ParallelSteps {
 	maxRow, maxColumn := getMaxRowAndColumn(nodes)
 	steps := make([]v1alpha1.ParallelSteps, maxRow+1)
@@ -315,7 +322,7 @@ func getExperimentInstanceIdFromWorkflowName(workflowName string) (string, error
 }
 
 func getExperimentUUIDAndNodeIDFromStepName(name string) (string, string, error) {
-	log.Error("ExperimentUUIDAndNodeIDFromStepName:", name)
+	log.Info("ExperimentUUIDAndNodeIDFromStepName:", name)
 	var reg *regexp.Regexp
 	var match []string
 

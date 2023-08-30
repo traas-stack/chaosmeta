@@ -47,3 +47,9 @@ func ParseDataSelectPathParameter(c *beego.Controller) *DataSelectQuery {
 	filterQuery := parseFilterPathParameter(c)
 	return NewDataSelectQuery(paginationQuery, sortQuery, filterQuery)
 }
+
+func ParseDataSelectPathParameterTest() *DataSelectQuery {
+	itemsPerPage := 10
+	page := 1
+	return NewDataSelectQuery(NewPaginationQuery(itemsPerPage, int(page-1)), NewSortQuery(nil), NewFilterQuery(nil))
+}

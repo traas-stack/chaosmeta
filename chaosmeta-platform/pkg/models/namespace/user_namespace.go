@@ -18,6 +18,8 @@ package namespace
 
 import (
 	"chaosmeta-platform/pkg/models/common"
+	"chaosmeta-platform/pkg/models/user"
+	"chaosmeta-platform/util/log"
 	"context"
 	"errors"
 	"fmt"
@@ -82,19 +84,24 @@ type UserNamespaceData struct {
 }
 
 type UserDataNamespace struct {
-	UserId     int        `json:"userId"`
+	UserId     int        `json:"user_id"`
+	UserName   string     `json:"user_name"`
 	Permission Permission `json:"permission"`
 	CreateTime string     `json:"create_time"`
 	UpdateTime string     `json:"update_time"`
 }
 
-func GetNamespacesFromUser(ctx context.Context, userId int, permission int, orderBy string, page, pageSize int) (int64, []UserNamespaceData, error) {
+func GetNamespacesFromUser(ctx context.Context, userIdList []int, permission int, orderBy string, page, pageSize int) (int64, []UserNamespaceData, error) {
 	u := UserNamespace{}
 	var (
 		namespaceDataList []UserNamespaceData
 		userNamespaces    []*UserNamespace
 	)
-	qs := models.GetORM().QueryTable(u.TableName()).Filter("user_id", userId)
+	qs := models.GetORM().QueryTable(u.TableName())
+	if len(userIdList) > 0 {
+		qs = qs.Filter("user_id__in", userIdList)
+	}
+
 	if permission >= 0 {
 		qs = qs.Filter("permission", permission)
 	}
@@ -129,7 +136,7 @@ func GetUsersFromNamespace(ctx context.Context, namespaceId int) (int64, []UserD
 		userNamespaces []*UserNamespace
 		userDataList   []UserDataNamespace
 	)
-	qs := models.GetORM().QueryTable(u.TableName()).Filter("namespace_id", namespaceId).OrderBy("id")
+	qs := models.GetORM().QueryTable(u.TableName()).Filter("namespace_id", namespaceId).Filter("permission", 1).OrderBy("id")
 
 	totalCount, err := qs.Count()
 	if err != nil {
@@ -140,8 +147,13 @@ func GetUsersFromNamespace(ctx context.Context, namespaceId int) (int64, []UserD
 		return 0, nil, err
 	}
 	for _, userNamespace := range userNamespaces {
+		userGet := user.User{ID: userNamespace.UserId}
+		if err := user.GetUserById(context.Background(), &userGet); err != nil {
+			log.Error(err)
+		}
 		userDataList = append(userDataList, UserDataNamespace{
 			UserId:     userNamespace.UserId,
+			UserName:   userGet.Email,
 			Permission: userNamespace.Permission,
 			CreateTime: userNamespace.CreateTime.Format(TimeLayout),
 			UpdateTime: userNamespace.UpdateTime.Format(TimeLayout),

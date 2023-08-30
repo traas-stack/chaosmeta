@@ -52,7 +52,7 @@ func Init() {
 		log.Error(err)
 		return
 	}
-	_, err = us.Create(ctx, "admin", "admin", string(AdminRole))
+	_, err = us.Create(ctx, "admin", "21232f297a57a5a743894a0e4a801fc3", string(AdminRole))
 	if err != nil {
 		log.Error(err)
 	}
@@ -178,7 +178,7 @@ type UserNamespaceData struct {
 
 func (a *UserService) getUserNamespaceList(ctx context.Context, userId int, permission int, orderBy string, page, pageSize int) (int64, []UserNamespaceData, error) {
 	var userNamespaceDatas []UserNamespaceData
-	total, namespaces, err := namespace2.GetNamespacesFromUser(ctx, userId, permission, orderBy, page, pageSize)
+	total, namespaces, err := namespace2.GetNamespacesFromUser(ctx, []int{userId}, permission, orderBy, page, pageSize)
 	if err != nil {
 		return 0, nil, err
 	}

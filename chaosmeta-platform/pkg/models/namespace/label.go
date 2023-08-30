@@ -20,6 +20,7 @@ import (
 	"chaosmeta-platform/pkg/models/common"
 	"context"
 	"errors"
+	"github.com/beego/beego/v2/client/orm"
 )
 
 const TimeLayout = "2006-01-02 15:04:05"
@@ -107,5 +108,8 @@ func QueryLabels(ctx context.Context, nameSpaceId int, name, creator string, ord
 	}
 
 	_, err = labelQuery.GetOamQuerySeter().All(labelList)
+	if err == orm.ErrNoRows {
+		return 0, nil, nil
+	}
 	return totalCount, *labelList, err
 }

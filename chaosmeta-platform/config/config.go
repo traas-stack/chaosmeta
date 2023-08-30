@@ -44,8 +44,10 @@ func (r RunMode) Int() int {
 }
 
 type Config struct {
-	SecretKey string `yaml:"secretkey"`
-	DB        struct {
+	SecretKey             string `yaml:"secretkey"`
+	ArgoWorkflowNamespace string `yaml:"argoWorkflowNamespace"`
+	WorkflowNamespace     string `yaml:"workflowNamespace"`
+	DB                    struct {
 		Name    string `yaml:"name"`
 		User    string `yaml:"user"`
 		Passwd  string `yaml:"passwd"`
@@ -83,6 +85,12 @@ func InitConfig() {
 	DefaultRunOptIns = &Config{}
 	if err := viper.Unmarshal(DefaultRunOptIns); err != nil {
 		log.Panic(err)
+	}
+	if DefaultRunOptIns.ArgoWorkflowNamespace == "" {
+		DefaultRunOptIns.ArgoWorkflowNamespace = "default"
+	}
+	if DefaultRunOptIns.WorkflowNamespace == "" {
+		DefaultRunOptIns.WorkflowNamespace = "chaosmeta-inject"
 	}
 }
 

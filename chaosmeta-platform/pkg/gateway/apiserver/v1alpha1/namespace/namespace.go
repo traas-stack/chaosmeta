@@ -19,10 +19,11 @@ package namespace
 import (
 	"chaosmeta-platform/pkg/gateway/apiserver/v1alpha1"
 	namespace2 "chaosmeta-platform/pkg/models/namespace"
-	"chaosmeta-platform/pkg/models/user"
 	"chaosmeta-platform/pkg/service/namespace"
+	userService "chaosmeta-platform/pkg/service/user"
 	"context"
 	"encoding/json"
+	"fmt"
 	beego "github.com/beego/beego/v2/server/web"
 )
 
@@ -67,6 +68,24 @@ func (c *NamespaceController) Get() {
 	c.Success(&c.Controller, getNamespaceResponse)
 }
 
+func (c *NamespaceController) GetPermission() {
+	namespaceId, err := c.GetInt(":id")
+	if err != nil {
+		c.Error(&c.Controller, err)
+		return
+	}
+	username := c.Ctx.Input.GetData("userName").(string)
+	userService := &userService.UserService{}
+	userGet, err := userService.Get(context.Background(), username)
+	if err != nil {
+		c.Error(&c.Controller, fmt.Errorf("unable to identify user"))
+		return
+	}
+	namespace := &namespace.NamespaceService{}
+	permission := namespace.GetUserPermission(context.Background(), namespaceId, userGet.ID)
+	c.Success(&c.Controller, permission)
+}
+
 func (c *NamespaceController) GetList() {
 	sort := c.GetString("sort")
 	name := c.GetString("name")
@@ -93,43 +112,52 @@ func (c *NamespaceController) QueryList() {
 
 	page, _ := c.GetInt("page", 1)
 	pageSize, _ := c.GetInt("page_size", 10)
-	sort := c.GetString("sort")
 
-	userGet := user.User{Email: username}
-
-	if err := user.GetUser(context.Background(), &userGet); err != nil {
-		c.Error(&c.Controller, err)
+	userService := &userService.UserService{}
+	userGet, errGet := userService.Get(context.Background(), username)
+	if errGet != nil {
+		c.Error(&c.Controller, errGet)
 		return
 	}
 
-	namespaceService := &namespace.NamespaceService{}
+	queryUserId := 0
+	if userNameQuery != "" {
+		userGet, errGet := userService.Get(context.Background(), userNameQuery)
+		if errGet != nil {
+			c.Error(&c.Controller, fmt.Errorf("no user"))
+			return
+		}
+		queryUserId = userGet.ID
+	}
+
 	var (
 		total         int64
 		namespaceList []namespace.NamespaceData
 		err           error
 	)
 
+	namespaceService := &namespace.NamespaceService{}
 	switch namespaceClass {
 	case "read":
-		total, namespaceList, err = namespaceService.GroupNamespacesByUsername(context.Background(), userGet.ID, nameSpaceName, userNameQuery, 0, sort, page, pageSize)
+		total, namespaceList, err = namespaceService.QueryNamespace(context.Background(), userGet.ID, queryUserId, nameSpaceName, 0, page, pageSize)
 		if err != nil {
 			c.Error(&c.Controller, err)
 			return
 		}
 	case "write":
-		total, namespaceList, err = namespaceService.GroupNamespacesByUsername(context.Background(), userGet.ID, nameSpaceName, userNameQuery, 1, sort, page, pageSize)
+		total, namespaceList, err = namespaceService.QueryNamespace(context.Background(), userGet.ID, queryUserId, nameSpaceName, 1, page, pageSize)
+		if err != nil {
+			c.Error(&c.Controller, err)
+			return
+		}
+	case "relevant":
+		total, namespaceList, err = namespaceService.QueryNamespace(context.Background(), userGet.ID, queryUserId, nameSpaceName, -1, page, pageSize)
 		if err != nil {
 			c.Error(&c.Controller, err)
 			return
 		}
 	case "all":
-		total, namespaceList, err = namespaceService.GroupAllNamespaces(context.Background(), nameSpaceName, userNameQuery, sort, page, pageSize)
-		if err != nil {
-			c.Error(&c.Controller, err)
-			return
-		}
-	case "not":
-		total, namespaceList, err = namespaceService.GroupNamespacesUserNotIn(context.Background(), userGet.ID, nameSpaceName, userNameQuery, sort, page, pageSize)
+		total, namespaceList, err = namespaceService.GroupAllNamespaces(context.Background(), userGet.ID, queryUserId, nameSpaceName, page, pageSize)
 		if err != nil {
 			c.Error(&c.Controller, err)
 			return

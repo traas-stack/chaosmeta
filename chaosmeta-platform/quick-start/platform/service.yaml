@@ -25,8 +25,8 @@ metadata:
 spec:
   ports:
     - name: http
-      port: 7001
-      targetPort: 7001
+      port: 81
+      targetPort: 8001
   selector:
     app: chaosmeta-platform
   sessionAffinity: None

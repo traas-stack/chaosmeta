@@ -42,6 +42,9 @@ func GetClusterIDsByNamespaceID(namespaceID int) ([]int, error) {
 	clusterNamespace := ClusterNamespace{}
 	var clusterIDs orm.ParamsList
 	_, err := models.GetORM().QueryTable(clusterNamespace.TableName()).Filter("namespace_id", namespaceID).ValuesFlat(&clusterIDs, "cluster_id")
+	if err == orm.ErrNoRows {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}

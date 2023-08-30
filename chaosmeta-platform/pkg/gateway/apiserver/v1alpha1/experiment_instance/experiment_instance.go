@@ -32,11 +32,14 @@ type ExperimentInstanceController struct {
 
 func (c *ExperimentInstanceController) GetExperimentInstances() {
 	lastInstance := c.GetString("last_instance")
-	scheduleType := c.GetString("schedule_type")
+	//scheduleType := c.GetString("schedule_type")
 	namespaceId, _ := c.GetInt("namespace_id")
+	experimentUUID := c.GetString("experiment_uuid")
 	name := c.GetString("name")
-	creator, _ := c.GetInt("creator", 0)
+	creatorName := c.GetString("creator_name")
 	timeType := c.GetString("time_type")
+	timeSearchField := c.GetString("time_search_field")
+	status := c.GetString("status")
 	recentDays, _ := c.GetInt("recent_days", 0)
 	startTime, _ := time.Parse(experiment.TimeLayout, c.GetString("start_time"))
 	endTime, _ := time.Parse(experiment.TimeLayout, c.GetString("end_time"))
@@ -44,7 +47,7 @@ func (c *ExperimentInstanceController) GetExperimentInstances() {
 	page, _ := c.GetInt("page", 1)
 	pageSize, _ := c.GetInt("page_size", 10)
 	es := experiment_instance.ExperimentInstanceService{}
-	total, experiments, err := es.SearchExperimentInstances(lastInstance, namespaceId, creator, name, scheduleType, timeType, recentDays, startTime, endTime, orderBy, page, pageSize)
+	total, experiments, err := es.SearchExperimentInstances(lastInstance, experimentUUID, namespaceId, creatorName, name, timeType, timeSearchField, status, recentDays, startTime, endTime, orderBy, page, pageSize)
 	if err != nil {
 		c.Error(&c.Controller, err)
 		return

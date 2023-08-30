@@ -24,53 +24,39 @@ import (
 	gyaml "github.com/ghodss/yaml"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	yamlutil "k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
-	"time"
 )
 
-type ChaosmetaInterface interface {
-	Get(ctx context.Context, namespace, name string) (result *ExperimentInjectStruct, err error)
-	List(ctx context.Context) (*ExperimentInjectStructList, error)
-	Create(ctx context.Context, chaosmeta *ExperimentInjectStruct) (*ExperimentInjectStruct, error)
-	Update(ctx context.Context, chaosmeta *ExperimentInjectStruct) (*ExperimentInjectStruct, error)
+type ChaosmetaFlowInjectInterface interface {
+	Get(ctx context.Context, namespace, name string) (result *LoadTest, err error)
+	List(ctx context.Context) (*LoadTestList, error)
+	Create(ctx context.Context, ChaosmetaFlowInject *LoadTest) (*LoadTest, error)
+	Update(ctx context.Context, ChaosmetaFlowInject *LoadTest) (*LoadTest, error)
 	Delete(ctx context.Context, name string) error
 	Patch(ctx context.Context, name string, pt types.PatchType, data []byte) error
 	DeleteExpiredList(ctx context.Context) error
 }
 
-type ChaosmetaService struct {
+type ChaosmetaFlowInjectService struct {
 	Config *rest.Config
 	Client dynamic.Interface
 }
 
-var gvr = schema.GroupVersionResource{
-	Group:    "chaosmeta.io",
-	Version:  "v1alpha1",
-	Resource: "experiments",
-}
-
-var gvk = schema.GroupVersionKind{
-	Group:   "chaosmeta.io",
-	Version: "v1alpha1",
-	Kind:    "Experiment",
-}
-
-func NewChaosmetaService(config *rest.Config) ChaosmetaInterface {
+func NewChaosmetaFlowInjectService(config *rest.Config) ChaosmetaFlowInjectInterface {
 	client, err := dynamic.NewForConfig(config)
 	if err != nil {
 		return nil
 	}
 
-	return &ChaosmetaService{
+	return &ChaosmetaFlowInjectService{
 		Config: config, Client: client,
 	}
 }
 
-func (c *ChaosmetaService) Get(ctx context.Context, namespace, name string) (result *ExperimentInjectStruct, err error) {
+func (c *ChaosmetaFlowInjectService) Get(ctx context.Context, namespace, name string) (result *LoadTest, err error) {
 	cb, err := c.Client.Resource(gvr).Namespace(namespace).Get(ctx, name, v1.GetOptions{})
 	if err != nil {
 		return nil, err
@@ -81,7 +67,7 @@ func (c *ChaosmetaService) Get(ctx context.Context, namespace, name string) (res
 		return nil, err
 	}
 
-	var experiment ExperimentInjectStruct
+	var experiment LoadTest
 	if err := json.Unmarshal(data, &experiment); err != nil {
 		return nil, err
 	}
@@ -89,7 +75,7 @@ func (c *ChaosmetaService) Get(ctx context.Context, namespace, name string) (res
 	return &experiment, nil
 }
 
-func (c *ChaosmetaService) List(ctx context.Context) (*ExperimentInjectStructList, error) {
+func (c *ChaosmetaFlowInjectService) List(ctx context.Context) (*LoadTestList, error) {
 	list, err := c.Client.Resource(gvr).List(ctx, v1.ListOptions{})
 	if err != nil {
 		return nil, err
@@ -100,7 +86,7 @@ func (c *ChaosmetaService) List(ctx context.Context) (*ExperimentInjectStructLis
 		return nil, err
 	}
 
-	var exList ExperimentInjectStructList
+	var exList LoadTestList
 	if err := json.Unmarshal(data, &exList); err != nil {
 		return nil, err
 	}
@@ -108,8 +94,8 @@ func (c *ChaosmetaService) List(ctx context.Context) (*ExperimentInjectStructLis
 	return &exList, nil
 }
 
-func (c *ChaosmetaService) Create(ctx context.Context, chaosmeta *ExperimentInjectStruct) (*ExperimentInjectStruct, error) {
-	d, err := json.Marshal(chaosmeta)
+func (c *ChaosmetaFlowInjectService) Create(ctx context.Context, ChaosmetaFlowInject *LoadTest) (*LoadTest, error) {
+	d, err := json.Marshal(ChaosmetaFlowInject)
 	if err != nil {
 		return nil, err
 	}
@@ -133,20 +119,20 @@ func (c *ChaosmetaService) Create(ctx context.Context, chaosmeta *ExperimentInje
 	if err != nil {
 		return nil, err
 	}
-	var experiment ExperimentInjectStruct
+	var experiment LoadTest
 	if err := json.Unmarshal(data, &experiment); err != nil {
 		return nil, err
 	}
-	if len(experiment.Status.Status) > 0 {
-		if experiment.Status.Status == FailedStatusType {
-			return nil, errors.New("chaosmeta failed to execute")
+	if len(experiment.Status) > 0 {
+		if experiment.Status == FailedStatus {
+			return nil, errors.New("ChaosmetaFlowInject failed to execute")
 		}
 	}
 	return &experiment, nil
 }
 
-func (c *ChaosmetaService) Update(ctx context.Context, chaosmeta *ExperimentInjectStruct) (*ExperimentInjectStruct, error) {
-	d, err := json.Marshal(chaosmeta)
+func (c *ChaosmetaFlowInjectService) Update(ctx context.Context, ChaosmetaFlowInject *LoadTest) (*LoadTest, error) {
+	d, err := json.Marshal(ChaosmetaFlowInject)
 	if err != nil {
 		return nil, err
 	}
@@ -161,14 +147,12 @@ func (c *ChaosmetaService) Update(ctx context.Context, chaosmeta *ExperimentInje
 		return nil, err
 	}
 
-	utd, err := c.Client.Resource(gvr).Namespace(obj.GetNamespace()).Get(ctx, obj.GetName(), v1.GetOptions{})
+	utd, err := c.Client.Resource(gvr).Get(ctx, obj.GetName(), v1.GetOptions{})
 	if err != nil {
-		log.Error(err)
 		return nil, err
 	}
-
 	obj.SetResourceVersion(utd.GetResourceVersion())
-	utd, err = c.Client.Resource(gvr).Namespace(obj.GetNamespace()).Update(ctx, obj, v1.UpdateOptions{})
+	utd, err = c.Client.Resource(gvr).Update(ctx, obj, v1.UpdateOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -177,41 +161,35 @@ func (c *ChaosmetaService) Update(ctx context.Context, chaosmeta *ExperimentInje
 	if err != nil {
 		return nil, err
 	}
-	var experiment ExperimentInjectStruct
+	var experiment LoadTest
 	if err := json.Unmarshal(data, &experiment); err != nil {
 		return nil, err
 	}
 	return &experiment, nil
 }
 
-func (c *ChaosmetaService) Delete(ctx context.Context, name string) error {
+func (c *ChaosmetaFlowInjectService) Delete(ctx context.Context, name string) error {
 	return c.Client.Resource(gvr).Delete(ctx, name, v1.DeleteOptions{})
 }
 
-func (c *ChaosmetaService) Patch(ctx context.Context, name string, pt types.PatchType, data []byte) error {
+func (c *ChaosmetaFlowInjectService) Patch(ctx context.Context, name string, pt types.PatchType, data []byte) error {
 	_, err := c.Client.Resource(gvr).Patch(ctx, name, pt, data, v1.PatchOptions{})
 	return err
 }
 
-func (c *ChaosmetaService) DeleteExpiredList(ctx context.Context) error {
-	chaosmetaList, err := c.List(ctx)
+func (c *ChaosmetaFlowInjectService) DeleteExpiredList(ctx context.Context) error {
+	ChaosmetaFlowInjectList, err := c.List(ctx)
 	if err != nil {
 		return err
 	}
-	for _, experiment := range chaosmetaList.Items {
-		expirationTime := time.Now().AddDate(0, 0, -1)
-		experimentCreateTime, err := time.Parse(TimeLayout, experiment.Status.CreateTime)
-		if err != nil {
-			return err
-		}
-
-		if experiment.Status.Status == SuccessStatusType && experiment.Status.CreateTime != "" && experimentCreateTime.Before(expirationTime) {
+	for _, experiment := range ChaosmetaFlowInjectList.Items {
+		if experiment.Status == SuccessStatus {
 			err := c.Delete(ctx, experiment.Name)
 			if err != nil {
-				log.Errorf("failed to delete chaosmeta experiment %s: %v", experiment.Name, err.Error())
+				log.Errorf("failed to delete ChaosmetaFlowInject experiment %s: %v", experiment.Name, err.Error())
 				return err
 			} else {
-				log.Errorf("chaosmeta experiment %s deleted", experiment.Name)
+				log.Errorf("ChaosmetaFlowInject experiment %s deleted", experiment.Name)
 			}
 		}
 	}

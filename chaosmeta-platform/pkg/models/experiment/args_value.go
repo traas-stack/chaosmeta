@@ -87,6 +87,9 @@ func GetArgsValuesByWorkflowNodeUUID(workflowNodeUUID string) ([]*ArgsValue, err
 	o := models.GetORM()
 	var argsValues []*ArgsValue
 	_, err := o.QueryTable(new(ArgsValue).TableName()).Filter("workflow_node_uuid", workflowNodeUUID).OrderBy("-create_time").All(&argsValues)
+	if err == orm.ErrNoRows {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}

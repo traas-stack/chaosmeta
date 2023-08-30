@@ -18,10 +18,13 @@ package experiment
 
 import (
 	"chaosmeta-platform/pkg/gateway/apiserver/v1alpha1"
+	experimentModel "chaosmeta-platform/pkg/models/experiment"
 	"chaosmeta-platform/pkg/service/experiment"
 	"chaosmeta-platform/pkg/service/user"
+	"chaosmeta-platform/util/log"
 	"encoding/json"
 	"errors"
+	"fmt"
 	beego "github.com/beego/beego/v2/server/web"
 	"time"
 )
@@ -36,8 +39,9 @@ func (c *ExperimentController) GetExperimentList() {
 	scheduleType := c.GetString("schedule_type")
 	namespaceID, _ := c.GetInt("namespace_id")
 	name := c.GetString("name")
-	creator, _ := c.GetInt("creator", 0)
+	creator := c.GetString("creator")
 	timeType := c.GetString("time_type")
+	timeSearchField := c.GetString("time_search_field")
 	recentDays, _ := c.GetInt("recent_days", 0)
 	startTime, _ := time.Parse(experiment.TimeLayout, c.GetString("start_time"))
 	endTime, _ := time.Parse(experiment.TimeLayout, c.GetString("end_time"))
@@ -46,7 +50,7 @@ func (c *ExperimentController) GetExperimentList() {
 	pageSize, _ := c.GetInt("page_size", 10)
 	experimentService := experiment.ExperimentService{}
 
-	total, experimentList, err := experimentService.SearchExperiments(lastInstanceStatus, namespaceID, creator, name, scheduleType, timeType, recentDays, startTime, endTime, orderBy, page, pageSize)
+	total, experimentList, err := experimentService.SearchExperiments(lastInstanceStatus, namespaceID, creator, name, scheduleType, timeType, timeSearchField, recentDays, startTime, endTime, orderBy, page, pageSize)
 	if err != nil {
 		c.Error(&c.Controller, err)
 		return
@@ -85,7 +89,7 @@ func (c *ExperimentController) CreateExperiment() {
 		return
 	}
 
-	var createExperimentRequest experiment.Experiment
+	var createExperimentRequest experiment.ExperimentCreate
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &createExperimentRequest); err != nil {
 		c.Error(&c.Controller, err)
 		return
@@ -106,7 +110,7 @@ func (c *ExperimentController) UpdateExperiment() {
 	uuid := c.Ctx.Input.Param(":uuid")
 	experimentService := experiment.ExperimentService{}
 
-	var updateExperimentRequest experiment.Experiment
+	var updateExperimentRequest experiment.ExperimentCreate
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &updateExperimentRequest); err != nil {
 		c.Error(&c.Controller, err)
 		return
@@ -121,7 +125,25 @@ func (c *ExperimentController) UpdateExperiment() {
 
 func (c *ExperimentController) StartExperiment() {
 	uuid := c.Ctx.Input.Param(":uuid")
-	if err := experiment.StartExperiment(uuid); err != nil {
+	username := c.Ctx.Input.GetData("userName").(string)
+	experimentService := experiment.ExperimentService{}
+	experimentGet, err := experimentService.GetExperimentByUUID(uuid)
+	if err != nil {
+		c.Error(&c.Controller, err)
+		return
+	}
+	if experimentGet.ScheduleType != string(experimentModel.ManualMode) {
+		c.Error(&c.Controller, fmt.Errorf("manual mode is required to perform the walkthrough"))
+		return
+	}
+
+	if err := experimentService.UpdateExperimentStatusAndLastInstance(uuid, int(experimentModel.ToBeExecuted), time.Now().Format(experimentModel.TimeLayout)); err != nil {
+		log.Error(err)
+	}
+	if err := experiment.StartExperiment(uuid, username); err != nil {
+		if err := experimentService.UpdateExperimentStatusAndLastInstance(uuid, int(experimentModel.Executed), time.Now().Format(experimentModel.TimeLayout)); err != nil {
+			log.Error(err)
+		}
 		c.Error(&c.Controller, err)
 		return
 	}

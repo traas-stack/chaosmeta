@@ -17,7 +17,7 @@
 package namespace
 
 import (
-	"chaosmeta-platform/pkg/models/experiment_instance"
+	"chaosmeta-platform/pkg/models/experiment"
 	namespaceModel "chaosmeta-platform/pkg/models/namespace"
 	"chaosmeta-platform/pkg/models/user"
 	"chaosmeta-platform/util/log"
@@ -34,7 +34,7 @@ func Init() {
 	}
 
 	defaultNamespace := &namespaceModel.Namespace{
-		Name:        "default namespace",
+		Name:        "默认空间",
 		Description: "This is the default namespace",
 		Creator:     1,
 		IsDefault:   true,
@@ -162,10 +162,11 @@ func (s *NamespaceService) GroupedUserInNamespaces(ctx context.Context, namespac
 }
 
 type NamespaceData struct {
-	NamespaceInfo  namespaceModel.NamespaceInfo      `json:"namespaceInfo"`
-	users          []namespaceModel.NamespaceData    `json:"users"`
-	UserData       UserDataInNamespace               `json:"userData"`
-	ExperimentData ExperimentInstanceDataInNamespace `json:"experimentrData"`
+	Permission      int                                `json:"permission"`
+	NamespaceInfo   namespaceModel.Namespace           `json:"namespaceInfo"`
+	Users           []namespaceModel.UserDataNamespace `json:"users"`
+	UserTotal       int64                              `json:"userTotal"`
+	ExperimentTotal int64                              `json:"experimentTotal"`
 }
 
 type UserDataInNamespace struct {
@@ -174,108 +175,112 @@ type UserDataInNamespace struct {
 	Users      []namespaceModel.UserDataNamespace `json:"users"`
 }
 
-func (s *NamespaceService) getUserData(ctx context.Context, userId int, namespaceId int) (UserDataInNamespace, error) {
-	userDataInNamespace := UserDataInNamespace{}
-	permission, err := namespaceModel.IsUserInNamespace(userId, namespaceId)
-	if err != nil {
-		return userDataInNamespace, err
-	}
-	userDataInNamespace.Permission = int(permission)
-
-	total, users, err := namespaceModel.GetUsersFromNamespace(ctx, namespaceId)
-	userDataInNamespace.ToTal = int(total)
-	userDataInNamespace.Users = append(userDataInNamespace.Users, users...)
-	return userDataInNamespace, err
-}
-
 type ExperimentInstanceDataInNamespace struct {
 	ToTal     int64            `json:"toTal"`
 	StatusMap map[string]int64 `json:"statusCount"`
 }
 
-func (s *NamespaceService) getExperimentInstanceData(ctx context.Context, namespaceId int) (ExperimentInstanceDataInNamespace, error) {
-	statusMap, total, err := experiment_instance.CountExperimentInstance(namespaceId, 0)
-	return ExperimentInstanceDataInNamespace{ToTal: total, StatusMap: statusMap}, err
-}
-
-func (s *NamespaceService) getUserAndExperimentInstanceData(ctx context.Context, users []namespaceModel.NamespaceData, namespaceData *NamespaceData) error {
-	if users == nil {
-		return nil
-	}
-	if namespaceData == nil {
-		return errors.New("namespaceData is nil")
-	}
-	var err error
-	for _, user := range users {
-		namespaceData.UserData, err = s.getUserData(ctx, user.Id, namespaceData.NamespaceInfo.ID)
-		if err != nil {
-			return err
-		}
-		namespaceData.ExperimentData, err = s.getExperimentInstanceData(ctx, namespaceData.NamespaceInfo.ID)
-		if err != nil {
-			return err
-		}
-	}
-	return err
-}
-
-// 未加入
-func (s *NamespaceService) GroupNamespacesUserNotIn(ctx context.Context, userId int, namespaceName string, userName string, orderBy string, page, pageSize int) (int64, []NamespaceData, error) {
-	total, namesapceList, err := namespaceModel.GroupNamespacesUserNotIn(userId, namespaceName, userName, orderBy, page, pageSize)
+func (s *NamespaceService) getUserAndExperimentInstanceData(ctx context.Context, namespaceId int) ([]namespaceModel.UserDataNamespace, int64, int64) {
+	userTotal, userList, err := namespaceModel.GetUsersFromNamespace(ctx, namespaceId)
 	if err != nil {
-		return 0, nil, err
+		log.Error(err)
 	}
-	var namespaceDataList []NamespaceData
-	for _, namespace := range namesapceList {
-		namespaceData := NamespaceData{NamespaceInfo: namespace}
-		_, userList, err := namespaceModel.GroupedUserInNamespaces(namespace.ID, "", "", -1, "", 1, 20)
+
+	totalExperiment, err := experiment.CountExperiments(namespaceId, -1, 0)
+	if err != nil {
+		log.Error(err)
+	}
+
+	return userList, userTotal, totalExperiment
+}
+
+// 全部空间，包括管理员
+func (s *NamespaceService) GroupAllNamespaces(ctx context.Context, userId, queryUserId int, namespaceName string, page, pageSize int) (int64, []NamespaceData, error) {
+	if userId == 0 {
+		return 0, nil, errors.New("invalid user id")
+	}
+
+	var nameSpaceIdList []int
+	if queryUserId > 0 {
+		var userIdList = []int{}
+		if !s.IsGlobalAdmin(ctx, userId) {
+			userIdList = append(userIdList, userId)
+		}
+		userIdList = append(userIdList, queryUserId)
+		_, namespaces, err := namespaceModel.GetNamespacesFromUser(ctx, userIdList, -1, "", 1, 100)
 		if err != nil {
-			continue
+			log.Error(err)
+			return 0, nil, errors.New("can not find namespaces")
 		}
-		if err := s.getUserAndExperimentInstanceData(ctx, userList, &namespaceData); err == nil {
-			namespaceDataList = append(namespaceDataList, namespaceData)
+
+		for _, namespace := range namespaces {
+			nameSpaceIdList = append(nameSpaceIdList, namespace.NamespaceId)
 		}
+	}
+
+	var namespaceDataList []NamespaceData
+	total, namespaceList, err := namespaceModel.ListNamespaces(ctx, nameSpaceIdList, namespaceName, "", "", page, pageSize)
+	if err != nil {
+		log.Error(err)
+		return 0, nil, errors.New("can not list namespaces")
+	}
+
+	for _, namespace := range namespaceList {
+		users, userTotal, experimentTotal := s.getUserAndExperimentInstanceData(ctx, namespace.Id)
+		namespaceData := NamespaceData{
+			Permission:      s.GetUserPermission(ctx, namespace.Id, userId),
+			NamespaceInfo:   namespace,
+			Users:           users,
+			UserTotal:       userTotal,
+			ExperimentTotal: experimentTotal,
+		}
+
+		namespaceDataList = append(namespaceDataList, namespaceData)
 	}
 	return total, namespaceDataList, nil
 }
 
-// 全部
-func (s *NamespaceService) GroupAllNamespaces(ctx context.Context, namespaceName string, userName string, orderBy string, page, pageSize int) (int64, []NamespaceData, error) {
-	total, namesapceList, err := namespaceModel.GroupAllNamespaces(namespaceName, userName, orderBy, page, pageSize)
-	if err != nil {
-		return 0, nil, err
+// 搜索空间, 不是全局管理员
+func (s *NamespaceService) QueryNamespace(ctx context.Context, userId int, queryUserId int, namespace string, permission int, page, pageSize int) (int64, []NamespaceData, error) {
+	if userId == 0 {
+		return 0, nil, errors.New("invalid user id")
 	}
-	var namespaceDataList []NamespaceData
-	for _, namespace := range namesapceList {
-		namespaceData := NamespaceData{NamespaceInfo: namespace}
-		var err error
-		_, userList, err := namespaceModel.GroupedUserInNamespaces(namespace.ID, "", "", -1, "", 1, 20)
-		if err != nil {
-			continue
-		}
-		if err := s.getUserAndExperimentInstanceData(ctx, userList, &namespaceData); err == nil {
-			namespaceDataList = append(namespaceDataList, namespaceData)
-		}
-	}
-	return total, namespaceDataList, nil
-}
 
-// 已加入
-func (s *NamespaceService) GroupNamespacesByUsername(ctx context.Context, userId int, namespace string, userName string, permission int, orderBy string, page, pageSize int) (int64, []NamespaceData, error) {
-	total, namesapceList, err := namespaceModel.GroupAllNamespacesByUserName(userId, namespace, userName, permission, orderBy, page, pageSize)
-	if err != nil {
-		return 0, nil, err
+	var userIdList = []int{userId}
+	//if !s.IsGlobalAdmin(ctx, userId) {
+	//	userIdList = append(userIdList, userId)
+	//}
+	if queryUserId > 0 {
+		userIdList = append(userIdList, queryUserId)
 	}
+	_, namespaces, err := namespaceModel.GetNamespacesFromUser(ctx, userIdList, permission, "", 1, 100)
+	if err != nil {
+		log.Error(err)
+		return 0, nil, errors.New("can not find namespaces")
+	}
+	if permission >= 0 && namespaces == nil {
+		return 0, nil, nil
+	}
+	var nameSpaceIdList []int
+	for _, namespace := range namespaces {
+		nameSpaceIdList = append(nameSpaceIdList, namespace.NamespaceId)
+	}
+
 	var namespaceDataList []NamespaceData
-	for _, namespace := range namesapceList {
-		namespaceData := NamespaceData{NamespaceInfo: namespace}
-		_, userList, err := namespaceModel.GroupedUserInNamespaces(namespace.ID, "", "", -1, "", 1, 20)
-		if err != nil {
-			continue
-		}
-		if err := s.getUserAndExperimentInstanceData(ctx, userList, &namespaceData); err == nil {
-			namespaceDataList = append(namespaceDataList, namespaceData)
-		}
+	total, namespaceList, err := namespaceModel.ListNamespaces(ctx, nameSpaceIdList, namespace, "", "", page, pageSize)
+	if err != nil {
+		log.Error(err)
+		return 0, nil, errors.New("can not list namespaces")
+	}
+
+	for _, namespace := range namespaceList {
+		users, userTotal, experimentTotal := s.getUserAndExperimentInstanceData(ctx, namespace.Id)
+		namespaceDataList = append(namespaceDataList, NamespaceData{
+			Permission:      s.GetUserPermission(ctx, namespace.Id, userId),
+			NamespaceInfo:   namespace,
+			Users:           users,
+			UserTotal:       userTotal,
+			ExperimentTotal: experimentTotal})
 	}
 	return total, namespaceDataList, nil
 }
@@ -329,22 +334,42 @@ func (s *NamespaceService) IsAdmin(ctx context.Context, namespaceId int, userNam
 	return false
 }
 
-func (s *NamespaceService) IsUserJoin(ctx context.Context, namespaceId int, userId int) (bool, int) {
+func (s *NamespaceService) IsGlobalAdmin(ctx context.Context, userId int) bool {
 	userGet := user.User{ID: userId}
 	if err := user.GetUserById(ctx, &userGet); err != nil {
-		return false, -1
+		return false
 	}
 	if userGet.Role == user.AdminRole {
-		return true, 1
+		return true
+	}
+	return false
+}
+
+func (s *NamespaceService) IsUserJoin(ctx context.Context, namespaceId int, userId int) (bool, int) {
+	permission := s.GetUserPermission(ctx, namespaceId, userId)
+	if permission < 0 {
+		return false, -1
+	}
+	return true, permission
+}
+
+func (s *NamespaceService) GetUserPermission(ctx context.Context, namespaceId int, userId int) int {
+	if s.IsGlobalAdmin(ctx, userId) {
+		return 1
+	}
+
+	userGet := user.User{ID: userId}
+	if err := user.GetUserById(ctx, &userGet); err != nil {
+		return -1
 	}
 	un := namespaceModel.UserNamespace{
 		NamespaceId: namespaceId,
 		UserId:      userGet.ID,
 	}
 	if err := namespaceModel.GetUserNamespace(&un); err != nil {
-		return false, -1
+		return -1
 	}
-	return true, int(un.Permission)
+	return int(un.Permission)
 }
 
 type UserInfoInNamespace struct {

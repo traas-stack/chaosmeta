@@ -23,6 +23,7 @@ import (
 )
 
 type LabelExperimentInstance struct {
+	ID                     int    `json:"id,omitempty" orm:"pk;auto;column(id)"`
 	LabelID                int    `json:"label_id" orm:"column(label_id);index"`
 	ExperimentInstanceUUID string `json:"experiment_instance_uuid" orm:"column(experiment_instance_uuid);index"`
 	models.BaseTimeModel
@@ -62,6 +63,9 @@ func ListLabelsByExperimentInstanceUUID(experimentUUID string) ([]*LabelExperime
 }
 
 func AddLabelIDsToExperiment(experimentUUID string, labelIDs []int) error {
+	if len(labelIDs) == 0 {
+		return nil
+	}
 	o := models.GetORM()
 	labelExperiments := make([]*LabelExperimentInstance, len(labelIDs))
 	for i, id := range labelIDs {

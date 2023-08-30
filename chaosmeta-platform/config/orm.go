@@ -35,7 +35,7 @@ func Setup() {
 		new(namespace.ClusterNamespace), new(namespace.Label), new(namespace.Namespace), new(namespace.UserNamespace), new(user.User),
 		new(cluster.Cluster),
 		new(agent.Agent),
-		new(basic.Scope), new(basic.Target), new(basic.Fault), new(basic.Args),
+		new(basic.Scope), new(basic.Target), new(basic.Fault), new(basic.FlowInject), new(basic.MeasureInject), new(basic.Args),
 		new(experiment.WorkflowNode), new(experiment.LabelExperiment), new(experiment.FaultRange), new(experiment.Experiment), new(experiment.ArgsValue),
 		new(experiment_instance.WorkflowNodeInstance), new(experiment_instance.LabelExperimentInstance), new(experiment_instance.FaultRangeInstance), new(experiment_instance.ExperimentInstance), new(experiment_instance.ArgsValueInstance),
 	)

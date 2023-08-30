@@ -124,6 +124,9 @@ func QueryUser(ctx context.Context, name, role, orderBy string, page, pageSize i
 	}
 
 	_, err = userQuery.GetOamQuerySeter().All(users)
+	if err == orm.ErrNoRows {
+		return 0, nil, nil
+	}
 	return totalCount, *users, err
 }
 

@@ -14,23 +14,4 @@
  * limitations under the License.
  */
 
-package experiment
-
-import (
-	"chaosmeta-platform/pkg/service/experiment"
-)
-
-type CreateExperimentResponse struct {
-	UUID string `json:"uuid"`
-}
-
-type GetExperimentResponse struct {
-	Experiment experiment.ExperimentGet `json:"experiments"`
-}
-
-type ExperimentListResponse struct {
-	Page        int                        `json:"page"`
-	PageSize    int                        `json:"pageSize"`
-	Total       int64                      `json:"total"`
-	Experiments []experiment.ExperimentGet `json:"experiments"`
-}
+package inject

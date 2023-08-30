@@ -25,7 +25,7 @@ import (
 )
 
 func (c *KubeController) ListNodes() {
-	id, _ := c.GetInt(":id")
+	id, _ := c.GetInt(":id", 0)
 	clusterService := cluster.ClusterService{}
 	kubeClient, restConfig, err := clusterService.GetRestConfig(context.Background(), id)
 	if err != nil {
