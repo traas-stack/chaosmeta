@@ -41,7 +41,7 @@ export const tagColors = [
 export const arrangeNodeTypeColors: any = {
   fault: '#F5E2CC',
   measure: '#C6F8E0',
-  pressure: '#FFD5D5',
+  flow: '#FFD5D5',
   other: '#D4E3F1',
 };
 

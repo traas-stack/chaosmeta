@@ -2,8 +2,8 @@ import { LightArea } from '@/components/CommonStyle';
 import { InfoCircleOutlined } from '@ant-design/icons';
 import { Col, Row, Tag } from 'antd';
 import React, { useState } from 'react';
-import { RecommendContainer } from './style';
 import Thumbnail from './Thumbnail';
+import { RecommendContainer } from './style';
 /**
  * 推荐实验
  * @returns

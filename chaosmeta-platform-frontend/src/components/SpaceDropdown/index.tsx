@@ -84,7 +84,6 @@ export default () => {
           },
         );
         const spaceId = history.location.query.spaceId;
-        console.log(spaceId, 'spaceId---')
         // 初始化加载时，页面不存在空间id需要添加默认空间id
         if (!spaceId) {
           handleUpdateSpaceId(namespaceList[0]?.id, namespaceList[0]?.name);
