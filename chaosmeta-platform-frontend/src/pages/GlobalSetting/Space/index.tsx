@@ -44,7 +44,7 @@ const SpaceManage: React.FC<unknown> = () => {
   const [form] = Form.useForm();
   const [pageData, setPageData] = useState<PageData>({
     page: 1,
-    pageSize: 10,
+    pageSize: 12,
     total: 0,
     namespaces: [],
   });
@@ -85,7 +85,7 @@ const SpaceManage: React.FC<unknown> = () => {
     }
     const params = {
       page: page || pageData.page || 1,
-      page_size: pageSize || pageData.pageSize || 10,
+      page_size: pageSize || pageData.pageSize || 12,
       sort,
       name: spaceName,
       namespaceClass: namespaceClass || spaceType,
@@ -111,8 +111,8 @@ const SpaceManage: React.FC<unknown> = () => {
       key: 'all',
     },
     {
-      label: '我管理的空间',
-      key: 'myAdmin',
+      label: '我相关的',
+      key: 'relevant',
     },
   ];
 
@@ -136,10 +136,10 @@ const SpaceManage: React.FC<unknown> = () => {
       label: '全部',
       value: 'all',
     },
-    {
-      label: '未加入',
-      value: 'not',
-    },
+    // {
+    //   label: '未加入',
+    //   value: 'not',
+    // },
     {
       label: '只读',
       value: 'read',
@@ -165,7 +165,7 @@ const SpaceManage: React.FC<unknown> = () => {
   useEffect(() => {
     handlePageSearch();
   }, []);
-  
+
   return (
     <PageContainer title="空间管理">
       <Container>
@@ -175,7 +175,8 @@ const SpaceManage: React.FC<unknown> = () => {
             activeKey={tabKey}
             onChange={(val) => {
               setTabKey(val);
-              const namespaceClass = val === 'myAdmin' ? 'write' : undefined;
+              const namespaceClass =
+                val === 'relevant' ? 'relevant' : undefined;
               handlePageSearch({ namespaceClass });
             }}
             tabBarExtraContent={
@@ -287,6 +288,7 @@ const SpaceManage: React.FC<unknown> = () => {
                   pageSize={pageData.pageSize}
                   current={pageData.page}
                   total={pageData.total}
+                  pageSizeOptions={[12, 20, 50, 100]}
                   onChange={(page, pageSize) => {
                     handlePageSearch({ page, pageSize });
                   }}

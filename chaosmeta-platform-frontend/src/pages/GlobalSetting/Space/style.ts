@@ -22,9 +22,8 @@ export const Container = styled.div`
 `;
 
 export const SpaceCard = styled.div<{ $permission: number }>`
-  /* height: 175px; */
   background-color: ${(props) => {
-    if (props?.$permission === 1) {
+    if (props?.$permission !== -1) {
       return '#fff';
     }
     return 'rgba(0,0,0,0.05)';
@@ -66,12 +65,14 @@ export const SpaceCard = styled.div<{ $permission: number }>`
       color: rgba(0, 0, 0, 0.45);
     }
     span {
+      flex: 1;
       color: rgba(0, 0, 0, 0.65);
       position: relative;
       overflow: hidden;
       text-overflow: ellipsis;
       word-break: keep-all;
-      display: -webkit-box;
+      /* display: -webkit-box; */
+      display: inline-block;
       -webkit-box-orient: vertical;
       -webkit-line-clamp: 2;
     }

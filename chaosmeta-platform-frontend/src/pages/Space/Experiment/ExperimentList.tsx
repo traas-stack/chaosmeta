@@ -316,7 +316,7 @@ const ExperimentList: React.FC<unknown> = () => {
                 <Badge color={statusTemp?.color} />{' '}
               </Popover>
               {/* 这里展示时间 -- 后端没有相应字段 --todo */}
-              <span>--</span>
+              <span>{formatTime(record?.last_instance)}</span>
             </div>
           </div>
         );
@@ -481,23 +481,44 @@ const ExperimentList: React.FC<unknown> = () => {
             locale={{
               emptyText: (
                 <EmptyCustom
-                  desc="请先创建实验，您可选择自己创建实验也可以通过推荐实验来快速构建实验场景，来验证应用系统的可靠性。"
+                  desc={
+                    spacePermission === 1
+                      ? '请先创建实验，您可选择自己创建实验也可以通过推荐实验来快速构建实验场景，来验证应用系统的可靠性。'
+                      : '您在该空间是只读权限，暂不支持创建实验。若想创建实验请去成员管理中找空间内有读写权限的成员修改权限'
+                  }
                   topTitle="当前空间还没有实验数据"
                   btns={
                     <Space>
-                      <Button
-                        type="primary"
-                        onClick={() => {
-                          history.push({
-                            pathname: '/space/experiment/add',
-                            query: {
-                              spaceId: history?.location?.query?.spaceId,
-                            },
-                          });
-                        }}
-                      >
-                        创建实验
-                      </Button>
+                      {spacePermission === 1 ? (
+                        <Button
+                          type="primary"
+                          onClick={() => {
+                            history.push({
+                              pathname: '/space/experiment/add',
+                              query: {
+                                spaceId: history?.location?.query?.spaceId,
+                              },
+                            });
+                          }}
+                        >
+                          创建实验
+                        </Button>
+                      ) : (
+                        <Button
+                          type="primary"
+                          onClick={() => {
+                            history.push({
+                              pathname: '/space/setting',
+                              query: {
+                                spaceId: history?.location?.query?.spaceId,
+                                tabKey: 'user',
+                              },
+                            });
+                          }}
+                        >
+                          前往成员管理
+                        </Button>
+                      )}
                       {/* <Button
                         onClick={() => {
                           history.push({

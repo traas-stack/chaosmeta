@@ -510,7 +510,7 @@ const AddExperiment = () => {
         header={{
           title: renderTitle(),
           onBack: () => {
-            history.push('/space/experiment');
+            history.back();
           },
           extra: headerExtra(),
         }}

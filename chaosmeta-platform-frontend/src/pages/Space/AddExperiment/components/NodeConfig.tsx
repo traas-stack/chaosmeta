@@ -50,6 +50,7 @@ const NodeConfig: React.FC<IProps> = (props) => {
   const [editTitleState, setEditTitleState] = useState<boolean>(false);
   const [fieldList, setFieldList] = useState<any[]>([]);
   const [durationType, setDurationType] = useState<string>('second');
+  const [kubernetesNamespace, setKubernetesNamespace] = useState<string>('');
 
   /**
    * 更新节点属性的方法
@@ -143,6 +144,7 @@ const NodeConfig: React.FC<IProps> = (props) => {
         const target_name = activeCol?.exec_range?.target_name
           ? activeCol?.exec_range?.target_name?.split(',')
           : undefined;
+        setKubernetesNamespace(activeCol?.exec_range?.target_namespace);
         form.setFieldsValue({
           ...activeCol,
           duration: initSecond,
@@ -194,6 +196,7 @@ const NodeConfig: React.FC<IProps> = (props) => {
       const target_name = activeCol?.exec_range?.target_name
         ? activeCol?.exec_range?.target_name?.split(',')
         : undefined;
+      setKubernetesNamespace(activeCol?.exec_range?.target_namespace);
       form.setFieldsValue({
         ...activeCol,
         duration: initSecond,
@@ -319,7 +322,11 @@ const NodeConfig: React.FC<IProps> = (props) => {
                   name={['exec_range', 'target_namespace']}
                   rules={[{ required: true, message: '请输入' }]}
                 >
-                  <KubernetesNamespaceSelect />
+                  <KubernetesNamespaceSelect
+                    onChange={(val: any) => {
+                      setKubernetesNamespace(val);
+                    }}
+                  />
                 </Form.Item>
                 <Form.Item
                   label="Kubernetes Label"
@@ -331,20 +338,26 @@ const NodeConfig: React.FC<IProps> = (props) => {
                   <Input placeholder="请输入" />
                 </Form.Item> */}
                 <Form.Item label="name" name={['exec_range', 'target_name']}>
-                  <KubernetesPodSelect mode="multiple" />
+                  <KubernetesPodSelect
+                    mode="multiple"
+                    form={form}
+                    kubernetesNamespace={kubernetesNamespace}
+                  />
                 </Form.Item>
-                <Form.Item
-                  label="Kubernetes Ip"
-                  name={['exec_range', 'target_ip']}
-                >
-                  <Input placeholder="请输入" />
-                </Form.Item>
-                <Form.Item
-                  label="Kubernetes Hostname"
+                {/* 一级节点为node时展示，node的id为2 */}
+                {activeCol?.scope_id === 2 && (
+                  <>
+                    <Form.Item label="Ip" name={['exec_range', 'target_ip']}>
+                      <Input placeholder="请输入" />
+                    </Form.Item>
+                  </>
+                )}
+                {/* <Form.Item
+                  label="Hostname"
                   name={['exec_range', 'target_hostname']}
                 >
                   <Input placeholder="请输入" />
-                </Form.Item>
+                </Form.Item> */}
               </>
             )}
           </div>

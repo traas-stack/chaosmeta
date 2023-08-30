@@ -96,36 +96,10 @@ export const layout = () => {
     },
     siderWidth: 208,
     layout: 'mix',
-    // breakpoint: false,
     splitMenus: true,
-    // collapsedButtonRender: (porps) => {
-    //   return null;
-    // },
-    // collapsed: false,
     rightContentRender: () => {
       return <UserRightArea />;
     },
-    // headerRender: (layoutProps: any) => {
-    //   const { title, logo } = layoutProps;
-    //   return (
-    //     <div
-    //       style={{
-    //         display: 'flex',
-    //         justifyContent: 'space-between',
-    //         padding: '0 16px',
-    //       }}
-    //     >
-    //       <div>
-    //         {title}
-    //         <img src={logo} />
-    //       </div>
-    //       <div>
-    //         <img src={initialState?.avatar} />
-    //         {initialState?.name}
-    //       </div>
-    //     </div>
-    //   );
-    // },
     menuExtraRender: (props: any) => {
       if (props?.matchMenuKeys[0] === '/setting') {
         return null;

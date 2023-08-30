@@ -173,6 +173,25 @@ export async function querySpaceUserList(
 }
 
 /**
+ * 获取空间内成员权限
+ * @param params
+ * @param options
+ * @returns
+ */
+export async function querySpaceUserPermission(
+  params: {
+    id: number | string; // 空间id
+  },
+  options?: { [key: string]: any },
+) {
+  return request<any>(`/chaosmeta/api/v1/namespaces/${params.id}/permission`, {
+    method: 'GET',
+    params,
+    ...(options || {}),
+  });
+}
+
+/**
  * 空间下批量添加成员
  * @param body
  * @param options

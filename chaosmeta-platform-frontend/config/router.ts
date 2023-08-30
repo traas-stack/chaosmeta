@@ -1,7 +1,7 @@
 export default [
   {
     path: '/',
-    redirect: '/space/overview',
+    redirect: '/login',
   },
   { path: '/*', component: '@/pages/404' },
   {

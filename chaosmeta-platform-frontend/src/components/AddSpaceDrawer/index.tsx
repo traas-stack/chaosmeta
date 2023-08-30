@@ -49,7 +49,12 @@ const AddSpaceDrawer: React.FC<IProps> = (props) => {
         // 更新空间信息
         handleUpdateSpaceId(res?.data?.id);
         setOpen(false);
-        history.push('/space/setting');
+        history.push({
+          pathname: '/space/setting',
+          query: {
+            spaceId: res?.data?.id,
+          },
+        });
       }
     },
   });
@@ -58,9 +63,6 @@ const AddSpaceDrawer: React.FC<IProps> = (props) => {
    * 创建空间
    */
   const handleCreate = () => {
-    // setCurSpace()
-    // handleUpdateSpaceId('20', 'ceshi')
-    // return
     form.validateFields().then((values) => {
       create?.run(values);
     });
