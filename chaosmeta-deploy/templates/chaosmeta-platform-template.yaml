@@ -89,8 +89,7 @@ spec:
       serviceAccountName: chaosmeta-platform
       containers:
         - name: chaosmeta-platform
-          imagePullPolicy: Always
-          image:  registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-platform:v0.0.3
+          image:  registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-platform:v0.0.6
           resources:
             requests:
               cpu: "1"
@@ -102,8 +101,7 @@ spec:
             - name: chaosmeta-config
               mountPath: /home/admin/conf
         - name: chaosmeta-platform-frontend
-          imagePullPolicy: Always
-          image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-platform-frontend:v0.0.2
+          image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-platform-frontend:v0.0.3
           ports:
             - containerPort: 8000
       volumes:
