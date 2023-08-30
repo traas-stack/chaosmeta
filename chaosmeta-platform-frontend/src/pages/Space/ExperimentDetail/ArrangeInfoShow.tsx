@@ -33,6 +33,7 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
   const [activeCol, setActiveCol] = useState<any>({ state: false });
   const [fieldList, setFieldList] = useState<any[]>([]);
   const [configForm] = Form.useForm();
+
   /**
    * 故障节点 - 查询节点表单配置信息
    */
@@ -52,12 +53,12 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
       type: 'fault',
     },
     {
-      name: '度量节点',
+      name: '度量引擎',
       type: 'measure',
     },
     {
-      name: '压测节点',
-      type: 'pressure',
+      name: '流量注入',
+      type: 'flow',
     },
     {
       name: '其他节点',
@@ -137,9 +138,17 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
                 curNodeDetail.args_value = newArgs;
               }
               // 为配置信息赋值
-              configForm.setFieldsValue(curNodeDetail);
+              configForm.setFieldsValue({
+                ...curNodeDetail,
+                exec_range: {
+                  ...curNodeDetail?.subtasks,
+                },
+              });
               setActiveCol({
                 ...curNodeDetail,
+                exec_range: {
+                  ...curNodeDetail?.subtasks,
+                },
               });
             }
           });
@@ -326,27 +335,27 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
                     >
                       <ShowText ellipsis />
                     </Form.Item>
-                    <Form.Item label="应用" name={['exec_range', 'target_app']}>
+                    {/* <Form.Item label="应用" name={['exec_range', 'target_app']}>
                       <ShowText ellipsis />
-                    </Form.Item>
+                    </Form.Item> */}
                     <Form.Item
                       label="name"
                       name={['exec_range', 'target_name']}
                     >
                       <ShowText ellipsis />
                     </Form.Item>
-                    <Form.Item
-                      label="Kubernetes Ip"
-                      name={['exec_range', 'target_ip']}
-                    >
-                      <ShowText ellipsis />
-                    </Form.Item>
-                    <Form.Item
-                      label="Kubernetes Hostname"
+                    {activeCol?.scope_id === 2 && (
+                      <Form.Item label="Ip" name={['exec_range', 'target_ip']}>
+                        <ShowText ellipsis />
+                      </Form.Item>
+                    )}
+
+                    {/* <Form.Item
+                      label="Hostname"
                       name={['exec_range', 'target_hostname']}
                     >
                       <ShowText ellipsis />
-                    </Form.Item>
+                    </Form.Item> */}
                   </>
                 )}
               </Form>

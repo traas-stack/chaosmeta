@@ -2,8 +2,8 @@ import { LightArea } from '@/components/CommonStyle';
 import { InfoCircleOutlined } from '@ant-design/icons';
 import { Col, Row, Tag } from 'antd';
 import React, { useState } from 'react';
-import { RecommendContainer } from './style';
 import Thumbnail from './Thumbnail';
+import { RecommendContainer } from './style';
 /**
  * 推荐实验
  * @returns
@@ -36,7 +36,6 @@ const RecommendExperiment: React.FC<unknown> = () => {
   ];
 
   const result = [1, 2, 3, 4];
-  // const result = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
 
   const tabItems = [
     {

@@ -10,9 +10,7 @@ import { Button, Form, Input, Space, Spin } from 'antd';
 import React, { useEffect, useState } from 'react';
 import { BasicInfoContainer } from './style';
 
-interface IProps {}
-
-const BasicInfo: React.FC<IProps> = () => {
+const BasicInfo: React.FC<any> = () => {
   const [form] = Form.useForm();
   const [saveDisabled, setSaveDisabled] = useState<boolean>(true);
   const [spaceInfo, setSpaceInfo] = useState<any>({});
@@ -26,7 +24,9 @@ const BasicInfo: React.FC<IProps> = () => {
     manual: true,
     formatResult: (res) => res,
     onSuccess: (res) => {
-      setSaveDisabled(true);
+      if (res?.code === 200) {
+        setSaveDisabled(true);
+      }
     },
   });
 

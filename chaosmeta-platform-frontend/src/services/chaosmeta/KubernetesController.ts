@@ -34,11 +34,12 @@ export async function queryPodLIst(
   params?: {
     page?: number;
     page_size?: number;
+    namespace?: string;
   },
   options?: { [key: string]: any },
 ) {
   return request<any>(
-    `/chaosmeta/api/v1/kubernetes/cluster/${envType}/namespace/chaosmeta/pods`,
+    `/chaosmeta/api/v1/kubernetes/cluster/${envType}/namespace/${params?.namespace}/pods`,
     {
       method: 'GET',
       params,

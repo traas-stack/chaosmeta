@@ -99,7 +99,7 @@ const ExperimentResult: React.FC<unknown> = () => {
       name,
       page,
       page_size: pageSize,
-      experimentId: history?.location?.query?.experimentId as string,
+      experiment_uuid: history?.location?.query?.experimentId as string,
       creator_name,
       status,
       time_search_field: timeType,
@@ -141,6 +141,7 @@ const ExperimentResult: React.FC<unknown> = () => {
                 pathname: '/space/experiment-result/detail',
                 query: {
                   resultId: record?.uuid,
+                  spaceId: history?.location?.query?.spaceId as string,
                 },
               });
             }}
@@ -153,7 +154,7 @@ const ExperimentResult: React.FC<unknown> = () => {
     {
       title: '执行人',
       width: 120,
-      dataIndex: 'creator',
+      dataIndex: 'creator_name',
     },
     {
       title: '实验开始时间',
@@ -222,6 +223,7 @@ const ExperimentResult: React.FC<unknown> = () => {
       },
     },
   ];
+
   useEffect(() => {
     handleSearch();
   }, [spaceIdChange]);
@@ -263,6 +265,12 @@ const ExperimentResult: React.FC<unknown> = () => {
                       <Button
                         onClick={() => {
                           form.resetFields();
+                          history.push({
+                            pathname: '/space/experiment-result',
+                            query: {
+                              spaceId: history?.location?.query?.spaceId as string,
+                            }
+                          })
                           handleSearch({ page: 1, pageSize: 10 });
                         }}
                       >
@@ -291,7 +299,11 @@ const ExperimentResult: React.FC<unknown> = () => {
                     emptyText: (
                       <EmptyCustom
                         desc="当前暂无实验结果数据"
-                        title="您可以前往实验列表页面查看实验"
+                        title={
+                          spacePermission === 1
+                            ? '您可以前往实验详情页面运行实验'
+                            : '您可以前往实验列表页面查看实验'
+                        }
                         btns={
                           <Space>
                             <Button

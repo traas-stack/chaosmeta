@@ -1,6 +1,7 @@
 import ShowText from '@/components/ShowText';
 import { triggerTypes } from '@/constants';
 import { formatTime } from '@/utils/format';
+import { renderScheduleType, renderTags } from '@/utils/renderItem';
 import { history } from '@umijs/max';
 import { Button, DatePicker, Drawer, Form, Input, Radio, Space } from 'antd';
 import moment from 'moment';
@@ -39,15 +40,11 @@ const InfoDrawer: React.FC<IProps> = (props) => {
         <Form.Item name={'name'} label="实验名称">
           <ShowText />
         </Form.Item>
-        <Form.Item name={'desc'} label="实验描述">
+        <Form.Item name={'description'} label="实验描述">
           <ShowText />
         </Form.Item>
-        <Form.Item name={'labels'} label="标签">
-          <ShowText />
-        </Form.Item>
-        <Form.Item name={'triggerType'} label="触发方式">
-          <ShowText />
-        </Form.Item>
+        <Form.Item label="标签">{renderTags(baseInfo?.labels)}</Form.Item>
+        <Form.Item label="触发方式">{renderScheduleType(baseInfo)}</Form.Item>
       </div>
     );
   };
@@ -131,6 +128,7 @@ const InfoDrawer: React.FC<IProps> = (props) => {
                 name={'schedule_type'}
                 label="触发方式"
                 rules={[{ required: true, message: '请选择' }]}
+                initialValue={'manual'}
               >
                 <Radio.Group>
                   {triggerTypes?.map((item) => {

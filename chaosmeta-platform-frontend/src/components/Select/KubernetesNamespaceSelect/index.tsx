@@ -24,7 +24,7 @@ const KubernetesNamespaceSelect = (props: IProps) => {
     }
   }, [list]);
 
-  const getUser = useRequest(queryNamespaceList, {
+  const getNamespaceList = useRequest(queryNamespaceList, {
     manual: true,
     formatResult: (res: any) => res,
     debounceInterval: 300,
@@ -37,15 +37,8 @@ const KubernetesNamespaceSelect = (props: IProps) => {
     },
   });
 
-  // 输入有值时进行搜索
-  // const handleUserSearch = (val: string) => {
-  //   if (val) {
-  //     getUser?.run({ identifier: val });
-  //   }
-  // };
-
   useEffect(() => {
-    getUser?.run({ page: 1, page_size: 500 });
+    getNamespaceList?.run({ page: 1, page_size: 500 });
   }, []);
 
   return (
@@ -55,7 +48,7 @@ const KubernetesNamespaceSelect = (props: IProps) => {
       showSearch
       // onSearch={(val) => handleUserSearch(val)}
       allowClear
-      notFoundContent={getUser?.loading ? <Spin size="small" /> : null}
+      notFoundContent={getNamespaceList?.loading ? <Spin size="small" /> : null}
       filterOption={false}
       onChange={onChange}
       placeholder={placeholder}

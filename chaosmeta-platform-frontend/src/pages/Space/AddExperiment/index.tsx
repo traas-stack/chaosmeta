@@ -1,19 +1,20 @@
 import ShowText from '@/components/ShowText';
 import {
   createExperiment,
+  deleteExperiment,
   queryExperimentDetail,
   updateExperiment,
 } from '@/services/chaosmeta/ExperimentController';
-import { getSpaceUserList } from '@/services/chaosmeta/UserController';
+import { querySpaceUserPermission } from '@/services/chaosmeta/SpaceController';
 import {
   arrangeDataOriginTranstion,
   arrangeDataResultTranstion,
 } from '@/utils/format';
-import { renderScheduleType } from '@/utils/renderItem';
-import { EditOutlined } from '@ant-design/icons';
+import { renderScheduleType, renderTags } from '@/utils/renderItem';
+import { EditOutlined, ExclamationCircleFilled } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
 import { history, useModel, useRequest } from '@umijs/max';
-import { Button, Form, Space, Spin, message } from 'antd';
+import { Button, Form, Modal, Space, Spin, message } from 'antd';
 import { useEffect, useState } from 'react';
 import ArrangeContent from './ArrangeContent';
 import InfoDrawer from './components/InfoDrawer';
@@ -22,7 +23,7 @@ import { Container } from './style';
 const AddExperiment = () => {
   const [form] = Form.useForm();
   // 用户权限
-  const { userInfo, setSpacePermission, spacePermission } = useModel('global');
+  const { setSpacePermission, spacePermission } = useModel('global');
   // 编排的数据
   const [arrangeList, setArrangeList] = useState<any>([]);
   // 编辑基本信息抽屉
@@ -85,17 +86,13 @@ const AddExperiment = () => {
   /**
    * 根据成员名称和空间id获取成员空间内权限信息
    */
-  const getUserSpaceAuth = useRequest(getSpaceUserList, {
+  const getUserSpaceAuth = useRequest(querySpaceUserPermission, {
     manual: true,
     formatResult: (res) => res,
     onSuccess: (res) => {
       if (res.code === 200) {
         // 存储用户空间权限
-        const curUserName = userInfo?.name || localStorage.getItem('userName');
-        const curUserInfo = res?.data?.users?.filter(
-          (item: { name: string }) => item.name === curUserName,
-        )[0];
-        setSpacePermission(curUserInfo?.permission);
+        setSpacePermission(res?.data);
       }
     },
   });
@@ -128,9 +125,7 @@ const AddExperiment = () => {
             )}
           </>
         </Space>
-        <Form.Item name={'labels'}>
-          <ShowText ellipsis isTags />
-        </Form.Item>
+        <Form.Item>{renderTags(baseInfo?.labels)}</Form.Item>
       </Form>
     );
   };
@@ -141,7 +136,7 @@ const AddExperiment = () => {
   const handleSubmit = () => {
     form.validateFields().then((values) => {
       const arrangeResult = arrangeDataResultTranstion(arrangeList);
-      if (!values?.name || !values?.schedule_type) {
+      if (!baseInfo?.name || !baseInfo?.schedule_type) {
         message.info('请完善基本信息');
         return;
       }
@@ -152,7 +147,9 @@ const AddExperiment = () => {
         message.info('请完善节点信息');
         return;
       }
-      const newLabels = values?.labels?.map((item: { id: number }) => item?.id);
+      const newLabels = baseInfo?.labels?.map(
+        (item: { id: number }) => item?.id,
+      );
       const newList = arrangeResult?.map((item) => {
         const {
           args_value,
@@ -167,10 +164,16 @@ const AddExperiment = () => {
           exec_type,
           name,
         } = item;
+        // return;
+        let target_name = exec_range?.target_name;
+        if (Array.isArray(target_name)) {
+          target_name = exec_range?.target_name?.join(',');
+        }
         const newExecRange = {
           ...exec_range,
-          target_name: exec_range?.target_name?.join(',') || undefined,
+          target_name: target_name || undefined,
         };
+
         return {
           name,
           args_value,
@@ -193,13 +196,43 @@ const AddExperiment = () => {
         workflow_nodes: newList,
       };
       const experimentId = history?.location?.query?.experimentId;
-      // return;
       if (experimentId) {
         editExperiment?.run({ ...params, uuid: experimentId });
       } else {
         handleCreateExperiment?.run(params);
       }
     });
+  };
+
+  /**
+   * 删除实验接口
+   */
+  const handleDeleteExperiment = useRequest(deleteExperiment, {
+    manual: true,
+    formatResult: (res) => res,
+    onSuccess: (res) => {
+      if (res?.code === 200) {
+        message.success('删除成功！');
+        history.push('/space/experiment');
+      }
+    },
+  });
+
+  /**
+   * 确认删除实验
+   */
+  const handleDeleteConfirm = () => {
+    const uuid = history?.location?.query?.experimentId as string;
+    if (uuid) {
+      Modal.confirm({
+        title: '确认要删除这个实验吗？',
+        icon: <ExclamationCircleFilled />,
+        content: '删除实验将会删除该实验的配置，但不会删除历史实验结果！',
+        onOk() {
+          handleDeleteExperiment?.run({ uuid });
+        },
+      });
+    }
   };
 
   const headerExtra = () => {
@@ -214,21 +247,29 @@ const AddExperiment = () => {
               <ShowText />
             </Form.Item>
           </div>
-          <Space>
-            <Button ghost danger>
-              删除
-            </Button>
-            <Button
-              ghost
-              type="primary"
-              loading={handleCreateExperiment?.loading}
-              onClick={() => {
-                handleSubmit();
-              }}
-            >
-              完成
-            </Button>
-          </Space>
+          {spacePermission === 1 && (
+            <Space>
+              <Button
+                ghost
+                danger
+                onClick={() => {
+                  handleDeleteConfirm();
+                }}
+              >
+                删除
+              </Button>
+              <Button
+                ghost
+                type="primary"
+                loading={handleCreateExperiment?.loading}
+                onClick={() => {
+                  handleSubmit();
+                }}
+              >
+                完成
+              </Button>
+            </Space>
+          )}
         </div>
       </Form>
     );
@@ -249,7 +290,6 @@ const AddExperiment = () => {
     if (spaceId) {
       getUserSpaceAuth?.run({
         id: spaceId as string,
-        name: userInfo?.name || localStorage.getItem('userName'),
       });
     }
     if (experimentId) {
