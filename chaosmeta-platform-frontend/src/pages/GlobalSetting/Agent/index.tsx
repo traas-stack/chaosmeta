@@ -9,14 +9,7 @@ import TableList from './TableList';
 import UpgradationDrawer from './UpgradationDrawer';
 import { Container } from './style';
 
-interface DataType {
-  id: string;
-  auth?: string;
-  userName: string;
-}
-
 const Agent: React.FC<unknown> = () => {
-  const [pageData, setPageData] = useState<any>({});
   const [selectedRows, setSelectedRows] = useState<any[]>([]);
   // 升级弹窗
   const [upgradationOpen, setUpgradationOpen] = useState<any>({
@@ -62,19 +55,14 @@ const Agent: React.FC<unknown> = () => {
   /**
    * 操作tab时
    */
-  const handleEditTab = (action, key) => {
+  const handleEditTab = (action: any, key: string) => {
     if (key === 'add') {
       setAddColonyOpen(true);
     } else {
       Modal.confirm({
         title: '确认要删除当前集群吗？',
         icon: <ExclamationCircleFilled />,
-        onOk() {
-          // handleBatchDelete?.run({ user_ids: ids });
-          // handleSearch();
-          //   return new Promise((resolve, reject) => {
-          // }).catch(() => console.log('Oops errors!'));
-        },
+        onOk() {},
         onCancel() {},
       });
     }

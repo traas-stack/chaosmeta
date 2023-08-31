@@ -25,12 +25,6 @@ import React, { useEffect, useState } from 'react';
 import SpaceList from './SpaceList';
 import { Container } from './style';
 
-interface DataType {
-  id: string;
-  auth?: string;
-  userName: string;
-}
-
 interface PageData {
   page: number;
   pageSize: number;
