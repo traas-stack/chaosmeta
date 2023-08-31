@@ -1,5 +1,5 @@
 /**
- * 实验结果页面
+ * 攻击范围
  * @returns
  */
 import { LightArea } from '@/components/CommonStyle';

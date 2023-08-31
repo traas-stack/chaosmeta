@@ -1,30 +1,15 @@
 import { styled } from '@umijs/max';
 
-interface OperateType {
-  operatetype: 'login' | 'register';
-}
-
 export const Container = styled.div`
   height: 100vh;
   background-image: url('https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*mLnfQ6O7lVgAAAAAAAAAAAAADmKmAQ/original');
   background-size: cover;
   font-size: 14px;
-  /* .login {
-    width: 200px;
-    margin: auto;
-    padding-top: 100px;
-  }
-  .operate {
-    width: 100%;
-    justify-content: flex-end;
-  } */
   .seize {
     height: 1px;
   }
   .card {
     width: 420px;
-    /* height: 500px; */
-    /* position: relative; */
     border-radius: 12px;
     margin-left: 16%;
     margin-top: 7%;
@@ -63,17 +48,3 @@ export const Container = styled.div`
     }
   }
 `;
-
-// export const OperateArea = styled.div<OperateType>`
-//   width: 100%;
-//   display: flex;
-//   /* justify-content: space-between; */
-//   align-items: center;
-//   justify-content: ${(props) => {
-//     const { operatetype } = props;
-//     return operatetype === 'login' ? 'flex-end' : 'space-between';
-//   }};
-//   .ant-btn:last-child {
-//     margin-left: 8px;
-//   }
-// `;
