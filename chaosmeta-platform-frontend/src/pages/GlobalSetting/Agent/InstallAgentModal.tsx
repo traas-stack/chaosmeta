@@ -129,7 +129,9 @@ const InstallAgentModal: React.FC<IProps> = (props) => {
                 type={leftSelectedRows?.length > 0 ? 'primary' : 'default'}
                 onClick={() => {
                   if (leftSelectedRows?.length > 0) {
-                    const rightKeys = rightData?.map((item) => item.id);
+                    const rightKeys = rightData?.map(
+                      (item: { id: number }) => item.id,
+                    );
                     const newList = leftSelectedRows?.filter(
                       (item) => !rightKeys?.includes(item.id),
                     );

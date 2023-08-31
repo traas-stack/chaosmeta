@@ -355,7 +355,7 @@ export const HandleMove = styled.div<{
   left: 258px;
   cursor: pointer;
   transition: all 0.3s;
-  top: ${(props) => {
+  top: ${(props: any) => {
     return `${((props?.$index || 0) + 1) * 64 - 16 - props?.$scrollTop}px`;
   }};
   .delete {

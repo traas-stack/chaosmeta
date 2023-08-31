@@ -32,12 +32,7 @@ const SpaceList: React.FC<IProps> = (props) => {
     Modal.confirm({
       title: '确认要卸载已安装的Agent吗？',
       icon: <ExclamationCircleFilled />,
-      onOk() {
-        // handleBatchDelete?.run({ user_ids: ids });
-        // handleSearch();
-        //   return new Promise((resolve, reject) => {
-        // }).catch(() => console.log('Oops errors!'));
-      },
+      onOk() {},
       onCancel() {},
     });
   };
