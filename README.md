@@ -1,147 +1,149 @@
 ![](docs/static/logo.png)
-[官方文档](https://chaosmeta.gitbook.io/chaosmeta-cn)
-# 简介
+[中文版README](README_CN.md)
 
-ChaosMeta 是蚂蚁集团开源的一款云原生混沌工程平台。它凝聚了蚂蚁集团在公司级大规模红蓝攻防演练实践中多年积累的方法论、技术以及产品。由“风险目录”（内部对各领域技术组件的通用风险场景手册）作为理论指导，结合技术实践，为蚂蚁集团多年的各种大促活动保驾护航。
+[Official Document](https://chaosmeta.gitbook.io/chaosmeta-cn)
+# Introduction
 
-ChaosMeta 是一个致力于支撑故障演练各个阶段的平台，覆盖了准入检测、流量注入、故障注入、故障度量、故障恢复、恢复度量等多个阶段的平台能力。为用户解放生产力的同时，也在追求着混沌工程的未来形态：一键自动化演练，甚至智能化演练。
+ChaosMeta is a cloud-native chaos engineering platform open sourced by Ant Group. It embodies the methodologies, technologies and products that Ant Group has accumulated over many years in the practice of large-scale red and blue offensive and defensive drills at the company level. With the "Risk Catalog" (internal general risk scenario manual for technical components in various fields) as theoretical guidance, combined with technical practice, it has escorted Ant Group's various promotional activities for many years.
 
-# 核心优势
-#### 简单易用，提供用户界面，使用门槛低
-支持可视化用户界面、Kubernetes API、命令行、HTTP等多种使用方式
+ChaosMeta is a platform dedicated to supporting all stages of fault drills, covering platform capabilities in multiple stages such as access detection, traffic injection, fault injection, fault measurement, fault recovery, and recovery measurement. While liberating productivity for users, it is also pursuing the future form of chaos engineering: one-click automated drills, and even intelligent drills.
+
+# core advantages
+#### Simple and easy to use, provides user interface, low threshold for use
+Support visual user interface, Kubernetes API, command line, HTTP API, and other methods.
 ![](docs/static/workflow.png)
 
-#### 大量实践经验充分验证，功能可靠性高
+#### Fully verified by a large amount of practical experience, high reliability
 
-蚂蚁蓝军团队在混沌工程行业深耕多年，内部每年举行公司级大规模红蓝攻防演练活动，面向公司全体业务，并且也有不少业务进行7X24小时演练以及月度常态演练
+The Blue Army team of Ant Group has been deeply involved in the chaos engineering industry for many years. It holds company-level large-scale red and blue offensive and defensive drills every year, facing all the company's businesses, and many businesses also conduct 7X24-hour drills and monthly normal drills
 
-内部演练对象类型覆盖云产品、Kubernetes、Operator应用、数据库（OceanBase、Etcd等）、中间件（消息队列、分布式调度、配置中心等）、业务应用（Java应用、C++应用、Golang应用）
+Internal drill object types cover cloud products, Kubernetes, Operator applications, databases (OceanBase, Etcd, etc.), middleware (message queues, distributed scheduling, configuration centers, etc.), business applications (Java applications, C++ applications, Golang applications)
 
-#### 灵活性高，支撑多种用户需求
+#### High flexibility, supporting a variety of user needs
 
-无论用户是想要一个完整的混沌工程平台，还是只想要底层的远程注入、编排调度等平台能力，甚至是只想要单机故障注入能力，或者对云上/云下的目标进行管理以及注入故障，都有相应的部署方案可以满足
+Whether the user wants a complete chaos engineering platform, or just wants the underlying platform capabilities such as remote injection, orchestration and scheduling, or even just wants the single-machine fault injection capability, or manages and injects targets on or off the cloud Failure, there are corresponding deployment plans to meet
 ![](docs/static/componentlink.png)
 
-#### 丰富的故障注入能力，云原生混沌工程
+#### Rich fault injection capabilities, cloud native chaos engineering
 
-由于蚂蚁集团对攻防演练的高度重视，促成了大规模高频率的演练活动，进而推动了各种各样的故障注入能力建设。并且因为蚂蚁内部有着庞大的基础设施规模，加上金融的低容错性，所以对Kubernetes、中间件等基础设施的稳定性要求非常高，因此蚂蚁混沌工程在云原生领域沉淀了比较丰富的故障能力以及演练经验。
+Because Ant Group attaches great importance to offensive and defensive drills, it has led to large-scale and high-frequency drills, which in turn has promoted the construction of various fault injection capabilities. And because Ant has a huge internal infrastructure scale, coupled with the low fault tolerance of finance, the stability requirements for infrastructure such as Kubernetes and middleware are very high. Therefore, Ant Chaos Engineering has accumulated rich fault capabilities in the cloud-native field. and exercise experience.
 
 
-#### 平台功能强大，支撑完整“混沌工程生命周期”，面向自动化
-ChaosMeta 覆盖准入检测、流量注入、故障注入、故障度量、故障恢复、恢复度量等多个阶段的平台能力，作为“自动化混沌工程”的技术基础
-![](docs/static/lifecycle_cn.png)
+#### The platform has powerful capabilities, supports the complete "chaos engineering life cycle", and is oriented towards automation.
+ChaosMeta covers access detection, traffic injection, fault injection, fault measurement, fault recovery, recovery measurement and other stages of platform capabilities, as the technical basis of "automated chaos engineering"
+![](docs/static/lifecycle_en.png)
 
-除了演练过程的平台能力支撑外，自动化演练的另一座大山是实验的设计，目前很难完全依赖机器去自动设计。但是我们可以把其中的可复用经验系统化抽象出来，整理成册，在对同一类组件进行混沌工程演练的时候，就可以快速复用起来，这个就是风险目录的设计初衷
-<img src="docs/static/riskdir.png" width="50%" >
+In addition to the platform capability support of the exercise process, another big mountain in the automated exercise is the design of the experiment. At present, it is difficult to completely rely on machines to automatically design. However, we can systematically abstract the reusable experience and organize it into a book. When conducting chaos engineering exercises on the same type of components, we can quickly reuse it. This is the original intention of the risk catalog design
 
-ChaosMeta 则会在“混沌工程生命周期”的技术基础以及“风险目录”的理论基础上，实现**一键体检**的自动化演练功能，直接产出目标的稳定性分数，大大解放用户在混沌工程中的人力投入
+<img src="docs/static/riskdir_en.png" width="50%" >
 
-# 架构概览
+ChaosMeta will realize the automated drill capability of **one-click physical examination** based on the technical foundation of "Chaos Engineering Life Cycle" and the theoretical basis of "Risk Catalog", directly generate the target stability score, and greatly liberate users in chaos
+
+# Architecture overview
 ![](docs/static/architecture.png)
+##### User layer (Client)
+The Client layer is mainly composed of **chaosmeta-platform** components. Its main task is to lower the threshold for users to use and provide a visual interface to facilitate users' planning, orchestration, experiment configuration, experiment record details, and Agent management (pods/node of k8s clusters, cross-cluster objects, non-k8s physical machines/containers, etc.) and other platform capabilities.
 
-##### 用户层（Client）
-用户层主要是由 **chaosmeta-platform** 组件构成，其主要任务是降低用户使用的门槛，提供可视化界面，方便用户使用计划、编排、实验配置、实验记录详情、Agent管理（k8s集群的pod/node、跨集群对象、非k8s的物理机/容器等）等平台功能。
-
-##### 引擎层（Engine）
-引擎层包含了 ChaosMeta 的核心平台能力以及部分云原生故障能力的实现，包含以下组件：
-- **chaosmeta-CRD**：ChaosMeta 的平台能力都是基于 Operator 框架开发的，因此每类能力都有对应的CRD，然后由对应的 Operator监听状态并执行对应操作。比如故障注入能力的 CRD 为 experiments.inject.chaosmeta.io 而对应监听的 operator 为 chaosmeta-inject-operator。因此用户可以通过 Kubectl 或者 Kubernetes-Client 创建对应的 CR 实例以执行相应的功能；
-
-
-- **chaosmeta-inject-operator**：监听用户创建的故障注入相关的 CR 实例，在控制循环中把集群中 CR 的实际状态和期望状态对比以执行相关故障注入逻辑和状态流转，把实际状态调谐至期望状态。根据 CR 实例定义的故障类型执行不同的操作，比如：如果是系统资源类故障，则需要通过 chaosmeta-daemonset 或 HTTP 或 命令通道进行远程注入；如果是云原生类故障，则会基于 Kubernetes APIServer 进行注入，并且如果是涉及动态准入类故障，还会请求 chaosmeta-webhook 更新篡改规则和拦截规则；
+##### Engine layer (Engine)
+The Engine layer includes the core platform capabilities of ChaosMeta and the implementation of some cloud-native fault capabilities, including the following components:
+- **chaosmeta-CRD**: ChaosMeta's platform capabilities are developed based on the Operator framework, so each type of capability has a corresponding CRD, and then the corresponding Operator monitors the status and performs the corresponding operations. For example, the CRD of the fault injection capability is experiments.inject.chaosmeta.io and the corresponding monitoring operator is chaosmeta-inject-operator. Therefore, users can create corresponding CR instances through Kubectl or Kubernetes-Client to perform corresponding capabilities;
 
 
-- **chaosmeta-webhook**：每个 APIServer 的 API 处理流程都需要经过认证、鉴权、准入，而准入阶段会经过 Mutating Admission Webhook （篡改）和 Validating Admission Webhook （校验）阶段，chaosmeta-webhook 会根据故障定义更新资源匹配规则，对用户的 Kubernetes 资源创建请求进行拦截、篡改、延时、异常等操作。这对于 Operator 应用以及 Kubernetes 自身集群健壮性相关的故障演练场景非常有意义。
+- **chaosmeta-inject-operator**: Listens to CR instances related to fault injection created by users, compares the actual status of CR in the cluster with the expected status in the control loop to execute relevant fault injection logic and status transfer, and converts the actual status Tune into the desired state. Different operations are performed based on the fault type defined by the CR instance. For example: if it is a system resource fault, remote injection is required through chaosmeta-daemonset or HTTP or command channel; if it is a cloud native fault, injection will be based on Kubernetes APIServer. , and if it involves a dynamic admission failure, chaosmeta-webhook will also be requested to update the tampering rules and interception rules;
 
 
-- **chaosmeta-measure-operator**：这是用于执行度量功能的组件，主要用于两个阶段：故障度量和恢复度量。故障度量是对故障注入效果的有效性度量，而恢复度量是对防御平台恢复能力的有效性度量。度量能力是实现混沌工程自动化以及智能化的关键能力。
+- **chaosmeta-webhook**: The API processing process of each APIServer needs to go through authentication, authentication, and admission, and the admission stage will go through the Mutating Admission Webhook (tampering) and Validating Admission Webhook (verification) stages, chaosmeta -webhook will update the resource matching rules according to the fault definition, and intercept, tamper with, delay, and exception the user's Kubernetes resource creation request. This is very meaningful for failure drill scenarios related to Operator applications and Kubernetes' own cluster robustness.
 
 
-  *举个例子，比如一次演练的故障效果预期是某个服务的请求成功量下跌50%，并且预期对应的防御平    台能5分钟内发现并且10分钟内恢复，执行手段是通过CPU打满实现。那么故障度量阶段就要找到相比故障      注入前服务请求成功量下跌50%的时间点（故障生效点）。恢复度量阶段就要找到对应告警的产生时间点（故障发现点），还要找到故障发现点后请求成功量恢复演练前水位的时间点（故障恢复点）。最后产生此次演练的分析报告，给出防御平台待改进的地方。*
-
-- **chaosmeta-workflow-operator**：提供故障编排的能力。因为现实中，除了单一的故障场景外。还有大量复杂故障场景的需求，这就需要通过串并行组合不同的故障注入能力来进行模拟。并且编排还不止于故障注入，还可以包含流量注入、故障准入检测、故障度量、恢复度量等不同能力类型的编排节点，这也是让演练走向自动化的关键能力。
+- **chaosmeta-measure-operator**: This is the component used to perform measurement capabilities, mainly used in two phases: failure measurement and recovery measurement. The fault metric is an effectiveness measure of the fault injection effect, while the recovery metric is an effectiveness measure of the resilience of the defense platform. Measurement capabilities are the key capabilities to achieve automation and intelligence in chaos engineering.
 
 
-##### 内核层（Kernel）
-内核层主要包含了单机故障注入能力的实现，主要包含了 **chaosmetad** 组件，提供了常驻 HTTP 服务的方式以及命令行执行的方式，还封装了对应的 daemonset 组件（**chaosmeta-daemonset**）。可灵活搭配不同需求的演练平台。
+*For example, the failure effect of a drill is expected to be that the number of successful requests for a certain service drops by 50%, and the corresponding defense platform is expected to be able to detect it within 5 minutes and recover within 10 minutes. The execution method is to achieve full CPU usage. Then the fault measurement phase must find the time point when the number of successful service requests drops by 50% compared to before the fault injection (fault effective point). In the recovery measurement phase, it is necessary to find the time point when the corresponding alarm is generated (fault discovery point), and also to find the time point after the fault discovery point to request a successful amount to restore the water level before the drill (fault recovery point). Finally, an analysis report of the exercise was generated, giving areas for improvement in the defense platform.*
 
-# 当前版本的能力
-当前版本发布了：用户界面、故障注入调度引擎、度量引擎、流量注入引擎、单机故障注入工具等组件
-#### 用户界面
-- 提供实验编排能力，降低使用门槛（当前版本的界面暂未支持流量注入类型和度量类型节点）；
-- 提供对集群内的 Pod/Node 远程目标注入能力以及筛选能力（后续会在界面支持集群外的目标）；
-- 提供空间管理的能力，可以对数据按需分隔管理；
-- 提供账号权限管理系统。
-#### 故障注入能力
-- 系统资源异常：CPU、内存、网络、磁盘、进程、文件等；
-- 内核资源异常：fd、nproc等；
-- JVM动态注入：函数调用延迟、函数返回值篡改、函数抛出异常等；
-- 容器故障注入：杀容器、暂停容器，容器内CPU、内存、网络、磁盘、进程、文件、JVM注入等实验场景；
-- Kubernetes注入：对任意pod执行CPU、内存、网络、磁盘、进程、文件、JVM注入等实验场景；
-- 云原生故障：集群资源异常比如大量Pending Pod堆积、Completed Job堆积等；还有Deployment、Node、Pod等云原生资源实例异常比如Deployment实例副本扩缩容篡改、Pod实例Finalizer注入等。
-#### 度量能力
-- monitor：对监控项的值进行预期判断，比如某个机器的 cpu 使用率监控值是否大于90%，默认支持 prometheus
-- pod：对 pod 相关数据进行预期判断，比如某个应用的 pod 实例数是否大于3
-- http：对 http 请求进行预期判断，比如进行指定的 http 请求时，返回状态码是否为200
-- tcp：对 tcp 请求进行预期判断，比如测试某个服务器的8080端口是否能通
-#### 流量注入能力
-- http：http 流量注入
+- **chaosmeta-workflow-operator**: Provides fault orchestration capabilities. Because in reality, except for a single failure scenario. There are also demands for a large number of complex fault scenarios, which require simulation through serial and parallel combinations of different fault injection capabilities. And orchestration is not limited to fault injection, but can also include orchestration nodes with different capability types such as traffic injection, fault admission detection, fault measurement, recovery measurement, etc. This is also a key capability for automating drills.
 
-# 使用指引
-#### 快速试用单机注入能力
+- **chaosmeta-flow-operator**: This is a component used to perform traffic injection, mainly used to mock the traffic of the target services. Because when we conduct fault drills, we often need to meet the flow rate to achieve the effect of the fault. For example, if you want to trigger a service delay alarm for a certain service, it is not enough to inject the delay into the container network of this service. If there is no traffic request, the corresponding monitoring alarm will not be triggered.
+
+##### Kernel layer (Kernel)
+The Kernel layer mainly includes the implementation of single-machine fault injection capability, mainly including the **chaosmetad** component, which provides the method of resident HTTP service and command line execution, and also encapsulates the corresponding daemonset component (**chaosmeta-daemonset**). The training platform can be flexibly matched with different needs.
+
+# Capabilities of the current version
+The current version has released: user interface, fault injection scheduling engine, measurement engine, traffic injection engine, single machine fault injection tool and other components
+#### User Interface
+- Provides experiment orchestration capabilities and lowers the threshold for use (the current version of the UI does not yet support traffic injection type and measurement type nodes);
+- Provides the ability to inject and filter remote targets of Pod/Node in the cluster (the UI will support targets outside the cluster in the future);
+- Provides space management capabilities and can separate and manage data on demand;
+- Provide account permission management system.
+#### Fault injection capability
+- System Resources Exception: CPU, memory, network, disk, process, file, etc.;
+- Kernel Resource Exception: fd, nproc, etc.;
+- JVM Dynamic Injection: function call delay, function return value tampering, function throwing exception, etc.;
+- Container Fault Injection: kill container, suspend container, CPU, memory, network, disk, process, file, JVM injection and other experimental scenarios in the container;
+- Kubernetes Injection: execute experimental scenarios such as CPU, memory, network, disk, process, file, JVM injection on any pod;
+- Cloud-Native Faults: Abnormalities in cluster resources such as accumulation of a large number of Pending Pods and Completed Jobs; there are also abnormalities in instances of cloud-native resources such as Deployment, Node, and Pod, such as copy expansion and shrinking tampering of Deployment instances, and injection of Pod instance Finalizers.
+#### Measuring Capabilities
+- monitor: Make expected judgments on the values of monitoring items, such as whether the CPU usage monitoring value of a certain machine is greater than 90%. Prometheus is supported by default.
+- pod: Make expected judgments on pod-related data, such as whether the number of pod instances of an application is greater than 3
+- http: Make expected judgments on http requests. For example, when making a specified http request, whether the return status code is 200
+- tcp: Make expected judgments on tcp requests, such as testing whether the 8080 port of a certain server is connectable
+#### Traffic injection capability
+- http: http traffic injection
+
+# Getting Start
+#### Quickly try the single-machine injection capability
 ```shell
-# 下载镜像并运行容器
+# Download docker mirror and run container
 docker run --privileged -it registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmetad-demo:v0.1.1 /bin/bash
 
-# 使环境变量生效
+# Make the environment variable take effect
 source /etc/profile
 
-# 启动测试服务
+# Start the test service
 cd /tmp && python -m SimpleHTTPServer 8080 > server.log 2>&1 &
 curl 127.0.0.1:8080
 
-# 创建一个实验，给lo网卡注入2s网络延迟，10分钟后自动恢复
+# Create an experiment to inject a 2s network delay into the lo network card, and it will automatically recover after 10 minutes
 chaosmetad inject network delay -i lo -l 2s --uid test-fg3g4 -t 10m
 
-# 查看实验信息，测试效果
+# View experiment information, test effect
 chaosmetad query
 curl 127.0.0.1:8080
 
-# 人工恢复实验
+# Manually recover the experiment
 chaosmetad recover test-fg3g4
 ```
+#### Fault Ability Usage
+For details, see: [Function Instructions](https://chaosmeta.gitbook.io/chaosmeta-cn/gong-neng-shi-yong-shuo-ming)
+#### Installation Guide
+For details, see: [Installation Guide](https://chaosmeta.gitbook.io/chaosmeta-cn/an-zhuang-zhi-yin)
+# Comminicate
+Welcome to submit defects, questions, suggestions and new features, all problems can be submitted to [Github Issues](https://github.com/traas-stack/chaosmeta/issues/new), you can also contact us in the following ways:
+- DingTalk group: 21765030887
+- Slack group: [ChaosMeta](https://app.slack.com/client/T057ERYMS8J/C057883SM38?geocode=zh-cn)
+- WeChat public account: ChaosMeta混沌工程
+- Twitter：AntChaosMeta
+- Email: chaosmeta.io@gmail.com
+- WeChat group: email communication/WeChat public account to obtain QR code invitation
 
-#### 故障能力使用
-详见：[功能使用说明](https://chaosmeta.gitbook.io/chaosmeta-cn/gong-neng-shi-yong-shuo-ming)
-#### 安装指引
-详见：[安装指引](https://chaosmeta.gitbook.io/chaosmeta-cn/an-zhuang-zhi-yin)
-# 交流
-欢迎提交缺陷、问题、建议和新功能，所有问题都可以提交到 [Github Issues](https://github.com/traas-stack/chaosmeta/issues/new)，你也可以通过以下方式联系我们：
-- 钉钉群：21765030887
-- Slack 群：[ChaosMeta](https://app.slack.com/client/T057ERYMS8J/C057883SM38?geocode=zh-cn)
-- 微信公众号：ChaosMeta混沌工程
-- 邮箱：chaosmeta.io@gmail.com
-- 微信群：邮箱沟通/微信公众号获取二维码邀请
-
-# 规划
-### 平台能力
-ChaosMeta 平台能力的未来演进分为三大阶段
-##### 第一阶段-人工配置
-要达到的目标是将架构图中的组件都完成对外开放，此时，即可支撑完整的混沌工程生命周期，进入初级自动化混沌工程领域，以“风险目录”作为理论参考，一次人工配置，多次自动执行。
-对外开放顺序如下（如果有相关需求欢迎提交issue，会考虑进行优先级调整）：
-- [x] 单机故障注入工具：chaosmetad
-- [x] 故障远程注入引擎：chaosmeta-inject-operator
-- [x] 平台界面：chaosmeta-platform
-- [x] 编排引擎：chaosmeta-workflow-operator
-- [x] 度量引擎：chaosmeta-measure-operator
-- [ ] 风险目录：对各领域技术组件的通用风险场景手册
-- [ ] 云原生动态准入故障注入能力：chaosmeta-webhook
-##### 第二阶段-自动化
-此阶段下，“风险目录”会发挥更大的价值，它不仅仅给出一类应用会有什么风险，还有对应的预防以及应急建议，并且每一项的评分是多少，而 ChaosMeta 会将“风险目录”集成为通用组件的风险体检套餐，实现一键“体检”能力，输入目标应用信息，直接输出一个风险评分以及风险分析报告。
-##### 第三阶段-智能化
-探索结合人工智能的方向，自动生成更多未知的风险场景。
-#### 故障注入能力
-以下仅为故障能力分类，具体提供的原子故障能力详见[故障能力说明](https://chaosmeta.gitbook.io/chaosmeta-cn/gong-neng-shi-yong-shuo-ming)（欢迎提交issue，提出新能力需求，需求较高的优先提供）：
-
+# RoadMap
+### Platform capabilities
+The future evolution of ChaosMeta platform capabilities is divided into three stages
+##### Phase 1 - Manual Configuration
+The goal to be achieved is to open all the components in the architecture diagram to the outside world. At this time, it can support the complete life cycle of chaos engineering, enter the field of primary automated chaos engineering, and use the "risk catalog" as a theoretical reference. Once manual configuration, multiple times automatically.
+The order of opening to the outside world is as follows (if you have relevant needs, you are welcome to submit an issue, and priority adjustments will be considered):
+- [x] Stand-alone fault injection tool：chaosmetad
+- [x] Fault Remote Injection Engine：chaosmeta-inject-operator
+- [x] Platform Dashboard：chaosmeta-platform
+- [x] Orchestration Engine：chaosmeta-workflow-operator
+- [x] Metric Engine：chaosmeta-measure-operator
+- [ ] Risk Catalog：Common Risk Scenario Handbook for Technical Components in Each Field
+- [ ] Cloud Native Dynamic Access Fault Injection Capability：chaosmeta-webhook
+##### Phase 2 - Automation
+At this stage, the "Risk Catalog" will play a greater role. It not only gives the risk of a class of applications, but also the corresponding prevention and emergency recommendations, and the score of each item, and ChaosMeta will The "risk catalog" is integrated into a risk medical examination package of general components, which realizes the one-click "physical examination" capability, inputs target application information, and directly outputs a risk score and risk analysis report.
+##### Phase 3 - intelligence
+Explore the direction of combining artificial intelligence
+### Fault Injection Capability
+The following is just a classification of fault capabilities. For the specific atomic fault capabilities provided, please refer to the [description of fault capabilities](https://chaosmeta.gitbook.io/chaosmeta-cn/gong-neng-shi-yong-shuo-ming) (welcome to submit issues and put forward new capability requirements, and those with higher requirements are given priority):
 ![](docs/static/roadmap.png)
 # License
-ChaosMeta 遵循 Apache 2.0 许可证，详细内容请阅读 [LICENSE](LICENSE)
+ChaosMeta follows the Apache 2.0 license, please read [LICENSE](LICENSE) for details
