@@ -1,7 +1,7 @@
 ![](docs/static/logo.png)
 [中文版README](README_CN.md)
 
-[Official Document](https://chaosmeta.gitbook.io/chaosmeta-cn)
+[Official Document](https://chaosmeta.gitbook.io/chaosmeta-en)
 # Introduction
 
 ChaosMeta is a cloud-native chaos engineering platform open sourced by Ant Group. It embodies the methodologies, technologies and products that Ant Group has accumulated over many years in the practice of large-scale red and blue offensive and defensive drills at the company level. With the "Risk Catalog" (internal general risk scenario manual for technical components in various fields) as theoretical guidance, combined with technical practice, it has escorted Ant Group's various promotional activities for many years.
@@ -113,9 +113,9 @@ curl 127.0.0.1:8080
 chaosmetad recover test-fg3g4
 ```
 #### Fault Ability Usage
-For details, see: [Function Instructions](https://chaosmeta.gitbook.io/chaosmeta-cn/gong-neng-shi-yong-shuo-ming)
+For details, see: [Function Instructions](https://chaosmeta.gitbook.io/chaosmeta-en/function-instructions)
 #### Installation Guide
-For details, see: [Installation Guide](https://chaosmeta.gitbook.io/chaosmeta-cn/an-zhuang-zhi-yin)
+For details, see: [Installation Guide](https://chaosmeta.gitbook.io/chaosmeta-en/installation-guide)
 # Comminicate
 Welcome to submit defects, questions, suggestions and new features, all problems can be submitted to [Github Issues](https://github.com/traas-stack/chaosmeta/issues/new), you can also contact us in the following ways:
 - DingTalk group: 21765030887
@@ -143,7 +143,7 @@ At this stage, the "Risk Catalog" will play a greater role. It not only gives th
 ##### Phase 3 - intelligence
 Explore the direction of combining artificial intelligence
 ### Fault Injection Capability
-The following is just a classification of fault capabilities. For the specific atomic fault capabilities provided, please refer to the [description of fault capabilities](https://chaosmeta.gitbook.io/chaosmeta-cn/gong-neng-shi-yong-shuo-ming) (welcome to submit issues and put forward new capability requirements, and those with higher requirements are given priority):
+The following is just a classification of fault capabilities. For the specific atomic fault capabilities provided, please refer to the [description of fault capabilities](https://chaosmeta.gitbook.io/chaosmeta-en/function-instructions) (welcome to submit issues and put forward new capability requirements, and those with higher requirements are given priority):
 ![](docs/static/roadmap.png)
 # License
 ChaosMeta follows the Apache 2.0 license, please read [LICENSE](LICENSE) for details
