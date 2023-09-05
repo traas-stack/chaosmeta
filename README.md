@@ -113,7 +113,7 @@ curl 127.0.0.1:8080
 chaosmetad recover test-fg3g4
 ```
 #### Fault Ability Usage
-For details, see: [Function Instructions](https://chaosmeta.gitbook.io/chaosmeta-en/function-instructions)
+For details, see: [Function Instructions](https://chaosmeta.gitbook.io/chaosmeta-en/capability-instruction)
 #### Installation Guide
 For details, see: [Installation Guide](https://chaosmeta.gitbook.io/chaosmeta-en/installation-guide)
 # Comminicate
@@ -143,7 +143,7 @@ At this stage, the "Risk Catalog" will play a greater role. It not only gives th
 ##### Phase 3 - intelligence
 Explore the direction of combining artificial intelligence
 ### Fault Injection Capability
-The following is just a classification of fault capabilities. For the specific atomic fault capabilities provided, please refer to the [description of fault capabilities](https://chaosmeta.gitbook.io/chaosmeta-en/function-instructions) (welcome to submit issues and put forward new capability requirements, and those with higher requirements are given priority):
+The following is just a classification of fault capabilities. For the specific atomic fault capabilities provided, please refer to the [description of fault capabilities](https://chaosmeta.gitbook.io/chaosmeta-en/capability-instruction) (welcome to submit issues and put forward new capability requirements, and those with higher requirements are given priority):
 ![](docs/static/roadmap.png)
 # License
 ChaosMeta follows the Apache 2.0 license, please read [LICENSE](LICENSE) for details
