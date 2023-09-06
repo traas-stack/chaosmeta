@@ -135,7 +135,7 @@ The order of opening to the outside world is as follows (if you have relevant ne
 - [x] Fault Remote Injection Engine：chaosmeta-inject-operator
 - [x] Platform Dashboard：chaosmeta-platform
 - [x] Orchestration Engine：chaosmeta-workflow-operator
-- [x] Metric Engine：chaosmeta-measure-operator
+- [x] Measure Engine：chaosmeta-measure-operator
 - [x] Traffic Injection Engine：chaosmeta-flow-operator
 - [ ] Risk Catalog：Common Risk Scenario Handbook for Technical Components in Each Field
 - [ ] Cloud Native Dynamic Access Fault Injection Capability：chaosmeta-webhook
