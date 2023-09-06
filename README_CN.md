@@ -135,6 +135,7 @@ ChaosMeta 平台能力的未来演进分为三大阶段
 - [x] 平台界面：chaosmeta-platform
 - [x] 编排引擎：chaosmeta-workflow-operator
 - [x] 度量引擎：chaosmeta-measure-operator
+- [x] 流量注入引擎：chaosmeta-flow-operator
 - [ ] 风险目录：对各领域技术组件的通用风险场景手册
 - [ ] 云原生动态准入故障注入能力：chaosmeta-webhook
 ##### 第二阶段-自动化
