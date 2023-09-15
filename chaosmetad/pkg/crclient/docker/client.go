@@ -148,7 +148,7 @@ func (d *Client) Exec(ctx context.Context, containerID, cmd string) (string, err
 	defer attach.Close()
 	data, err := ioutil.ReadAll(attach.Reader)
 	if err != nil {
-		return "", fmt.Errorf("read container exec date error: %s", err.Error())
+		return "", fmt.Errorf("read container exec data error: %s", err.Error())
 	}
 
 	logger.Debugf("container exec output: %s", string(data))

@@ -504,7 +504,7 @@ data:
       "executor": {
         "mode": "daemonset",
         "executor": "chaosmetad",
-        "version": "0.1.1",
+        "version": "0.2.0",
         "agentConfig": {
           "agentPort": 29595
         },
