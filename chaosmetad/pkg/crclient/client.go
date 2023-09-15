@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/crclient/base"
+	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/crclient/containerd"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/crclient/docker"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/crclient/pouch"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/log"
@@ -29,9 +30,6 @@ const (
 	CrDocker     = "docker"
 	CrContainerd = "containerd"
 	CrPouch      = "pouch"
-
-	// /var/run/pouchd.sock
-	// /var/run/containerd.sock
 )
 
 type Client interface {
@@ -54,7 +52,7 @@ func GetClient(ctx context.Context, cr string) (Client, error) {
 	case CrDocker:
 		return docker.GetClient(ctx)
 	case CrContainerd:
-		return nil, fmt.Errorf("to be supported")
+		return containerd.GetClient(ctx)
 	case CrPouch:
 		return pouch.GetClient(ctx)
 	default:

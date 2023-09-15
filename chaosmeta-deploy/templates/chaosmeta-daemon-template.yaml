@@ -19,7 +19,7 @@ spec:
 #        chaos-role.chaosmeta.io: chaosmeta-daemon
       containers:
         - name: chaosmeta-daemon
-          image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-daemon:v0.1.1
+          image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-daemon:v0.2.0
           securityContext:
             privileged: true
           volumeMounts:

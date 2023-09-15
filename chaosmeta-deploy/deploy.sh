@@ -18,6 +18,7 @@ BASE_DIR=$(
   pwd
 )
 
+mkdir -p ${BASE_DIR}/yamls
 # param check
 OP=$1
 NAMESPACE=$2
@@ -27,10 +28,10 @@ for ((i = 3; i <= $#; i++)); do
 done
 
 if [ "$OP" == "-h" ] || [ "$OP" == "--help" ] || [ -z "$OP" ] || [ ${#COMPONENT_LIST[@]} -eq 0 ]; then
-  echo "format: sh deploy.sh [operation] [namespace] [component list]"
-  echo "operation support: ${OP_INSTALL},${OP_UNINSTALL}"
-  echo "component support: ${COMPONENT_ALL} ${COMPONENT_PLATFORM} ${COMPONENT_WORKFLOW} ${COMPONENT_INJECT} ${COMPONENT_MEASURE} ${COMPONENT_FLOW} ${COMPONENT_DAEMON}"
-  echo "example: sh deploy.sh install default ${COMPONENT_PLATFORM} ${COMPONENT_WORKFLOW} ${COMPONENT_INJECT} ${COMPONENT_DAEMON}"
+  echo -e "\nformat: sh deploy.sh [operation] [namespace] [component list]"
+  echo -e "example: sh deploy.sh install default ${COMPONENT_PLATFORM} ${COMPONENT_WORKFLOW} ${COMPONENT_INJECT} ${COMPONENT_DAEMON}\n"
+  echo "operation support: ${OP_INSTALL} ${OP_UNINSTALL}"
+  echo -e "component support: ${COMPONENT_ALL} ${COMPONENT_PLATFORM} ${COMPONENT_WORKFLOW} ${COMPONENT_INJECT} ${COMPONENT_MEASURE} ${COMPONENT_FLOW} ${COMPONENT_DAEMON}\n"
   exit 1
 fi
 
