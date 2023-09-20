@@ -123,6 +123,7 @@ func (e *CmdExecutor) ExecTool(ctx context.Context) error {
 }
 
 func CpContainerFile(ctx context.Context, cr, containerID, src, dst string) error {
+	log.GetLogger(ctx).Debugf("cp from %s to %s in %s", src, dst, containerID)
 	client, err := crclient.GetClient(ctx, cr)
 	if err != nil {
 		return fmt.Errorf("get %s client error: %s", cr, err.Error())
@@ -190,7 +191,7 @@ func RunBashCmdWithOutput(ctx context.Context, cmd string) (string, error) {
 			return "", fmt.Errorf(re)
 		}
 
-		return "", err
+		return "", fmt.Errorf("%s, output: %s", err.Error(), re)
 	}
 
 	return re, nil
@@ -322,5 +323,6 @@ func ExecContainerRaw(ctx context.Context, cr, cId, cmd string) (string, error) 
 		return "", fmt.Errorf("get %s client error: %s", cr, err.Error())
 	}
 
+	log.GetLogger(ctx).Debugf("container: %s, exec cmd: %s", cId, cmd)
 	return client.Exec(ctx, cId, cmd)
 }

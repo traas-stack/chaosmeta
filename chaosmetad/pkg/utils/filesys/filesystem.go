@@ -31,6 +31,20 @@ func MkdirP(ctx context.Context, path string) error {
 	return cmdexec.RunBashCmdWithoutOutput(ctx, fmt.Sprintf("mkdir -p %s", path))
 }
 
+func MkdirPInContainer(ctx context.Context, cr, cId, path string) error {
+	_, err := cmdexec.ExecContainerRaw(ctx, cr, cId, fmt.Sprintf("mkdir -p %s", path))
+	return err
+}
+
+func RemoveFileInContainer(ctx context.Context, cr, cId, file string) error {
+	if file == "" || file == "/" || strings.Index(file, "*") >= 0 {
+		return fmt.Errorf("delete file[%s] not allowed", file)
+	}
+
+	_, err := cmdexec.ExecContainerRaw(ctx, cr, cId, fmt.Sprintf("rm %s", file))
+	return err
+}
+
 func Chmod(ctx context.Context, path, perm string) error {
 	return cmdexec.RunBashCmdWithoutOutput(ctx, fmt.Sprintf("chmod %s %s", perm, path))
 }

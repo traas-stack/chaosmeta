@@ -19,13 +19,14 @@ package jvm
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/injector"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/log"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils"
-	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/cmdexec"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/filesys"
+	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/process"
 	"os"
 )
 
@@ -68,13 +69,18 @@ func (i *MethodExceptionInjector) Validator(ctx context.Context) error {
 		return err
 	}
 
-	pidList, err := getPidList(ctx, i.Args.Pid, i.Args.Key, i.Info.ContainerRuntime, i.Info.ContainerId)
+	pidList, err := process.GetPidListByPidOrKeyInContainer(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, i.Args.Pid, i.Args.Key)
 	if err != nil {
 		return fmt.Errorf("get target process's pid error: %s", err.Error())
 	}
 
 	for _, pid := range pidList {
-		if filesys.CheckDir(getRuleDir(pid)) == nil {
+		ifExist, err := filesys.ExistFile(getRuleFile(i.Info.ContainerId, pid))
+		if err != nil {
+			return fmt.Errorf("check file of process[%d] exist error: %s", pid, err.Error())
+		}
+
+		if ifExist {
 			return fmt.Errorf("has jvm experiment running in process[%d]", pid)
 		}
 	}
@@ -89,15 +95,13 @@ func (i *MethodExceptionInjector) Validator(ctx context.Context) error {
 
 func (i *MethodExceptionInjector) Inject(ctx context.Context) error {
 	var (
-		pidList     []int
-		err         error
-		needRecover bool
-		errMsg      string
-		logger      = log.GetLogger(ctx)
+		pidList []int
+		err     error
+		logger  = log.GetLogger(ctx)
 	)
 
-	pidList, _ = getPidList(ctx, i.Args.Pid, i.Args.Key, i.Info.ContainerRuntime, i.Info.ContainerId)
-
+	pidList, _ = process.GetPidListByPidOrKeyInContainer(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, i.Args.Pid, i.Args.Key)
+	logger.Debugf("target pid list: %v", pidList)
 	// save target
 	i.Runtime.AttackPids = pidList
 
@@ -113,38 +117,15 @@ func (i *MethodExceptionInjector) Inject(ctx context.Context) error {
 	}
 
 	logger.Debugf("rule json: %s", string(ruleBytes))
-	// create rule file
-	for _, pid := range pidList {
-		if err := writeRule(ctx, pid, ruleBytes); err != nil {
-			needRecover = true
-			errMsg = fmt.Sprintf("write rule for process[%d] error: %s", pid, err.Error())
-			break
-		}
-	}
-
-	if !needRecover {
-		// execute
-		for _, pid := range pidList {
-			if _, err := cmdexec.StartBashCmdAndWaitPid(ctx, getCmd(pid), TimeoutSec); err != nil {
-				needRecover = true
-				errMsg = fmt.Sprintf("execute fault for process[%d] error: %s", pid, err.Error())
-				break
-			}
-		}
-	}
-
-	if needRecover {
+	err = doInject(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, pidList, ruleBytes)
+	if err != nil {
 		// undo recover
-		if err := i.Recover(ctx); err != nil {
-			logger.Warnf("undo error: %s", err.Error())
+		if rErr := i.Recover(ctx); rErr != nil {
+			logger.Warnf("undo error: %s", rErr.Error())
 		}
 	}
 
-	if errMsg != "" {
-		return fmt.Errorf(errMsg)
-	}
-
-	return nil
+	return err
 }
 
 func (i *MethodExceptionInjector) Recover(ctx context.Context) error {
@@ -153,13 +134,31 @@ func (i *MethodExceptionInjector) Recover(ctx context.Context) error {
 	}
 
 	logger := log.GetLogger(ctx)
+	var errMsg string
 	for _, pid := range i.Runtime.AttackPids {
-		targetDir := getRuleDir(pid)
-		if filesys.CheckDir(targetDir) == nil {
-			if err := os.RemoveAll(targetDir); err != nil {
-				logger.Errorf("remove dir[%s] error: %s", targetDir, err.Error())
+		targetRule := getRuleFile(i.Info.ContainerId, pid)
+		logger.Debugf("check file: %s", targetRule)
+		ifExist, err := filesys.ExistFile(targetRule)
+		if err != nil {
+			errMsg = fmt.Sprintf("%s. %s", errMsg, fmt.Sprintf("check file[%s] exist error: %s", targetRule, err.Error()))
+			continue
+		}
+
+		if ifExist {
+			if i.Info.ContainerRuntime != "" {
+				if err := filesys.RemoveFileInContainer(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, getContainerRuleFile(pid)); err != nil {
+					errMsg = fmt.Sprintf("%s. %s", errMsg, fmt.Sprintf("remove rule[%s] error: %s", targetRule, err.Error()))
+					continue
+				}
+			}
+			if err := os.RemoveAll(targetRule); err != nil {
+				errMsg = fmt.Sprintf("%s. %s", errMsg, fmt.Sprintf("remove rule[%s] error: %s", targetRule, err.Error()))
 			}
 		}
+	}
+
+	if errMsg != "" {
+		return errors.New(errMsg)
 	}
 
 	return nil

@@ -115,7 +115,6 @@ func (d *Client) GetAllPidList(ctx context.Context, containerID string) ([]base.
 	return rePro, nil
 }
 
-// Exec TODO: now output has extra space prefix, need to fix this bug
 func (d *Client) Exec(ctx context.Context, containerID, cmd string) (string, error) {
 	logger := log.GetLogger(ctx)
 	logger.Debugf("container exec cmd: %s", cmd)
@@ -137,13 +136,27 @@ func (d *Client) Exec(ctx context.Context, containerID, cmd string) (string, err
 	}
 
 	defer conn.Close()
-	data, err := ioutil.ReadAll(r)
+	dataBytes, err := ioutil.ReadAll(r)
 	if err != nil {
 		return "", fmt.Errorf("read container exec data error: %s", err.Error())
 	}
 
-	logger.Debugf("container exec output: %s", string(data))
-	return string(data), nil
+	data := string(dataBytes)
+	logger.Debugf("container exec output: %s", data)
+	execInspect, err := d.client.ContainerExecInspect(context.Background(), resp.ID)
+	if err != nil {
+		return "", fmt.Errorf("inspect container exec result error: %s", err.Error())
+	}
+
+	if execInspect.ExitCode != 0 {
+		return "", fmt.Errorf("exit code: %d, output: %s", execInspect.ExitCode, data)
+	}
+
+	if len(data) >= 8 {
+		data = data[8:]
+	}
+
+	return data, nil
 }
 
 // KillContainerById convert to static container

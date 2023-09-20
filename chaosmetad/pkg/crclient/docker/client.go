@@ -146,13 +146,27 @@ func (d *Client) Exec(ctx context.Context, containerID, cmd string) (string, err
 	}
 
 	defer attach.Close()
-	data, err := ioutil.ReadAll(attach.Reader)
+	dataBytes, err := ioutil.ReadAll(attach.Reader)
 	if err != nil {
 		return "", fmt.Errorf("read container exec data error: %s", err.Error())
 	}
 
-	logger.Debugf("container exec output: %s", string(data))
-	return string(data), nil
+	data := string(dataBytes)
+	logger.Debugf("container exec output: %s", data)
+	execInspect, err := d.client.ContainerExecInspect(context.Background(), resp.ID)
+	if err != nil {
+		return "", fmt.Errorf("inspect container exec result error: %s", err.Error())
+	}
+
+	if execInspect.ExitCode != 0 {
+		return "", fmt.Errorf("exit code: %d, output: %s", execInspect.ExitCode, string(data))
+	}
+
+	if len(data) >= 8 {
+		data = data[8:]
+	}
+
+	return data, nil
 }
 
 // KillContainerById convert to static container
