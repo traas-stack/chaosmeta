@@ -199,6 +199,15 @@ func StopExperiment(experimentInstanceID string) error {
 	}
 
 	experimentInstanceInfo.Status = "Succeeded"
+	for _, node := range workFlowGet.Status.Nodes {
+		if node.TemplateName == string(ExperimentInject) || node.TemplateName == string(RawSuspend) {
+			if node.Phase == "Failed" || node.Phase == "Error" {
+				experimentInstanceInfo.Status = string(node.Phase)
+				return experimentInstanceModel.UpdateExperimentInstance(experimentInstanceInfo)
+			}
+		}
+	}
+
 	return experimentInstanceModel.UpdateExperimentInstance(experimentInstanceInfo)
 }
 

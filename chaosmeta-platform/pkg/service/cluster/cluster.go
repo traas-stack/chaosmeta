@@ -128,6 +128,12 @@ func (c *ClusterService) GetList(ctx context.Context, name, orderBy string, page
 }
 
 func (c *ClusterService) GetRestConfig(ctx context.Context, id int) (*kubernetes.Clientset, *rest.Config, error) {
+	if config.DefaultRunOptIns.RunMode == "KubeConfig" {
+		id = -1
+	}
+	if config.DefaultRunOptIns.RunMode == "ServiceAccount" {
+		id = 0
+	}
 	if id == 0 {
 		return c.getRestConfigInCluster()
 	}

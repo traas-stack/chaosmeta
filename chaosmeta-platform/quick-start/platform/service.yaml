@@ -4,7 +4,7 @@ metadata:
   labels:
     app: chaosmeta-platform-mysql
   name: chaosmeta-platform-mysql
-  namespace: chaosmeta-platform
+  namespace: chaosmeta
 spec:
   ports:
     - port: 3306
@@ -21,12 +21,12 @@ metadata:
   labels:
     app: chaosmeta-platform
   name: chaosmeta-platform
-  namespace: chaosmeta-platform
+  namespace: chaosmeta
 spec:
   ports:
     - name: http
-      port: 81
-      targetPort: 8001
+      port: 8082
+      targetPort: 8082
   selector:
     app: chaosmeta-platform
   sessionAffinity: None

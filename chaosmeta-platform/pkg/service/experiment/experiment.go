@@ -50,6 +50,7 @@ type ExperimentInfo struct {
 	Status       int       `json:"status"`
 	CreateTime   time.Time `json:"create_time,omitempty"`
 	UpdateTime   time.Time `json:"update_time,omitempty"`
+	LastInstance string    `json:"last_instance,omitempty"`
 }
 
 type LabelGet struct {
@@ -178,15 +179,91 @@ func (es *ExperimentService) UpdateExperiment(uuid string, experimentParam *Expe
 	if experimentParam == nil {
 		return errors.New("experimentParam is nil")
 	}
-	_, err := experiment.GetExperimentByUUID(uuid)
+	getExperiment, err := experiment.GetExperimentByUUID(uuid)
 	if err != nil {
-		return err
+		return fmt.Errorf("no this experiment")
 	}
-	if err := es.DeleteExperimentByUUID(uuid); err != nil {
-		return err
+
+	experimentUUid := getExperiment.UUID
+	log.Error(1)
+	//label
+	if len(experimentParam.Labels) > 0 {
+		if err := experiment.ClearLabelIDsByExperimentUUID(uuid); err != nil {
+			log.Error(err)
+			return err
+		}
+		if err := experiment.AddLabelIDsToExperiment(uuid, experimentParam.Labels); err != nil {
+			log.Error(err)
+			return err
+		}
 	}
-	_, err = es.CreateExperiment(experimentParam)
-	return err
+	log.Error(2)
+	//workflow_nodes
+
+	for _, node := range experimentParam.WorkflowNodes {
+		node.ExperimentUUID = experimentUUid
+		workflowNodeCreate := experiment.WorkflowNode{
+			UUID:           node.UUID,
+			Name:           node.Name,
+			ExperimentUUID: experimentUUid,
+			Row:            node.Row,
+			Column:         node.Column,
+			Duration:       node.Duration,
+			ScopeId:        node.ScopeId,
+			TargetId:       node.TargetId,
+			ExecType:       node.ExecType,
+			ExecID:         node.ExecID,
+		}
+
+		log.Error(3)
+		if err := experiment.DeleteWorkflowNodeByUUID(node.UUID); err != nil {
+			log.Error(err)
+			return err
+		}
+		log.Error(4)
+		if err := experiment.CreateWorkflowNode(&workflowNodeCreate); err != nil {
+			log.Error(err)
+			return err
+		}
+		log.Error(5)
+		//args_value
+		if len(node.ArgsValue) > 0 {
+			if err := experiment.ClearArgsValuesByWorkflowNodeUUID(node.UUID); err != nil {
+				log.Error(err)
+				return err
+			}
+			if err := experiment.BatchInsertArgsValues(node.UUID, node.ArgsValue); err != nil {
+				log.Error(err)
+				return err
+			}
+		}
+
+		log.Error(6)
+		//exec_range
+		if node.FaultRange != nil {
+			node.FaultRange.WorkflowNodeInstanceUUID = node.UUID
+			if err := experiment.ClearFaultRangesByWorkflowNodeInstanceUUID(node.UUID); err != nil {
+				log.Error(err)
+				return err
+			}
+			if err := experiment.CreateFaultRange(node.FaultRange); err != nil {
+				return err
+			}
+		}
+	}
+
+	getExperiment.Name = experimentParam.Name
+	getExperiment.Description = experimentParam.Description
+	getExperiment.ScheduleType = experimentParam.ScheduleType
+	getExperiment.ScheduleRule = experimentParam.ScheduleRule
+	log.Error(7)
+	return experiment.UpdateExperiment(getExperiment)
+	//experimentParam.Creator = getExperiment.Creator
+	//if err := es.DeleteExperimentByUUID(uuid); err != nil {
+	//	return err
+	//}
+	//_, err = es.CreateExperiment(experimentParam)
+	//return err
 }
 
 func (es *ExperimentService) UpdateExperimentStatusAndLastInstance(uuid string, status int, lastInstance string) error {
@@ -263,7 +340,6 @@ func (es *ExperimentService) GetExperimentByUUID(uuid string) (*ExperimentGet, e
 	}
 
 	return &experimentReturn, es.GetWorkflowNodesByExperiment(uuid, &experimentReturn)
-
 	//CountExperimentInstances()
 }
 
