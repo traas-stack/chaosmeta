@@ -16,6 +16,11 @@
 
 package file
 
+import (
+	"fmt"
+	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils"
+)
+
 const (
 	TargetFile = "file"
 
@@ -28,5 +33,15 @@ const (
 	FaultFileDelete = "del"
 
 	FaultFileChmod = "chmod"
-	FileExec       = "chaosmeta_file"
+	//FileExec       = "chaosmeta_file"
+
+	BackUpDir = "/tmp/chaosmeta_backup_file"
 )
+
+func getAppendFlag(uid string) string {
+	return fmt.Sprintf(" %s-%s", utils.RootName, uid)
+}
+
+func getBackupDir(uid string) string {
+	return fmt.Sprintf("%s%s", BackUpDir, uid)
+}

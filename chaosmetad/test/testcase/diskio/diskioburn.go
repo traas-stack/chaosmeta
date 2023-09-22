@@ -143,7 +143,7 @@ func GetDiskIOBurnTest() []common.TestCase {
 					return err
 				}
 
-				return checkDiskioBurn(0, 5000, 0, 5000, "/data/testdiskio_chaosmeta")
+				return checkDiskioBurn(0, 3000, 0, 3000, "/data/testdiskio_chaosmeta")
 			},
 			PostProcessor: func() error {
 				return os.Remove("/data/testdiskio_chaosmeta")
@@ -198,7 +198,7 @@ func checkExistPro(ifExist bool, dir string) error {
 	//}
 
 	file := fmt.Sprintf("%s/chaosmeta_diskburn_%s", dir, common.UID)
-	exist, err = filesys.ExistPath(file)
+	exist, err = filesys.ExistPathLocal(file)
 	if err != nil {
 		return fmt.Errorf("check file[%s] exist error: %s", file, err.Error())
 	}

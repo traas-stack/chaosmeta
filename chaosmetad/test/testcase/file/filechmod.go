@@ -19,7 +19,6 @@ package file
 import (
 	"context"
 	"fmt"
-	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/cmdexec"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/filesys"
 	"github.com/traas-stack/chaosmeta/chaosmetad/test/common"
@@ -28,7 +27,7 @@ import (
 )
 
 var (
-	fileChmodFileName = "chaosmeta_file.test"
+	fileChmodFileName = "/tmp/chaosmeta_file.test"
 	fileChmodPerm     = "762"
 	fileChmodOldPerm  = ""
 )
@@ -91,10 +90,10 @@ func GetFileChmodTest() []common.TestCase {
 				return nil
 			},
 			Check: func() error {
-				return checkPerm(fmt.Sprintf("%s/%s", utils.GetRunPath(), fileChmodFileName), fileChmodPerm)
+				return checkPerm(fileAppendFileName, fileChmodPerm)
 			},
 			CheckRecover: func() error {
-				return checkPerm(fmt.Sprintf("%s/%s", utils.GetRunPath(), fileChmodFileName), fileChmodOldPerm)
+				return checkPerm(fileAppendFileName, fileChmodOldPerm)
 			},
 			PostProcessor: func() error {
 				return os.Remove(fileChmodFileName)

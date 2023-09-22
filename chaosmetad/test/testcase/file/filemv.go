@@ -27,8 +27,8 @@ import (
 )
 
 var (
-	fileMvSrcFileName = "chaosmeta_src.test"
-	fileMvDstFileName = "chaosmeta_dst.test"
+	fileMvSrcFileName = "/tmp/chaosmeta_src.test"
+	fileMvDstFileName = "/tmp/chaosmeta_dst.test"
 )
 
 func GetFileMvTest() []common.TestCase {

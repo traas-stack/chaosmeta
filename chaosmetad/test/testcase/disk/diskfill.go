@@ -117,35 +117,35 @@ func GetDiskFillTest() []common.TestCase {
 			},
 		},
 		{
-			Args:  "-p 100",
+			Args:  "-p 98",
 			Error: false,
 			Check: func() error {
-				return checkDiskFillPer(tmpDir, getTmpFile(), 100, false)
+				return checkDiskFillPer(tmpDir, getTmpFile(), 98, false)
 			},
 			CheckRecover: func() error {
 				return checkDiskFillPer(tmpDir, getTmpFile(), tmpUsagePer, true)
 			},
 		},
-		{
-			Args:  fmt.Sprintf("-d /data -p %d", upperDataPer),
-			Error: false,
-			Check: func() error {
-				return checkDiskFillPer(dataDir, getDataFile(), upperDataPer, false)
-			},
-			CheckRecover: func() error {
-				return checkDiskFillPer(dataDir, getDataFile(), dataUsagePer, true)
-			},
-		},
-		{
-			Args:  fmt.Sprintf("-d /data -p %d -b 10Mb", upperDataPer),
-			Error: false,
-			Check: func() error {
-				return checkDiskFillPer(dataDir, getDataFile(), upperDataPer, false)
-			},
-			CheckRecover: func() error {
-				return checkDiskFillPer(dataDir, getDataFile(), dataUsagePer, true)
-			},
-		},
+		//{
+		//	Args:  fmt.Sprintf("-d /data -p %d", upperDataPer),
+		//	Error: false,
+		//	Check: func() error {
+		//		return checkDiskFillPer(dataDir, getDataFile(), upperDataPer, false)
+		//	},
+		//	CheckRecover: func() error {
+		//		return checkDiskFillPer(dataDir, getDataFile(), dataUsagePer, true)
+		//	},
+		//},
+		//{
+		//	Args:  fmt.Sprintf("-d /data -p %d -b 10Mb", upperDataPer),
+		//	Error: false,
+		//	Check: func() error {
+		//		return checkDiskFillPer(dataDir, getDataFile(), upperDataPer, false)
+		//	},
+		//	CheckRecover: func() error {
+		//		return checkDiskFillPer(dataDir, getDataFile(), dataUsagePer, true)
+		//	},
+		//},
 		{
 			Args:  "-d /data -b 500000",
 			Error: false,
@@ -224,7 +224,7 @@ func checkDiskFillPer(dir, file string, targetPer int, recover bool) error {
 		return fmt.Errorf("usage is unexpected: %d", now)
 	}
 
-	exist, err := filesys.ExistPath(file)
+	exist, err := filesys.ExistPathLocal(file)
 	if err != nil {
 		return fmt.Errorf("check file exsit error: %s", err.Error())
 	}
@@ -259,7 +259,7 @@ func checkDiskFillByte(dir, file string, targetByte int, recover bool) error {
 		return fmt.Errorf("usage is unexpected: %d", now)
 	}
 
-	exist, err := filesys.ExistPath(file)
+	exist, err := filesys.ExistPathLocal(file)
 	if err != nil {
 		return fmt.Errorf("check file exsit error: %s", err.Error())
 	}

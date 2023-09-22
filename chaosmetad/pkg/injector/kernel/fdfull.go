@@ -196,7 +196,7 @@ func (i *FdfullInjector) Recover(ctx context.Context) error {
 			}
 		}
 
-		isDirExist, err := filesys.ExistPath(fdFullDir)
+		isDirExist, err := filesys.ExistPathLocal(fdFullDir)
 		if err != nil {
 			return fmt.Errorf("check dir[%s] exist error: %s", fdFullDir, err.Error())
 		}

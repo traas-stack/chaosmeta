@@ -117,7 +117,6 @@ func (d *Client) GetAllPidList(ctx context.Context, containerID string) ([]base.
 
 func (d *Client) Exec(ctx context.Context, containerID, cmd string) (string, error) {
 	logger := log.GetLogger(ctx)
-	logger.Debugf("container exec cmd: %s", cmd)
 	execOpts := &types.ExecCreateConfig{
 		AttachStdin:  true,
 		AttachStdout: true,

@@ -128,7 +128,6 @@ func (d *Client) GetPidById(ctx context.Context, containerID string) (int, error
 // Exec TODO: now output has extra space prefix, need to fix this bug
 func (d *Client) Exec(ctx context.Context, containerID, cmd string) (string, error) {
 	logger := log.GetLogger(ctx)
-	logger.Debugf("container exec cmd: %s", cmd)
 	execOpts := types.ExecConfig{
 		AttachStdin:  true,
 		AttachStdout: true,

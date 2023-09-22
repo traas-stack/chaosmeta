@@ -29,7 +29,7 @@ import (
 )
 
 var (
-	fileAddFileName = "chaosmeta_file.test"
+	fileAddFileName = "/tmp/chaosmeta_file.test"
 	fileAddContent  = "wdvew\nregewc24\ncf234c\neg34"
 	fileAddPerm     = "762"
 )
@@ -72,22 +72,22 @@ func GetFileAddTest() []common.TestCase {
 		{
 			Args: fmt.Sprintf("-p %s -c \"%s\" -P %s", fileAddFileName, fileAddContent, fileAddPerm),
 			Check: func() error {
-				return checkFileAdd(fmt.Sprintf("%s/%s", utils.GetRunPath(), fileAddFileName), fileAddPerm, fileAddContent)
+				return checkFileAdd(fileAddFileName, fileAddPerm, fileAddContent)
 			},
 			CheckRecover: func() error {
-				return checkFileNotExist(fmt.Sprintf("%s/%s", utils.GetRunPath(), fileAddFileName))
+				return checkFileNotExist(fileAddFileName)
 			},
 		},
 		{
-			Args: fmt.Sprintf("-p %s -c \"%s\" -P %s -f", "notexist/abc/efg/temp.log", fileAddContent, fileAddPerm),
+			Args: fmt.Sprintf("-p %s -c \"%s\" -P %s -f", "/notexist/abc/efg/temp.log", fileAddContent, fileAddPerm),
 			Check: func() error {
-				return checkFileAdd(fmt.Sprintf("%s/%s", utils.GetRunPath(), "notexist/abc/efg/temp.log"), fileAddPerm, fileAddContent)
+				return checkFileAdd("/notexist/abc/efg/temp.log", fileAddPerm, fileAddContent)
 			},
 			CheckRecover: func() error {
-				return checkFileNotExist(fmt.Sprintf("%s/%s", utils.GetRunPath(), "notexist/abc/efg/temp.log"))
+				return checkFileNotExist("/notexist/abc/efg/temp.log")
 			},
 			PostProcessor: func() error {
-				return os.RemoveAll("notexist")
+				return os.RemoveAll("/notexist")
 			},
 		},
 	}
