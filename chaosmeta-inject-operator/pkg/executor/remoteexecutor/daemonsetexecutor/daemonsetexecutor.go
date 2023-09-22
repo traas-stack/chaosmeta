@@ -103,7 +103,7 @@ func (r *DaemonsetRemoteExecutor) Inject(ctx context.Context, injectObject strin
 		}
 
 		unitArgs.Key = strings.ReplaceAll(unitArgs.Key, "_", "-")
-		executeCmd = fmt.Sprintf("%s --%s %s", executeCmd, unitArgs.Key, unitArgs.Value)
+		executeCmd = fmt.Sprintf("%s --%s=%s", executeCmd, unitArgs.Key, unitArgs.Value)
 	}
 
 	if timeout != "" {
