@@ -8,13 +8,13 @@
   "executor": {
     "mode": "daemonset",
     "executor": "chaosmetad",
-    "version": "0.1.1",
+    "version": "0.2.0",
     "agentConfig": {
       "agentPort": 29595
     },
     "daemonsetConfig": {
       "localExecPath": "/tmp",
-      "daemonNs": "chaosmeta",
+      "daemonNs": "chaosmeta-inject",
       "daemonLabel": {
         "app.chaosmeta.io": "chaosmeta-daemon"
       }

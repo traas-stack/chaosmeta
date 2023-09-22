@@ -1,0 +1,49 @@
+                <?xml version="1.0" encoding="UTF-8"?>
+                <jmeterTestPlan version="1.2" properties="5.0" jmeter="5.6">
+                  <hashTree>
+                    <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="Test Plan">
+                      <elementProp name="TestPlan.user_defined_variables" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables">
+                        <collectionProp name="Arguments.arguments"/>
+                      </elementProp>
+                    </TestPlan>
+                    <hashTree>
+                      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="Thread Group">
+                        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller">
+                          <stringProp name="LoopController.loops">1</stringProp>
+                        </elementProp>
+                        <stringProp name="ThreadGroup.num_threads">@NUM_THREADS@</stringProp>
+                        <stringProp name="ThreadGroup.ramp_time">1</stringProp>
+                        <boolProp name="ThreadGroup.scheduler">true</boolProp>
+                        <stringProp name="ThreadGroup.duration">@DURATION@</stringProp>
+                        <stringProp name="ThreadGroup.delay">0</stringProp>
+                      </ThreadGroup>
+                      <hashTree>
+                        <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="HTTP Header Manager">
+                          <collectionProp name="HeaderManager.headers">
+                            @ELEMENT_PROP@
+                          </collectionProp>
+                        </HeaderManager>
+                        <hashTree/>
+                        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="HTTP Request">
+                          <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+                          <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+                            <collectionProp name="Arguments.arguments">
+                              <elementProp name="" elementType="HTTPArgument">
+                                <stringProp name="Argument.value">@BODY@</stringProp>
+                                <stringProp name="Argument.metadata">=</stringProp>
+                              </elementProp>
+                            </collectionProp>
+                          </elementProp>
+                          <stringProp name="HTTPSampler.domain">@HOST@</stringProp>
+                          <stringProp name="HTTPSampler.port">@PORT@</stringProp>
+                          <stringProp name="HTTPSampler.path">@PATH@</stringProp>
+                          <stringProp name="HTTPSampler.method">@METHOD@</stringProp>
+                          <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+                          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+                        </HTTPSamplerProxy>
+                        <hashTree/>
+                      </hashTree>
+                    </hashTree>
+                  </hashTree>
+                </jmeterTestPlan>
+                

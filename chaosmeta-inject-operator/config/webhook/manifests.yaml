@@ -11,12 +11,12 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-inject-chaosmeta-io-v1alpha1-experiment
+      path: /mutate-chaosmeta-io-v1alpha1-experiment
   failurePolicy: Fail
   name: mexperiment.kb.io
   rules:
   - apiGroups:
-    - inject.chaosmeta.io
+    - chaosmeta.io
     apiVersions:
     - v1alpha1
     operations:
@@ -37,12 +37,12 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-inject-chaosmeta-io-v1alpha1-experiment
+      path: /validate-chaosmeta-io-v1alpha1-experiment
   failurePolicy: Fail
   name: vexperiment.kb.io
   rules:
   - apiGroups:
-    - inject.chaosmeta.io
+    - chaosmeta.io
     apiVersions:
     - v1alpha1
     operations:

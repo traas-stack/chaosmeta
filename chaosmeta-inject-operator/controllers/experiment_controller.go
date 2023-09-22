@@ -43,9 +43,9 @@ type ExperimentReconciler struct {
 	//Scheme     *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=inject.chaosmeta.io,resources=experiments,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=inject.chaosmeta.io,resources=experiments/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=inject.chaosmeta.io,resources=experiments/finalizers,verbs=update
+//+kubebuilder:rbac:groups=chaosmeta.io,resources=experiments,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=chaosmeta.io,resources=experiments/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=chaosmeta.io,resources=experiments/finalizers,verbs=update
 //+kubebuilder:rbac:groups=core,resources=pods;pods/exec;services;namespaces;nodes,verbs=*
 //+kubebuilder:rbac:groups=apps,resources=deployments;daemonsets;replicasets;statefulsets,verbs=*
 //+kubebuilder:rbac:groups=batchs,resources=jobs,verbs=*
@@ -90,6 +90,13 @@ func (r *ExperimentReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 				logger.Info(fmt.Sprintf("update Finalizer of %s/%s to: %s", instance.Namespace, instance.Name, instance.ObjectMeta.Finalizers))
 				return ctrl.Result{}, r.Update(ctx, instance)
 			}
+		}
+	} else {
+		if instance.Status.Phase == v1alpha1.RecoverPhaseType && (instance.Status.Status == v1alpha1.SuccessStatusType ||
+			instance.Status.Status == v1alpha1.FailedStatusType || instance.Status.Status == v1alpha1.PartSuccessStatusType) {
+			solveFinalizer(instance)
+			logger.Info(fmt.Sprintf("update Finalizer of %s/%s to: %s", instance.Namespace, instance.Name, instance.ObjectMeta.Finalizers))
+			return ctrl.Result{}, r.Update(ctx, instance)
 		}
 	}
 

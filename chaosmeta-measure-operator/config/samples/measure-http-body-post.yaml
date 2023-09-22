@@ -1,0 +1,32 @@
+apiVersion: chaosmeta.io/v1alpha1
+kind: CommonMeasure
+metadata:
+  name: measure-http-body-post
+  namespace: chaosmeta-measure
+spec:
+  measureType: http
+  duration: 5m
+  interval: 5s
+  successCount: 3
+  failedCount: 0
+  stopped: false
+  judgement:
+    judgeType: body
+    judgeValue: '{"a":{"b":{"age":201}}}'
+  args:
+    - key: host
+      value: '192.168.2.189'
+    - key: port
+      value: '8080'
+    - key: path
+      value: '/testpost'
+    - key: header
+      value: 'Content-Type:application/json,Host:chaosmeta.io'
+    - key: scheme
+      value: 'HTTP'
+    - key: method
+      value: 'POST'
+    - key: timeout
+      value: '5'
+    - key: body
+      value: '{"name":"a","age":201}'

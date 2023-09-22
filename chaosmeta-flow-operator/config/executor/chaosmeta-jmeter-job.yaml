@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: jmeter-job
+spec:
+  parallelism: 3
+  completions: 3
+  backoffLimit: 1
+  template:
+    metadata:
+      name: jmeter-pod
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: jmeter-container
+          image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-jmeter:v1.0.0
+          command: ["sh", "-c", "echo $JEMETER_CONFIG > /opt/jmeter.config && jmeter -n -t /opt/jmeter.config"]
+          resources:
+            requests:
+              cpu: "@CPU_REQ@"
+              memory: 1Gi
+            limits:
+              cpu: "@CPU_REQ@"
+              memory: 1Gi
+          env:
+            - name: JEMETER_CONFIG
+              value: |
+@INITIAL_CONFIG@

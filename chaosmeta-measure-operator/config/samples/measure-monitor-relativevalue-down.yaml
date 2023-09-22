@@ -1,0 +1,18 @@
+apiVersion: chaosmeta.io/v1alpha1
+kind: CommonMeasure
+metadata:
+  name: measure-monitor-relativevalue-down
+  namespace: chaosmeta-measure
+spec:
+  measureType: monitor
+  duration: 5m
+  interval: 5s
+  successCount: 3
+  failedCount: 0
+  stopped: false
+  judgement:
+    judgeType: relativevalue
+    judgeValue: ',-5000'
+  args:
+    - key: query
+      value: 'node_memory_MemAvailable_bytes{instance="192.168.2.189:9100"}'

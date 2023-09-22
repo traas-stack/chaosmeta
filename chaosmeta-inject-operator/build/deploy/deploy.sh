@@ -29,11 +29,11 @@ if [ "${VERSION}" != "local" ]; then
 
     downloadfile "${preurl}"/config/chaosmeta-inject.json "${ROOT_PATH}"/config/chaosmeta-inject.json
     downloadfile "${preurl}"/build/build.sh "${ROOT_PATH}"/build/build.sh
-    downloadfile "${preurl}"/build/yamls/chaosmeta.yaml "${ROOT_PATH}"/yamls/chaosmeta.yaml
+    downloadfile "${preurl}"/build/yamls/chaosmeta-inject.yaml "${ROOT_PATH}"/yamls/chaosmeta-inject.yaml
     downloadfile "${preurl}"/build/yamls/chaosmeta-daemonset.yaml "${ROOT_PATH}"/yamls/chaosmeta-daemonset.yaml
 fi
 
-kubectl apply -f "${ROOT_PATH}"/yamls/chaosmeta.yaml
+kubectl apply -f "${ROOT_PATH}"/yamls/chaosmeta-inject.yaml
 kubectl apply -f "${ROOT_PATH}"/yamls/chaosmeta-daemonset.yaml
 if [ "${VERSION}" != "local" ]; then
     sh "${ROOT_PATH}"/build/build.sh

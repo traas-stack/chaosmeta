@@ -1,0 +1,174 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.10.0
+  creationTimestamp: null
+  name: experiments.chaosmeta.io
+spec:
+  group: chaosmeta.io
+  names:
+    kind: Experiment
+    listKind: ExperimentList
+    plural: experiments
+    singular: experiment
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Experiment is the Schema for the experiments API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ExperimentSpec defines the desired state of Experiment
+            properties:
+              experiment:
+                properties:
+                  args:
+                    items:
+                      properties:
+                        key:
+                          type: string
+                        value:
+                          type: string
+                        valueType:
+                          type: string
+                      required:
+                      - key
+                      - value
+                      type: object
+                    type: array
+                  duration:
+                    description: Duration support "h", "m", "s"
+                    type: string
+                  fault:
+                    type: string
+                  target:
+                    type: string
+                required:
+                - fault
+                - target
+                type: object
+              rangeMode:
+                properties:
+                  type:
+                    description: 'Type Optional: all、percent、count'
+                    type: string
+                  value:
+                    type: integer
+                required:
+                - type
+                type: object
+              scope:
+                description: 'Scope Optional: node, pod. type of experiment object'
+                type: string
+              selector:
+                description: Selector The internal part of unit is "AND", and the
+                  external part is "OR" and de-duplication
+                items:
+                  properties:
+                    ip:
+                      items:
+                        type: string
+                      type: array
+                    label:
+                      additionalProperties:
+                        type: string
+                      type: object
+                    name:
+                      items:
+                        type: string
+                      type: array
+                    namespace:
+                      type: string
+                  type: object
+                type: array
+              targetPhase:
+                type: string
+            required:
+            - experiment
+            - scope
+            - targetPhase
+            type: object
+          status:
+            description: ExperimentStatus defines the observed state of Experiment
+            properties:
+              createTime:
+                type: string
+              detail:
+                properties:
+                  inject:
+                    items:
+                      properties:
+                        backup:
+                          type: string
+                        injectObjectName:
+                          type: string
+                        message:
+                          type: string
+                        startTime:
+                          type: string
+                        status:
+                          type: string
+                        uid:
+                          description: InjectObjectInfo string     `json:"injectObjectInfo,omitempty"`
+                          type: string
+                        updateTime:
+                          type: string
+                      type: object
+                    type: array
+                  recover:
+                    items:
+                      properties:
+                        backup:
+                          type: string
+                        injectObjectName:
+                          type: string
+                        message:
+                          type: string
+                        startTime:
+                          type: string
+                        status:
+                          type: string
+                        uid:
+                          description: InjectObjectInfo string     `json:"injectObjectInfo,omitempty"`
+                          type: string
+                        updateTime:
+                          type: string
+                      type: object
+                    type: array
+                type: object
+              message:
+                type: string
+              phase:
+                type: string
+              status:
+                type: string
+              updateTime:
+                type: string
+            required:
+            - createTime
+            - detail
+            - message
+            - phase
+            - status
+            - updateTime
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

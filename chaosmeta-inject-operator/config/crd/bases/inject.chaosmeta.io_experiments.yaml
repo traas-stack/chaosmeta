@@ -5,9 +5,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.11.1
   creationTimestamp: null
-  name: experiments.inject.chaosmeta.io
+  name: experiments.chaosmeta.io
 spec:
-  group: inject.chaosmeta.io
+  group: chaosmeta.io
   names:
     kind: Experiment
     listKind: ExperimentList

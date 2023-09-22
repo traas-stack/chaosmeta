@@ -35,10 +35,6 @@ func Chmod(ctx context.Context, path, perm string) error {
 	return cmdexec.RunBashCmdWithoutOutput(ctx, fmt.Sprintf("chmod %s %s", perm, path))
 }
 
-//func GetPermCmd(path string) string {
-//	return "stat -c '%a' " + path
-//}
-
 func GetPerm(ctx context.Context, cr, cId string, path string) (perm string, err error) {
 	cmd := "stat -c '%a' " + path
 	if cr == "" {
@@ -55,29 +51,7 @@ func GetPermission(path string) (string, error) {
 		return "", fmt.Errorf("get stat of path[%s] error: %s", path, err.Error())
 	}
 
-	p := info.Mode().Perm().String()
-	if len(p) != 10 {
-		return "", fmt.Errorf("perm[%s] is too short", p)
-	}
-
-	return fmt.Sprintf("%s%s%s", getPermNum(p[1:4]), getPermNum(p[4:7]), getPermNum(p[7:10])), nil
-}
-
-func getPermNum(unit string) string {
-	var v int
-	for i, c := range unit {
-		if c != '-' {
-			if i == 0 {
-				v += 4
-			} else if i == 1 {
-				v += 2
-			} else if i == 2 {
-				v += 1
-			}
-		}
-	}
-
-	return strconv.Itoa(v)
+	return fmt.Sprintf("%o", info.Mode().Perm()), nil
 }
 
 func CheckDir(dir string) error {

@@ -1,0 +1,22 @@
+apiVersion: chaosmeta.io/v1alpha1
+kind: CommonMeasure
+metadata:
+  name: measure-tcp-false
+  namespace: chaosmeta-measure
+spec:
+  measureType: tcp
+  duration: 1m
+  interval: 3s
+  successCount: 3
+  failedCount: 0
+  stopped: false
+  judgement:
+    judgeType: connectivity
+    judgeValue: 'false'
+  args:
+    - key: ip
+      value: '192.168.2.189'
+    - key: port
+      value: '8081'
+    - key: timeout
+      value: '5'

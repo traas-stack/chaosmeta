@@ -39,7 +39,7 @@ func (r *Experiment) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-//+kubebuilder:webhook:path=/mutate-inject-chaosmeta-io-v1alpha1-experiment,mutating=true,failurePolicy=fail,sideEffects=None,groups=inject.chaosmeta.io,resources=experiments,verbs=create,versions=v1alpha1,name=mexperiment.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/mutate-chaosmeta-io-v1alpha1-experiment,mutating=true,failurePolicy=fail,sideEffects=None,groups=chaosmeta.io,resources=experiments,verbs=create,versions=v1alpha1,name=mexperiment.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Defaulter = &Experiment{}
 
@@ -80,7 +80,7 @@ func (r *Experiment) Default() {
 	}
 }
 
-//+kubebuilder:webhook:path=/validate-inject-chaosmeta-io-v1alpha1-experiment,mutating=false,failurePolicy=fail,sideEffects=None,groups=inject.chaosmeta.io,resources=experiments,verbs=create;update;delete,versions=v1alpha1,name=vexperiment.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/validate-chaosmeta-io-v1alpha1-experiment,mutating=false,failurePolicy=fail,sideEffects=None,groups=chaosmeta.io,resources=experiments,verbs=create;update;delete,versions=v1alpha1,name=vexperiment.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Validator = &Experiment{}
 

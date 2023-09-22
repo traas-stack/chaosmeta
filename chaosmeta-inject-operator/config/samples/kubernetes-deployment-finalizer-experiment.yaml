@@ -1,7 +1,8 @@
-apiVersion: inject.chaosmeta.io/v1alpha1
+apiVersion: chaosmeta.io/v1alpha1
 kind: Experiment
 metadata:
   name: kubernetes-deployment-finalizer
+  namespace: chaosmeta-inject
 spec:
   scope: kubernetes
   targetPhase: inject

@@ -1,0 +1,107 @@
+html {
+  body {
+    // 全局背景图
+    .ant-pro-layout-bg-list {
+      background-image: url('https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*wt5SSrooBdIAAAAAAAAAAAAADmKmAQ/original') !important;
+      background-size: cover !important;
+    }
+    // header
+    .ant-pro-layout {
+      .ant-layout-header {
+        height: 52px !important;
+        line-height: 52px !important;
+        background-color: transparent !important;
+        border-block-end: none !important;
+        .ant-pro-top-nav-header-main {
+          padding: 0 24px;
+        }
+        .ant-menu-item {
+          line-height: 32px;
+          color: rgba(0, 10, 26, 0.68);
+          font-size: 16px;
+          margin-right: 24px;
+        }
+        // 头部选中菜单样式
+        .ant-menu-item-selected {
+          background-color: rgba(0, 0, 0, 0.07) !important;
+        }
+        // 左上logo和标题
+        .ant-pro-top-nav-header-logo {
+          margin-right: 48px;
+          img {
+            height: 24px;
+          }
+          h1 {
+            opacity: 0.85;
+            font-weight: 500;
+            font-size: 18px;
+            color: #000000;
+            line-height: 26px;
+          }
+        }
+      }
+      // 空间切换区域
+      .ant-pro-sider-extra {
+        margin: 0;
+      }
+      // 左侧菜单选中时的样式
+      .ant-menu-item-selected {
+        background-color: rgba(255, 255, 255, 0.5) !important;
+      }
+      // 页面标题
+      .ant-page-header-heading {
+        .ant-page-header-heading-title {
+          font-size: 16px;
+          font-weight: 500;
+          color: rgba(0, 0, 0, 0.85);
+        }
+      }
+      // 页面标题和内容距离
+      .ant-pro-page-container-children-container {
+        padding-block: 0;
+      }
+      // 左侧菜单icon高度
+      .ant-pro-base-menu-inline-item-icon {
+        height: 16px !important;
+      }
+      // 全局默认button颜色
+      .ant-btn-default {
+        color: rgba(0, 0, 0, 0.65);
+      }
+      // 表格单元格默认颜色
+      .ant-table {
+        .ant-table-cell {
+          color: rgba(0, 0, 0, 0.65);
+        }
+      }
+      // 批量操作选中态
+      .batch-active {
+        color: #4096ff !important;
+        border-color: #4096ff;
+      }
+      //  表格空状态下去除单元格边框
+      .ant-table-empty {
+        .ant-table-cell {
+          border: none;
+        }
+      }
+    }
+    .ellipsis {
+      position: relative;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      word-break: keep-all;
+    }
+  }
+  // a标签默认样式
+  a {
+    color: #1677ff;
+    text-decoration: none;
+    background-color: transparent;
+    outline: none;
+    cursor: pointer;
+    transition: color 0.3s;
+    font-weight: 400;
+  }
+}

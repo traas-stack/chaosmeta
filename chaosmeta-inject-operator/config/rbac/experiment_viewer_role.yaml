@@ -12,7 +12,7 @@ metadata:
   name: experiment-viewer-role
 rules:
 - apiGroups:
-  - inject.chaosmeta.io
+  - chaosmeta.io
   resources:
   - experiments
   verbs:
@@ -20,7 +20,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - inject.chaosmeta.io
+  - chaosmeta.io
   resources:
   - experiments/status
   verbs:
