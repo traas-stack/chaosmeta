@@ -37,9 +37,9 @@ const (
 	defaultSocket = "/run/containerd/containerd.sock"
 
 	termExitCode = 143
-	// DefaultNS TODO: need to be a command line args
+	// TODO: need to be a command line args
 	defaultNS = "k8s.io"
-	//defaultNS    = "moby"
+	//defaultNS = "moby"
 )
 
 type Client struct {

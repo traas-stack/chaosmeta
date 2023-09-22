@@ -35,6 +35,7 @@ const (
 
 const (
 	ExpectedErr = 99
+	TestFileErr = 1
 )
 
 func SolveErr(ctx context.Context, code int, msg string) {

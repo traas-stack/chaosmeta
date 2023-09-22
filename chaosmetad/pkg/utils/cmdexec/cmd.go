@@ -123,6 +123,7 @@ func (e *CmdExecutor) ExecTool(ctx context.Context) error {
 }
 
 func CpContainerFile(ctx context.Context, cr, containerID, src, dst string) error {
+	log.GetLogger(ctx).Debugf("cp from %s to %s in %s", src, dst, containerID)
 	client, err := crclient.GetClient(ctx, cr)
 	if err != nil {
 		return fmt.Errorf("get %s client error: %s", cr, err.Error())
@@ -190,7 +191,11 @@ func RunBashCmdWithOutput(ctx context.Context, cmd string) (string, error) {
 			return "", fmt.Errorf(re)
 		}
 
-		return "", err
+		if c.ProcessState.Sys().(syscall.WaitStatus).ExitStatus() == errutil.TestFileErr {
+			return "", fmt.Errorf("exit code: %d, error: %s", errutil.TestFileErr, re)
+		}
+
+		return "", fmt.Errorf("%s, output: %s", err.Error(), re)
 	}
 
 	return re, nil
@@ -304,6 +309,7 @@ func ExecContainer(ctx context.Context, cr, containerID string, namespaces []str
 		}
 
 		combinedOutput := stdout.String() + stderr.String()
+		// TODO: not use exit code judge task if success?
 		if strings.Index(combinedOutput, "[error]") >= 0 {
 			return "", fmt.Errorf(combinedOutput)
 		} else {
@@ -322,5 +328,24 @@ func ExecContainerRaw(ctx context.Context, cr, cId, cmd string) (string, error) 
 		return "", fmt.Errorf("get %s client error: %s", cr, err.Error())
 	}
 
+	log.GetLogger(ctx).Debugf("container: %s, exec cmd: %s", cId, cmd)
 	return client.Exec(ctx, cId, cmd)
+}
+
+func ExecCommon(ctx context.Context, cr, cId, cmd string) (string, error) {
+	if cr == "" {
+		return RunBashCmdWithOutput(ctx, cmd)
+	} else {
+		// TODO: need to transfer to ExecContainer?
+		return ExecContainerRaw(ctx, cr, cId, cmd)
+	}
+}
+
+func ExecBackGroundCommon(ctx context.Context, cr, cId, cmd string) error {
+	if cr == "" {
+		return StartBashCmd(ctx, cmd)
+	} else {
+		_, err := ExecContainer(ctx, cr, cId, []string{namespace.MNT, namespace.IPC, namespace.NET, namespace.PID, namespace.UTS}, cmd, ExecStart)
+		return err
+	}
 }

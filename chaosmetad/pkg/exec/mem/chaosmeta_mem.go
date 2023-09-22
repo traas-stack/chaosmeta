@@ -81,7 +81,7 @@ func execInject(ctx context.Context, fault string, args []string) error {
 func execRecover(ctx context.Context, fault string, args []string) error {
 	fillDir := args[0]
 
-	isDirExist, err := filesys.ExistPath(fillDir)
+	isDirExist, err := filesys.ExistPathLocal(fillDir)
 	if err != nil {
 		return fmt.Errorf("check tmpfs[%s] exist error: %s", fillDir, err.Error())
 	}

@@ -21,10 +21,7 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/injector"
-	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils"
-	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/cmdexec"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/filesys"
-	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/namespace"
 	"path/filepath"
 )
 
@@ -57,18 +54,6 @@ func (i *DeleteInjector) SetOption(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&i.Args.Path, "path", "p", "", "file path, include dir and file name")
 }
 
-func (i *DeleteInjector) getCmdExecutor(method, args string) *cmdexec.CmdExecutor {
-	return &cmdexec.CmdExecutor{
-		ContainerId:      i.Info.ContainerId,
-		ContainerRuntime: i.Info.ContainerRuntime,
-		ContainerNs:      []string{namespace.MNT},
-		ToolKey:          FileExec,
-		Method:           method,
-		Fault:            FaultFileDelete,
-		Args:             args,
-	}
-}
-
 func (i *DeleteInjector) Validator(ctx context.Context) error {
 	if err := i.BaseInjector.Validator(ctx); err != nil {
 		return err
@@ -78,23 +63,29 @@ func (i *DeleteInjector) Validator(ctx context.Context) error {
 		return fmt.Errorf("\"path\" is empty")
 	}
 
-	if i.Info.ContainerRuntime != "" {
-		if !filepath.IsAbs(i.Args.Path) {
-			return fmt.Errorf("\"path\" must provide absolute path")
-		}
-	} else {
-		var err error
-		i.Args.Path, err = filesys.GetAbsPath(i.Args.Path)
-		if err != nil {
-			return fmt.Errorf("\"path\"[%s] get absolute path error: %s", i.Args.Path, err.Error())
-		}
+	if !filesys.IfPathAbs(ctx, i.Args.Path) {
+		return fmt.Errorf("\"path\" must provide absolute path")
 	}
 
-	return i.getCmdExecutor(utils.MethodValidator, i.Args.Path).ExecTool(ctx)
+	exist, err := filesys.CheckFile(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, i.Args.Path)
+	if err != nil {
+		return fmt.Errorf("check exist file[%s] error: %s", i.Args.Path, err.Error())
+	}
+
+	if !exist {
+		return fmt.Errorf("file[%s] is not exist", i.Args.Path)
+	}
+
+	return nil
 }
 
 func (i *DeleteInjector) Inject(ctx context.Context) error {
-	return i.getCmdExecutor(utils.MethodInject, fmt.Sprintf("%s %s", i.Args.Path, i.Info.Uid)).ExecTool(ctx)
+	backupDir := getBackupDir(i.Info.Uid)
+	if err := filesys.MkdirForce(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, backupDir); err != nil {
+		return fmt.Errorf("create backup dir[%s] error: %s", backupDir, err.Error())
+	}
+
+	return filesys.MoveFile(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, i.Args.Path, fmt.Sprintf("%s/%s", backupDir, filepath.Base(i.Args.Path)))
 }
 
 func (i *DeleteInjector) Recover(ctx context.Context) error {
@@ -102,5 +93,17 @@ func (i *DeleteInjector) Recover(ctx context.Context) error {
 		return nil
 	}
 
-	return i.getCmdExecutor(utils.MethodRecover, fmt.Sprintf("%s %s", i.Args.Path, i.Info.Uid)).ExecTool(ctx)
+	backupFile := fmt.Sprintf("%s/%s", getBackupDir(i.Info.Uid), filepath.Base(i.Args.Path))
+	isExist, err := filesys.CheckFile(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, i.Args.Path)
+	if err != nil {
+		return fmt.Errorf("check exist file[%s] error: %s", i.Args.Path, err.Error())
+	}
+
+	if !isExist {
+		if err := filesys.MoveFile(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, backupFile, i.Args.Path); err != nil {
+			return fmt.Errorf("mv from[%s] to[%s] error: %s", backupFile, i.Args.Path, err.Error())
+		}
+	}
+
+	return filesys.RemoveRF(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, getBackupDir(i.Info.Uid))
 }

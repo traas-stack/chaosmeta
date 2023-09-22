@@ -68,7 +68,7 @@ func execValidator(ctx context.Context, fault string, args []string) error {
 }
 
 func validatorBurn(ctx context.Context, dir string) error {
-	if err := filesys.CheckDir(dir); err != nil {
+	if err := filesys.CheckDirLocal(dir); err != nil {
 		return fmt.Errorf("\"dir\"[%s] check error: %s", dir, err.Error())
 	}
 
@@ -107,7 +107,7 @@ func recoverBurn(ctx context.Context, uid, dir string) error {
 	}
 
 	file := getBurnFileName(uid, dir)
-	isFileExist, err := filesys.ExistPath(file)
+	isFileExist, err := filesys.ExistPathLocal(file)
 	if err != nil {
 		return fmt.Errorf("check file[%s] exist error: %s", file, err.Error())
 	}

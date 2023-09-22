@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/injector"
-	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/log"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/cmdexec"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/namespace"
@@ -138,7 +137,5 @@ func (i *OccupyInjector) Recover(ctx context.Context) error {
 		return nil
 	}
 
-	re, err := i.getCmdExecutor().Exec(ctx, i.Args.RecoverCmd)
-	log.GetLogger(ctx).Debug(re)
-	return err
+	return cmdexec.ExecBackGroundCommon(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, i.Args.RecoverCmd)
 }

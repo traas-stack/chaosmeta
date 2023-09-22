@@ -21,11 +21,8 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/injector"
-	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils"
-	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/cmdexec"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/filesys"
-	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/namespace"
-	"path/filepath"
+	"strings"
 )
 
 func init() {
@@ -61,48 +58,49 @@ func (i *AppendInjector) SetOption(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&i.Args.Raw, "raw", "r", false, "if raw content, raw content can not recover")
 }
 
-func (i *AppendInjector) getCmdExecutor(method, args string) *cmdexec.CmdExecutor {
-	return &cmdexec.CmdExecutor{
-		ContainerId:      i.Info.ContainerId,
-		ContainerRuntime: i.Info.ContainerRuntime,
-		ContainerNs:      []string{namespace.MNT},
-		ToolKey:          FileExec,
-		Method:           method,
-		Fault:            FaultFileAppend,
-		Args:             args,
-	}
-}
-
 func (i *AppendInjector) Validator(ctx context.Context) error {
 	if err := i.BaseInjector.Validator(ctx); err != nil {
 		return err
 	}
 
 	if i.Args.Path == "" {
-		return fmt.Errorf("\"path\" is empty")
+		return fmt.Errorf("\"path\" can not be empty")
 	}
 
-	if i.Info.ContainerRuntime != "" {
-		if !filepath.IsAbs(i.Args.Path) {
-			return fmt.Errorf("\"path\" must provide absolute path")
-		}
-	} else {
-		var err error
-		i.Args.Path, err = filesys.GetAbsPath(i.Args.Path)
-		if err != nil {
-			return fmt.Errorf("\"path\"[%s] get absolute path error: %s", i.Args.Path, err.Error())
-		}
+	if !filesys.IfPathAbs(ctx, i.Args.Path) {
+		return fmt.Errorf("\"path\" must provide absolute path")
 	}
 
 	if i.Args.Content == "" {
-		return fmt.Errorf("\"content\" is empty")
+		return fmt.Errorf("\"content\" can not be empty")
 	}
 
-	return i.getCmdExecutor(utils.MethodValidator, i.Args.Path).ExecTool(ctx)
+	fileExist, err := filesys.CheckFile(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, i.Args.Path)
+	if err != nil {
+		return fmt.Errorf("check exist file[%s] error: %s", i.Args.Path, err.Error())
+	}
+
+	if !fileExist {
+		return fmt.Errorf("file[%s] is not exist", i.Args.Path)
+	}
+
+	return nil
 }
 
 func (i *AppendInjector) Inject(ctx context.Context) error {
-	return i.getCmdExecutor(utils.MethodInject, fmt.Sprintf("%s %s %v '%s'", i.Args.Path, i.Info.Uid, i.Args.Raw, i.Args.Content)).ExecTool(ctx)
+	flag := getAppendFlag(i.Info.Uid)
+
+	if !i.Args.Raw {
+		i.Args.Content = strings.ReplaceAll(i.Args.Content, "\\n", "\n")
+		i.Args.Content = fmt.Sprintf("%s%s", strings.ReplaceAll(i.Args.Content, "\n", fmt.Sprintf("%s\n", flag)), flag)
+	}
+
+	i.Args.Content = fmt.Sprintf("\n%s", i.Args.Content)
+	if err := filesys.AppendFile(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, i.Args.Path, i.Args.Content); err != nil {
+		return fmt.Errorf("append content to %s error: %s", i.Args.Path, err.Error())
+	}
+
+	return nil
 }
 
 func (i *AppendInjector) Recover(ctx context.Context) error {
@@ -110,5 +108,18 @@ func (i *AppendInjector) Recover(ctx context.Context) error {
 		return nil
 	}
 
-	return i.getCmdExecutor(utils.MethodRecover, fmt.Sprintf("%s %s %v", i.Args.Path, i.Info.Uid, i.Args.Raw)).ExecTool(ctx)
+	if i.Args.Raw {
+		return nil
+	}
+
+	exist, err := filesys.CheckFile(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, i.Args.Path)
+	if err != nil {
+		return fmt.Errorf("check exist file[%s] error: %s", i.Args.Path, err.Error())
+	}
+
+	if exist {
+		return filesys.DeleteLineByKey(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, i.Args.Path, getAppendFlag(i.Info.Uid))
+	}
+
+	return nil
 }
