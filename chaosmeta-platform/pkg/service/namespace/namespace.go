@@ -71,6 +71,10 @@ func (s *NamespaceService) Create(ctx context.Context, name, description string,
 		Description: description,
 		Creator:     creator.ID,
 	}
+
+	if err := namespaceModel.GetNamespaceByName(ctx, namespace); err == nil {
+		return 0, errors.New("namespace:" + name + " already exists")
+	}
 	namespaceId, err := namespaceModel.InsertNamespace(ctx, namespace)
 	if err != nil {
 		return 0, err

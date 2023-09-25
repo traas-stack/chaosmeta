@@ -186,7 +186,7 @@ func InitCpuFault(ctx context.Context, cpuTarget basic.Target) error {
 func InitCpuTargetArgsBurn(ctx context.Context, cpuFault basic.Fault) error {
 	var (
 		CpuArgsPercent = basic.Args{InjectId: cpuFault.ID, ExecType: ExecInject, Key: "percent", KeyCn: "使用率", Unit: "%", UnitCn: "%", Description: "target cpu usage", DescriptionCn: "目标cpu使用率", ValueType: "int", Required: true, ValueRule: "1-100"}
-		CpuArgsCount   = basic.Args{InjectId: cpuFault.ID, ExecType: ExecInject, Key: "count", KeyCn: "核", Unit: "core", UnitCn: "大于等于0的整数，0表示全部核", DefaultValue: "0", Description: "number of faulty CPU cores", DescriptionCn: "故障cpu核数", ValueType: "int", ValueRule: ">=0"}
+		CpuArgsCount   = basic.Args{InjectId: cpuFault.ID, ExecType: ExecInject, Key: "count", KeyCn: "核", Unit: "core", UnitCn: "核", DefaultValue: "0", Description: "number of faulty CPU cores", DescriptionCn: "故障cpu核数", ValueType: "int", ValueRule: ">=0"}
 		CpuArgsList    = basic.Args{InjectId: cpuFault.ID, ExecType: ExecInject, Key: "list", KeyCn: "列表", Unit: "", UnitCn: "", Description: "cpu fault list", DescriptionCn: "故障cpu列表,逗号分隔的核编号列表，可以从/proc/cpuinfo确认", ValueType: "string"}
 	)
 	return basic.InsertArgsMulti(ctx, []*basic.Args{&CpuArgsPercent, &CpuArgsCount, &CpuArgsList})
@@ -374,7 +374,7 @@ func getNetworkCommonFilterParameters(fault basic.Fault) []*basic.Args {
 func InitNetworkTargetArgsOccupy(ctx context.Context, networkFault basic.Fault) error {
 	var (
 		NetworkArgsPort       = basic.Args{InjectId: networkFault.ID, ExecType: ExecInject, Key: "port", KeyCn: "端口", Description: "target port", DescriptionCn: "目标端口", ValueType: "int"}
-		NetworkArgsProtocol   = basic.Args{InjectId: networkFault.ID, ExecType: ExecInject, Key: "protocol", KeyCn: "协议", Unit: "tcp,udp,tcp6,udp6", UnitCn: "tcp,udp,tcp6,udp6", DefaultValue: "tcp", Description: "target protocol", DescriptionCn: "目标协议", ValueType: "string"}
+		NetworkArgsProtocol   = basic.Args{InjectId: networkFault.ID, ExecType: ExecInject, Key: "protocol", KeyCn: "协议", DefaultValue: "tcp", Description: "target protocol", DescriptionCn: "目标协议", ValueType: "string", ValueRule: "tcp,udp,tcp6,udp6"}
 		NetworkArgsRecoverCmd = basic.Args{InjectId: networkFault.ID, ExecType: ExecInject, Key: "recover-cmd", KeyCn: "恢复命令", Description: "resume command, it will be executed last when resuming operation", DescriptionCn: "恢复命令，恢复操作时会最后执行", ValueType: "string"}
 	)
 	return basic.InsertArgsMulti(ctx, []*basic.Args{&NetworkArgsPort, &NetworkArgsProtocol, &NetworkArgsRecoverCmd})
@@ -417,7 +417,7 @@ func InitNetworkTargetArgsCorrupt(ctx context.Context, networkFault basic.Fault)
 }
 
 func InitNetworkTargetArgsDuplicate(ctx context.Context, networkFault basic.Fault) error {
-	var NetworkArgsPercent = basic.Args{InjectId: networkFault.ID, ExecType: ExecInject, Key: "percent", KeyCn: "丢包率", Description: "packet loss rate", DescriptionCn: "丢包率", ValueType: "int", Required: true, ValueRule: "1-100"}
+	var NetworkArgsPercent = basic.Args{InjectId: networkFault.ID, ExecType: ExecInject, Key: "percent", KeyCn: "包重复率", Description: "packet loss rate", DescriptionCn: "丢包率", ValueType: "int", Required: true, ValueRule: "1-100"}
 
 	argList := []*basic.Args{&NetworkArgsPercent}
 	argList = append(argList, getNetworkCommonFilterParameters(networkFault)...)
@@ -437,7 +437,6 @@ func InitNetworkTargetArgsReorder(ctx context.Context, networkFault basic.Fault)
 func InitProcessFault(ctx context.Context, processTarget basic.Target) error {
 	var (
 		processFaultKill = basic.Fault{TargetId: processTarget.ID, Name: "kill", NameCn: "杀进程", Description: "kill the target process", DescriptionCn: "把目标进程杀掉；pid 和 key 参数至少提供一个，都提供的时候，以 pid 为准，忽略 key"}
-
 		processFaultStop = basic.Fault{TargetId: processTarget.ID, Name: "stop", NameCn: "停止进程", Description: "stop target process", DescriptionCn: "停止目标进程; pid 和 key 参数至少提供一个，都提供的时候，以 pid 为准，忽略 key"}
 	)
 	if err := basic.InsertFault(ctx, &processFaultKill); err != nil {
@@ -456,7 +455,7 @@ func InitProcessFault(ctx context.Context, processTarget basic.Target) error {
 func InitProcessTargetArgsKill(ctx context.Context, processFault basic.Fault) error {
 	var (
 		ProcessArgsKey        = basic.Args{InjectId: processFault.ID, ExecType: ExecInject, Key: "key", KeyCn: "关键词", Description: "keywords used to filter affected processes; Will use ps -ef | grep [key] to filter", DescriptionCn: "用来筛选受影响进程的关键词;会使用ps -ef | grep [key]来筛选", ValueType: "string"}
-		ProcessArgsPid        = basic.Args{InjectId: processFault.ID, ExecType: ExecInject, Key: "pid", KeyCn: "进程", Description: "the pid of the living process", DescriptionCn: "存活进程的pid", ValueType: "int"}
+		ProcessArgsPid        = basic.Args{InjectId: processFault.ID, ExecType: ExecInject, Key: "pid", KeyCn: "进程pid", Description: "the pid of the living process", DescriptionCn: "存活进程的pid", ValueType: "int"}
 		ProcessArgsSignal     = basic.Args{InjectId: processFault.ID, ExecType: ExecInject, Key: "signal", KeyCn: "信号", DefaultValue: "9", Description: "the signal sent to the process;consistent with the signal value supported by the kill command", DescriptionCn: "对进程发送的信号;和kill命令支持的信号数值一致", ValueType: "int"}
 		ProcessArgsRecoverCmd = basic.Args{InjectId: processFault.ID, ExecType: ExecInject, Key: "recover-cmd", KeyCn: "恢复命令", Description: "resume command, it will be executed last when resuming operation", DescriptionCn: "恢复命令，恢复操作时会最后执行", ValueType: "string"}
 	)
@@ -659,9 +658,10 @@ func InitContainerFault(ctx context.Context, containerTarget basic.Target) error
 
 func InitContainerArgs(ctx context.Context, containerFault basic.Fault) error {
 	var (
-		ContainerArgsId      = basic.Args{InjectId: containerFault.ID, ExecType: ExecInject, Key: "container-id", KeyCn: "目标容器ID", Description: "target container, do not specify the default attack local", DescriptionCn: "目标容器, 不指定默认攻击本地", ValueType: "int"}
-		ContainerArgsRuntime = basic.Args{InjectId: containerFault.ID, ExecType: ExecInject, Key: "container-runtime", KeyCn: "目标容器runtime", DescriptionCn: "可选docker、pouch，如果指定了container-id，不指定runtime则默认为docker", Description: "docker or pouch, if container-id is specified and runtime is not specified, it defaults to docker", ValueType: "string", ValueRule: "docker,pouch"}
+		ContainerArgsId       = basic.Args{InjectId: containerFault.ID, ExecType: ExecInject, Key: "container-id", KeyCn: "目标容器ID", Description: "target container, do not specify the default attack local", DescriptionCn: "目标容器, 不指定默认攻击本地", ValueType: "int"}
+		ContainerArgsRuntime  = basic.Args{InjectId: containerFault.ID, ExecType: ExecInject, Key: "container-runtime", KeyCn: "目标容器runtime", DescriptionCn: "可选docker、pouch，如果指定了container-id，不指定runtime则默认为docker", Description: "docker or pouch, if container-id is specified and runtime is not specified, it defaults to docker", ValueType: "string", ValueRule: "docker,pouch"}
+		ContainerArgsWaittime = basic.Args{InjectId: containerFault.ID, ExecType: ExecInject, Key: "wait-time(s)", KeyCn: "容器重启可容忍耗时秒数", ValueType: "int", ValueRule: ">10", DefaultValue: "10"}
 	)
 
-	return basic.InsertArgsMulti(ctx, []*basic.Args{&ContainerArgsId, &ContainerArgsRuntime})
+	return basic.InsertArgsMulti(ctx, []*basic.Args{&ContainerArgsId, &ContainerArgsRuntime, &ContainerArgsWaittime})
 }

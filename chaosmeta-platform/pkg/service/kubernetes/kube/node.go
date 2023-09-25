@@ -576,7 +576,7 @@ func (n *nodeService) TaintOrUnTaint(nodeName, op string, taint *corev1.Taint) (
 	case "remove":
 		node, err = n.param.KubernetesClient.CoreV1().Nodes().Get(context.TODO(), nodeName, metav1.GetOptions{})
 		if err != nil {
-			log.Infof("Failed to remove taint: %v", err)
+			log.Errorf("Failed to remove taint: %v", err)
 			return nil, err
 		}
 		var updated bool

@@ -287,6 +287,9 @@ func getMaxRowAndColumn(nodes []*experiment_instance.WorkflowNodesDetail) (int, 
 }
 
 func getStepArguments(experimentInstanceId string, node *experiment_instance.WorkflowNodesDetail) *v1alpha1.DAGTask {
+	if node == nil {
+		return &v1alpha1.DAGTask{}
+	}
 	switch node.ExecType {
 	case string(WaitExecType):
 		return getWaitStep(node.Duration, experimentInstanceId, node.UUID)
@@ -336,7 +339,6 @@ func convertToSteps(experimentInstanceId string, nodes []*experiment_instance.Wo
 	for _, node := range nodes {
 		task := *getStepArguments(experimentInstanceId, node)
 		if prevNode != nil && prevNode.Row != node.Row {
-			// 当行数发生变化时，打印当前行的结束信息
 			endTask.Dependencies = append(endTask.Dependencies, getStepArguments(experimentInstanceId, prevNode).Name)
 			//steps = append(steps, task)
 			log.Debugf("End of row %d\n", prevNode.Row)

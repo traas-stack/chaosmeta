@@ -74,7 +74,7 @@ type ExperimentGet struct {
 	ScheduleRule  string          `json:"schedule_rule"`
 	NamespaceID   int             `json:"namespace_id"`
 	Creator       int             `json:"creator,omitempty"`
-	NextExec      time.Time       `json:"next_exec,omitempty"`
+	NextExec      string          `json:"next_exec,omitempty"`
 	CreatorName   string          `json:"creator_name,omitempty"`
 	Status        int             `json:"status"`
 	LastInstance  string          `json:"last_instance"`
@@ -197,9 +197,8 @@ func (es *ExperimentService) UpdateExperiment(uuid string, experimentParam *Expe
 			return err
 		}
 	}
-	log.Error(2)
-	//workflow_nodes
 
+	//workflow_nodes
 	for _, node := range experimentParam.WorkflowNodes {
 		node.ExperimentUUID = experimentUUid
 		workflowNodeCreate := experiment.WorkflowNode{
@@ -215,17 +214,14 @@ func (es *ExperimentService) UpdateExperiment(uuid string, experimentParam *Expe
 			ExecID:         node.ExecID,
 		}
 
-		log.Error(3)
 		if err := experiment.DeleteWorkflowNodeByUUID(node.UUID); err != nil {
 			log.Error(err)
 			return err
 		}
-		log.Error(4)
 		if err := experiment.CreateWorkflowNode(&workflowNodeCreate); err != nil {
 			log.Error(err)
 			return err
 		}
-		log.Error(5)
 		//args_value
 		if len(node.ArgsValue) > 0 {
 			if err := experiment.ClearArgsValuesByWorkflowNodeUUID(node.UUID); err != nil {
@@ -238,7 +234,6 @@ func (es *ExperimentService) UpdateExperiment(uuid string, experimentParam *Expe
 			}
 		}
 
-		log.Error(6)
 		//exec_range
 		if node.FaultRange != nil {
 			node.FaultRange.WorkflowNodeInstanceUUID = node.UUID
@@ -252,11 +247,14 @@ func (es *ExperimentService) UpdateExperiment(uuid string, experimentParam *Expe
 		}
 	}
 
+	if getExperiment.ScheduleType != experimentParam.ScheduleType {
+		getExperiment.Status = experiment.ToBeExecuted
+	}
 	getExperiment.Name = experimentParam.Name
 	getExperiment.Description = experimentParam.Description
 	getExperiment.ScheduleType = experimentParam.ScheduleType
 	getExperiment.ScheduleRule = experimentParam.ScheduleRule
-	log.Error(7)
+
 	return experiment.UpdateExperiment(getExperiment)
 	//experimentParam.Creator = getExperiment.Creator
 	//if err := es.DeleteExperimentByUUID(uuid); err != nil {
@@ -326,11 +324,14 @@ func (es *ExperimentService) GetExperimentByUUID(uuid string) (*ExperimentGet, e
 		NamespaceID:  experimentGet.NamespaceID,
 		CreatorName:  userGet.Email,
 		Creator:      experimentGet.Creator,
-		NextExec:     experimentGet.NextExec,
 		Status:       int(experimentGet.Status),
 		LastInstance: experimentGet.LastInstance,
 		CreateTime:   experimentGet.CreateTime,
 		UpdateTime:   experimentGet.UpdateTime,
+	}
+
+	if !experimentGet.NextExec.IsZero() {
+		experimentReturn.NextExec = experimentGet.NextExec.Format(TimeLayout)
 	}
 
 	experimentCount, _ := experiment_instance.CountExperimentInstances(0, experimentGet.UUID, "", 0)

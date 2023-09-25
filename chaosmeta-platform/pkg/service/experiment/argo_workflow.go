@@ -76,7 +76,7 @@ func (a *argoWorkFlowService) Create(wf v1alpha1.Workflow) (*v1alpha1.Workflow, 
 	if err != nil {
 		return nil, err
 	}
-	log.Errorf("Workflow %s created", createdWorkflow.Name)
+	log.Infof("Workflow %s created", createdWorkflow.Name)
 	return createdWorkflow, nil
 }
 
@@ -86,7 +86,7 @@ func (a *argoWorkFlowService) Update(wf v1alpha1.Workflow) (*v1alpha1.Workflow, 
 	if err != nil {
 		return nil, err
 	}
-	log.Errorf("Workflow %s updated", updatedWorkflow.Name)
+	log.Infof("Workflow %s updated", updatedWorkflow.Name)
 	return updatedWorkflow, nil
 }
 

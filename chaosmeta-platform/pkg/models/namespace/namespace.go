@@ -57,6 +57,13 @@ func DeleteNamespace(ctx context.Context, id int) (int64, error) {
 	return num, err
 }
 
+func GetNamespaceByName(ctx context.Context, namespace *Namespace) error {
+	if namespace == nil {
+		return errors.New("namespace is nil")
+	}
+	return models.GetORM().Read(namespace, "name")
+}
+
 func GetNamespaceById(ctx context.Context, namespace *Namespace) error {
 	if namespace == nil {
 		return errors.New("namespace is nil")

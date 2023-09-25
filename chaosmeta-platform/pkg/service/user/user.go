@@ -304,6 +304,13 @@ func (a *UserService) UpdateListRole(ctx context.Context, name string, ids []int
 	if !a.IsAdmin(ctx, name) {
 		return fmt.Errorf("not admin")
 	}
+	userGet := user.User{Email: name}
+	user.GetUser(ctx, &userGet)
+	for _, id := range ids {
+		if id == userGet.ID {
+			return fmt.Errorf("admin cannot update own role")
+		}
+	}
 
 	return user.UpdateUsersRole(ctx, ids, role)
 }
