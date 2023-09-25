@@ -174,7 +174,7 @@ func InitDeploymentFinalizerArgs(ctx context.Context, deploymentFault basic.Faul
 
 func InitDeploymentReplicasArgs(ctx context.Context, deploymentFault basic.Fault) error {
 	argsMode := basic.Args{InjectId: deploymentFault.ID, ExecType: ExecInject, Key: "mode", KeyCn: "模式", ValueType: "string", DefaultValue: "", Description: "scaling mode", DescriptionCn: "扩缩容模式", ValueRule: "absolutecount,relativecount,relativepercent"}
-	argsValue := basic.Args{InjectId: deploymentFault.ID, ExecType: ExecInject, Key: "value", KeyCn: "扩所容值", DescriptionCn: "数值，在三种模式下表示不同含义。absolutecount：最终目标副本数；relativecount：相对旧副本数增加或减少了多少个；relativepercent：相对旧副本数增加或减少了百分之多少", Description: "Numerical values, with different meanings in the three modes, absolutecount: the final target number of copies, relativecount: how much has been increased or decreased relative to the number of old copies, relativepercent: the percentage increase or decrease relative to the number of old copies", ValueType: "string", DefaultValue: "", ValueRule: ""}
+	argsValue := basic.Args{InjectId: deploymentFault.ID, ExecType: ExecInject, Key: "value", KeyCn: "扩缩容大小", DescriptionCn: "数值，在三种模式下表示不同含义。absolutecount：最终目标副本数；relativecount：相对旧副本数增加或减少了多少个；relativepercent：相对旧副本数增加或减少了百分之多少", Description: "Numerical values, with different meanings in the three modes, absolutecount: the final target number of copies, relativecount: how much has been increased or decreased relative to the number of old copies, relativepercent: the percentage increase or decrease relative to the number of old copies", ValueType: "string", DefaultValue: "", ValueRule: ""}
 	return basic.InsertArgsMulti(ctx, []*basic.Args{&argsMode, &argsValue})
 }
 

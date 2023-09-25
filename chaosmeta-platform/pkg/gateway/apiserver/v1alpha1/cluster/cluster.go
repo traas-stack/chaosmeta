@@ -36,8 +36,7 @@ func (c *ClusterController) Create() {
 		c.Error(&c.Controller, err)
 		return
 	}
-	username := c.Ctx.Input.GetData("userName").(string)
-	log.Error(username, "create:", requestBody.Name)
+
 	clusterService := &cluster.ClusterService{}
 	clusterId, err := clusterService.Create(context.Background(), requestBody.Name, requestBody.Kubeconfig)
 	if err != nil {
@@ -47,6 +46,7 @@ func (c *ClusterController) Create() {
 	c.Success(&c.Controller, CreateClusterResponse{
 		ID: clusterId,
 	})
+	log.Info(c.Ctx.Input.GetData("userName").(string), "create:", requestBody.Name)
 }
 
 func (c *ClusterController) Get() {
@@ -121,12 +121,12 @@ func (c *ClusterController) Delete() {
 		c.Error(&c.Controller, err)
 		return
 	}
-	username := c.Ctx.Input.GetData("userName").(string)
-	log.Error(username, "delete:", clusterId)
+
 	clusterService := &cluster.ClusterService{}
 	if err := clusterService.Delete(context.Background(), clusterId); err != nil {
 		c.Error(&c.Controller, err)
 		return
 	}
 	c.Success(&c.Controller, "ok")
+	log.Info(c.Ctx.Input.GetData("userName").(string), "delete:", clusterId)
 }

@@ -199,6 +199,15 @@ func StopExperiment(experimentInstanceID string) error {
 	}
 
 	experimentInstanceInfo.Status = "Succeeded"
+	for _, node := range workFlowGet.Status.Nodes {
+		if node.TemplateName == string(ExperimentInject) || node.TemplateName == string(RawSuspend) {
+			if node.Phase == "Failed" || node.Phase == "Error" {
+				experimentInstanceInfo.Status = string(node.Phase)
+				return experimentInstanceModel.UpdateExperimentInstance(experimentInstanceInfo)
+			}
+		}
+	}
+
 	return experimentInstanceModel.UpdateExperimentInstance(experimentInstanceInfo)
 }
 
@@ -211,14 +220,21 @@ func (e *ExperimentRoutine) DealOnceExperiment() {
 
 	for _, experimentGet := range experiments {
 		nextExec, _ := time.Parse(DefaultFormat, experimentGet.ScheduleRule)
-		if time.Now().After(nextExec) {
+		timeNow, _ := time.Parse(DefaultFormat, time.Now().Format(DefaultFormat))
+		if timeNow.After(nextExec) {
+			experimentGet.LastInstance = timeNow.Format(TimeLayout)
+			log.Info(experimentGet.UUID, " next exec time", experimentGet.NextExec)
+			if err := experiment.UpdateExperiment(experimentGet); err != nil {
+				log.Error(err)
+				continue
+			}
+
 			log.Error("create an experiment")
 			if err := StartExperiment(experimentGet.UUID, ""); err != nil {
 				log.Error(err)
 				continue
 			}
 			experimentGet.Status = experiment.Executed
-			experimentGet.LastInstance = time.Now().Format(TimeLayout)
 			if err := experiment.UpdateExperiment(experimentGet); err != nil {
 				log.Error(err)
 				continue
@@ -253,7 +269,8 @@ func (e *ExperimentRoutine) DealCronExperiment() {
 		if time.Now().After(experimentGet.NextExec) {
 			experimentGet.Status = experiment.Executed
 			experimentGet.NextExec = cronExpr.Next(now)
-			log.Error(experimentGet.UUID, " next exec time", experimentGet.NextExec)
+			experimentGet.LastInstance = time.Now().Format(TimeLayout)
+			log.Info(experimentGet.UUID, " next exec time", experimentGet.NextExec)
 			if err := experiment.UpdateExperiment(experimentGet); err != nil {
 				log.Error(err)
 				continue
@@ -264,7 +281,7 @@ func (e *ExperimentRoutine) DealCronExperiment() {
 			}
 
 			experimentGet.Status = experiment.ToBeExecuted
-			experimentGet.LastInstance = time.Now().Format(TimeLayout)
+
 			if err := experiment.UpdateExperiment(experimentGet); err != nil {
 				log.Error(err)
 				continue
