@@ -18,12 +18,12 @@ export default defineConfig({
   styledComponents: {},
   proxy: {
     '/users': {
-      target: 'http://127.0.0.1/',
+      target: 'http://127.0.0.1:8082/',
       changeOrigin: true,
       pathRewrite: { '^/api': '' },
     },
     '/chaosmeta': {
-      target: 'http://127.0.0.1/',
+      target: 'http://127.0.0.1:8082/',
       changeOrigin: true,
       pathRewrite: { '^/api': '' },
     },
