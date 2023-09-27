@@ -110,6 +110,17 @@ func writeRule(ctx context.Context, cId string, pid int, ruleBytes []byte) error
 	return nil
 }
 
+// TODO: It is currently impossible to determine accurately because the ExecContainer function does not completely determine whether it is successful based on the return code.
+func checkJavaCmd(ctx context.Context, cr, cId string) error {
+	cmd := "java -help"
+	if cr != "" {
+		_, err := cmdexec.ExecContainer(ctx, cr, cId, []string{namespace.MNT, namespace.ENV}, cmd, cmdexec.ExecRun)
+		return err
+	} else {
+		return cmdexec.RunBashCmdWithoutOutput(ctx, cmd)
+	}
+}
+
 func doInject(ctx context.Context, cr, cId string, pidList []int, ruleBytes []byte) error {
 	// create rule file
 	for _, pid := range pidList {
@@ -143,7 +154,7 @@ func doInject(ctx context.Context, cr, cId string, pidList []int, ruleBytes []by
 		for _, pid := range pidList {
 			cmd := fmt.Sprintf("cd %s && java -cp .:tools.jar %s %d %s %s", JVMContainerDir, AttacherTool, pid,
 				fmt.Sprintf("%s/%s", JVMContainerDir, JVMAgentTool), getContainerRuleFile(pid))
-			if _, err := cmdexec.ExecContainer(ctx, cr, cId, []string{namespace.MNT, namespace.PID, namespace.MNT}, cmd, cmdexec.ExecStart); err != nil {
+			if _, err := cmdexec.ExecContainer(ctx, cr, cId, []string{namespace.MNT, namespace.PID, namespace.IPC, namespace.ENV}, cmd, cmdexec.ExecStart); err != nil {
 				return fmt.Errorf("execute fault for process[%d] error: %s", pid, err.Error())
 			}
 		}

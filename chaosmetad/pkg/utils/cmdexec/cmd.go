@@ -186,16 +186,17 @@ func RunBashCmdWithOutput(ctx context.Context, cmd string) (string, error) {
 
 	reByte, err := c.CombinedOutput()
 	re := string(reByte)
+	log.GetLogger(ctx).Debugf("output: %s, err: %v", re, err)
 	if err != nil {
 		if c.ProcessState.Sys().(syscall.WaitStatus).ExitStatus() == errutil.ExpectedErr {
-			return "", fmt.Errorf(re)
+			return "", fmt.Errorf("output: %s, error: %s", re, err.Error())
 		}
 
 		if c.ProcessState.Sys().(syscall.WaitStatus).ExitStatus() == errutil.TestFileErr {
-			return "", fmt.Errorf("exit code: %d, error: %s", errutil.TestFileErr, re)
+			return "", fmt.Errorf("exit code: %d, output: %s, error: %s", errutil.TestFileErr, re, err.Error())
 		}
 
-		return "", fmt.Errorf("%s, output: %s", err.Error(), re)
+		return "", fmt.Errorf("error: %s, output: %s", err.Error(), re)
 	}
 
 	return re, nil
@@ -329,7 +330,9 @@ func ExecContainerRaw(ctx context.Context, cr, cId, cmd string) (string, error) 
 	}
 
 	log.GetLogger(ctx).Debugf("container: %s, exec cmd: %s", cId, cmd)
-	return client.Exec(ctx, cId, cmd)
+	re, err := client.Exec(ctx, cId, cmd)
+	log.GetLogger(ctx).Debugf("container: %s, output: %s, err: %v", cId, re, err)
+	return re, err
 }
 
 func ExecCommon(ctx context.Context, cr, cId, cmd string) (string, error) {

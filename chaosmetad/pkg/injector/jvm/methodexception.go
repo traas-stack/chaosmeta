@@ -90,6 +90,10 @@ func (i *MethodExceptionInjector) Validator(ctx context.Context) error {
 		return fmt.Errorf("\"method\" is invalid: %s", err.Error())
 	}
 
+	if err := checkJavaCmd(ctx, i.Info.ContainerRuntime, i.Info.ContainerId); err != nil {
+		return fmt.Errorf("check java exec error: %s", err.Error())
+	}
+
 	return nil
 }
 

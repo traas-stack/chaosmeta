@@ -386,7 +386,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-inject-controller:v0.1.0
+        image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-inject-controller:v0.1.1
         livenessProbe:
           httpGet:
             path: /healthz
@@ -507,7 +507,7 @@ data:
       "executor": {
         "mode": "daemonset",
         "executor": "chaosmetad",
-        "version": "0.3.0",
+        "version": "0.3.2",
         "agentConfig": {
           "agentPort": 29595
         },
