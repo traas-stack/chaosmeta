@@ -40,6 +40,8 @@ func GetNsOption(namespaces []string) string {
 			nsOptionStr += " -n"
 		case IPC:
 			nsOptionStr += " -i"
+		case ENV:
+			nsOptionStr += " -e"
 		}
 	}
 
