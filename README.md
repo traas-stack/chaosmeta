@@ -11,8 +11,8 @@ ChaosMeta is a platform dedicated to supporting all stages of fault drills, cove
 # core advantages
 #### Simple and easy to use, provides user interface, low threshold for use
 Support visual user interface, Kubernetes API, command line, HTTP API, and other methods.
-![](docs/static/workflow.png)
-<iframe src="//player.bilibili.com/player.html?aid=276433781&bvid=BV1yF411m7b4&cid=1280401525&p=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"> </iframe>
+[![docs/static/componentlink.png
+](docs/static/workflow.png)](https://player.bilibili.com/player.html?aid=276433781&bvid=BV1yF411m7b4&cid=1280401525&p=1)
 
 #### Fully verified by a large amount of practical experience, high reliability
 

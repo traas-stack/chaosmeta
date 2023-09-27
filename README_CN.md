@@ -9,7 +9,9 @@ ChaosMeta 是一个致力于支撑故障演练各个阶段的平台，覆盖了�
 # 核心优势
 #### 简单易用，提供用户界面，使用门槛低
 支持可视化用户界面、Kubernetes API、命令行、HTTP等多种使用方式
-![](docs/static/workflow.png)
+
+[![docs/static/componentlink.png
+](docs/static/workflow.png)](https://player.bilibili.com/player.html?aid=276433781&bvid=BV1yF411m7b4&cid=1280401525&p=1)
 
 #### 大量实践经验充分验证，功能可靠性高
 
@@ -21,8 +23,6 @@ ChaosMeta 是一个致力于支撑故障演练各个阶段的平台，覆盖了�
 
 无论用户是想要一个完整的混沌工程平台，还是只想要底层的远程注入、编排调度等平台能力，甚至是只想要单机故障注入能力，或者对云上/云下的目标进行管理以及注入故障，都有相应的部署方案可以满足
 ![](docs/static/componentlink.png)
-
-<iframe src="//player.bilibili.com/player.html?aid=276433781&bvid=BV1yF411m7b4&cid=1280401525&p=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"> </iframe>
 
 #### 丰富的故障注入能力，云原生混沌工程
 
