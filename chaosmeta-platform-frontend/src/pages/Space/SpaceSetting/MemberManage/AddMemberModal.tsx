@@ -5,7 +5,7 @@
 import { spaceAddUser } from '@/services/chaosmeta/SpaceController';
 import { getSpaceUserList } from '@/services/chaosmeta/UserController';
 import { SearchOutlined } from '@ant-design/icons';
-import { history, useRequest } from '@umijs/max';
+import { history, useIntl, useRequest } from '@umijs/max';
 import {
   Button,
   Checkbox,
@@ -47,6 +47,7 @@ const AddMemberModal: React.FC<IProps> = (props) => {
   const [userList, setUserList] = useState<any[]>([]);
   // 分页信息
   const [pageData, setPageData] = useState<any>({});
+  const intl = useIntl();
 
   /**
    * 检索用户
@@ -85,7 +86,7 @@ const AddMemberModal: React.FC<IProps> = (props) => {
     formatResult: (res) => res,
     onSuccess: (res) => {
       if (res?.code === 200) {
-        message.success('添加成功');
+        message.success(intl.formatMessage({ id: 'addMember.add.success' }));
         setOpen(false);
         handlePageSearch();
       }
@@ -236,7 +237,7 @@ const AddMemberModal: React.FC<IProps> = (props) => {
 
   return (
     <Drawer
-      title="添加成员"
+      title={intl.formatMessage({ id: 'addMember' })}
       open={open}
       width={800}
       onClose={() => {
@@ -245,13 +246,13 @@ const AddMemberModal: React.FC<IProps> = (props) => {
       footer={
         <div style={{ textAlign: 'right' }}>
           <Space>
-            <Button>取消</Button>
+            <Button>{intl.formatMessage({ id: 'cancel' })}</Button>
             <Button
               type="primary"
               onClick={handleAddUser}
               loading={addUser?.loading}
             >
-              确定
+              {intl.formatMessage({ id: 'confirm' })}
             </Button>
           </Space>
         </div>
@@ -260,9 +261,12 @@ const AddMemberModal: React.FC<IProps> = (props) => {
       <Form form={form} layout="vertical">
         <AddUserDrawerContainer>
           <div className="left" onScroll={handleScroll}>
-            <Form.Item label="用户名" name={'name'}>
+            <Form.Item
+              label={intl.formatMessage({ id: 'username' })}
+              name={'name'}
+            >
               <Input
-                placeholder="请输入关键词"
+                placeholder={intl.formatMessage({ id: 'keyword' })}
                 onChange={() => {
                   handleSearchUser();
                 }}
@@ -273,7 +277,10 @@ const AddMemberModal: React.FC<IProps> = (props) => {
             {userList?.length > 0 ? (
               <Spin spinning={queryUserList?.loading}>
                 <div>
-                  {form.getFieldValue('name') ? '搜索' : '全部'}成员列表
+                  {form.getFieldValue('name')
+                    ? intl.formatMessage({ id: 'search' })
+                    : intl.formatMessage({ id: 'all' })}{' '}
+                  {intl.formatMessage({ id: 'memberList' })}
                 </div>
                 <div className="check-all">
                   <Checkbox
@@ -281,7 +288,7 @@ const AddMemberModal: React.FC<IProps> = (props) => {
                     onChange={onCheckAllChange}
                     checked={checkAll}
                   >
-                    全选
+                    {intl.formatMessage({ id: 'selectAll' })}
                   </Checkbox>
                 </div>
                 {/* <Checkbox.Group value={checkedList} onChange={onChange}> */}
@@ -314,7 +321,9 @@ const AddMemberModal: React.FC<IProps> = (props) => {
               <Spin spinning={queryUserList?.loading}>
                 <Empty
                   image={Empty.PRESENTED_IMAGE_SIMPLE}
-                  description="暂未搜索到结果，请尝试切换关键词重新搜索"
+                  description={intl.formatMessage({
+                    id: 'addMember.search.result',
+                  })}
                 />
               </Spin>
             )}
@@ -324,25 +333,38 @@ const AddMemberModal: React.FC<IProps> = (props) => {
                 color: 'rgba(0,0,0,0.65)',
               }}
             >
-              {queryUserList.loading && <Spin>加载中...</Spin>}
+              {queryUserList.loading && (
+                <Spin>{intl.formatMessage({ id: 'addMember.loading' })}</Spin>
+              )}
               {pageData?.users?.length < pageData.pageSize && (
-                <div style={{ marginTop: '24px' }}>没有更多了～</div>
+                <div style={{ marginTop: '24px' }}>
+                  {intl.formatMessage({ id: 'addMember.noMore' })}
+                </div>
               )}
             </div>
           </div>
           <div className="right">
             <Form.Item
-              label="用户权限"
+              label={intl.formatMessage({ id: 'addMember.user.permission' })}
               name={'permission'}
               initialValue={0}
-              rules={[{ required: true, message: '请选择' }]}
+              rules={[
+                {
+                  required: true,
+                  message: intl.formatMessage({ id: 'selectPlaceholder' }),
+                },
+              ]}
             >
               <Radio.Group>
-                <Radio value={0}>只读</Radio>
-                <Radio value={1}>读写</Radio>
+                <Radio value={0}>
+                  {intl.formatMessage({ id: 'readonly' })}
+                </Radio>
+                <Radio value={1}>{intl.formatMessage({ id: 'write' })}</Radio>
               </Radio.Group>
             </Form.Item>
-            <div className="title">已选择用户</div>
+            <div className="title">
+              {intl.formatMessage({ id: 'addMember.selected.user' })}
+            </div>
             {rightCheckedList?.length > 0 && (
               <div>
                 {rightCheckedList?.map((item) => {

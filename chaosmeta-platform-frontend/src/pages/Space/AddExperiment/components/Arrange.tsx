@@ -1,5 +1,5 @@
-import { arrangeNodeTypeColors, scaleStepMap } from '@/constants';
-import { formatDuration, handleTimeTransform } from '@/utils/format';
+import { arrangeNodeTypeColors, nodeTypes, scaleStepMap } from '@/constants';
+import { formatDuration, getIntlLabel, handleTimeTransform } from '@/utils/format';
 import {
   DeleteOutlined,
   ExclamationCircleFilled,
@@ -16,6 +16,7 @@ import { Modal, Space } from 'antd';
 import React, { useEffect, useState } from 'react';
 import { ArrangeContainer, DroppableRow, HandleMove } from '../style';
 import DroppableItem from './DroppableItem';
+import { useIntl } from '@umijs/max';
 
 interface IProps {
   arrangeList: any[];
@@ -51,7 +52,7 @@ const Arrange: React.FC<IProps> = (props) => {
   const scaleStep = [33, 66, 100, 150, 200, 300];
   // 统计总时长
   const [totalDuration, setTotalDuration] = useState(0);
-
+  const intl = useIntl();
   /**
    * @description: 处理函数，计算二级列表中所有子项的总时长并更新到总时长上
    */
@@ -216,25 +217,6 @@ const Arrange: React.FC<IProps> = (props) => {
     );
   };
 
-  const nodeTypes = [
-    {
-      name: '故障节点',
-      type: 'fault',
-    },
-    {
-      name: '度量引擎',
-      type: 'measure',
-    },
-    {
-      name: '流量注入',
-      type: 'flow',
-    },
-    {
-      name: '其他节点',
-      type: 'other',
-    },
-  ];
-
   useEffect(() => {
     // 比例变化时，修改时间间隔的数量，不低于屏幕宽度的秒数，避免出现空白区域，默认1000s
     const doc = document.body;
@@ -296,7 +278,7 @@ const Arrange: React.FC<IProps> = (props) => {
       <div className="footer">
         <Space style={{ alignItems: 'center' }}>
           <div>
-            总时长：
+            {intl.formatMessage({id: 'totalDuration'})}：
             <span className="total-time">
               {handleTimeTransform(totalDuration)}
             </span>
@@ -304,11 +286,11 @@ const Arrange: React.FC<IProps> = (props) => {
           <Space className="node-type">
             {nodeTypes?.map((item) => {
               return (
-                <Space key={item.name} className="node-item">
+                <Space key={item.label} className="node-item">
                   <div
                     style={{ background: arrangeNodeTypeColors[item.type] }}
                   ></div>
-                  {item.name}
+                  {getIntlLabel(item)}
                 </Space>
               );
             })}

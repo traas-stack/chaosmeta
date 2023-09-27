@@ -1,10 +1,20 @@
 import DynamicForm from '@/components/DynamicForm';
 import ShowText from '@/components/ShowText';
-import { arrangeNodeTypeColors, nodeTypeMap, scaleStepMap } from '@/constants';
+import {
+  arrangeNodeTypeColors,
+  nodeTypeMap,
+  nodeTypeMapUS,
+  nodeTypes,
+  scaleStepMap,
+} from '@/constants';
 import { queryFaultNodeFields } from '@/services/chaosmeta/ExperimentController';
-import { formatDuration, handleTimeTransform } from '@/utils/format';
+import {
+  formatDuration,
+  getIntlLabel,
+  handleTimeTransform,
+} from '@/utils/format';
 import { ZoomInOutlined, ZoomOutOutlined } from '@ant-design/icons';
-import { history, useRequest } from '@umijs/max';
+import { getLocale, history, useIntl, useRequest } from '@umijs/max';
 import { Form, Space, Spin } from 'antd';
 import { useEffect, useState } from 'react';
 import { ArrangeWrap, DroppableCol, DroppableRow } from './style';
@@ -33,6 +43,7 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
   const [activeCol, setActiveCol] = useState<any>({ state: false });
   const [fieldList, setFieldList] = useState<any[]>([]);
   const [configForm] = Form.useForm();
+  const intl = useIntl();
 
   /**
    * 故障节点 - 查询节点表单配置信息
@@ -46,25 +57,6 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
       }
     },
   });
-
-  const nodeTypes = [
-    {
-      name: '故障节点',
-      type: 'fault',
-    },
-    {
-      name: '度量引擎',
-      type: 'measure',
-    },
-    {
-      name: '流量注入',
-      type: 'flow',
-    },
-    {
-      name: '其他节点',
-      type: 'other',
-    },
-  ];
 
   /**
    * @description: 处理函数，计算二级列表中所有子项的总时长并更新到总时长上
@@ -295,20 +287,32 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
           <div className="info">
             <Spin spinning={getFaultNodeFields?.loading}>
               <Form form={configForm}>
-                <div className="subtitle">配置信息</div>
-                <Form.Item label="节点名称" name={'name'}>
+                <div className="subtitle">
+                  {intl.formatMessage({ id: 'configInfo' })}
+                </div>
+                <Form.Item
+                  label={intl.formatMessage({ id: 'nodeName' })}
+                  name={'name'}
+                >
                   <ShowText ellipsis />
                 </Form.Item>
-                <Form.Item label="节点类型" name={'exec_type'}>
+                <Form.Item
+                  label={intl.formatMessage({ id: 'nodeType' })}
+                  // name={'exec_type'}
+                >
                   <ShowText
                     value={
-                      nodeTypeMap[activeCol?.exec_type] || activeCol?.exec_type
+                      (getLocale() === 'en-US' ? nodeTypeMapUS : nodeTypeMap)[
+                        activeCol?.exec_type
+                      ] || activeCol?.exec_type
                     }
                   />
                 </Form.Item>
                 <Form.Item
                   label={`${
-                    activeCol?.exec_type === 'wait' ? '等待时长' : '持续时长'
+                    activeCol?.exec_type === 'wait'
+                      ? intl.formatMessage({ id: 'waitTime' })
+                      : intl.formatMessage({ id: 'duration' })
                   }`}
                   name={'duration'}
                 >
@@ -322,7 +326,9 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
                       parentName={'args_value'}
                       readonly
                     />
-                    <div className="subtitle range">攻击范围</div>
+                    <div className="subtitle range">
+                      {intl.formatMessage({ id: 'attackRange' })}
+                    </div>
                     <Form.Item
                       label="Kubernetes Namespace"
                       name={['exec_range', 'target_namespace']}
@@ -367,21 +373,21 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
         <div className="footer">
           <Space style={{ alignItems: 'center' }}>
             <div>
-              总时长：
+              {intl.formatMessage({ id: 'totalDuration' })}：
               <span className="total-time">
                 {handleTimeTransform(totalDuration)}
               </span>
             </div>
             <Space className="node-type">
-              {nodeTypes?.map((item) => {
+              {nodeTypes?.map((item: any) => {
                 return (
-                  <Space key={item.name} className="node-item">
+                  <Space key={item.label} className="node-item">
                     <div
                       style={{
                         background: arrangeNodeTypeColors[item.type],
                       }}
                     ></div>
-                    {item.name}
+                    {getIntlLabel(item)}
                   </Space>
                 );
               })}

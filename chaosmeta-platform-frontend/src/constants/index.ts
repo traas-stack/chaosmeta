@@ -82,9 +82,9 @@ export const scaleStepMap: any = {
 
 // 触发方式选项
 export const triggerTypes = [
-  { label: '手动触发', value: 'manual' },
-  { label: '单次定时', value: 'once' },
-  { label: '周期性', value: 'cron' },
+  { label: '手动触发', value: 'manual', labelUS: 'manual trigger' },
+  { label: '单次定时', value: 'once', labelUS: 'single timing' },
+  { label: '周期性', value: 'cron', labelUS: 'periodicity' },
 ];
 
 // 实验结果状态
@@ -92,17 +92,20 @@ export const experimentResultStatus = [
   {
     value: 'Pending',
     label: '等待中',
+    labelUS: 'pending',
     color: 'blue',
     type: 'info',
   },
   {
     value: 'Running',
+    labelUS: 'running',
     label: '运行中',
     color: 'blue',
     type: 'info',
   },
   {
     value: 'Succeeded',
+    labelUS: 'succeeded',
     label: '成功',
     color: 'green',
     type: 'success',
@@ -110,12 +113,14 @@ export const experimentResultStatus = [
 
   {
     value: 'Failed',
+    labelUS: 'failed',
     label: '失败',
     color: 'red',
     type: 'error',
   },
   {
     value: 'error',
+    labelUS: 'error',
     label: '错误',
     color: 'red',
     type: 'error',
@@ -127,21 +132,25 @@ export const experimentStatus = [
   {
     value: 0,
     label: '待执行',
+    labelUS: 'to be executed',
     color: 'blue',
   },
   {
     value: 1,
     label: '执行成功',
+    labelUS: 'execution succeed',
     color: 'green',
   },
   {
     value: 2,
     label: '执行失败',
+    labelUS: 'execution failed',
     color: 'red',
   },
   {
     value: 3,
     label: '执行中',
+    labelUS: 'executing',
     color: 'blue',
   },
 ];
@@ -153,3 +162,35 @@ export const nodeTypeMap: any = {
   flow: '流量注入',
   wait: '等待时长',
 };
+
+// 节点类型
+export const nodeTypeMapUS: any = {
+  fault: 'faulty node',
+  measure: 'measurement engine',
+  flow: 'flow injection',
+  wait: 'waiting time',
+};
+
+
+export const nodeTypes = [
+  {
+    label: '故障节点',
+    labelUS: 'faulty node',
+    type: 'fault',
+  },
+  {
+    label: '度量引擎',
+    labelUS: 'measurement engine',
+    type: 'measure',
+  },
+  {
+    label: '流量注入',
+    labelUS: 'flow injection',
+    type: 'flow',
+  },
+  {
+    label: '其他节点',
+    labelUS: 'other nodes',
+    type: 'other',
+  },
+];

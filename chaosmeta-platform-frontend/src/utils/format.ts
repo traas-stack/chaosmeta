@@ -1,15 +1,16 @@
+import { getLocale } from '@umijs/max';
 import cronstrue from 'cronstrue';
 import 'cronstrue/locales/zh_CN';
-import moment from 'moment';
+import dayjs from 'dayjs';
 import { v1 } from 'uuid';
 
 export function trim(str: string) {
   return str.trim();
 }
 
-export const formatTime = (time: moment.MomentInput) => {
+export const formatTime = (time?: dayjs.Dayjs | string) => {
   if (time) {
-    return moment(time)?.format('YYYY-MM-DD HH:mm:ss');
+    return dayjs(time)?.format('YYYY-MM-DD HH:mm:ss');
   }
   return '--';
 };
@@ -175,15 +176,74 @@ export const arrangeDataResultTranstion = (result: any) => {
  * @returns
  */
 export const cronTranstionCN = (cronRule: string) => {
+  // 获取当前语言，用于cron表达式描述展示
+  let curIntl = getLocale();
+  curIntl = curIntl.replace('-', '_');
   let cronCN = '';
   if (cronRule) {
     try {
-      cronCN = cronstrue.toString(cronRule, { locale: 'zh_CN' });
+      cronCN = cronstrue.toString(cronRule, { locale: curIntl });
     } catch (error) {
       cronCN = 'error';
     }
   }
   return cronCN;
+};
+
+/**
+ * 获取国际化文本
+ * @param temp 包含中文文案和对应英文文案的对象
+ * @returns 返回当前环境下的文案
+ */
+export const getIntlLabel = (temp: { label: string; labelUS: string }) => {
+  // 获取当前环境
+  const curIntl = getLocale();
+  // 如果当前环境为英文环境
+  if (curIntl === 'en-US') {
+    // 返回对应的英文文案
+    return temp?.labelUS;
+  }
+  // 返回对应的中文文案
+  return temp?.label;
+};
+
+/**
+ * 获取国际化文本
+ * @param temp 包含中文文案和对应英文文案的对象
+ * @returns 返回当前环境下的文案
+ */
+export const getIntlName = (temp: { name: string; nameCn: string }) => {
+  // 获取当前环境
+  const curIntl = getLocale();
+  if (temp?.name && temp?.nameCn) {
+    // 如果当前环境为英文环境
+    if (curIntl === 'en-US') {
+      // 返回对应的英文文案
+      return temp?.name;
+    }
+    // 返回对应的中文文案
+    return temp?.nameCn;
+  }
+  return temp?.name;
+};
+
+/**
+ * 根据传入的对象和key返回对应的中文/英文文案
+ * @param temp 包含中文文案和对应英文文案的对象
+ * @param cnKey 中文key
+ * @param usKey 英文key
+ * @returns
+ */
+export const getIntlText = (temp: any, cnKey: string, usKey: string) => {
+  // 获取当前环境
+  const curIntl = getLocale();
+  // 如果当前环境为英文环境
+  if (curIntl === 'en-US') {
+    // 返回对应的英文文案
+    return temp?.[usKey];
+  }
+  // 返回对应的中文文案
+  return temp?.[cnKey];
 };
 
 /**

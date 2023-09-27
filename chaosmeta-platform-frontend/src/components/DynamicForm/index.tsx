@@ -1,5 +1,8 @@
-import { Form, Input, InputNumber, Radio, Select } from 'antd';
+import { getIntlText } from '@/utils/format';
+import { useIntl } from '@umijs/max';
+import { Form, Input, Radio, Select } from 'antd';
 import ShowText from '../ShowText';
+import UnitInput from './UnitInput';
 
 interface Field {
   id: number;
@@ -22,6 +25,7 @@ interface Props {
   fieldList: Field[];
   parentName?: string;
   readonly?: boolean;
+  form?: any;
 }
 
 /**
@@ -30,69 +34,8 @@ interface Props {
  * @returns
  */
 const DynamicForm = (props: Props) => {
-  const { fieldList, parentName, readonly } = props;
-
-  /**
-   * 解析动态表单配置内容，根据不同条件渲染为不同表单元素
-   * @param field
-   * @returns
-   */
-  const renderItem = (field: Field) => {
-    const { valueRule, valueType, keyCn } = field;
-    if (valueType === 'int') {
-      return <InputNumber placeholder={keyCn} style={{ width: '100%' }} />;
-    }
-    if (valueType === 'bool') {
-      return (
-        <Radio.Group>
-          <Radio value={true}>是</Radio>
-          <Radio value={false}>否</Radio>
-        </Radio.Group>
-      );
-    }
-    if (valueType === 'stringlist') {
-      let options: string[] = [];
-      if (valueRule) {
-        options = valueRule?.split(',');
-      }
-      return (
-        <Select mode={'tags'} placeholder={keyCn}>
-          {options.map((option) => {
-            return (
-              <Select.Option key={option} value={option}>
-                {option}
-              </Select.Option>
-            );
-          })}
-        </Select>
-      );
-    }
-    if (valueRule) {
-      let options: string[] = [];
-      if (valueRule) {
-        options = valueRule?.split(',');
-      }
-      return (
-        <Select placeholder={keyCn}>
-          {options.map((option) => {
-            return (
-              <Select.Option key={option} value={option}>
-                {option}
-              </Select.Option>
-            );
-          })}
-        </Select>
-      );
-    }
-    return <Input placeholder={keyCn} />;
-  };
-
-  const initValue = (defaultValue: any) => {
-    if (defaultValue || defaultValue === 0) {
-      return defaultValue;
-    }
-    return undefined;
-  };
+  const { fieldList, parentName, readonly, form } = props;
+  const intl = useIntl();
 
   /**
    * 如果存在父级名字，则将其与当前名字合并成一个字符串数组返回；否则直接返回当前名字。
@@ -107,6 +50,80 @@ const DynamicForm = (props: Props) => {
   };
 
   /**
+   * 解析动态表单配置内容，根据不同条件渲染为不同表单元素
+   * @param field
+   * @returns
+   */
+  const renderItem = (field: any) => {
+    const { valueRule, valueType } = field;
+    // if (valueType === 'int') {
+    //   return (
+    //     <InputNumber
+    //       placeholder={getIntlText(field, 'descriptionCn', 'description')}
+    //       style={{ width: '100%' }}
+    //     />
+    //   );
+    // }
+    if (valueType === 'bool') {
+      return (
+        <Radio.Group>
+          <Radio value={'true'}>{intl.formatMessage({ id: 'yes' })}</Radio>
+          <Radio value={'false'}>{intl.formatMessage({ id: 'no' })}</Radio>
+        </Radio.Group>
+      );
+    }
+    if (valueType === 'stringlist') {
+      let options: string[] = [];
+      if (valueRule) {
+        options = valueRule?.split(',');
+      }
+      return (
+        <Select mode={'tags'} placeholder={getIntlText(field, 'keyCn', 'key')}>
+          {options.map((option) => {
+            return (
+              <Select.Option key={option} value={option}>
+                {option}
+              </Select.Option>
+            );
+          })}
+        </Select>
+      );
+    }
+    if (
+      valueRule &&
+      !valueRule.includes('-') &&
+      !valueRule.includes('>') &&
+      !valueRule.includes('<') &&
+      !valueRule.includes('=')
+    ) {
+      let options: string[] = [];
+      if (valueRule) {
+        options = valueRule?.split(',');
+      }
+      return (
+        <Select placeholder={getIntlText(field, 'keyCn', 'key')}>
+          {options.map((option) => {
+            return (
+              <Select.Option key={option} value={option}>
+                {option}
+              </Select.Option>
+            );
+          })}
+        </Select>
+      );
+    }
+
+    return <Input placeholder={getIntlText(field, 'keyCn', 'key')} />;
+  };
+
+  const initValue = (defaultValue: any) => {
+    if (defaultValue || defaultValue === 0) {
+      return defaultValue;
+    }
+    return undefined;
+  };
+
+  /**
    * 判断规则函数，根据传入的参数进行判断并返回相应的结果
    * @param {Object} item - 包含规则信息的对象
    * @param {*} value - 待判断的值
@@ -114,7 +131,7 @@ const DynamicForm = (props: Props) => {
    */
   const rule = (item: any, value: number) => {
     // 获取规则信息中的 valueType、valueRule 和 keyCn 属性
-    const { valueType, valueRule, keyCn } = item;
+    const { valueType, valueRule } = item;
     if (!value && value !== 0) {
       // 其他情况都返回通过, 为空时让form自动去判断
       return Promise.resolve();
@@ -129,21 +146,33 @@ const DynamicForm = (props: Props) => {
           value > Number(valueRuleList[1])
         ) {
           // 不满足大于规定范围条件，返回错误信息
-          return Promise.reject(`${keyCn}的取值为 ${valueRule}`);
+          return Promise.reject(
+            `${getIntlText(item, 'keyCn', 'key')} ${intl.formatMessage({
+              id: 'ruleText',
+            })} ${valueRule}`,
+          );
         }
       }
       if (valueRule?.includes('>=')) {
         const valueRuleList = valueRule.split('>=');
         if (value < Number(valueRuleList[1])) {
           // 不满足大于规定范围条件，返回错误信息
-          return Promise.reject(`${keyCn}的取值为 ${valueRule}`);
+          return Promise.reject(
+            `${getIntlText(item, 'keyCn', 'key')} ${intl.formatMessage({
+              id: 'ruleText',
+            })} ${valueRule}`,
+          );
         }
       }
       if (valueRule?.includes('>')) {
         const valueRuleList = valueRule.split('>');
         if (value <= Number(valueRuleList[1])) {
           // 不满足大于规定范围条件，返回错误信息
-          return Promise.reject(`${keyCn}的取值为 ${valueRule}`);
+          return Promise.reject(
+            `${getIntlText(item, 'keyCn', 'key')} ${intl.formatMessage({
+              id: 'ruleText',
+            })} ${valueRule}`,
+          );
         }
       }
     }
@@ -154,14 +183,13 @@ const DynamicForm = (props: Props) => {
   return (
     <>
       {fieldList?.map((item: Field) => {
-        const { keyCn, id, required, defaultValue } = item;
+        const { id, required, defaultValue } = item;
         if (readonly) {
           return (
             <Form.Item
               name={formatName(id)}
-              label={keyCn}
+              label={getIntlText(item, 'keyCn', 'key')}
               key={id}
-              // rules={[{ required, message: keyCn }]}
               initialValue={initValue(defaultValue)}
             >
               <ShowText />
@@ -170,8 +198,9 @@ const DynamicForm = (props: Props) => {
         }
         return (
           <Form.Item
+            tooltip={getIntlText(item, 'descriptionCn', 'description')}
             name={formatName(id)}
-            label={keyCn}
+            label={getIntlText(item, 'keyCn', 'key')}
             key={id}
             rules={[
               { required },
@@ -183,7 +212,12 @@ const DynamicForm = (props: Props) => {
             ]}
             initialValue={initValue(defaultValue)}
           >
-            {renderItem(item)}
+            {/* 带有单位的特殊处理 */}
+            {item.unit ? (
+              <UnitInput field={item} form={form} parentName={parentName} />
+            ) : (
+              renderItem(item)
+            )}
           </Form.Item>
         );
       })}

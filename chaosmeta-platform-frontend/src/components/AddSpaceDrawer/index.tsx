@@ -1,5 +1,8 @@
-import { createSpace } from '@/services/chaosmeta/SpaceController';
-import { history, useModel, useRequest } from '@umijs/max';
+import {
+  createSpace,
+  queryClassSpaceList,
+} from '@/services/chaosmeta/SpaceController';
+import { history, useIntl, useModel, useRequest } from '@umijs/max';
 import { Button, Drawer, Form, Input, Space, message } from 'antd';
 import React from 'react';
 
@@ -11,11 +14,38 @@ interface IProps {
 const AddSpaceDrawer: React.FC<IProps> = (props) => {
   const { open, setOpen } = props;
   const [form] = Form.useForm();
-  const { setCurSpace } = useModel('global');
+  const { setCurSpace, setSpaceList } = useModel('global');
+  const intl = useIntl();
 
   const handleCancel = () => {
     setOpen(false);
   };
+
+  /**
+   * 获取空间列表 -- 当前用户有查看权限的空间只读和读写
+   */
+  const getSpaceList = useRequest(queryClassSpaceList, {
+    manual: true,
+    formatResult: (res) => res,
+    debounceInterval: 300,
+    onSuccess: (res) => {
+      if (res?.code === 200) {
+        const namespaceList = res.data?.namespaces?.map(
+          (item: { namespaceInfo: any }) => {
+            // side侧边菜单的展开/收起会影响这里，暂时用icon代替，todo
+            return {
+              icon: item?.namespaceInfo?.name,
+              key: item?.namespaceInfo?.id,
+              id: item?.namespaceInfo?.id?.toString(),
+              name: item?.namespaceInfo?.name,
+            };
+          },
+        );
+        // 更新空间列表
+        setSpaceList(namespaceList);
+      }
+    },
+  });
 
   /**
    * 更新地址栏空间id，并保存
@@ -24,6 +54,7 @@ const AddSpaceDrawer: React.FC<IProps> = (props) => {
   const handleUpdateSpaceId = (id: any) => {
     if (id) {
       const name = form.getFieldValue('name');
+      getSpaceList?.run({ page: 1, page_size: 10, namespaceClass: 'relevant' });
       history.push({
         pathname: history.location.pathname,
         query: {
@@ -45,7 +76,7 @@ const AddSpaceDrawer: React.FC<IProps> = (props) => {
     formatResult: (res) => res,
     onSuccess: async (res) => {
       if (res.code === 200) {
-        message.success('创建成功');
+        message.success(intl.formatMessage({ id: 'createText' }));
         // 更新空间信息
         handleUpdateSpaceId(res?.data?.id);
         setOpen(false);
@@ -70,20 +101,22 @@ const AddSpaceDrawer: React.FC<IProps> = (props) => {
 
   return (
     <Drawer
-      title="新建空间"
+      title={intl.formatMessage({ id: 'createSpace' })}
       open={open}
       onClose={handleCancel}
       width={480}
       footer={
         <div style={{ textAlign: 'right' }}>
           <Space>
-            <Button onClick={handleCancel}>取消</Button>
+            <Button onClick={handleCancel}>
+              {intl.formatMessage({ id: 'cancel' })}
+            </Button>
             <Button
               type="primary"
               onClick={handleCreate}
               loading={create.loading}
             >
-              创建完成并去配置
+              {intl.formatMessage({ id: 'createSpace.confirm' })}
             </Button>
           </Space>
         </div>
@@ -92,18 +125,33 @@ const AddSpaceDrawer: React.FC<IProps> = (props) => {
       <Form layout="vertical" form={form}>
         <Form.Item
           name={'name'}
-          label="空间名称"
-          rules={[{ required: true, message: '请输入' }]}
-          help="请尽量保持空间名称的简洁，不超过64个字符"
+          label={intl.formatMessage({ id: 'spaceName' })}
+          rules={[
+            {
+              required: true,
+              message: intl.formatMessage({ id: 'inputPlaceholder' }),
+            },
+          ]}
+          help={intl.formatMessage({ id: 'spaceDescriptionTip' })}
         >
-          <Input placeholder="请输入空间名称" maxLength={64} />
+          <Input
+            placeholder={`${intl.formatMessage({
+              id: 'inputPlaceholder',
+            })} ${intl.formatMessage({ id: 'spaceName' })}`}
+            maxLength={64}
+          />
         </Form.Item>
         <Form.Item
           name={'description'}
-          label="空间描述"
+          label={intl.formatMessage({ id: 'spaceDescription' })}
           style={{ marginTop: '36px' }}
         >
-          <Input.TextArea placeholder="请输入空间描述" rows={5} />
+          <Input.TextArea
+            placeholder={`${intl.formatMessage({
+              id: 'inputPlaceholder',
+            })} ${intl.formatMessage({ id: 'spaceDescription' })}`}
+            rows={5}
+          />
         </Form.Item>
       </Form>
     </Drawer>

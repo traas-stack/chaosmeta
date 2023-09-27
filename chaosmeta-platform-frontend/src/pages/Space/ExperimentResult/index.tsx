@@ -11,10 +11,10 @@ import {
   queryExperimentResultList,
   stopExperimentResult,
 } from '@/services/chaosmeta/ExperimentController';
-import { formatTime } from '@/utils/format';
+import { formatTime, getIntlLabel } from '@/utils/format';
 import { useParamChange } from '@/utils/useParamChange';
 import { PageContainer } from '@ant-design/pro-components';
-import { history, useModel, useRequest } from '@umijs/max';
+import { history, useIntl, useModel, useRequest } from '@umijs/max';
 import {
   Badge,
   Button,
@@ -48,16 +48,30 @@ const ExperimentResult: React.FC<unknown> = () => {
   });
   const spaceIdChange = useParamChange('spaceId');
   const { spacePermission } = useModel('global');
+  const intl = useIntl();
+  // 请输入文案
+  const pleaseInput = intl.formatMessage({
+    id: 'pleaseInput',
+  });
+
+  // 请选择文案
+  const pleaseSelect = intl.formatMessage({
+    id: 'pleaseSelect',
+  });
 
   // 时间类型
   const timeTypes = [
     {
       value: 'create_time',
-      label: '实验开始时间',
+      label: intl.formatMessage({
+        id: 'experimentStartTime',
+      }),
     },
     {
       value: 'update_time',
-      label: '实验结束时间',
+      label: intl.formatMessage({
+        id: 'experimentEndTime',
+      }),
     },
   ];
 
@@ -121,7 +135,11 @@ const ExperimentResult: React.FC<unknown> = () => {
       formatResult: (res) => res,
       onSuccess: (res, params) => {
         if (res?.code === 200) {
-          message.success(`${params[0]?.name}实验已停止`);
+          message.success(
+            `${params[0]?.name} ${intl.formatMessage({
+              id: 'experimentResult.stop.text',
+            })}`,
+          );
           handleSearch();
         }
       },
@@ -130,7 +148,9 @@ const ExperimentResult: React.FC<unknown> = () => {
 
   const columns: ColumnsType<any> = [
     {
-      title: '名称',
+      title: intl.formatMessage({
+        id: 'name',
+      }),
       width: 160,
       dataIndex: 'name',
       render: (text: string, record: { uuid: string }) => {
@@ -152,12 +172,16 @@ const ExperimentResult: React.FC<unknown> = () => {
       },
     },
     {
-      title: '执行人',
+      title: intl.formatMessage({
+        id: 'creator',
+      }),
       width: 120,
       dataIndex: 'creator_name',
     },
     {
-      title: '实验开始时间',
+      title: intl.formatMessage({
+        id: 'experimentStartTime',
+      }),
       width: 180,
       dataIndex: 'create_time',
       sorter: true,
@@ -166,7 +190,9 @@ const ExperimentResult: React.FC<unknown> = () => {
       },
     },
     {
-      title: '实验结束时间',
+      title: intl.formatMessage({
+        id: 'experimentEndTime',
+      }),
       width: 180,
       dataIndex: 'update_time',
       sorter: true,
@@ -175,17 +201,19 @@ const ExperimentResult: React.FC<unknown> = () => {
       },
     },
     {
-      title: '实验状态',
+      title: intl.formatMessage({
+        id: 'experimentStatus',
+      }),
       width: 100,
       dataIndex: 'status',
       render: (text: string) => {
-        const temp = experimentResultStatus?.filter(
+        const temp: any = experimentResultStatus?.filter(
           (item) => item?.value === text,
         )[0];
         if (temp) {
           return (
             <div>
-              <Badge color={temp?.color} /> {temp?.label}
+              <Badge color={temp?.color} /> {getIntlLabel(temp)}
             </div>
           );
         }
@@ -197,7 +225,9 @@ const ExperimentResult: React.FC<unknown> = () => {
   // 操作column，有权限才可查看
   const operateColumn: any[] = [
     {
-      title: '操作',
+      title: intl.formatMessage({
+        id: 'operate',
+      }),
       width: 60,
       fixed: 'right',
       render: (record: { uuid: string; status: string; name: string }) => {
@@ -206,7 +236,9 @@ const ExperimentResult: React.FC<unknown> = () => {
           return (
             <Space>
               <Popconfirm
-                title="你确定要停止吗？"
+                title={intl.formatMessage({
+                  id: 'stopConfirmText',
+                })}
                 onConfirm={() => {
                   handleStopExperiment?.run({
                     uuid: record?.uuid,
@@ -214,7 +246,11 @@ const ExperimentResult: React.FC<unknown> = () => {
                   });
                 }}
               >
-                <a>停止</a>
+                <a>
+                  {intl.formatMessage({
+                    id: 'stop',
+                  })}
+                </a>
               </Popconfirm>
             </Space>
           );
@@ -230,25 +266,44 @@ const ExperimentResult: React.FC<unknown> = () => {
 
   return (
     <>
-      <PageContainer title="实验结果">
+      <PageContainer
+        title={intl.formatMessage({
+          id: 'experimentResult',
+        })}
+      >
         <Container>
           <div className="result-list ">
             <LightArea className="search">
               <Form form={form} labelCol={{ span: 6 }}>
                 <Row gutter={16}>
                   <Col span={8}>
-                    <Form.Item name={'name'} label="名称">
-                      <Input placeholder="请输入" />
+                    <Form.Item
+                      name={'name'}
+                      label={intl.formatMessage({
+                        id: 'name',
+                      })}
+                    >
+                      <Input placeholder={pleaseInput} />
                     </Form.Item>
                   </Col>
                   <Col span={8}>
-                    <Form.Item name={'creator_name'} label="执行人">
-                      <Input placeholder="请输入" />
+                    <Form.Item
+                      name={'creator_name'}
+                      label={intl.formatMessage({
+                        id: 'creator',
+                      })}
+                    >
+                      <Input placeholder={pleaseInput} />
                     </Form.Item>
                   </Col>
                   <Col span={8}>
-                    <Form.Item name={'status'} label="实验状态">
-                      <Select placeholder="请选择">
+                    <Form.Item
+                      name={'status'}
+                      label={intl.formatMessage({
+                        id: 'experimentStatus',
+                      })}
+                    >
+                      <Select placeholder={pleaseSelect}>
                         {experimentResultStatus.map((item) => {
                           return (
                             <Select.Option key={item.value} value={item.value}>
@@ -268,13 +323,16 @@ const ExperimentResult: React.FC<unknown> = () => {
                           history.push({
                             pathname: '/space/experiment-result',
                             query: {
-                              spaceId: history?.location?.query?.spaceId as string,
-                            }
-                          })
+                              spaceId: history?.location?.query
+                                ?.spaceId as string,
+                            },
+                          });
                           handleSearch({ page: 1, pageSize: 10 });
                         }}
                       >
-                        重置
+                        {intl.formatMessage({
+                          id: 'reset',
+                        })}
                       </Button>
                       <Button
                         type="primary"
@@ -282,7 +340,9 @@ const ExperimentResult: React.FC<unknown> = () => {
                           handleSearch();
                         }}
                       >
-                        查询
+                        {intl.formatMessage({
+                          id: 'query',
+                        })}
                       </Button>
                     </Space>
                   </Col>
@@ -292,17 +352,28 @@ const ExperimentResult: React.FC<unknown> = () => {
             <LightArea>
               <div className="table">
                 <div className="area-operate">
-                  <div className="title">实验结果列表</div>
+                  <div className="title">
+                    {' '}
+                    {intl.formatMessage({
+                      id: 'experimentResultList',
+                    })}
+                  </div>
                 </div>
                 <Table
                   locale={{
                     emptyText: (
                       <EmptyCustom
-                        desc="当前暂无实验结果数据"
+                        desc={intl.formatMessage({
+                          id: 'experimentResult.table.description',
+                        })}
                         title={
                           spacePermission === 1
-                            ? '您可以前往实验详情页面运行实验'
-                            : '您可以前往实验列表页面查看实验'
+                            ? intl.formatMessage({
+                                id: 'experimentResult.table.title',
+                              })
+                            : intl.formatMessage({
+                                id: 'experimentResult.table.noAuth.title',
+                              })
                         }
                         btns={
                           <Space>
@@ -317,7 +388,9 @@ const ExperimentResult: React.FC<unknown> = () => {
                                 });
                               }}
                             >
-                              前往实验列表
+                              {intl.formatMessage({
+                                id: 'experimentResult.table.btn',
+                              })}
                             </Button>
                           </Space>
                         }

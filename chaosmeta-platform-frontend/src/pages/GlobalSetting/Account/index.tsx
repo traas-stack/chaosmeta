@@ -7,7 +7,7 @@ import {
 } from '@/services/chaosmeta/UserController';
 import { ExclamationCircleFilled, SearchOutlined } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
-import { useModel, useRequest } from '@umijs/max';
+import { useIntl, useModel, useRequest } from '@umijs/max';
 import {
   Alert,
   Button,
@@ -25,7 +25,7 @@ import { Container, Role } from './style';
 interface DataType {
   id: string;
   auth?: string;
-  userName: string;
+  name: string;
 }
 
 const Account: React.FC<unknown> = () => {
@@ -35,6 +35,7 @@ const Account: React.FC<unknown> = () => {
   const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
   const { userInfo } = useModel('global');
   const [batchState, setBatchState] = useState<boolean>(false);
+  const intl = useIntl();
   /**
    * 分页查询
    */
@@ -80,7 +81,7 @@ const Account: React.FC<unknown> = () => {
     formatResult: (res) => res,
     onSuccess: (res) => {
       if (res.code === 200) {
-        message.success('用户角色修改成功');
+        message.success(intl.formatMessage({ id: 'account.role.update' }));
         handleSearch();
       }
     },
@@ -93,7 +94,7 @@ const Account: React.FC<unknown> = () => {
     manual: true,
     formatResult: (res) => res,
     onSuccess: () => {
-      message.success('您已成功删除所选成员');
+      message.success(intl.formatMessage({ id: 'account.delete.success' }));
       handleSearch();
     },
   });
@@ -104,9 +105,9 @@ const Account: React.FC<unknown> = () => {
   const handleDeleteAccount = (ids: string[]) => {
     if (ids?.length > 0) {
       Modal.confirm({
-        title: '确认要删除当前所选账号吗？',
+        title: intl.formatMessage({ id: 'account.delete.title' }),
         icon: <ExclamationCircleFilled />,
-        content: '删除账号用户将无法登录平台，要再次使用只能重新注册！',
+        content: intl.formatMessage({ id: 'account.delete.content' }),
         onOk() {
           handleBatchDelete?.run({ user_ids: ids });
           handleSearch();
@@ -121,33 +122,33 @@ const Account: React.FC<unknown> = () => {
     {
       label: (
         <Role>
-          <span>管理员</span>
-          <span>拥有所有权限</span>
+          <span>{intl.formatMessage({ id: 'admin' })}</span>
+          <span>{intl.formatMessage({ id: 'adminDescription' })}</span>
         </Role>
       ),
       value: 'admin',
-      name: '管理员',
+      name: intl.formatMessage({ id: 'admin' }),
     },
     {
       label: (
         <Role>
-          <span>普通用户</span>
-          <span>可登录查看，同时叠加空间内权限</span>
+          <span>{intl.formatMessage({ id: 'generalUser' })}</span>
+          <span>{intl.formatMessage({ id: 'generalUserDescription' })}</span>
         </Role>
       ),
       value: 'normal',
-      name: '普通用户',
+      name: intl.formatMessage({ id: 'generalUser' }),
     },
   ];
 
   const columns: any = [
     {
-      title: '用户名',
+      title: intl.formatMessage({ id: 'username' }),
       width: 80,
       dataIndex: 'name',
     },
     {
-      title: '加入时间',
+      title: intl.formatMessage({ id: 'joinTime' }),
       width: 160,
       dataIndex: 'create_time',
       sorter: true,
@@ -156,16 +157,16 @@ const Account: React.FC<unknown> = () => {
       },
     },
     {
-      title: '角色',
+      title: intl.formatMessage({ id: 'role' }),
       width: 160,
       dataIndex: 'role',
       filters: [
         {
-          text: '管理员',
+          text: intl.formatMessage({ id: 'admin' }),
           value: 'admin',
         },
         {
-          text: '普通用户',
+          text: intl.formatMessage({ id: 'generalUser' }),
           value: 'normal',
         },
       ],
@@ -204,17 +205,17 @@ const Account: React.FC<unknown> = () => {
 
   const operateColumns: any = [
     {
-      title: '操作',
+      title: intl.formatMessage({ id: 'operate' }),
       width: 60,
       fixed: 'right',
       render: (record: DataType) => {
-        return record?.userName !== userInfo?.name ? (
+        return record?.name !== userInfo?.name ? (
           <a
             onClick={() => {
               handleDeleteAccount([record.id]);
             }}
           >
-            删除
+            {intl.formatMessage({ id: 'delete' })}
           </a>
         ) : null;
       },
@@ -227,15 +228,19 @@ const Account: React.FC<unknown> = () => {
 
   return (
     <Container>
-      <PageContainer title="账号管理">
+      <PageContainer title={intl.formatMessage({ id: 'account.title' })}>
         <Form form={form}>
           <LightArea>
             <div className="area-operate">
-              <div className="title">账号列表</div>
+              <div className="title">
+                {intl.formatMessage({ id: 'account.list' })}
+              </div>
               <Space>
                 <Form.Item name={'name'}>
                   <Input
-                    placeholder="请输入用户名进行搜索"
+                    placeholder={intl.formatMessage({
+                      id: 'account.search.placeholder',
+                    })}
                     onPressEnter={() => {
                       handleSearch();
                     }}
@@ -255,7 +260,7 @@ const Account: React.FC<unknown> = () => {
                       setBatchState(!batchState);
                     }}
                   >
-                    批量操作
+                    {intl.formatMessage({ id: 'batchOperate' })}
                   </Button>
                 )}
               </Space>
@@ -265,14 +270,16 @@ const Account: React.FC<unknown> = () => {
                 <Alert
                   message={
                     <>
-                      已选择 <a>{selectedRowKeys.length}</a> 项
+                      {intl.formatMessage({ id: 'selected' })}{' '}
+                      <a>{selectedRowKeys.length}</a>{' '}
+                      {intl.formatMessage({ id: 'item' })}
                       <a
                         style={{ paddingLeft: '16px' }}
                         onClick={() => {
                           setSelectedRowKeys([]);
                         }}
                       >
-                        清空
+                        {intl.formatMessage({ id: 'clear' })}
                       </a>
                     </>
                   }
@@ -292,7 +299,7 @@ const Account: React.FC<unknown> = () => {
                         handleDeleteAccount(selectedRowKeys);
                       }}
                     >
-                      批量删除
+                      {intl.formatMessage({ id: 'batchDelete' })}
                     </Button>
                   }
                   showIcon
@@ -312,7 +319,7 @@ const Account: React.FC<unknown> = () => {
                     ? {
                         selectedRowKeys,
                         getCheckboxProps: (record: DataType) => {
-                          if (record?.userName === userInfo?.name) {
+                          if (record?.name === userInfo?.name) {
                             return {
                               disabled: true,
                             };
