@@ -24,10 +24,10 @@ import (
 // k8S-Target
 func InitK8STarget(ctx context.Context, scope basic.Scope) error {
 	var (
-		K8SPodTarget        = basic.Target{Name: "Pod", NameCn: "Pod", Description: "Fault injection capabilities related to cloud-native resource pod instances", DescriptionCn: "云原生资源pod实例相关的故障注入能力"}
-		K8SDeploymentTarget = basic.Target{Name: "Deployment", NameCn: "Deployment", Description: "Fault injection capabilities related to cloud-native resource deployment instances", DescriptionCn: "云原生资源deployment实例相关的故障注入能力"}
-		K8SNodeTarget       = basic.Target{Name: "Node", NameCn: "Node", Description: "Fault injection capabilities related to cloud-native resource node instances", DescriptionCn: "云原生资源node实例相关的故障注入能力"}
-		K8SClusterTarget    = basic.Target{Name: "Cluster", NameCn: "Cluster", Description: "Fault injection capabilities related to kubernetes macro cluster risks", DescriptionCn: "kubernetes宏观的集群性风险相关的故障注入能力"}
+		K8SPodTarget        = basic.Target{Name: "pod", NameCn: "Pod", Description: "Fault injection capabilities related to cloud-native resource pod instances", DescriptionCn: "云原生资源pod实例相关的故障注入能力"}
+		K8SDeploymentTarget = basic.Target{Name: "deployment", NameCn: "Deployment", Description: "Fault injection capabilities related to cloud-native resource deployment instances", DescriptionCn: "云原生资源deployment实例相关的故障注入能力"}
+		K8SNodeTarget       = basic.Target{Name: "node", NameCn: "Node", Description: "Fault injection capabilities related to cloud-native resource node instances", DescriptionCn: "云原生资源node实例相关的故障注入能力"}
+		K8SClusterTarget    = basic.Target{Name: "cluster", NameCn: "Cluster", Description: "Fault injection capabilities related to kubernetes macro cluster risks", DescriptionCn: "kubernetes宏观的集群性风险相关的故障注入能力"}
 	)
 	K8SPodTarget.ScopeId = scope.ID
 	if err := basic.InsertTarget(ctx, &K8SPodTarget); err != nil {

@@ -22,6 +22,8 @@ ChaosMeta 是一个致力于支撑故障演练各个阶段的平台，覆盖了�
 无论用户是想要一个完整的混沌工程平台，还是只想要底层的远程注入、编排调度等平台能力，甚至是只想要单机故障注入能力，或者对云上/云下的目标进行管理以及注入故障，都有相应的部署方案可以满足
 ![](docs/static/componentlink.png)
 
+<iframe src="//player.bilibili.com/player.html?aid=276433781&bvid=BV1yF411m7b4&cid=1280401525&p=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"> </iframe>
+
 #### 丰富的故障注入能力，云原生混沌工程
 
 由于蚂蚁集团对攻防演练的高度重视，促成了大规模高频率的演练活动，进而推动了各种各样的故障注入能力建设。并且因为蚂蚁内部有着庞大的基础设施规模，加上金融的低容错性，所以对Kubernetes、中间件等基础设施的稳定性要求非常高，因此蚂蚁混沌工程在云原生领域沉淀了比较丰富的故障能力以及演练经验。

@@ -226,7 +226,7 @@ func getInjectStep(experimentInstanceUUID string, node *experiment_instance.Work
 		if node.Subtasks.TargetLabel != "" {
 			labelMap := make(map[string]string)
 			for _, pair := range strings.Split(node.Subtasks.TargetLabel, ",") {
-				parts := strings.Split(pair, "=")
+				parts := strings.Split(pair, ":")
 				labelMap[strings.TrimSpace(parts[0])] = strings.TrimSpace(parts[1])
 			}
 			selector.Label = labelMap
