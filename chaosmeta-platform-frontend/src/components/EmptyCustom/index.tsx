@@ -2,10 +2,10 @@ import React from 'react';
 import { Container } from './style';
 
 interface IProps {
-  desc?: string;
-  title?: string;
+  desc?: any;
+  title?: any;
   imgSrc?: string;
-  topTitle?: string;
+  topTitle?: any;
   btns?: any;
 }
 const EmptyCustom: React.FC<IProps> = (props) => {

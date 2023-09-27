@@ -11,7 +11,7 @@ import {
 } from '@/services/chaosmeta/SpaceController';
 import { useParamChange } from '@/utils/useParamChange';
 import { SearchOutlined } from '@ant-design/icons';
-import { history, useModel, useRequest } from '@umijs/max';
+import { history, useIntl, useModel, useRequest } from '@umijs/max';
 import {
   Alert,
   Button,
@@ -47,6 +47,7 @@ const TagManage: React.FC<any> = () => {
   const [batchState, setBatchState] = useState<boolean>(false);
   const [form] = Form.useForm();
   const [addTagDrawerOpen, setAddTagDrawerOpen] = useState<boolean>(false);
+  const intl = useIntl();
   /**
    * 分页接口
    */
@@ -89,7 +90,9 @@ const TagManage: React.FC<any> = () => {
     formatResult: (res) => res,
     onSuccess: (res) => {
       if (res?.code === 200) {
-        message.success('你已成功删除标签');
+        message.success(
+          intl.formatMessage({ id: 'tagManageMent.delete.success.tip' }),
+        );
         handlePageSearch();
       }
     },
@@ -97,12 +100,12 @@ const TagManage: React.FC<any> = () => {
 
   const baseColumns: ColumnsType<any> = [
     {
-      title: '名称',
+      title: intl.formatMessage({ id: 'name' }),
       width: 120,
       dataIndex: 'name',
     },
     {
-      title: '标签颜色',
+      title: intl.formatMessage({ id: 'tagManageMent.column.tagColor' }),
       width: 100,
       dataIndex: 'color',
       render: (text: string) => {
@@ -113,7 +116,7 @@ const TagManage: React.FC<any> = () => {
       },
     },
     {
-      title: '标签样式',
+      title: intl.formatMessage({ id: 'tagManageMent.column.tagStyle' }),
       width: 100,
       dataIndex: 'name',
       render: (text: string, record: { color: string }) => {
@@ -124,12 +127,12 @@ const TagManage: React.FC<any> = () => {
       },
     },
     {
-      title: '创建人',
+      title: intl.formatMessage({ id: 'creator' }),
       width: 160,
       dataIndex: 'creator',
     },
     {
-      title: '创建时间',
+      title: intl.formatMessage({ id: 'createTime' }),
       width: 160,
       dataIndex: 'create_time',
       sorter: true,
@@ -141,7 +144,7 @@ const TagManage: React.FC<any> = () => {
 
   const operateColumns: ColumnsType<any> = [
     {
-      title: '操作',
+      title: intl.formatMessage({ id: 'operate' }),
       width: 60,
       fixed: 'right',
       dataIndex: 'id',
@@ -149,17 +152,17 @@ const TagManage: React.FC<any> = () => {
         return (
           <Popconfirm
             placement="bottom"
-            title={'你确定要删除吗？'}
+            title={intl.formatMessage({ id: 'deleteConfirmText' })}
             onConfirm={() => {
               return handleDelete?.run({
                 id: text,
                 ns_id: history?.location?.query?.spaceId as string,
               });
             }}
-            okText="确定"
-            cancelText="取消"
+            okText={intl.formatMessage({ id: 'confirm' })}
+            cancelText={intl.formatMessage({ id: 'cancel' })}
           >
-            <a>删除</a>
+            <a>{intl.formatMessage({ id: 'delete' })}</a>
           </Popconfirm>
         );
       },
@@ -173,12 +176,16 @@ const TagManage: React.FC<any> = () => {
   return (
     <LightArea>
       <div className="area-operate">
-        <div className="title">标签列表</div>
+        <div className="title">
+          {intl.formatMessage({ id: 'tagManageMent.title' })}
+        </div>
         <Form form={form}>
           <Space>
             <Form.Item name={'name'} noStyle>
               <Input
-                placeholder="请输入标签名称"
+                placeholder={intl.formatMessage({
+                  id: 'tagManageMent.search.placeholder',
+                })}
                 onPressEnter={() => {
                   handlePageSearch();
                 }}
@@ -199,7 +206,7 @@ const TagManage: React.FC<any> = () => {
                     setBatchState(!batchState);
                   }}
                 >
-                  批量操作
+                  {intl.formatMessage({ id: 'batchOperate' })}
                 </Button>
                 <Button
                   type="primary"
@@ -207,7 +214,7 @@ const TagManage: React.FC<any> = () => {
                     setAddTagDrawerOpen(true);
                   }}
                 >
-                  新建标签
+                  {intl.formatMessage({ id: 'tagManageMent.add.title' })}
                 </Button>
               </>
             )}
@@ -219,14 +226,16 @@ const TagManage: React.FC<any> = () => {
           <Alert
             message={
               <>
-                已选择 <a>{selectedRowKeys.length}</a> 项
+                {intl.formatMessage({ id: 'selected' })}{' '}
+                <a>{selectedRowKeys.length}</a>{' '}
+                {intl.formatMessage({ id: 'item' })}
                 <a
                   style={{ paddingLeft: '16px' }}
                   onClick={() => {
                     setSelectedRowKeys([]);
                   }}
                 >
-                  清空
+                  {intl.formatMessage({ id: 'clear' })}
                 </a>
               </>
             }
@@ -235,7 +244,7 @@ const TagManage: React.FC<any> = () => {
             action={
               <Popconfirm
                 placement="bottom"
-                title={'你确定要删除吗？'}
+                title={intl.formatMessage({ id: 'deleteConfirmText' })}
                 disabled={selectedRowKeys?.length === 0}
                 onConfirm={async () => {
                   const queryList: any[] = [];
@@ -249,14 +258,18 @@ const TagManage: React.FC<any> = () => {
                   });
                   const result = await Promise.all(queryList);
                   if (result.every((item) => item.code === 200)) {
-                    message.success('你已成功删除标签');
+                    message.success(
+                      intl.formatMessage({
+                        id: 'tagManageMent.delete.success.tip',
+                      }),
+                    );
                     setSelectedRowKeys([]);
                     handlePageSearch();
                   }
                   return result;
                 }}
-                okText="确定"
-                cancelText="取消"
+                okText={intl.formatMessage({ id: 'confirm' })}
+                cancelText={intl.formatMessage({ id: 'cancel' })}
               >
                 <Button
                   type="link"
@@ -268,7 +281,7 @@ const TagManage: React.FC<any> = () => {
                         : 'rgba(0,10,26,0.26)',
                   }}
                 >
-                  批量删除
+                  {intl.formatMessage({ id: 'batchDelete' })}
                 </Button>
               </Popconfirm>
             }
@@ -281,8 +294,12 @@ const TagManage: React.FC<any> = () => {
               if (spacePermission === 1) {
                 return (
                   <EmptyCustom
-                    desc="请新建标签，提前创建好标签在创建实验的时候可以直接选用快速为实验打上标签。"
-                    topTitle="您还没有标签数据"
+                    desc={intl.formatMessage({
+                      id: 'tagManageMent.table.empty.description',
+                    })}
+                    topTitle={intl.formatMessage({
+                      id: 'tagManageMent.table.empty.title',
+                    })}
                     btns={
                       <Button
                         type="primary"
@@ -290,7 +307,7 @@ const TagManage: React.FC<any> = () => {
                           setAddTagDrawerOpen(true);
                         }}
                       >
-                        新建标签
+                        {intl.formatMessage({ id: 'tagManageMent.add.title' })}
                       </Button>
                     }
                     imgSrc="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*q5JMSKh4woYAAAAAAAAAAAAADmKmAQ/original"
@@ -299,8 +316,12 @@ const TagManage: React.FC<any> = () => {
               }
               return (
                 <EmptyCustom
-                  desc="您在该空间只是只读权限，暂不支持添加标签。若想添加标签请去成员管理中找空间内有读写权限的成员修改权限"
-                  topTitle="当前还没有标签数据"
+                  desc={intl.formatMessage({
+                    id: 'tagManageMent.table.empty.noAuth.description',
+                  })}
+                  topTitle={intl.formatMessage({
+                    id: 'tagManageMent.table.empty.noAuth.title',
+                  })}
                   btns={
                     <Button
                       type="primary"
@@ -314,7 +335,7 @@ const TagManage: React.FC<any> = () => {
                         });
                       }}
                     >
-                      前往成员管理
+                      {intl.formatMessage({ id: 'goToMemberManagement' })}
                     </Button>
                   }
                   imgSrc="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*q5JMSKh4woYAAAAAAAAAAAAADmKmAQ/original"

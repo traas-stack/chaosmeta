@@ -3,15 +3,18 @@ import { Tabs } from 'antd';
 import React from 'react';
 import ExperimentList from './ExperimentList';
 // import RecommendExperiment from './RecommendExperiment';
+import { useIntl } from '@umijs/max';
 import { Container } from './style';
 /**
  * 实验列表页面
  * @returns
  */
 const Experiment: React.FC<unknown> = () => {
+  const intl = useIntl();
   const tabItems = [
     {
-      label: '实验列表',
+      label: intl.formatMessage({ id: 'experimentList' }),
+
       key: 'list',
       children: <ExperimentList />,
     },
@@ -22,10 +25,10 @@ const Experiment: React.FC<unknown> = () => {
     //   children: <RecommendExperiment />,
     // },
   ];
-  
+
   return (
     <>
-      <PageContainer title="实验">
+      <PageContainer title={intl.formatMessage({ id: 'experiment' })}>
         <Container>
           <Tabs items={tabItems} />
         </Container>

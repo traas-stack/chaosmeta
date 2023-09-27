@@ -1,7 +1,6 @@
-import { queryNamespaceList } from '@/services/chaosmeta/KubernetesController';
-import { useIntl } from '@umijs/max';
-import { useRequest } from '@umijs/max';
-import { Select, Spin, message } from 'antd';
+import { queryPodNodeList } from '@/services/chaosmeta/KubernetesController';
+import { useIntl, useRequest } from '@umijs/max';
+import { Empty, Select, Spin, message } from 'antd';
 import { useEffect, useState } from 'react';
 
 interface IProps {
@@ -14,7 +13,7 @@ interface IProps {
   style?: any;
 }
 
-const KubernetesNamespaceSelect = (props: IProps) => {
+const KubernetesPodSelect = (props: IProps) => {
   const intl = useIntl();
   const {
     value,
@@ -33,7 +32,7 @@ const KubernetesNamespaceSelect = (props: IProps) => {
     }
   }, [list]);
 
-  const getNamespaceList = useRequest(queryNamespaceList, {
+  const getPodList = useRequest(queryPodNodeList, {
     manual: true,
     formatResult: (res: any) => res,
     debounceInterval: 300,
@@ -47,17 +46,24 @@ const KubernetesNamespaceSelect = (props: IProps) => {
   });
 
   useEffect(() => {
-    getNamespaceList?.run({ page: 1, page_size: 500 });
+    getPodList?.run({
+      page: 1,
+      page_size: 500,
+    });
   }, []);
 
   return (
     <Select
       mode={mode}
       value={value}
-      showSearch
-      // onSearch={(val) => handleUserSearch(val)}
       allowClear
-      notFoundContent={getNamespaceList?.loading ? <Spin size="small" /> : null}
+      notFoundContent={
+        getPodList?.loading ? (
+          <Spin size="small" />
+        ) : (
+          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />
+        )
+      }
       filterOption={false}
       onChange={onChange}
       placeholder={placeholder}
@@ -74,4 +80,4 @@ const KubernetesNamespaceSelect = (props: IProps) => {
   );
 };
 
-export default KubernetesNamespaceSelect;
+export default KubernetesPodSelect;

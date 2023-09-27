@@ -5,7 +5,7 @@ import {
 } from '@/services/chaosmeta/SpaceController';
 import { formatTime } from '@/utils/format';
 import { useParamChange } from '@/utils/useParamChange';
-import { history, useModel, useRequest } from '@umijs/max';
+import { history, useIntl, useModel, useRequest } from '@umijs/max';
 import { Button, Form, Input, Space, Spin } from 'antd';
 import React, { useEffect, useState } from 'react';
 import { BasicInfoContainer } from './style';
@@ -16,6 +16,7 @@ const BasicInfo: React.FC<any> = () => {
   const [spaceInfo, setSpaceInfo] = useState<any>({});
   const spaceIdChange = useParamChange('spaceId');
   const { spacePermission } = useModel('global');
+  const intl = useIntl();
 
   /**
    * 修改接口
@@ -78,25 +79,48 @@ const BasicInfo: React.FC<any> = () => {
             <div>
               <Form.Item
                 name={'name'}
-                label="空间名称"
-                rules={[{ required: true, message: '请输入空间名称' }]}
-                help="请尽量保持空间名称的简洁，不超过64个字符"
+                label={intl.formatMessage({ id: 'spaceName' })}
+                rules={[
+                  {
+                    required: true,
+                    message: `${intl.formatMessage({
+                      id: 'inputPlaceholder',
+                    })} ${intl.formatMessage({ id: 'spaceName' })}`,
+                  },
+                ]}
+                help={intl.formatMessage({ id: 'spaceDescriptionTip' })}
               >
-                <Input placeholder="请输入空间名称" maxLength={64} />
+                <Input
+                  placeholder={`${intl.formatMessage({
+                    id: 'inputPlaceholder',
+                  })} ${intl.formatMessage({ id: 'spaceName' })}`}
+                  maxLength={64}
+                />
               </Form.Item>
-              <Form.Item name={'description'} label="空间描述">
+              <Form.Item
+                name={'description'}
+                label={intl.formatMessage({ id: 'spaceDescription' })}
+              >
                 <Input.TextArea
-                  placeholder="请输入空间描述"
+                  placeholder={`${intl.formatMessage({
+                    id: 'inputPlaceholder',
+                  })} ${intl.formatMessage({ id: 'spaceDescription' })}`}
                   style={{ resize: 'none' }}
                   rows={4}
                   maxLength={200}
                   showCount
                 />
               </Form.Item>
-              <Form.Item name={'create_time'} label="创建时间">
+              <Form.Item
+                name={'create_time'}
+                label={intl.formatMessage({ id: 'createTime' })}
+              >
                 <ShowText />
               </Form.Item>
-              <Form.Item name={'count'} label="成员数量">
+              <Form.Item
+                name={'count'}
+                label={intl.formatMessage({ id: 'memberNumber' })}
+              >
                 <ShowText />
               </Form.Item>
               <Space>
@@ -106,7 +130,7 @@ const BasicInfo: React.FC<any> = () => {
                   onClick={handleEdit}
                   loading={editInfo.loading}
                 >
-                  保存
+                  {intl.formatMessage({ id: 'save' })}
                 </Button>
                 <Button
                   onClick={() => {
@@ -114,23 +138,35 @@ const BasicInfo: React.FC<any> = () => {
                     setSaveDisabled(true);
                   }}
                 >
-                  取消
+                  {intl.formatMessage({ id: 'cancel' })}
                 </Button>
               </Space>
             </div>
           ) : (
             // 只读权限时
             <div>
-              <Form.Item name={'name'} label="空间名称">
+              <Form.Item
+                name={'name'}
+                label={intl.formatMessage({ id: 'spaceName' })}
+              >
                 <ShowText />
               </Form.Item>
-              <Form.Item name={'description'} label="空间描述">
+              <Form.Item
+                name={'description'}
+                label={intl.formatMessage({ id: 'spaceDescription' })}
+              >
                 <ShowText />
               </Form.Item>
-              <Form.Item name={'create_time'} label="创建时间">
+              <Form.Item
+                name={'create_time'}
+                label={intl.formatMessage({ id: 'createTime' })}
+              >
                 <ShowText />
               </Form.Item>
-              <Form.Item name={'count'} label="成员数量">
+              <Form.Item
+                name={'count'}
+                label={intl.formatMessage({ id: 'memberNumber' })}
+              >
                 <ShowText />
               </Form.Item>
             </div>

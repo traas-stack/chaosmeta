@@ -15,7 +15,7 @@ import {
   formatTime,
 } from '@/utils/format';
 import { renderScheduleType, renderTags } from '@/utils/renderItem';
-import { useRequest } from '@umijs/max';
+import { useIntl, useRequest } from '@umijs/max';
 import ArrangeInfoShow from './ArrangeInfoShow';
 import { Container } from './style';
 
@@ -25,6 +25,7 @@ const AddExperiment = () => {
   // 用户权限
   const { spacePermission } = useModel('global');
   const [baseInfo, setBaseInfo] = useState<any>({});
+  const intl = useIntl();
 
   /**
    * 获取实验详情
@@ -73,7 +74,7 @@ const AddExperiment = () => {
     formatResult: (res) => res,
     onSuccess: (res) => {
       if (res?.code === 200) {
-        message.success('复制成功');
+        message.success(intl.formatMessage({ id: 'copyText' }));
         history.push({
           pathname: '/space/experiment/detail',
           query: {
@@ -103,7 +104,7 @@ const AddExperiment = () => {
               handleCopyExperiment();
             }}
           >
-            复制
+            {intl.formatMessage({ id: 'copy' })}
           </Button>
           <Button
             onClick={() => {
@@ -116,7 +117,7 @@ const AddExperiment = () => {
               });
             }}
           >
-            实验结果
+            {intl.formatMessage({ id: 'experimentResult' })}
           </Button>
           <Button
             onClick={() => {
@@ -126,7 +127,7 @@ const AddExperiment = () => {
               });
             }}
           >
-            编辑
+            {intl.formatMessage({ id: 'edit' })}
           </Button>
           {/* 手动时才展示 */}
           {baseInfo?.schedule_type === 'manual' && (
@@ -140,7 +141,7 @@ const AddExperiment = () => {
                 });
               }}
             >
-              运行
+              {intl.formatMessage({ id: 'run' })}
             </Button>
           )}
         </Space>
@@ -158,7 +159,7 @@ const AddExperiment = () => {
           });
         }}
       >
-        实验结果
+        {intl.formatMessage({ id: 'experimentResult' })}
       </Button>
     );
   };
@@ -185,25 +186,33 @@ const AddExperiment = () => {
       >
         <Spin spinning={getExperimentDetail?.loading}>
           <div className="content">
-            <Descriptions title="基本信息">
-              <Descriptions.Item label="创建人">
+            <Descriptions title={intl.formatMessage({ id: 'basicInfo' })}>
+              <Descriptions.Item label={intl.formatMessage({ id: 'creator' })}>
                 {baseInfo?.creator_name}
               </Descriptions.Item>
-              <Descriptions.Item label="最近操作时间">
+              <Descriptions.Item
+                label={intl.formatMessage({ id: 'lastOperationTime' })}
+              >
                 {formatTime(baseInfo?.update_time)}
               </Descriptions.Item>
-              <Descriptions.Item label="标签">
+              <Descriptions.Item label={intl.formatMessage({ id: 'label' })}>
                 {renderTags(baseInfo?.labels) || '--'}
               </Descriptions.Item>
-              <Descriptions.Item label="触发方式">
+              <Descriptions.Item
+                label={intl.formatMessage({ id: 'triggerMode' })}
+              >
                 {renderScheduleType(baseInfo)}
               </Descriptions.Item>
-              <Descriptions.Item label="描述">
+              <Descriptions.Item
+                label={intl.formatMessage({ id: 'description' })}
+              >
                 {baseInfo?.description}
               </Descriptions.Item>
             </Descriptions>
             <div className="experiment">
-              <div className="experiment-title">实验配置</div>
+              <div className="experiment-title">
+                {intl.formatMessage({ id: 'experimentConfig' })}
+              </div>
               <ArrangeInfoShow arrangeList={arrangeList} />
             </div>
           </div>

@@ -1,4 +1,4 @@
-import { history } from '@umijs/max';
+import { getLocale, history } from '@umijs/max';
 import { message } from 'antd';
 
 export const httpErrorMessage: any = {
@@ -55,7 +55,7 @@ const errorHandler = async (error: any) => {
     }
   } else if (error.response) {
     const { statusText, status } = error.response;
-    const errorMsg = statusText || httpErrorMessage['zh-CN'][status];
+    const errorMsg = statusText || httpErrorMessage[getLocale()][status];
     // Axios 的错误
     // 请求成功发出且服务器也响应了状态码，但状态代码超出了 2xx 的范围
     message.error(errorMsg);

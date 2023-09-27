@@ -1,5 +1,6 @@
+import { useIntl } from '@umijs/max';
 import { Col, DatePicker, Form, Radio, Select } from 'antd';
-import moment from 'moment';
+import dayjs from 'dayjs';
 import React from 'react';
 
 interface IProps {
@@ -13,19 +14,25 @@ interface IProps {
 const TimeTypeRangeSelect: React.FC<IProps> = (props) => {
   const { form, timeTypes } = props;
   const { RangePicker } = DatePicker;
+  const intl = useIntl();
+
+  // 请选择文案
+  const pleaseSelect = intl.formatMessage({
+    id: 'pleaseSelect',
+  });
 
   const timeFastType = [
     {
       value: 'all',
-      label: '全部',
+      label: intl.formatMessage({ id: 'timeType.all' }),
     },
     {
       value: '7day',
-      label: '近7天',
+      label: intl.formatMessage({ id: 'timeType.7' }),
     },
     {
       value: '30day',
-      label: '近30天',
+      label: intl.formatMessage({ id: 'timeType.30' }),
     },
   ];
   return (
@@ -33,11 +40,11 @@ const TimeTypeRangeSelect: React.FC<IProps> = (props) => {
       <Col span={6}>
         <Form.Item
           name={'timeType'}
-          label="时间类型"
+          label={intl.formatMessage({ id: 'timeType' })}
           labelCol={{ span: 8 }}
           // style={{minWidth: '260px'}}
         >
-          <Select placeholder="请选择" allowClear>
+          <Select placeholder={pleaseSelect} allowClear>
             {timeTypes?.map((item) => {
               return (
                 <Select.Option key={item.value} value={item.value}>
@@ -58,15 +65,15 @@ const TimeTypeRangeSelect: React.FC<IProps> = (props) => {
               }
               if (value === '7day') {
                 const timeRange = [
-                  moment().subtract(6, 'd').startOf('day'),
-                  moment().endOf('day'),
+                  dayjs().subtract(6, 'd').startOf('day'),
+                  dayjs().endOf('day'),
                 ];
                 form.setFieldValue('time', timeRange);
               }
               if (value === '30day') {
                 const timeRange = [
-                  moment().subtract(30, 'd').startOf('day'),
-                  moment().endOf('day'),
+                  dayjs().subtract(30, 'd').startOf('day'),
+                  dayjs().endOf('day'),
                 ];
                 form.setFieldValue('time', timeRange);
               }
