@@ -18,6 +18,7 @@ package experiment
 
 import (
 	models "chaosmeta-platform/pkg/models/common"
+	"errors"
 	"github.com/beego/beego/v2/client/orm"
 )
 
@@ -33,6 +34,7 @@ type WorkflowNode struct {
 	TargetId       int    `json:"target_id" orm:"column(target_id); int(11)"`
 	ExecType       string `json:"exec_type" orm:"column(exec_type);size(32)"`
 	ExecID         int    `json:"exec_id" orm:"column(exec_id); int(11)"`
+	Version        int    `json:"-" orm:"column(version);default(0);version"`
 	models.BaseTimeModel
 }
 
@@ -71,6 +73,39 @@ func GetWorkflowNodesByExperimentUUID(experimentUUID string) ([]*WorkflowNode, e
 func CreateWorkflowNode(workflowNode *WorkflowNode) error {
 	_, err := models.GetORM().Insert(workflowNode)
 	return err
+}
+
+func UpdateWorkflowNode(workflowNode *WorkflowNode) error {
+	o := models.GetORM()
+	tx, err := o.Begin()
+	if err != nil {
+		return err
+	}
+
+	existing := WorkflowNode{UUID: workflowNode.UUID}
+	err = tx.Read(&existing)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if workflowNode.Version != existing.Version {
+		tx.Rollback()
+		return errors.New("Concurrent modification detected")
+	}
+
+	workflowNode.Version = existing.Version + 1
+	if _, err = tx.Update(workflowNode); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err = tx.Commit(); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return nil
 }
 
 func DeleteWorkflowNodeByUUID(uuid string) error {

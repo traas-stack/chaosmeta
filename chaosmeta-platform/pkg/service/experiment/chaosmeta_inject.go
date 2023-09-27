@@ -208,10 +208,10 @@ func (c *ChaosmetaService) DeleteExpiredList(ctx context.Context) error {
 		if experiment.Status.Status == SuccessStatusType && experiment.Status.CreateTime != "" && experimentCreateTime.Before(expirationTime) {
 			err := c.Delete(ctx, experiment.Name)
 			if err != nil {
-				log.Errorf("failed to delete chaosmeta experiment %s: %v", experiment.Name, err.Error())
+				log.Infof("failed to delete chaosmeta experiment %s: %v", experiment.Name, err.Error())
 				return err
 			} else {
-				log.Errorf("chaosmeta experiment %s deleted", experiment.Name)
+				log.Infof("chaosmeta experiment %s deleted", experiment.Name)
 			}
 		}
 	}

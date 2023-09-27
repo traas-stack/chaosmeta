@@ -9,7 +9,9 @@ ChaosMeta 是一个致力于支撑故障演练各个阶段的平台，覆盖了�
 # 核心优势
 #### 简单易用，提供用户界面，使用门槛低
 支持可视化用户界面、Kubernetes API、命令行、HTTP等多种使用方式
-![](docs/static/workflow.png)
+
+[![docs/static/componentlink.png
+](docs/static/workflow.png)](https://player.bilibili.com/player.html?aid=276433781&bvid=BV1yF411m7b4&cid=1280401525&p=1)
 
 #### 大量实践经验充分验证，功能可靠性高
 

@@ -110,6 +110,52 @@ func (a *UserService) Login(ctx context.Context, name, password string) (string,
 	return tocken, refreshToken, nil
 }
 
+//func (a *UserService) LoginWithOauth2(ctx context.Context, code string) (string, string, error) {
+//	dexConfig := &oauth2.Config{
+//		ClientID:     "your-client-id",
+//		ClientSecret: "your-client-secret",
+//		Scopes:       []string{"scope1", "scope2"},
+//		RedirectURL:  "http://localhost:8080/callback",
+//		Endpoint: oauth2.Endpoint{
+//			AuthURL:  "https://authserver.com/auth",
+//			TokenURL: "https://authserver.com/token",
+//		},
+//	}
+//
+//	token, err := dexConfig.Exchange(context.Background(), code)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	userGet := user.User{Email: name}
+//	if err := user.GetUser(ctx, &userGet); err != nil {
+//		return "", "", fmt.Errorf("user not registered")
+//	}
+//	if userGet.Disabled || userGet.IsDeleted {
+//		return "", "", errors.ErrUnauthorized()
+//	}
+//	if !VerifyPassword(password, userGet.Password) {
+//		return "", "", errors.ErrUnauthorized()
+//	}
+//
+//	userGet.LastLoginTime = time.Now()
+//	if err := user.UpdateUser(ctx, &userGet); err != nil {
+//		return "", "", err
+//	}
+//
+//	authentication := Authentication{}
+//	tocken, err := authentication.GenerateToken(name, string(GrantTypeAccess), 5*time.Minute)
+//	if err != nil {
+//		return "", "", err
+//	}
+//
+//	refreshToken, err := authentication.GenerateToken(name, string(GrantTypeRefresh), time.Hour*24)
+//	if err != nil {
+//		return "", "", err
+//	}
+//	return tocken, refreshToken, nil
+//}
+
 func (a *UserService) Create(ctx context.Context, name, password, role string) (int, error) {
 	hash, err := HashPassword(password)
 	if err != nil {
@@ -257,6 +303,13 @@ func (a *UserService) UpdatePassword(ctx context.Context, name, newPassword stri
 func (a *UserService) UpdateListRole(ctx context.Context, name string, ids []int, role string) error {
 	if !a.IsAdmin(ctx, name) {
 		return fmt.Errorf("not admin")
+	}
+	userGet := user.User{Email: name}
+	user.GetUser(ctx, &userGet)
+	for _, id := range ids {
+		if id == userGet.ID {
+			return fmt.Errorf("admin cannot update own role")
+		}
 	}
 
 	return user.UpdateUsersRole(ctx, ids, role)
