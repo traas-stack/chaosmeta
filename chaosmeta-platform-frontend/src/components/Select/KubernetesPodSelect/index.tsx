@@ -1,5 +1,5 @@
 import { queryPodLIst } from '@/services/chaosmeta/KubernetesController';
-import { useRequest } from '@umijs/max';
+import { useIntl, useRequest } from '@umijs/max';
 import { Empty, Select, Spin, message } from 'antd';
 import { useEffect, useState } from 'react';
 
@@ -16,12 +16,13 @@ interface IProps {
 }
 
 const KubernetesPodSelect = (props: IProps) => {
+  const intl = useIntl();
   const {
     value,
     onChange,
     list,
     mode,
-    placeholder = '请选择',
+    placeholder = intl.formatMessage({ id: 'selectPlaceholder' }),
     style,
     form,
     kubernetesNamespace,

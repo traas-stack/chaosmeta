@@ -1,6 +1,6 @@
 import { useParamChange } from '@/utils/useParamChange';
 import { PageContainer } from '@ant-design/pro-components';
-import { history } from '@umijs/max';
+import { history, useIntl } from '@umijs/max';
 import { Tabs } from 'antd';
 import React, { useEffect, useState } from 'react';
 import BasicInfo from './BasicInfo';
@@ -12,19 +12,20 @@ import { Container } from './style';
 const SpaceSetting: React.FC<unknown> = () => {
   const [activeKey, setActiveKey] = useState<string>('basic');
   const tabKeyChange = useParamChange('tabKey');
+  const intl = useIntl();
   const tabItems = [
     {
-      label: '基本信息',
+      label: intl.formatMessage({ id: 'basicInfo' }),
       key: 'basic',
       children: <BasicInfo />,
     },
     {
-      label: '成员管理',
+      label: intl.formatMessage({ id: 'spaceSetting.tab.member' }),
       key: 'user',
       children: <MemberManage />,
     },
     {
-      label: '标签管理',
+      label: intl.formatMessage({ id: 'spaceSetting.tab.tag' }),
       key: 'tag',
       children: <TagManage />,
     },
@@ -42,7 +43,7 @@ const SpaceSetting: React.FC<unknown> = () => {
   }, [tabKeyChange]);
 
   return (
-    <PageContainer title="空间设置">
+    <PageContainer title={intl.formatMessage({ id: 'spaceSetting' })}>
       <Container>
         <Tabs
           items={tabItems}

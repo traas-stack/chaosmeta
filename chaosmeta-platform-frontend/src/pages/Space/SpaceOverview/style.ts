@@ -90,7 +90,7 @@ export const SpaceContent = styled.div`
         color: rgba(0, 0, 0, 0.85);
       }
       .ant-select-selector {
-        width: 100px;
+        width: 120px;
         .ant-select-selection-item {
           font-size: 12px;
           color: rgba(0, 0, 0, 0.65);

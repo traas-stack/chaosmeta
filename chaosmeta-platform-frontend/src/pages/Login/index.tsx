@@ -1,5 +1,5 @@
 import { login, register } from '@/services/chaosmeta/UserController';
-import { history, useRequest } from '@umijs/max';
+import { history, useIntl, useRequest } from '@umijs/max';
 import { Button, Form, Input, message } from 'antd';
 import CryptoJS from 'crypto-js';
 import { useState } from 'react';
@@ -8,6 +8,7 @@ import { Container } from './style';
 export default () => {
   const [form] = Form.useForm();
   const [operateType, setOperateType] = useState<'login' | 'register'>('login');
+  const intl = useIntl();
 
   /**
    * 注册
@@ -17,7 +18,7 @@ export default () => {
     formatResult: (res) => res,
     onSuccess: (res) => {
       if (res.code === 200) {
-        message.success('注册成功，请登录');
+        message.success(intl.formatMessage({ id: 'reister.success' }));
         form.resetFields();
         setOperateType('login');
       }
@@ -70,23 +71,40 @@ export default () => {
               <img src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*lMXkRKmd8WcAAAAAAAAAAAAADmKmAQ/original" />
             </div>
             <div className="title">
-              {operateType === 'login' ? '登录' : '注册'}
+              {operateType === 'login'
+                ? intl.formatMessage({ id: 'login' })
+                : intl.formatMessage({ id: 'register' })}
             </div>
-            <div className="tip">欢迎使用ChaosMeta</div>
+            <div className="tip">
+              {intl.formatMessage({ id: 'welcome' })} ChaosMeta
+            </div>
             <Form.Item
               name={'name'}
-              rules={[{ required: true, message: '请输入用户名' }]}
-              help="用户名可以使用中英文，长度不超过64个字符"
+              rules={[
+                {
+                  required: true,
+                  message: intl.formatMessage({ id: 'usernamePlaceholder' }),
+                },
+              ]}
+              help={intl.formatMessage({ id: 'username.rule' })}
             >
-              <Input placeholder="用户名" maxLength={64} />
+              <Input
+                placeholder={intl.formatMessage({ id: 'username' })}
+                maxLength={64}
+              />
             </Form.Item>
             <Form.Item
               name={'password'}
-              rules={[{ required: true, message: '请输入密码' }]}
-              help={'密码8-16位中英文大小写及下划线等特殊字符'}
+              rules={[
+                {
+                  required: true,
+                  message: intl.formatMessage({ id: 'password.placeholder' }),
+                },
+              ]}
+              help={intl.formatMessage({ id: 'password.rule' })}
             >
               <Input.Password
-                placeholder="密码"
+                placeholder={intl.formatMessage({ id: 'password' })}
                 minLength={8}
                 maxLength={16}
                 onPressEnter={() => {
@@ -102,10 +120,14 @@ export default () => {
                     validator(rule, value) {
                       const password = form.getFieldValue('password');
                       if (!value) {
-                        return Promise.reject('请确认密码');
+                        return Promise.reject(
+                          intl.formatMessage({ id: 'password.confirm' }),
+                        );
                       }
                       if (password !== value) {
-                        return Promise.reject('两次密码不一致');
+                        return Promise.reject(
+                          intl.formatMessage({ id: 'password.inconsistent' }),
+                        );
                       }
                       return Promise.resolve();
                     },
@@ -113,7 +135,9 @@ export default () => {
                 ]}
               >
                 <Input.Password
-                  placeholder="确认密码"
+                  placeholder={intl.formatMessage({
+                    id: 'password.confirm.again',
+                  })}
                   minLength={8}
                   maxLength={16}
                 />
@@ -125,19 +149,21 @@ export default () => {
               loading={handleLogin?.loading || handleRegister?.loading}
               onClick={submit}
             >
-              {operateType === 'login' ? '登录' : '注册'}
+              {operateType === 'login'
+                ? intl.formatMessage({ id: 'login' })
+                : intl.formatMessage({ id: 'register' })}
             </Button>
             <div>
               {operateType === 'login' ? (
                 <div>
-                  还没有账号？{' '}
+                  {intl.formatMessage({ id: 'notAccount' })}{' '}
                   <a
                     onClick={() => {
                       setOperateType('register');
                       form.resetFields();
                     }}
                   >
-                    注册
+                    {intl.formatMessage({ id: 'register' })}
                   </a>
                 </div>
               ) : (
@@ -146,7 +172,8 @@ export default () => {
                     setOperateType('login');
                   }}
                 >
-                  已经有账号？ <a>登录</a>
+                  {intl.formatMessage({ id: 'haveAccount' })}{' '}
+                  <a>{intl.formatMessage({ id: 'login' })}</a>
                 </div>
               )}
             </div>

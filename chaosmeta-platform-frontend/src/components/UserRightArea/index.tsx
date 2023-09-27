@@ -7,7 +7,7 @@ import {
   updatePassword,
 } from '@/services/chaosmeta/UserController';
 import cookie from '@/utils/cookie';
-import { history, useModel, useRequest } from '@umijs/max';
+import { SelectLang, history, useIntl, useModel, useRequest } from '@umijs/max';
 import {
   Button,
   Divider,
@@ -25,7 +25,7 @@ const UserRightArea: React.FC<any> = () => {
   const [form] = Form.useForm();
   const [passwordOpen, setPasswordOpen] = useState<boolean>(false);
   const { userInfo, setUserInfo } = useModel('global');
-
+  const intl = useIntl();
   // 获取用户信息
   const queryUserInfo = useRequest(getUserInfo, {
     manual: true,
@@ -43,7 +43,7 @@ const UserRightArea: React.FC<any> = () => {
             setPasswordOpen(true);
           }}
         >
-          修改密码
+          {intl.formatMessage({ id: 'updatePassword' })}
         </div>
       ),
       key: 'updatePassword',
@@ -60,7 +60,7 @@ const UserRightArea: React.FC<any> = () => {
             history.push('/login');
           }}
         >
-          退出登录
+          {intl.formatMessage({ id: 'signOut' })}
         </div>
       ),
       key: 'logout',
@@ -75,7 +75,7 @@ const UserRightArea: React.FC<any> = () => {
     formatResult: (res) => res,
     onSuccess: (res) => {
       if (res?.code === 200) {
-        message.success('密码修改成功，即将跳转到登录页面重新登录');
+        message.success(intl.formatMessage({ id: 'password.success' }));
 
         setTimeout(() => {
           cookie.clearToken('TOKEN');
@@ -110,6 +110,8 @@ const UserRightArea: React.FC<any> = () => {
 
   return (
     <>
+      {/* 语言切换 */}
+      <SelectLang />
       <Dropdown menu={{ items }}>
         <Space style={{ cursor: 'pointer' }}>
           <img src={userInfo?.avatar} />
@@ -118,7 +120,7 @@ const UserRightArea: React.FC<any> = () => {
       </Dropdown>
       {passwordOpen && (
         <Modal
-          title="修改密码"
+          title={intl.formatMessage({ id: 'updatePassword' })}
           open={passwordOpen}
           onCancel={() => {
             setPasswordOpen(false);
@@ -132,7 +134,7 @@ const UserRightArea: React.FC<any> = () => {
                       setPasswordOpen(false);
                     }}
                   >
-                    取消
+                    {intl.formatMessage({ id: 'cancel' })}
                   </Button>
                   <Button
                     onClick={() => {
@@ -141,7 +143,7 @@ const UserRightArea: React.FC<any> = () => {
                     type="primary"
                     loading={handleUpdatePassword.loading}
                   >
-                    提交
+                    {intl.formatMessage({ id: 'submit' })}
                   </Button>
                 </Space>
               </div>
@@ -152,19 +154,39 @@ const UserRightArea: React.FC<any> = () => {
           <Form form={form} layout="vertical">
             <Form.Item
               name={'oldPassword'}
-              rules={[{ required: true, message: '请输入原密码' }]}
-              label="原密码"
+              rules={[
+                {
+                  required: true,
+                  message: intl.formatMessage({
+                    id: 'password.old.placeholder',
+                  }),
+                },
+              ]}
+              label={intl.formatMessage({ id: 'password.old' })}
             >
-              <Input.Password placeholder="请输入原密码" />
+              <Input.Password
+                placeholder={intl.formatMessage({
+                  id: 'password.old.placeholder',
+                })}
+              />
             </Form.Item>
             <Form.Item
               name={'password'}
-              rules={[{ required: true, message: '请输入密码' }]}
-              help="密码8-16位中英文大小写及下划线等特殊字符"
-              label="新密码"
+              rules={[
+                {
+                  required: true,
+                  message: intl.formatMessage({
+                    id: 'password.new.placeholder',
+                  }),
+                },
+              ]}
+              help={intl.formatMessage({ id: 'password.rule' })}
+              label={intl.formatMessage({ id: 'password.new' })}
             >
               <Input.Password
-                placeholder="请输入新密码"
+                placeholder={intl.formatMessage({
+                  id: 'password.new.placeholder',
+                })}
                 minLength={8}
                 maxLength={16}
               />
@@ -177,18 +199,26 @@ const UserRightArea: React.FC<any> = () => {
                   validator(rule, value) {
                     const password = form.getFieldValue('password');
                     if (!value) {
-                      return Promise.reject('请确认密码');
+                      return Promise.reject(
+                        intl.formatMessage({ id: 'password.confirm' }),
+                      );
                     }
                     if (password !== value) {
-                      return Promise.reject('密码不正确');
+                      return Promise.reject(
+                        intl.formatMessage({ id: 'password.error' }),
+                      );
                     }
                     return Promise.resolve();
                   },
                 },
               ]}
-              label="确认新密码"
+              label={intl.formatMessage({ id: 'password.new.confirm' })}
             >
-              <Input.Password placeholder="请再次输入新密码" />
+              <Input.Password
+                placeholder={intl.formatMessage({
+                  id: 'password.new.placeholder.again',
+                })}
+              />
             </Form.Item>
           </Form>
         </Modal>

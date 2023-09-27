@@ -1,7 +1,9 @@
 import DynamicForm from '@/components/DynamicForm';
 import KubernetesNamespaceSelect from '@/components/Select/KubernetesNamespaceSelect';
+import KubernetesPodNodeSelect from '@/components/Select/KubernetesPodNodeSelect';
 import KubernetesPodSelect from '@/components/Select/KubernetesPodSelect';
 import ShowText from '@/components/ShowText';
+import { nodeTypeMap, nodeTypeMapUS } from '@/constants';
 import { queryFaultNodeFields } from '@/services/chaosmeta/ExperimentController';
 import { formatDuration } from '@/utils/format';
 import {
@@ -10,7 +12,7 @@ import {
   DeleteOutlined,
   EditOutlined,
 } from '@ant-design/icons';
-import { useRequest } from '@umijs/max';
+import { getLocale, useIntl, useRequest } from '@umijs/max';
 import {
   Button,
   Form,
@@ -51,6 +53,7 @@ const NodeConfig: React.FC<IProps> = (props) => {
   const [fieldList, setFieldList] = useState<any[]>([]);
   const [durationType, setDurationType] = useState<string>('second');
   const [kubernetesNamespace, setKubernetesNamespace] = useState<string>('');
+  const intl = useIntl();
 
   /**
    * 更新节点属性的方法
@@ -80,7 +83,12 @@ const NodeConfig: React.FC<IProps> = (props) => {
   const handleEditTitle = () => {
     const curTitle = form.getFieldValue('name');
     if (!curTitle) {
-      message.info('请输入名称');
+      message.info(
+        `${intl.formatMessage({ id: 'inputPlaceholder' })} ${intl.formatMessage(
+          { id: 'name' },
+        )}`,
+      );
+      return;
     }
     handleEditNode('name', curTitle);
     setEditTitleState(false);
@@ -123,12 +131,40 @@ const NodeConfig: React.FC<IProps> = (props) => {
       onChange={(value) => {
         setDurationType(value);
       }}
-      style={{ width: 60 }}
+      style={{ width: 90 }}
     >
-      <Select.Option value="second">秒</Select.Option>
-      <Select.Option value="minute">分</Select.Option>
+      <Select.Option value="second">
+        {intl.formatMessage({ id: 'second' })}
+      </Select.Option>
+      <Select.Option value="minute">
+        {intl.formatMessage({ id: 'minute' })}
+      </Select.Option>
     </Select>
   );
+
+  // 表单赋值
+  const handleFormAssignment = () => {
+    // 初始化给表单赋值
+    const initSecond = formatDuration(activeCol?.duration);
+    let target_name = activeCol?.exec_range?.target_name;
+    if (!Array.isArray(target_name)) {
+      target_name = activeCol?.exec_range?.target_name
+        ? activeCol?.exec_range?.target_name?.split(',')
+        : undefined;
+    }
+    setKubernetesNamespace(activeCol?.exec_range?.target_namespace);
+    form.setFieldsValue({
+      ...activeCol,
+      duration: initSecond,
+      exec_type_name: (getLocale() === 'en-US' ? nodeTypeMapUS : nodeTypeMap)[
+        activeCol?.exec_type
+      ],
+      exec_range: {
+        ...activeCol?.exec_range,
+        target_name,
+      },
+    });
+  };
 
   /**
    * 故障节点 - 查询节点表单配置信息
@@ -139,20 +175,7 @@ const NodeConfig: React.FC<IProps> = (props) => {
     onSuccess: (res: any) => {
       if (res?.code === 200) {
         setFieldList(res?.data?.args || []);
-        // 初始化给表单赋值
-        const initSecond = formatDuration(activeCol?.duration);
-        const target_name = activeCol?.exec_range?.target_name
-          ? activeCol?.exec_range?.target_name?.split(',')
-          : undefined;
-        setKubernetesNamespace(activeCol?.exec_range?.target_namespace);
-        form.setFieldsValue({
-          ...activeCol,
-          duration: initSecond,
-          exec_range: {
-            ...activeCol?.exec_range,
-            target_name,
-          },
-        });
+        handleFormAssignment();
       }
     },
   });
@@ -191,22 +214,16 @@ const NodeConfig: React.FC<IProps> = (props) => {
       if (activeCol?.exec_id) {
         getFaultNodeFields?.run({ id: activeCol?.exec_id });
       }
-      // 初始化给表单赋值
-      const initSecond = formatDuration(activeCol?.duration);
-      const target_name = activeCol?.exec_range?.target_name
-        ? activeCol?.exec_range?.target_name?.split(',')
-        : undefined;
-      setKubernetesNamespace(activeCol?.exec_range?.target_namespace);
-      form.setFieldsValue({
-        ...activeCol,
-        duration: initSecond,
-        exec_range: {
-          ...activeCol?.exec_range,
-          target_name,
-        },
-      });
+      handleFormAssignment();
     }
   }, [activeCol?.uuid]);
+
+  useEffect(() => {
+    const initSecond = formatDuration(activeCol?.duration);
+    form.setFieldsValue({
+      duration: initSecond,
+    });
+  }, [activeCol?.duration]);
 
   return (
     <NodeConfigContainer>
@@ -219,13 +236,23 @@ const NodeConfig: React.FC<IProps> = (props) => {
                   <Form.Item
                     name={'name'}
                     noStyle
-                    rules={[{ required: true, message: '请输入' }]}
+                    rules={[
+                      {
+                        required: true,
+                        message: intl.formatMessage({ id: 'inputPlaceholder' }),
+                      },
+                    ]}
                   >
-                    <Input placeholder="请输入" style={{ width: '120px' }} />
+                    <Input
+                      placeholder={intl.formatMessage({
+                        id: 'inputPlaceholder',
+                      })}
+                      style={{ width: '120px' }}
+                    />
                   </Form.Item>
                 ) : (
                   <Form.Item name={'name'} noStyle>
-                    <ShowText value="CPU燃烧" />
+                    <ShowText />
                   </Form.Item>
                 )}
                 {editTitleState ? (
@@ -263,7 +290,7 @@ const NodeConfig: React.FC<IProps> = (props) => {
             <Space size={24}>
               {!disabled && (
                 <Popconfirm
-                  title="你确定要删除吗？"
+                  title={intl.formatMessage({ id: 'deleteConfirmText' })}
                   onConfirm={handleDeleteNode}
                 >
                   <DeleteOutlined style={{ color: '#FF4D4F' }} />
@@ -278,11 +305,18 @@ const NodeConfig: React.FC<IProps> = (props) => {
             </Space>
           </div>
           <div className="form">
-            <Form.Item label="节点类型" name="exec_type_name">
-              <Input placeholder="节点类型" disabled />
+            <Form.Item
+              label={intl.formatMessage({ id: 'nodeType' })}
+              name="exec_type_name"
+            >
+              <Input disabled />
             </Form.Item>
             <Form.Item
-              label={activeCol?.exec_type === 'wait' ? '等待时长' : '持续时长'}
+              label={
+                activeCol?.exec_type === 'wait'
+                  ? intl.formatMessage({ id: 'waitTime' })
+                  : intl.formatMessage({ id: 'duration' })
+              }
               name="duration"
               rules={[
                 { required: true },
@@ -292,9 +326,9 @@ const NodeConfig: React.FC<IProps> = (props) => {
                       return Promise.reject(
                         `${
                           activeCol?.exec_type === 'wait'
-                            ? '等待时长'
-                            : '持续时长'
-                        }大于0`,
+                            ? intl.formatMessage({ id: 'waitTime' })
+                            : intl.formatMessage({ id: 'duration' })
+                        } ${intl.formatMessage({ id: 'limit' })}`,
                       );
                     }
                     return Promise.resolve();
@@ -304,10 +338,7 @@ const NodeConfig: React.FC<IProps> = (props) => {
             >
               <InputNumber
                 addonAfter={selectAfter}
-                placeholder="请输入"
-                // onChange={() => {
-                //   handleTimeChange();
-                // }}
+                placeholder={intl.formatMessage({ id: 'inputPlaceholder' })}
                 style={{ width: '100%' }}
               />
             </Form.Item>
@@ -315,40 +346,65 @@ const NodeConfig: React.FC<IProps> = (props) => {
             {activeCol?.exec_type !== 'wait' && (
               <>
                 {/* 动态表单部分 */}
-                <DynamicForm fieldList={fieldList} parentName={'args_value'} />
-                <div className="range">攻击范围</div>
-                <Form.Item
-                  label="Kubernetes Namespace"
-                  name={['exec_range', 'target_namespace']}
-                  rules={[{ required: true, message: '请输入' }]}
-                >
-                  <KubernetesNamespaceSelect
-                    onChange={(val: any) => {
-                      setKubernetesNamespace(val);
-                    }}
-                  />
-                </Form.Item>
+                <DynamicForm
+                  fieldList={fieldList}
+                  parentName={'args_value'}
+                  form={form}
+                />
+                <div className="range">
+                  {intl.formatMessage({ id: 'attackRange' })}
+                </div>
+                {/* 一级节点为node时不展示Namespace */}
+                {activeCol?.scope_id !== 2 && (
+                  <Form.Item
+                    label="Kubernetes Namespace"
+                    name={['exec_range', 'target_namespace']}
+                    rules={[
+                      {
+                        required: true,
+                        message: intl.formatMessage({ id: 'inputPlaceholder' }),
+                      },
+                    ]}
+                  >
+                    <KubernetesNamespaceSelect
+                      onChange={(val: any) => {
+                        setKubernetesNamespace(val);
+                      }}
+                    />
+                  </Form.Item>
+                )}
+
                 <Form.Item
                   label="Kubernetes Label"
-                  name={['exec_range', 'target_lebel']}
+                  name={['exec_range', 'target_label']}
                 >
-                  <Input placeholder="请输入" />
+                  <Input
+                    placeholder={intl.formatMessage({ id: 'inputPlaceholder' })}
+                  />
                 </Form.Item>
                 {/* <Form.Item label="应用" name={['exec_range', 'target_app']}>
                   <Input placeholder="请输入" />
                 </Form.Item> */}
-                <Form.Item label="name" name={['exec_range', 'target_name']}>
-                  <KubernetesPodSelect
-                    mode="multiple"
-                    form={form}
-                    kubernetesNamespace={kubernetesNamespace}
-                  />
+                <Form.Item label="PodName" name={['exec_range', 'target_name']}>
+                  {activeCol?.scope_id === 2 ? (
+                    <KubernetesPodNodeSelect mode="multiple" />
+                  ) : (
+                    <KubernetesPodSelect
+                      mode="multiple"
+                      form={form}
+                      kubernetesNamespace={kubernetesNamespace}
+                    />
+                  )}
                 </Form.Item>
                 {/* 一级节点为node时展示，node的id为2 */}
                 {activeCol?.scope_id === 2 && (
                   <>
                     <Form.Item label="Ip" name={['exec_range', 'target_ip']}>
-                      <Input placeholder="请输入" />
+                      <Input
+                        placeholder={intl.formatMessage({
+                          id: 'inputPlaceholder',
+                        })}
+                      />
                     </Form.Item>
                   </>
                 )}
@@ -363,7 +419,7 @@ const NodeConfig: React.FC<IProps> = (props) => {
           </div>
           <div className="config-footer">
             <Button type="primary" onClick={handleConfirm}>
-              确认
+              {intl.formatMessage({ id: 'confirm' })}
             </Button>
           </div>
         </Form>

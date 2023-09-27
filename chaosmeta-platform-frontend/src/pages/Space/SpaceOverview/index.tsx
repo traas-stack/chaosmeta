@@ -1,7 +1,7 @@
 import { LightArea } from '@/components/CommonStyle';
 import { DownOutlined, RightOutlined, UpOutlined } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
-import { history, useModel } from '@umijs/max';
+import { history, useIntl, useModel } from '@umijs/max';
 import { Button, Card, Col, Row, Space, Tag } from 'antd';
 import React, { useState } from 'react';
 import ExperimentalOverview from './ExperimentalOverview';
@@ -10,17 +10,22 @@ import { Container, SpaceContent, TopStep } from './style';
 const MySpace: React.FC<unknown> = () => {
   const [panelState, setPanelState] = useState<boolean>(true);
   const { spacePermission } = useModel('global');
+  const intl = useIntl();
   return (
     <Container>
-      <PageContainer title="工作台">
+      <PageContainer title={intl.formatMessage({ id: 'overview.workbench' })}>
         <LightArea>
           <TopStep>
             <div className="panel">
-              <div className="title">开始您的实验，只需要3步！</div>
+              <div className="title">
+                {intl.formatMessage({ id: 'overview.tip' })}
+              </div>
               <div className="panel-state">
                 {panelState ? (
                   <Space>
-                    <span>收起</span>
+                    <span>
+                      {intl.formatMessage({ id: 'overview.panel.close' })}
+                    </span>
                     <div
                       className="icon"
                       onClick={() => {
@@ -32,7 +37,9 @@ const MySpace: React.FC<unknown> = () => {
                   </Space>
                 ) : (
                   <Space>
-                    <span>展开</span>
+                    <span>
+                      {intl.formatMessage({ id: 'overview.panel.expand' })}
+                    </span>
                     <div
                       className="icon"
                       onClick={() => {
@@ -52,19 +59,28 @@ const MySpace: React.FC<unknown> = () => {
                   <Space>
                     <img src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*h_acR7jTCrgAAAAAAAAAAAAADmKmAQ/original" />
                     <div>
-                      <div className="title">创建实验</div>
+                      <div className="title">
+                        {intl.formatMessage({ id: 'overview.step1.title' })}
+                      </div>
                       <div className="desc">
-                        可选择实验模版快速构建实验场景，进行基础资源，如cpu燃烧等实验来验证应用系统的可靠性
+                        {intl.formatMessage({
+                          id: 'overview.step1.description',
+                        })}
                       </div>
                       {spacePermission === 1 && (
                         <Space className="buttons">
                           <Button
                             type="primary"
                             onClick={() => {
-                              history.push('/space/experiment/add');
+                              history.push({
+                                pathname: '/space/experiment/add',
+                                query: {
+                                  spaceId: history?.location?.query?.spaceId,
+                                },
+                              });
                             }}
                           >
-                            创建实验
+                            {intl.formatMessage({ id: 'overview.step1.title' })}
                           </Button>
                           {/* <Button>实验模版</Button> */}
                         </Space>
@@ -78,8 +94,14 @@ const MySpace: React.FC<unknown> = () => {
                   <Space>
                     <img src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*MelqSodcfO8AAAAAAAAAAAAADmKmAQ/original" />
                     <div>
-                      <div className="title">执行实验</div>
-                      <div className="desc">针对配置好的实验可发起攻击</div>
+                      <div className="title">
+                        {intl.formatMessage({ id: 'overview.step2.title' })}
+                      </div>
+                      <div className="desc">
+                        {intl.formatMessage({
+                          id: 'overview.step2.description',
+                        })}
+                      </div>
                     </div>
                   </Space>
                 </Card>
@@ -89,9 +111,13 @@ const MySpace: React.FC<unknown> = () => {
                   <Space>
                     <img src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*in2BQ4sjkicAAAAAAAAAAAAADmKmAQ/original" />
                     <div>
-                      <div className="title">查看实验结果</div>
+                      <div className="title">
+                        {intl.formatMessage({ id: 'overview.step3.title' })}
+                      </div>
                       <div className="desc">
-                        实验过程中可观测系统指标，实验完成后可查看实验结果，系统会自动度量
+                        {intl.formatMessage({
+                          id: 'overview.step3.description',
+                        })}
                       </div>
                       {spacePermission === 1 && (
                         <Space className="buttons">
@@ -101,7 +127,7 @@ const MySpace: React.FC<unknown> = () => {
                               history.push('/space/experiment-result');
                             }}
                           >
-                            查看实验结果
+                            {intl.formatMessage({ id: 'overview.step3.title' })}
                           </Button>
                         </Space>
                       )}
