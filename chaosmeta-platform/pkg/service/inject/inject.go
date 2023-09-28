@@ -185,7 +185,7 @@ func InitCpuFault(ctx context.Context, cpuTarget basic.Target) error {
 
 func InitCpuTargetArgsBurn(ctx context.Context, cpuFault basic.Fault) error {
 	var (
-		CpuArgsPercent = basic.Args{InjectId: cpuFault.ID, ExecType: ExecInject, Key: "percent", KeyCn: "使用率", Unit: "%", UnitCn: "%", Description: "Target cpu usage", DescriptionCn: "目标cpu使用率", ValueType: "int", Required: true, ValueRule: "1-100"}
+		CpuArgsPercent = basic.Args{InjectId: cpuFault.ID, ExecType: ExecInject, Key: "percent", KeyCn: "使用率", Unit: "", UnitCn: "", Description: "Target cpu usage", DescriptionCn: "目标cpu使用率", ValueType: "int", Required: true, ValueRule: "1-100"}
 		CpuArgsCount   = basic.Args{InjectId: cpuFault.ID, ExecType: ExecInject, Key: "count", KeyCn: "核数", Unit: "", UnitCn: "", DefaultValue: "0", Description: "Number of faulty CPU cores, 0 means all cores", DescriptionCn: "故障cpu核数,0表示全部核", ValueType: "int", ValueRule: ">=0"}
 		CpuArgsList    = basic.Args{InjectId: cpuFault.ID, ExecType: ExecInject, Key: "list", KeyCn: "列表", Unit: "", UnitCn: "", Description: "Faulty cpu list, comma separated core number list, can be confirmed from /proc/cpuinfo", DescriptionCn: "故障cpu列表,逗号分隔的核编号列表,可以从/proc/cpuinfo确认", ValueType: "string"}
 	)
@@ -218,15 +218,15 @@ func InitMemFault(ctx context.Context, memTarget basic.Target) error {
 
 func InitMemTargetArgsFill(ctx context.Context, memFault basic.Fault) error {
 	var (
-		MemArgsPercent = basic.Args{InjectId: memFault.ID, ExecType: ExecInject, Key: "percent", KeyCn: "内存使用率", Unit: "%", UnitCn: "%", Description: "Target mem usage", DescriptionCn: "目标内存使用率", ValueType: "int", Required: true, ValueRule: "1-100"}
+		MemArgsPercent = basic.Args{InjectId: memFault.ID, ExecType: ExecInject, Key: "percent", KeyCn: "内存使用率", Unit: "", UnitCn: "", Description: "Target mem usage", DescriptionCn: "目标内存使用率", ValueType: "int", Required: true, ValueRule: "1-100"}
 		MemArgsBytes   = basic.Args{InjectId: memFault.ID, ExecType: ExecInject, Key: "bytes", KeyCn: "填充量", Unit: "KB,MB,GB,TB", UnitCn: "KB,MB,GB,TB", Description: "Memory fill", DescriptionCn: "内存填充量", ValueType: "string"}
-		MemArgsMode    = basic.Args{InjectId: memFault.ID, ExecType: ExecInject, Key: "mode", KeyCn: "填充模式", Unit: "mode", UnitCn: "模式", Description: "Memory filling mode, ram is the way to apply for process memory, cache is the way to use tmpfs", DescriptionCn: "内存填充模式,ram是使用进程内存申请的方式,cache是使用tmpfs的方式", ValueType: "string", Required: true, ValueRule: "ram,cache"}
+		MemArgsMode    = basic.Args{InjectId: memFault.ID, ExecType: ExecInject, Key: "mode", KeyCn: "填充模式", Unit: "", UnitCn: "", Description: "Memory filling mode, ram is the way to apply for process memory, cache is the way to use tmpfs", DescriptionCn: "内存填充模式,ram是使用进程内存申请的方式,cache是使用tmpfs的方式", ValueType: "string", Required: true, ValueRule: "ram,cache"}
 	)
 	return basic.InsertArgsMulti(ctx, []*basic.Args{&MemArgsPercent, &MemArgsBytes, &MemArgsMode})
 }
 
 func InitMemTargetArgsOom(ctx context.Context, memFault basic.Fault) error {
-	var MemArgsMode = basic.Args{InjectId: memFault.ID, ExecType: ExecInject, Key: "mode", KeyCn: "内存填充模式", Unit: "mode", UnitCn: "模式", DefaultValue: "cache", Description: "Memory filling mode, ram is the way to apply for process memory, cache is the way to use tmpfs", DescriptionCn: "内存填充模式,ram是使用进程内存申请的方式,cache是使用tmpfs的方式", ValueType: "string", Required: true, ValueRule: "ram,cache"}
+	var MemArgsMode = basic.Args{InjectId: memFault.ID, ExecType: ExecInject, Key: "mode", KeyCn: "内存填充模式", Unit: "", UnitCn: "", DefaultValue: "cache", Description: "Memory filling mode, ram is the way to apply for process memory, cache is the way to use tmpfs", DescriptionCn: "内存填充模式,ram是使用进程内存申请的方式,cache是使用tmpfs的方式", ValueType: "string", Required: true, ValueRule: "ram,cache"}
 	return basic.InsertArgsMulti(ctx, []*basic.Args{&MemArgsMode})
 }
 
@@ -240,7 +240,7 @@ func InitDiskFault(ctx context.Context, diskTarget basic.Target) error {
 
 func InitDiskTargetArgsFill(ctx context.Context, diskFault basic.Fault) error {
 	var (
-		DiskArgsPercent = basic.Args{InjectId: diskFault.ID, ExecType: ExecInject, Key: "percent", KeyCn: "磁盘使用率", Unit: "%", UnitCn: "%", Description: "Target disk usage", DescriptionCn: "目标磁盘使用率", ValueType: "int", Required: true, ValueRule: "1-100"}
+		DiskArgsPercent = basic.Args{InjectId: diskFault.ID, ExecType: ExecInject, Key: "percent", KeyCn: "磁盘使用率", Unit: "", UnitCn: "", Description: "Target disk usage", DescriptionCn: "目标磁盘使用率", ValueType: "int", Required: true, ValueRule: "1-100"}
 		DiskArgsBytes   = basic.Args{InjectId: diskFault.ID, ExecType: ExecInject, Key: "bytes", KeyCn: "填充量", Unit: "KB,MB,GB,TB", UnitCn: "KB,MB,GB,TB", Description: "Memory fill", DescriptionCn: "磁盘填充量", ValueType: "string"}
 		DiskArgsDir     = basic.Args{InjectId: diskFault.ID, ExecType: ExecInject, Key: "dir", KeyCn: "目录", Unit: "", UnitCn: "", DefaultValue: "/tmp", Description: "Target population directory", DescriptionCn: "目标填充目录", ValueType: "string"}
 	)
@@ -286,7 +286,7 @@ func InitDiskioTargetArgsHang(ctx context.Context, diskioFault basic.Fault) erro
 		DiskioArgsDevList = basic.Args{InjectId: diskioFault.ID, ExecType: ExecInject, Key: "dev-list", KeyCn: "设备列表", Unit: "", UnitCn: "", Description: "Target disk device list, use the command lsblk -a | grep disk to obtain the primary and secondary device numbers of the target device, such as 8:0", DescriptionCn: "目标磁盘设备列表,使用命令lsblk -a | grep disk获取目标设备的主备设备号,比如8:0", ValueType: "stringlist"}
 		DiskioArgsPidList = basic.Args{InjectId: diskioFault.ID, ExecType: ExecInject, Key: "pid-list", KeyCn: "进程pid列表", Unit: "", UnitCn: "", Description: "Affected process pid list, for example: 7850, 7690", DescriptionCn: "受影响的进程pid列表,比如:7850,7690", ValueType: "stringlist"}
 		DiskioArgsKey     = basic.Args{InjectId: diskioFault.ID, ExecType: ExecInject, Key: "key", KeyCn: "关键词", Unit: "", UnitCn: "", Description: "keywords used to filter affected processes will be filtered using ps -ef | grep [key]", DescriptionCn: "用来筛选受影响进程的关键词,会使用ps -ef | grep [key]来筛选", ValueType: "string"}
-		DiskioArgsMode    = basic.Args{InjectId: diskioFault.ID, ExecType: ExecInject, Key: "mode", KeyCn: "IO模式", Unit: "mode", UnitCn: "模式", DefaultValue: "all", Description: "Affected IO operation", DescriptionCn: "受影响的IO操作", ValueType: "string", ValueRule: "all,read,write"}
+		DiskioArgsMode    = basic.Args{InjectId: diskioFault.ID, ExecType: ExecInject, Key: "mode", KeyCn: "IO模式", Unit: "", UnitCn: "", DefaultValue: "all", Description: "Affected IO operation", DescriptionCn: "受影响的IO操作", ValueType: "string", ValueRule: "all,read,write"}
 	)
 	return basic.InsertArgsMulti(ctx, []*basic.Args{&DiskioArgsDevList, &DiskioArgsPidList, &DiskioArgsKey, &DiskioArgsMode})
 }
