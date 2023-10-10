@@ -2,7 +2,7 @@ apiVersion: chaosmeta.io/v1alpha1
 kind: CommonMeasure
 metadata:
   name: measure-monitor-absolutevalue-larger
-  namespace: chaosmeta-measure
+  namespace: chaosmeta
 spec:
   measureType: monitor
   duration: 5m

@@ -161,6 +161,10 @@ func judge(ctx context.Context, ins *measurev1alpha1.CommonMeasure) bool {
 	nowTime := time.Now().Format(measurev1alpha1.TimeFormat)
 	ins.Status.UpdateTime = nowTime
 
+	if result && ins.Status.MeetTime == "" {
+		ins.Status.MeetTime = nowTime
+	}
+
 	if timeout || ins.Spec.Stopped {
 		if result {
 			ins.Status.Status = measurev1alpha1.SuccessStatus
@@ -172,6 +176,7 @@ func judge(ctx context.Context, ins *measurev1alpha1.CommonMeasure) bool {
 
 		return true
 	}
+
 	return false
 }
 

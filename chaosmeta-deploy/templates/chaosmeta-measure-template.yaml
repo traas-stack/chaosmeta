@@ -102,6 +102,8 @@ spec:
                   - updateTime
                   type: object
                 type: array
+              meetTime:
+                type: string
               message:
                 type: string
               nextTime:
@@ -119,6 +121,7 @@ spec:
             - createTime
             - failedMeasure
             - initialData
+            - meetTime
             - message
             - nextTime
             - status
@@ -317,7 +320,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-measure-controller:v0.0.5
+        image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-measure-controller:v0.0.6
         livenessProbe:
           httpGet:
             path: /healthz

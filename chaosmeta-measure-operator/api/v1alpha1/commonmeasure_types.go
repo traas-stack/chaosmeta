@@ -116,6 +116,7 @@ type CommonMeasureStatus struct {
 	CreateTime     string        `json:"createTime"`
 	UpdateTime     string        `json:"updateTime"`
 	NextTime       string        `json:"nextTime"`
+	MeetTime       string        `json:"meetTime"`
 	Measures       []MeasureTask `json:"measures,omitempty"`
 }
 

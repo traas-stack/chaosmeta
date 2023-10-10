@@ -11,14 +11,8 @@ spec:
   stopped: false
   args:
     - key: host
-      value: '192.168.2.189'
+      value: '127.0.0.1'
     - key: port
       value: '8080'
-    - key: path
-      value: '/testpost'
-    - key: header
-      value: 'Content-Type:application/json,Host:chaosmeta.io'
     - key: method
-      value: 'POST'
-    - key: body
-      value: '{"name":"tester", "age": 50}'
+      value: 'GET'

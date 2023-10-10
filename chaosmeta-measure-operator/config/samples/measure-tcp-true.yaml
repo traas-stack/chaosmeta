@@ -2,10 +2,10 @@ apiVersion: chaosmeta.io/v1alpha1
 kind: CommonMeasure
 metadata:
   name: measure-tcp-true
-  namespace: chaosmeta-measure
+  namespace: chaosmeta
 spec:
   measureType: tcp
-  duration: 10m
+  duration: 2m
   interval: 5s
   successCount: 3
   failedCount: 0
