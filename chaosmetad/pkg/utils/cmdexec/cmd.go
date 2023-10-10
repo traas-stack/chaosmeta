@@ -310,6 +310,7 @@ func ExecContainer(ctx context.Context, cr, containerID string, namespaces []str
 		}
 
 		combinedOutput := stdout.String() + stderr.String()
+		logger.Debugf("container exec output: %s", combinedOutput)
 		// TODO: not use exit code judge task if success?
 		if strings.Index(combinedOutput, "[error]") >= 0 {
 			return "", fmt.Errorf(combinedOutput)
@@ -341,6 +342,14 @@ func ExecCommon(ctx context.Context, cr, cId, cmd string) (string, error) {
 	} else {
 		// TODO: need to transfer to ExecContainer?
 		return ExecContainerRaw(ctx, cr, cId, cmd)
+	}
+}
+
+func ExecCommonWithNS(ctx context.Context, cr, cId, cmd string, ns []string) (string, error) {
+	if cr == "" {
+		return RunBashCmdWithOutput(ctx, cmd)
+	} else {
+		return ExecContainer(ctx, cr, cId, ns, cmd, ExecRun)
 	}
 }
 

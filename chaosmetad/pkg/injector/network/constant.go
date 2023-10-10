@@ -16,6 +16,13 @@
 
 package network
 
+import (
+	"context"
+	"fmt"
+	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/log"
+	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/net"
+)
+
 const (
 	TargetNetwork = "network"
 	DirectionOut  = "out"
@@ -37,5 +44,26 @@ const (
 	DefaultGap     = 3
 	DefaultLatency = "1s"
 
-	NetworkExec = "chaosmeta_network"
+	//NetworkExec = "chaosmeta_network"
 )
+
+func undoTcWithErr(ctx context.Context, cr, cId string, netInterface, msg string) error {
+	if err := execRecover(ctx, cr, cId, netInterface); err != nil {
+		log.GetLogger(ctx).Warnf("undo tc rule error: %s", err.Error())
+	}
+
+	return fmt.Errorf(msg)
+}
+
+func execRecover(ctx context.Context, cr, cId, netInterface string) error {
+	isTcExist, err := net.ExistTCRootQdisc(ctx, cr, cId, netInterface)
+	if err != nil {
+		return fmt.Errorf("check tc rule exist error: %s", err.Error())
+	}
+
+	if isTcExist {
+		return net.ClearTcRule(ctx, cr, cId, netInterface)
+	}
+
+	return nil
+}
