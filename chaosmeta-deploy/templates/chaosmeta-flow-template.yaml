@@ -303,7 +303,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-flow-controller:v0.0.1
+        image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-flow-controller:v0.0.2
         livenessProbe:
           httpGet:
             path: /healthz
