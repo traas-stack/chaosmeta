@@ -2,7 +2,7 @@ apiVersion: chaosmeta.io/v1alpha1
 kind: CommonMeasure
 metadata:
   name: measure-pod-larger
-  namespace: chaosmeta-measure
+  namespace: chaosmeta
 spec:
   measureType: pod
   duration: 5m

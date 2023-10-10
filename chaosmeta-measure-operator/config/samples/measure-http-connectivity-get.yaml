@@ -2,7 +2,7 @@ apiVersion: chaosmeta.io/v1alpha1
 kind: CommonMeasure
 metadata:
   name: measure-http-connectivity-get
-  namespace: chaosmeta-measure
+  namespace: chaosmeta
 spec:
   measureType: http
   duration: 5m
