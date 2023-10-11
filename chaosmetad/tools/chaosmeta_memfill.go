@@ -19,7 +19,8 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/memory"
+	"github.com/shirou/gopsutil/mem"
+	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils"
 	"github.com/traas-stack/chaosmeta/chaosmetad/tools/common"
 	"math"
 	"os"
@@ -113,7 +114,7 @@ func main() {
 		common.ExitWithErr(fmt.Sprintf("percent is not a num: %s", err.Error()))
 	}
 
-	fillKBytes, err := memory.CalculateFillKBytes(context.Background(), percent, bytes)
+	fillKBytes, err := calculateFillKBytes(context.Background(), percent, bytes)
 	if err != nil {
 		common.ExitWithErr(fmt.Sprintf("get fill KBytes error: %s", err.Error()))
 	}
@@ -140,4 +141,31 @@ func main() {
 	}
 
 	common.SleepWait(timeout)
+}
+
+func calculateFillKBytes(ctx context.Context, percent int, fillBytes string) (int64, error) {
+	var fillKBytes int64
+	if percent != 0 {
+		v, err := mem.VirtualMemory()
+		if err != nil {
+			return -1, fmt.Errorf("check vm error: %s", err.Error())
+		}
+
+		usedPercent := float64(v.Total-v.Available) / float64(v.Total) * 100
+
+		if float64(percent) < usedPercent {
+			return -1, fmt.Errorf("current mem usage is %.2f%%, no need to fill any mem", usedPercent)
+		}
+
+		fillKBytes = int64((float64(percent) - usedPercent) / 100 * (float64(v.Total) / 1024))
+	} else {
+		fillKBytes, _ = utils.GetKBytes(fillBytes)
+	}
+
+	// prevent overflow
+	if fillKBytes <= 0 {
+		return -1, fmt.Errorf("fill bytes[%dKB]must larget than 0", fillKBytes)
+	}
+
+	return fillKBytes, nil
 }

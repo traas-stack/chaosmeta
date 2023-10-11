@@ -116,7 +116,8 @@ func (i *OccupyInjector) Inject(ctx context.Context) error {
 		timeout, _ = utils.GetTimeSecond(i.Info.Timeout)
 	}
 
-	err = i.getCmdExecutor().StartCmdAndWait(ctx, fmt.Sprintf("%s %s %d %s %d", utils.GetToolPath(OccupyKey), i.Info.Uid, i.Args.Port, i.Args.Protocol, timeout))
+	cmd := fmt.Sprintf("%s %s %d %s %d", utils.GetToolPath(OccupyKey), i.Info.Uid, i.Args.Port, i.Args.Protocol, timeout)
+	_, err = cmdexec.ExecCommonWithNS(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, cmd, []string{namespace.NET, namespace.PID})
 	if err != nil {
 		return fmt.Errorf("start cmd error: %s", err.Error())
 	}
