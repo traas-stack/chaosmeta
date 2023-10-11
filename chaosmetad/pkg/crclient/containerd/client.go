@@ -277,6 +277,7 @@ func (d *Client) CpFile(ctx context.Context, containerID, src, dst string) error
 	pId := uuid.New().String()
 	var stdout, stderr bytes.Buffer
 
+	// TODO：To be optimized, should not rely on /bin/bash in the container
 	pro, err := task.Exec(ctx, pId, &specs.Process{
 		Args: []string{"/bin/bash", "-c", fmt.Sprintf("touch %s && chmod %s %s && cat > %s", dst, perm, dst, dst)},
 		Cwd:  "/",
