@@ -24,6 +24,8 @@ import (
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/log"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/cmdexec"
+	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/filesys"
+	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/memory"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/namespace"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/process"
 )
@@ -75,7 +77,7 @@ func (i *OOMInjector) getCmdExecutor(method, args string) *cmdexec.CmdExecutor {
 	return &cmdexec.CmdExecutor{
 		ContainerId:      i.Info.ContainerId,
 		ContainerRuntime: i.Info.ContainerRuntime,
-		ContainerNs:      []string{namespace.MNT, namespace.PID},
+		ContainerNs:      []string{namespace.PID},
 		ToolKey:          MemExec,
 		Method:           method,
 		Fault:            FaultMemFill,
@@ -97,7 +99,13 @@ func (i *OOMInjector) Validator(ctx context.Context) error {
 			return fmt.Errorf("not support mode \"cache\" in container")
 		}
 
-		return i.getCmdExecutor(utils.MethodValidator, "").ExecTool(ctx)
+		if !cmdexec.SupportCmd("fallocate") && !cmdexec.SupportCmd("dd") {
+			return fmt.Errorf("not support cmd \"fallocate\" and \"dd\", can not fill cache")
+		}
+
+		if !cmdexec.SupportCmd("mount") {
+			return fmt.Errorf("not support cmd \"mount\", can not fill cache")
+		}
 	}
 
 	return nil
@@ -117,15 +125,6 @@ func (i *OOMInjector) Inject(ctx context.Context) error {
 
 		toolPath := utils.GetToolPath(MemFillKey)
 		args := fmt.Sprintf("'%s' %d %d '%s' %d", i.Info.Uid, -999, PercentOOM, "", timeout)
-
-		if i.Info.ContainerRuntime != "" {
-			localPath := toolPath
-			toolPath = utils.GetContainerPath(MemFillKey)
-			if err := cmdexec.CpContainerFile(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, localPath, toolPath); err != nil {
-				return fmt.Errorf("container cp from [%s] to [%s] error: %s", localPath, toolPath, err.Error())
-			}
-		}
-
 		cmd := fmt.Sprintf("%s %s", toolPath, args)
 		if err := i.getCmdExecutor("", "").StartCmdAndWait(ctx, cmd); err != nil {
 			if err := i.Recover(ctx); err != nil {
@@ -135,7 +134,9 @@ func (i *OOMInjector) Inject(ctx context.Context) error {
 			return err
 		}
 	} else {
-		return i.getCmdExecutor(utils.MethodInject, fmt.Sprintf("%d '%s' '%s' '%s'", PercentOOM, "", getOOMDir(i.Info.Uid), TmpFsFile)).ExecTool(ctx)
+		if err := memory.FillCache(ctx, PercentOOM, "", getOOMDir(i.Info.Uid), TmpFsFile); err != nil {
+			return fmt.Errorf("fill cache error: %s", err.Error())
+		}
 	}
 
 	return nil
@@ -147,7 +148,18 @@ func (i *OOMInjector) Recover(ctx context.Context) error {
 	}
 
 	if i.Args.Mode == ModeCache {
-		return i.getCmdExecutor(utils.MethodRecover, getOOMDir(i.Info.Uid)).ExecTool(ctx)
+		fillDir := getOOMDir(i.Info.Uid)
+
+		isDirExist, err := filesys.ExistPathLocal(fillDir)
+		if err != nil {
+			return fmt.Errorf("check tmpfs[%s] exist error: %s", fillDir, err.Error())
+		}
+
+		if isDirExist {
+			return memory.UndoTmpfs(ctx, fillDir)
+		}
+
+		return nil
 	} else {
 		return process.CheckExistAndKillByKey(ctx, fmt.Sprintf("%s %s", MemFillKey, i.Info.Uid))
 	}
