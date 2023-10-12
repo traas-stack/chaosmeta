@@ -132,7 +132,7 @@ func doInject(ctx context.Context, cr, cId string, pidList []int, ruleBytes []by
 	// cp tool to container
 	if cr != "" {
 		// cp rule file and jvm inject tool
-		if err := filesys.MkdirPInContainer(ctx, cr, cId, getContainerRuleDir()); err != nil {
+		if err := filesys.MkdirForce(ctx, cr, cId, getContainerRuleDir()); err != nil {
 			return fmt.Errorf("mkdir tool dir in container error: %s", err.Error())
 		}
 

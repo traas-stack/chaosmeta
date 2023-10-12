@@ -26,7 +26,7 @@ import (
 )
 
 var (
-	memFillSleepTime                             = 1 * time.Second
+	memFillSleepTime                             = 2 * time.Second
 	memPerOffset                                 = 3
 	memBytesKbOffset                             = 18000
 	memFillDir                                   = "/tmp/chaosmeta_mem_tmpfs"

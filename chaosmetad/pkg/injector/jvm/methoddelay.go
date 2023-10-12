@@ -151,7 +151,7 @@ func (i *MethodDelayInjector) Recover(ctx context.Context) error {
 
 		if ifExist {
 			if i.Info.ContainerRuntime != "" {
-				if err := filesys.RemoveFileInContainer(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, getContainerRuleFile(pid)); err != nil {
+				if err := filesys.RemoveFile(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, getContainerRuleFile(pid)); err != nil {
 					errMsg = fmt.Sprintf("%s. %s", errMsg, fmt.Sprintf("remove rule[%s] error: %s", targetRule, err.Error()))
 					continue
 				}

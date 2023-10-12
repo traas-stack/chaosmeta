@@ -78,18 +78,6 @@ func (i *FillInjector) SetOption(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&i.Args.Mode, "mode", "m", "", fmt.Sprintf("mem fill mode, support: %s、%s（default %s）", ModeRam, ModeCache, ModeCache))
 }
 
-func (i *FillInjector) getCmdExecutor(method, args string) *cmdexec.CmdExecutor {
-	return &cmdexec.CmdExecutor{
-		ContainerId:      i.Info.ContainerId,
-		ContainerRuntime: i.Info.ContainerRuntime,
-		ContainerNs:      []string{namespace.PID},
-		ToolKey:          MemExec,
-		Method:           method,
-		Fault:            FaultMemFill,
-		Args:             args,
-	}
-}
-
 // Validator percent > bytes
 func (i *FillInjector) Validator(ctx context.Context) error {
 	if err := i.BaseInjector.Validator(ctx); err != nil {
@@ -146,7 +134,7 @@ func (i *FillInjector) Inject(ctx context.Context) error {
 		toolPath := utils.GetToolPath(MemFillKey)
 		args := fmt.Sprintf("'%s' %d %d '%s' %d", i.Info.Uid, -999, i.Args.Percent, i.Args.Bytes, timeout)
 		cmd := fmt.Sprintf("%s %s", toolPath, args)
-		if err := i.getCmdExecutor("", "").StartCmdAndWait(ctx, cmd); err != nil {
+		if err := cmdexec.WaitCommonWithNS(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, cmd, []string{namespace.PID}); err != nil {
 			if err := i.Recover(ctx); err != nil {
 				logger.Warnf("undo error: %s", err.Error())
 			}

@@ -22,6 +22,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/injector"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/cmdexec"
+	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/namespace"
 )
 
 func init() {
@@ -89,7 +90,7 @@ func (i *ServerInjector) Inject(ctx context.Context) error {
 		cmd = getServerDeleteInjectCmd(i.Info.Uid, i.Args.Ip)
 	}
 
-	_, err := cmdexec.ExecCommon(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, cmd)
+	_, err := cmdexec.ExecCommonWithNS(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, cmd, []string{namespace.MNT})
 	return err
 }
 
@@ -105,7 +106,7 @@ func (i *ServerInjector) Recover(ctx context.Context) error {
 		cmd = getServerDeleteRecoverCmd(i.Info.Uid)
 	}
 
-	_, err := cmdexec.ExecCommon(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, cmd)
+	_, err := cmdexec.ExecCommonWithNS(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, cmd, []string{namespace.MNT})
 	return err
 }
 

@@ -73,18 +73,6 @@ func (i *OOMInjector) SetOption(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&i.Args.Mode, "mode", "m", "", fmt.Sprintf("mem fill mode, support: %s、%s（default %s）", ModeRam, ModeCache, ModeCache))
 }
 
-func (i *OOMInjector) getCmdExecutor(method, args string) *cmdexec.CmdExecutor {
-	return &cmdexec.CmdExecutor{
-		ContainerId:      i.Info.ContainerId,
-		ContainerRuntime: i.Info.ContainerRuntime,
-		ContainerNs:      []string{namespace.PID},
-		ToolKey:          MemExec,
-		Method:           method,
-		Fault:            FaultMemFill,
-		Args:             args,
-	}
-}
-
 func (i *OOMInjector) Validator(ctx context.Context) error {
 	if err := i.BaseInjector.Validator(ctx); err != nil {
 		return err
@@ -126,13 +114,14 @@ func (i *OOMInjector) Inject(ctx context.Context) error {
 		toolPath := utils.GetToolPath(MemFillKey)
 		args := fmt.Sprintf("'%s' %d %d '%s' %d", i.Info.Uid, -999, PercentOOM, "", timeout)
 		cmd := fmt.Sprintf("%s %s", toolPath, args)
-		if err := i.getCmdExecutor("", "").StartCmdAndWait(ctx, cmd); err != nil {
+		if err := cmdexec.WaitCommonWithNS(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, cmd, []string{namespace.PID}); err != nil {
 			if err := i.Recover(ctx); err != nil {
 				logger.Warnf("undo error: %s", err.Error())
 			}
 
 			return err
 		}
+
 	} else {
 		if err := memory.FillCache(ctx, PercentOOM, "", getOOMDir(i.Info.Uid), TmpFsFile); err != nil {
 			return fmt.Errorf("fill cache error: %s", err.Error())
