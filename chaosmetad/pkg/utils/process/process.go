@@ -24,6 +24,7 @@ import (
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/log"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/cmdexec"
+	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/namespace"
 	"os"
 	"strconv"
 	"strings"
@@ -66,7 +67,8 @@ func GetProcessByPid(ctx context.Context, cr, cId string, pid int) (int, error) 
 		err   error
 	)
 
-	reStr, err = cmdexec.ExecCommon(ctx, cr, cId, cmd)
+	//reStr, err = cmdexec.ExecCommon(ctx, cr, cId, cmd)
+	reStr, err = cmdexec.ExecCommonWithNS(ctx, cr, cId, cmd, []string{namespace.PID, namespace.MNT})
 	if err != nil {
 		return -1, fmt.Errorf("exec cmd error: %s", err.Error())
 	}
@@ -92,7 +94,8 @@ func GetProcessByKey(ctx context.Context, cr, cId string, key string) ([]int, er
 		pidList []int
 	)
 
-	reStr, err = cmdexec.ExecCommon(ctx, cr, cId, cmd)
+	reStr, err = cmdexec.ExecCommonWithNS(ctx, cr, cId, cmd, []string{namespace.PID, namespace.MNT})
+	//reStr, err = cmdexec.ExecCommon(ctx, cr, cId, cmd)
 	if err != nil {
 		return nil, fmt.Errorf("exec cmd error: %s", err.Error())
 	}
@@ -129,7 +132,7 @@ func SignalProcessByPid(ctx context.Context, cr, cId string, pid, signal int) er
 		err error
 	)
 
-	_, err = cmdexec.ExecCommon(ctx, cr, cId, cmd)
+	_, err = cmdexec.ExecCommonWithNS(ctx, cr, cId, cmd, []string{namespace.PID, namespace.MNT})
 	if err != nil {
 		return fmt.Errorf("exec cmd error: %s", err.Error())
 	}
@@ -148,7 +151,7 @@ func SignalProcessByKey(ctx context.Context, cr, cId string, key string, signal 
 		err error
 	)
 
-	_, err = cmdexec.ExecCommon(ctx, cr, cId, cmd)
+	_, err = cmdexec.ExecCommonWithNS(ctx, cr, cId, cmd, []string{namespace.PID, namespace.MNT})
 	if err != nil {
 		return fmt.Errorf("exec cmd error: %s", err.Error())
 	}
@@ -223,58 +226,14 @@ func GetPidListByPidOrKeyInContainer(ctx context.Context, cr, cId string, pid in
 	//logger := log.GetLogger(ctx)
 	var pidList []int
 	if pid > 0 {
-		if cr != "" {
-			cmd := fmt.Sprintf("ps -eo pid | grep -w %d", pid)
-			reStr, err := cmdexec.ExecContainerRaw(ctx, cr, cId, cmd)
-			if err != nil {
-				return nil, fmt.Errorf("exec cmd[%s] in container[%s] error: %s", cmd, cId, err.Error())
-			}
-			reStr = strings.TrimSpace(reStr)
-			if reStr != strconv.Itoa(pid) {
-				return nil, fmt.Errorf("pid[%d] is not exist", pid)
-			}
-		} else {
-			ifExist, err := ExistPid(ctx, pid)
-			if err != nil {
-				return nil, fmt.Errorf("check pid exist error: %s", err.Error())
-			}
-			if !ifExist {
-				return nil, fmt.Errorf("pid[%d] is not exist", pid)
-			}
+		_, err := GetProcessByPid(ctx, cr, cId, pid)
+		if err != nil {
+			return nil, fmt.Errorf("check pid[%d] error: %s", err.Error())
 		}
+
 		pidList = append(pidList, pid)
 	} else if key != "" {
-		cmd := getProcessKeyCmd(key)
-		var (
-			reStr string
-			err   error
-		)
-
-		if cr != "" {
-			reStr, err = cmdexec.ExecContainerRaw(ctx, cr, cId, cmd)
-			if err != nil {
-				return nil, fmt.Errorf("exec cmd[%s] in container[%s] error: %s", cmd, cId, err.Error())
-			}
-		} else {
-			reStr, err = cmdexec.RunBashCmdWithOutput(ctx, getProcessKeyCmd(key))
-			if err != nil {
-				return nil, fmt.Errorf("get process list error: %s", err.Error())
-			}
-		}
-
-		pStrList := strings.Split(reStr, "\n")
-		for _, unitPStr := range pStrList {
-			unitPStr = strings.TrimSpace(unitPStr)
-			if unitPStr == "" {
-				continue
-			}
-			unitPid, err := strconv.Atoi(unitPStr)
-			if err != nil {
-				return nil, fmt.Errorf("%s is not a valid pid: %s", unitPStr, err.Error())
-			}
-			pidList = append(pidList, unitPid)
-		}
-
+		return GetProcessByKey(ctx, cr, cId, key)
 	} else {
 		return nil, fmt.Errorf("must provide \"pid\" or \"key\"")
 	}

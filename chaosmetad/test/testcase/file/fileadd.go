@@ -116,7 +116,7 @@ func checkFileAdd(fileName, addPerm, addContent string) error {
 		return fmt.Errorf("add file[%s] failed: not exist", fileName)
 	}
 
-	perm, err := filesys.GetPermission(fileName)
+	perm, err := filesys.GetPerm(context.Background(), "", "", fileName)
 	if err != nil {
 		return fmt.Errorf("get perm of file[%s] error: %s", fileName, err.Error())
 	}

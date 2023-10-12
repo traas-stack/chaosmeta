@@ -195,8 +195,9 @@ int main(int argc, char *argv[]) {
     }
 
     int re = system(cmd);
+    re = (re >> 8) & 0xFF;
     if (re != 0) {
-//        fprintf(stderr, "cmd exec error\n");
+//        fprintf(stderr, "cmd exec error， exit code: %d\n", re);
         return re;
     }
 

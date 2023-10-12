@@ -24,7 +24,6 @@ import (
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/log"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/containercgroup"
-	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/errutil"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/namespace"
 	"os/exec"
 	"strings"
@@ -82,15 +81,6 @@ func (e *CmdExecutor) StartCmd(ctx context.Context, cmd string) error {
 		err = StartBashCmd(ctx, cmd)
 	}
 	return err
-}
-
-// Exec cmd should not block
-func (e *CmdExecutor) Exec(ctx context.Context, cmd string) (string, error) {
-	if e.ContainerRuntime != "" {
-		return ExecContainerRaw(ctx, e.ContainerRuntime, e.ContainerId, cmd)
-	} else {
-		return RunBashCmdWithOutput(ctx, cmd)
-	}
 }
 
 func (e *CmdExecutor) ExecTool(ctx context.Context) error {
@@ -186,17 +176,18 @@ func RunBashCmdWithOutput(ctx context.Context, cmd string) (string, error) {
 
 	reByte, err := c.CombinedOutput()
 	re := string(reByte)
-	log.GetLogger(ctx).Debugf("output: %s, err: %v", re, err)
-	if err != nil {
-		if c.ProcessState.Sys().(syscall.WaitStatus).ExitStatus() == errutil.ExpectedErr {
-			return "", fmt.Errorf("output: %s, error: %s", re, err.Error())
-		}
+	errMsg := fmt.Sprintf("exit code: %d, output: %s, error: %v", c.ProcessState.Sys().(syscall.WaitStatus).ExitStatus(), re, err)
+	log.GetLogger(ctx).Debugf("exec result: %s", errMsg)
+	if err != nil || c.ProcessState.Sys().(syscall.WaitStatus).ExitStatus() != 0 {
+		//if c.ProcessState.Sys().(syscall.WaitStatus).ExitStatus() == errutil.ExpectedErr {
+		//	return "", fmt.Errorf("output: %s, error: %s", re, err.Error())
+		//}
 
-		if c.ProcessState.Sys().(syscall.WaitStatus).ExitStatus() == errutil.TestFileErr {
-			return "", fmt.Errorf("exit code: %d, output: %s, error: %s", errutil.TestFileErr, re, err.Error())
-		}
+		//if c.ProcessState.Sys().(syscall.WaitStatus).ExitStatus() == errutil.TestFileErr {
+		//	return "", fmt.Errorf("exit code: %d, output: %s, error: %s", errutil.TestFileErr, re, err.Error())
+		//}
 
-		return "", fmt.Errorf("error: %s, output: %s", err.Error(), re)
+		return "", fmt.Errorf(errMsg)
 	}
 
 	return re, nil
@@ -211,16 +202,6 @@ func StartBashCmd(ctx context.Context, cmd string) error {
 	log.GetLogger(ctx).Debugf("start cmd: %s", cmd)
 	return exec.Command("/bin/bash", "-c", cmd).Start()
 }
-
-//func StartBashCmdWithPid(ctx context.Context, cmd string) (int, error) {
-//	log.GetLogger(ctx).Debugf("start cmd: %s", cmd)
-//	c := exec.Command("/bin/bash", "-c", cmd)
-//	if err := c.Start(); err != nil {
-//		return utils.NoPid, err
-//	}
-//
-//	return c.Process.Pid, nil
-//}
 
 func StartBashCmdAndWaitPid(ctx context.Context, cmd string, timeoutSec int) (int, error) {
 	log.GetLogger(ctx).Debugf("start cmd: %s", cmd)
@@ -246,7 +227,6 @@ func StartBashCmdAndWaitByUser(ctx context.Context, cmd, user string) error {
 	c := exec.Command("runuser", "-l", user, "-c", cmd)
 	var stdout, stderr bytes.Buffer
 	c.Stdout, c.Stderr = &stdout, &stderr
-
 	if err := c.Start(); err != nil {
 		return fmt.Errorf("cmd start error: %s", err.Error())
 	}
@@ -305,18 +285,16 @@ func ExecContainer(ctx context.Context, cr, containerID string, namespaces []str
 	case ExecWait:
 		return "", waitProExec(ctx, &stdout, &stderr, 0)
 	case ExecRun:
-		if err := c.Wait(); err != nil {
-			return "", fmt.Errorf("wait process error: %s", err.Error())
-		}
-
+		err = c.Wait()
 		combinedOutput := stdout.String() + stderr.String()
-		logger.Debugf("container exec output: %s", combinedOutput)
-		// TODO: not use exit code judge task if success?
-		if strings.Index(combinedOutput, "[error]") >= 0 {
-			return "", fmt.Errorf(combinedOutput)
+		errMsg := fmt.Sprintf("exit code: %d, output: %s， err: %v", c.ProcessState.Sys().(syscall.WaitStatus).ExitStatus(), combinedOutput, err)
+		logger.Debugf("container exec result: %s", errMsg)
+		if err != nil || c.ProcessState.Sys().(syscall.WaitStatus).ExitStatus() != 0 {
+			return "", fmt.Errorf(errMsg)
 		} else {
 			return combinedOutput, nil
 		}
+
 	case ExecStart:
 		return "", nil
 	default:
@@ -324,25 +302,16 @@ func ExecContainer(ctx context.Context, cr, containerID string, namespaces []str
 	}
 }
 
-func ExecContainerRaw(ctx context.Context, cr, cId, cmd string) (string, error) {
-	client, err := crclient.GetClient(ctx, cr)
-	if err != nil {
-		return "", fmt.Errorf("get %s client error: %s", cr, err.Error())
-	}
-
-	log.GetLogger(ctx).Debugf("container: %s, exec cmd: %s", cId, cmd)
-	re, err := client.Exec(ctx, cId, cmd)
-	log.GetLogger(ctx).Debugf("container: %s, output: %s, err: %v", cId, re, err)
-	return re, err
-}
-
-func ExecCommon(ctx context.Context, cr, cId, cmd string) (string, error) {
+func WaitCommonWithNS(ctx context.Context, cr, cId, cmd string, ns []string) error {
+	var err error
 	if cr == "" {
-		return RunBashCmdWithOutput(ctx, cmd)
+		_, err = StartBashCmdAndWaitPid(ctx, cmd, 0)
+		return err
 	} else {
-		// TODO: need to transfer to ExecContainer?
-		return ExecContainerRaw(ctx, cr, cId, cmd)
+		_, err = ExecContainer(ctx, cr, cId, ns, cmd, ExecWait)
 	}
+
+	return err
 }
 
 func ExecCommonWithNS(ctx context.Context, cr, cId, cmd string, ns []string) (string, error) {

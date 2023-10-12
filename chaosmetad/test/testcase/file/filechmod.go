@@ -81,7 +81,7 @@ func GetFileChmodTest() []common.TestCase {
 				}
 
 				var err error
-				fileChmodOldPerm, err = filesys.GetPermission(fileChmodFileName)
+				fileChmodOldPerm, err = filesys.GetPerm(context.Background(), "", "", fileChmodFileName)
 				if err != nil {
 					return err
 				}
@@ -116,7 +116,7 @@ func GetFileChmodTest() []common.TestCase {
 }
 
 func checkPerm(fileName, targetPerm string) error {
-	perm, err := filesys.GetPermission(fileName)
+	perm, err := filesys.GetPerm(context.Background(), "", "", fileName)
 	if err != nil {
 		return fmt.Errorf("get perm error: %s", err.Error())
 	}

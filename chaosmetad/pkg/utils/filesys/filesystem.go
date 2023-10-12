@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/cmdexec"
+	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/namespace"
 	"os"
 	"strconv"
 	"strings"
@@ -46,11 +47,13 @@ func getPathExistCmd(path string) string {
 }
 
 func getAppendFileCmd(path, content string) string {
-	return fmt.Sprintf("echo -e \"%s\" >> %s", content, path)
+	//return fmt.Sprintf("echo -e \"%s\" >> %s", content, path)
+	return fmt.Sprintf("echo -e '%s' >> %s", content, path)
 }
 
 func getOverWriteFileCmd(path, content string) string {
-	return fmt.Sprintf("echo -en \"%s\" > %s", content, path)
+	//return fmt.Sprintf("echo -en \"%s\" > %s", content, path)
+	return fmt.Sprintf("echo -en '%s' > %s", content, path)
 }
 
 func getDeleteLineByKeyCmd(path, key string) string {
@@ -61,15 +64,15 @@ func getMkdirForceCmd(dir string) string {
 	return fmt.Sprintf("mkdir -p %s", dir)
 }
 
-func getRemoveFile(file string) string {
+func getRemoveFileCmd(file string) string {
 	return fmt.Sprintf("rm %s", file)
 }
 
-func getRemoveRF(path string) string {
+func getRemoveRFCmd(path string) string {
 	return fmt.Sprintf("rm -rf %s", path)
 }
 
-func getMoveFile(src, dst string) string {
+func getMoveFileCmd(src, dst string) string {
 	return fmt.Sprintf("mv %s %s", src, dst)
 }
 
@@ -82,7 +85,7 @@ func GetPerm(ctx context.Context, cr, cId string, file string) (string, error) {
 		return "", fmt.Errorf("\"file\" can not be empty")
 	}
 
-	perm, err := cmdexec.ExecCommon(ctx, cr, cId, getPermCmd(file))
+	perm, err := cmdexec.ExecCommonWithNS(ctx, cr, cId, getPermCmd(file), []string{namespace.MNT})
 	return strings.TrimSpace(perm), err
 }
 
@@ -95,7 +98,7 @@ func MoveFile(ctx context.Context, cr, cId string, src, dst string) error {
 		return fmt.Errorf("\"dst\" can not be empty")
 	}
 
-	_, err := cmdexec.ExecCommon(ctx, cr, cId, getMoveFile(src, dst))
+	_, err := cmdexec.ExecCommonWithNS(ctx, cr, cId, getMoveFileCmd(src, dst), []string{namespace.MNT})
 	return err
 }
 
@@ -104,7 +107,7 @@ func RemoveFile(ctx context.Context, cr, cId string, file string) error {
 		return fmt.Errorf("\"file\" can not be empty")
 	}
 
-	_, err := cmdexec.ExecCommon(ctx, cr, cId, getRemoveFile(file))
+	_, err := cmdexec.ExecCommonWithNS(ctx, cr, cId, getRemoveFileCmd(file), []string{namespace.MNT})
 	return err
 }
 
@@ -113,7 +116,7 @@ func RemoveRF(ctx context.Context, cr, cId string, path string) error {
 		return fmt.Errorf("\"path\" can not be empty")
 	}
 
-	_, err := cmdexec.ExecCommon(ctx, cr, cId, getRemoveRF(path))
+	_, err := cmdexec.ExecCommonWithNS(ctx, cr, cId, getRemoveRFCmd(path), []string{namespace.MNT})
 	return err
 }
 
@@ -122,11 +125,7 @@ func OverWriteFile(ctx context.Context, cr, cId string, path, content string) er
 		return fmt.Errorf("\"path\" can not be empty")
 	}
 
-	if content == "" {
-		return fmt.Errorf("\"content\" can not be empty")
-	}
-
-	_, err := cmdexec.ExecCommon(ctx, cr, cId, getOverWriteFileCmd(path, content))
+	_, err := cmdexec.ExecCommonWithNS(ctx, cr, cId, getOverWriteFileCmd(path, content), []string{namespace.MNT})
 	return err
 }
 
@@ -135,7 +134,7 @@ func MkdirForce(ctx context.Context, cr, cId string, dir string) error {
 		return fmt.Errorf("\"dir\" can not be empty")
 	}
 
-	_, err := cmdexec.ExecCommon(ctx, cr, cId, getMkdirForceCmd(dir))
+	_, err := cmdexec.ExecCommonWithNS(ctx, cr, cId, getMkdirForceCmd(dir), []string{namespace.MNT})
 	return err
 }
 
@@ -144,7 +143,7 @@ func CheckDir(ctx context.Context, cr, cId string, dir string) (bool, error) {
 		return false, fmt.Errorf("\"dir\" can not be empty")
 	}
 
-	_, err := cmdexec.ExecCommon(ctx, cr, cId, getCheckDirCmd(dir))
+	_, err := cmdexec.ExecCommonWithNS(ctx, cr, cId, getCheckDirCmd(dir), []string{namespace.MNT})
 	if err != nil {
 		if strings.Index(err.Error(), FileNotFoundKey) >= 0 {
 			return false, nil
@@ -174,7 +173,7 @@ func CheckFile(ctx context.Context, cr, cId string, file string) (bool, error) {
 		return false, fmt.Errorf("\"file\" can not be empty")
 	}
 
-	_, err := cmdexec.ExecCommon(ctx, cr, cId, getCheckFileCmd(file))
+	_, err := cmdexec.ExecCommonWithNS(ctx, cr, cId, getCheckFileCmd(file), []string{namespace.MNT})
 	if err != nil {
 		if strings.Index(err.Error(), FileNotFoundKey) >= 0 {
 			return false, nil
@@ -192,7 +191,7 @@ func ExistPath(ctx context.Context, cr, cId string, path string) (bool, error) {
 		return false, fmt.Errorf("\"path\" can not be empty")
 	}
 
-	_, err := cmdexec.ExecCommon(ctx, cr, cId, getPathExistCmd(path))
+	_, err := cmdexec.ExecCommonWithNS(ctx, cr, cId, getPathExistCmd(path), []string{namespace.MNT})
 	if err != nil {
 		if strings.Index(err.Error(), FileNotFoundKey) >= 0 {
 			return false, nil
@@ -226,7 +225,7 @@ func Chmod(ctx context.Context, cr, cId string, path, perm string) error {
 		return fmt.Errorf("\"perm\" can not be empty")
 	}
 
-	_, err := cmdexec.ExecCommon(ctx, cr, cId, getChmodCmd(path, perm))
+	_, err := cmdexec.ExecCommonWithNS(ctx, cr, cId, getChmodCmd(path, perm), []string{namespace.MNT})
 	return err
 }
 
@@ -240,7 +239,7 @@ func DeleteLineByKey(ctx context.Context, cr, cId string, path, key string) erro
 		return fmt.Errorf("\"key\" can not be empty")
 	}
 
-	_, err := cmdexec.ExecCommon(ctx, cr, cId, getDeleteLineByKeyCmd(path, key))
+	_, err := cmdexec.ExecCommonWithNS(ctx, cr, cId, getDeleteLineByKeyCmd(path, key), []string{namespace.MNT})
 	return err
 }
 
@@ -254,7 +253,7 @@ func AppendFile(ctx context.Context, cr, cId string, path, content string) error
 		return fmt.Errorf("\"path\" can not be empty")
 	}
 
-	_, err := cmdexec.ExecCommon(ctx, cr, cId, getAppendFileCmd(path, content))
+	_, err := cmdexec.ExecCommonWithNS(ctx, cr, cId, getAppendFileCmd(path, content), []string{namespace.MNT})
 	return err
 }
 
@@ -269,29 +268,6 @@ func IfPathAbs(ctx context.Context, path string) bool {
 
 func MkdirP(ctx context.Context, path string) error {
 	return cmdexec.RunBashCmdWithoutOutput(ctx, fmt.Sprintf("mkdir -p %s", path))
-}
-
-func MkdirPInContainer(ctx context.Context, cr, cId, path string) error {
-	_, err := cmdexec.ExecContainerRaw(ctx, cr, cId, fmt.Sprintf("mkdir -p %s", path))
-	return err
-}
-
-func RemoveFileInContainer(ctx context.Context, cr, cId, file string) error {
-	if file == "" || file == "/" || strings.Index(file, "*") >= 0 {
-		return fmt.Errorf("delete file[%s] not allowed", file)
-	}
-
-	_, err := cmdexec.ExecContainerRaw(ctx, cr, cId, fmt.Sprintf("rm %s", file))
-	return err
-}
-
-func GetPermission(path string) (string, error) {
-	info, err := os.Stat(path)
-	if err != nil {
-		return "", fmt.Errorf("get stat of path[%s] error: %s", path, err.Error())
-	}
-
-	return fmt.Sprintf("%o", info.Mode().Perm()), nil
 }
 
 // ExistFile Must be a file

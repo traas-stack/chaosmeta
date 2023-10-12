@@ -65,14 +65,6 @@ func (i *OccupyInjector) SetDefault() {
 	}
 }
 
-func (i *OccupyInjector) getCmdExecutor() *cmdexec.CmdExecutor {
-	return &cmdexec.CmdExecutor{
-		ContainerId:      i.Info.ContainerId,
-		ContainerRuntime: i.Info.ContainerRuntime,
-		ContainerNs:      []string{namespace.NET},
-	}
-}
-
 func (i *OccupyInjector) SetOption(cmd *cobra.Command) {
 	// i.BaseInjector.SetOption(cmd)
 	cmd.Flags().IntVarP(&i.Args.Port, "port", "p", 0, "target port")
@@ -117,7 +109,7 @@ func (i *OccupyInjector) Inject(ctx context.Context) error {
 	}
 
 	cmd := fmt.Sprintf("%s %s %d %s %d", utils.GetToolPath(OccupyKey), i.Info.Uid, i.Args.Port, i.Args.Protocol, timeout)
-	_, err = cmdexec.ExecCommonWithNS(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, cmd, []string{namespace.NET, namespace.PID})
+	err = cmdexec.WaitCommonWithNS(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, cmd, []string{namespace.NET, namespace.PID})
 	if err != nil {
 		return fmt.Errorf("start cmd error: %s", err.Error())
 	}

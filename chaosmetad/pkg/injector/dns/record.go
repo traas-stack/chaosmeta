@@ -22,6 +22,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/injector"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/cmdexec"
+	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/namespace"
 )
 
 func init() {
@@ -95,7 +96,7 @@ func (i *RecordInjector) Inject(ctx context.Context) error {
 		cmd = getRecordDeleteInjectCmd(i.Info.Uid, i.Args.Domain)
 	}
 
-	_, err := cmdexec.ExecCommon(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, cmd)
+	_, err := cmdexec.ExecCommonWithNS(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, cmd, []string{namespace.MNT})
 	return err
 }
 
@@ -111,7 +112,7 @@ func (i *RecordInjector) Recover(ctx context.Context) error {
 		cmd = getRecordDeleteRecoverCmd(i.Info.Uid)
 	}
 
-	_, err := cmdexec.ExecCommon(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, cmd)
+	_, err := cmdexec.ExecCommonWithNS(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, cmd, []string{namespace.MNT})
 	return err
 }
 
