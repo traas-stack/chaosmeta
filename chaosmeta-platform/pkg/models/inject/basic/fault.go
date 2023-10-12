@@ -63,7 +63,6 @@ func UpdateFault(ctx context.Context, fault *Fault) error {
 
 func GetFaultById(ctx context.Context, id int) (*Fault, error) {
 	o := models.GetORM()
-
 	fault := &Fault{ID: id}
 	err := o.Read(fault)
 

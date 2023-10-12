@@ -19,6 +19,7 @@ package inject
 import (
 	models "chaosmeta-platform/pkg/models/common"
 	"chaosmeta-platform/pkg/models/inject/basic"
+	"chaosmeta-platform/util/log"
 	"context"
 	"fmt"
 )
@@ -32,8 +33,11 @@ const (
 	NodeScopeType       ScopeType = "node"
 	KubernetesScopeType ScopeType = "kubernetes"
 
-	ExecInject = "inject"
-	ExecFlow   = "flow"
+	ExecInject        = "fault"
+	ExecFlow          = "flow"
+	ExecFlowCommon    = "flow_common"
+	ExecMeasure       = "measure"
+	ExecMeasureCommon = "measure_common"
 )
 
 var (
@@ -43,6 +47,19 @@ var (
 )
 
 func Init() error {
+	if err := InitInject(); err != nil {
+		log.Fatal(err)
+	}
+	if err := InitFlow(); err != nil {
+		log.Fatal(err)
+	}
+	if err := InitMeasure(); err != nil {
+		log.Fatal(err)
+	}
+	return nil
+}
+
+func InitInject() error {
 	scope, target, fault, args := basic.Scope{}, basic.Target{}, basic.Fault{}, basic.Args{}
 	if _, err := models.GetORM().Raw(fmt.Sprintf("TRUNCATE TABLE %s", scope.TableName())).Exec(); err != nil {
 		return err
@@ -61,7 +78,6 @@ func Init() error {
 	}
 	ctx := context.Background()
 
-	// 开始初始化数据
 	scopes := []basic.Scope{PodScope, NodeScope}
 	for _, scope := range scopes {
 		scopeId, err := basic.InsertScope(ctx, &scope)
@@ -365,7 +381,7 @@ func getNetworkCommonFilterParameters(fault basic.Fault) []*basic.Args {
 		NetworkArgsSrcIP     = basic.Args{InjectId: fault.ID, ExecType: ExecInject, Key: "src-ip", KeyCn: "数据包筛选参数：源ip列表", Description: "Source IP list, for example: 1.2.3.4,2.3.4.5,192.168.1.1/24", DescriptionCn: "源ip列表，比如1.2.3.4,2.3.4.5,192.168.1.1/24", ValueType: "stringlist"}
 		NetworkArgsDstPort   = basic.Args{InjectId: fault.ID, ExecType: ExecInject, Key: "dst-port", KeyCn: "数据包筛选参数：目标端口列表", Description: "Target port list, for example: 8080-8090,8095,9099", DescriptionCn: "目标端口列表，比如8080-8090,8095,9099", ValueType: "stringlist"}
 		NetworkArgsSrcPort   = basic.Args{InjectId: fault.ID, ExecType: ExecInject, Key: "src-port", KeyCn: "数据包筛选参数：源端口列表", Description: "Source port list, such as 8080-8090,8095,9099", DescriptionCn: "源端口列表，比如8080-8090,8095,9099", ValueType: "stringlist"}
-		NetworkArgsMode      = basic.Args{InjectId: fault.ID, ExecType: ExecInject, Key: "mode", KeyCn: "数据包筛选模式", Unit: "", UnitCn: "", DefaultValue: "normal", Description: "normal: inject fault to selected targets, exclude: do not inject fault to selected targets", DescriptionCn: "normal:对选中的目标注入故障,exclude:对选中的目标不注入故障", ValueType: "string", ValueRule: "normal,exclude"}
+		NetworkArgsMode      = basic.Args{InjectId: fault.ID, ExecType: ExecInject, Key: "mode", KeyCn: "数据包筛选模式", Unit: "", UnitCn: "", DefaultValue: "normal", Description: "Normal: inject fault to selected targets, exclude: do not inject fault to selected targets", DescriptionCn: "normal:对选中的目标注入故障,exclude:对选中的目标不注入故障", ValueType: "string", ValueRule: "normal,exclude"}
 		NetworkArgsForce     = basic.Args{InjectId: fault.ID, ExecType: ExecInject, Key: "force", KeyCn: "是否强制覆盖", DefaultValue: "false", Description: "Whether to force overwrite", DescriptionCn: "是否强制覆盖", ValueType: "bool", ValueRule: "true,false"}
 	)
 	return []*basic.Args{&NetworkArgsInterface, &NetworkArgsDstIP, &NetworkArgsSrcIP, &NetworkArgsDstPort, &NetworkArgsSrcPort, &NetworkArgsMode, &NetworkArgsForce}
@@ -373,9 +389,9 @@ func getNetworkCommonFilterParameters(fault basic.Fault) []*basic.Args {
 
 func InitNetworkTargetArgsOccupy(ctx context.Context, networkFault basic.Fault) error {
 	var (
-		NetworkArgsPort       = basic.Args{InjectId: networkFault.ID, ExecType: ExecInject, Key: "port", KeyCn: "端口", Description: "target port", DescriptionCn: "目标端口", ValueType: "int"}
-		NetworkArgsProtocol   = basic.Args{InjectId: networkFault.ID, ExecType: ExecInject, Key: "protocol", KeyCn: "协议", DefaultValue: "tcp", Description: "target protocol", DescriptionCn: "目标协议", ValueType: "string", ValueRule: "tcp,udp,tcp6,udp6"}
-		NetworkArgsRecoverCmd = basic.Args{InjectId: networkFault.ID, ExecType: ExecInject, Key: "recover-cmd", KeyCn: "恢复命令", Description: "resume command, it will be executed last when resuming operation", DescriptionCn: "恢复命令，恢复操作时会最后执行", ValueType: "string"}
+		NetworkArgsPort       = basic.Args{InjectId: networkFault.ID, ExecType: ExecInject, Key: "port", KeyCn: "端口", Description: "Target port", DescriptionCn: "目标端口", ValueType: "int"}
+		NetworkArgsProtocol   = basic.Args{InjectId: networkFault.ID, ExecType: ExecInject, Key: "protocol", KeyCn: "协议", DefaultValue: "tcp", Description: "Target protocol", DescriptionCn: "目标协议", ValueType: "string", ValueRule: "tcp,udp,tcp6,udp6"}
+		NetworkArgsRecoverCmd = basic.Args{InjectId: networkFault.ID, ExecType: ExecInject, Key: "recover-cmd", KeyCn: "恢复命令", Description: "Resume command, it will be executed last when resuming operation", DescriptionCn: "恢复命令，恢复操作时会最后执行", ValueType: "string"}
 	)
 	return basic.InsertArgsMulti(ctx, []*basic.Args{&NetworkArgsPort, &NetworkArgsProtocol, &NetworkArgsRecoverCmd})
 }
@@ -426,7 +442,7 @@ func InitNetworkTargetArgsDuplicate(ctx context.Context, networkFault basic.Faul
 
 func InitNetworkTargetArgsReorder(ctx context.Context, networkFault basic.Fault) error {
 	var (
-		NetworkArgsLatency = basic.Args{InjectId: networkFault.ID, ExecType: ExecInject, Key: "latency", KeyCn: "包延迟", Unit: "us,ms,s", UnitCn: "us,ms,s", DefaultValue: "1s", Description: "delay", DescriptionCn: "延迟时间", ValueType: "int", Required: true}
+		NetworkArgsLatency = basic.Args{InjectId: networkFault.ID, ExecType: ExecInject, Key: "latency", KeyCn: "包延迟", Unit: "us,ms,s", UnitCn: "us,ms,s", DefaultValue: "1s", Description: "Delay", DescriptionCn: "延迟时间", ValueType: "int", Required: true}
 		NetworkArgsGap     = basic.Args{InjectId: networkFault.ID, ExecType: ExecInject, Key: "gap", KeyCn: "KeyCn", DefaultValue: "3", Description: "Select the interval. For example, a gap of 3 means that packets with serial numbers 1, 3, 6, 9, etc. will not be delayed, and the remaining packets will be delayed", DescriptionCn: "选中间隔,比如gap为3表示序号为1、3、6、9等的包不延迟,其余的包会延迟", ValueType: "int", ValueRule: ">0"}
 	)
 	argList := []*basic.Args{&NetworkArgsLatency, &NetworkArgsGap}
@@ -454,10 +470,10 @@ func InitProcessFault(ctx context.Context, processTarget basic.Target) error {
 
 func InitProcessTargetArgsKill(ctx context.Context, processFault basic.Fault) error {
 	var (
-		ProcessArgsKey        = basic.Args{InjectId: processFault.ID, ExecType: ExecInject, Key: "key", KeyCn: "关键词", Description: "keywords used to filter affected processes; Will use ps -ef | grep [key] to filter", DescriptionCn: "用来筛选受影响进程的关键词;会使用ps -ef | grep [key]来筛选", ValueType: "string"}
-		ProcessArgsPid        = basic.Args{InjectId: processFault.ID, ExecType: ExecInject, Key: "pid", KeyCn: "进程pid", Description: "the pid of the living process", DescriptionCn: "存活进程的pid", ValueType: "int"}
-		ProcessArgsSignal     = basic.Args{InjectId: processFault.ID, ExecType: ExecInject, Key: "signal", KeyCn: "信号", DefaultValue: "9", Description: "the signal sent to the process;consistent with the signal value supported by the kill command", DescriptionCn: "对进程发送的信号;和kill命令支持的信号数值一致", ValueType: "int"}
-		ProcessArgsRecoverCmd = basic.Args{InjectId: processFault.ID, ExecType: ExecInject, Key: "recover-cmd", KeyCn: "恢复命令", Description: "resume command, it will be executed last when resuming operation", DescriptionCn: "恢复命令，恢复操作时会最后执行", ValueType: "string"}
+		ProcessArgsKey        = basic.Args{InjectId: processFault.ID, ExecType: ExecInject, Key: "key", KeyCn: "关键词", Description: "Keywords used to filter affected processes; Will use ps -ef | grep [key] to filter", DescriptionCn: "用来筛选受影响进程的关键词;会使用ps -ef | grep [key]来筛选", ValueType: "string"}
+		ProcessArgsPid        = basic.Args{InjectId: processFault.ID, ExecType: ExecInject, Key: "pid", KeyCn: "进程pid", Description: "The pid of the living process", DescriptionCn: "存活进程的pid", ValueType: "int"}
+		ProcessArgsSignal     = basic.Args{InjectId: processFault.ID, ExecType: ExecInject, Key: "signal", KeyCn: "信号", DefaultValue: "9", Description: "The signal sent to the process; consistent with the signal value supported by the kill command", DescriptionCn: "对进程发送的信号;和kill命令支持的信号数值一致", ValueType: "int"}
+		ProcessArgsRecoverCmd = basic.Args{InjectId: processFault.ID, ExecType: ExecInject, Key: "recover-cmd", KeyCn: "恢复命令", Description: "Resume command, it will be executed last when resuming operation", DescriptionCn: "恢复命令，恢复操作时会最后执行", ValueType: "string"}
 	)
 	return basic.InsertArgsMulti(ctx, []*basic.Args{&ProcessArgsKey, &ProcessArgsPid, &ProcessArgsSignal, &ProcessArgsRecoverCmd})
 }
@@ -548,8 +564,8 @@ func InitFileTargetArgsAdd(ctx context.Context, fileFault basic.Fault) error {
 
 func InitFileTargetArgsMove(ctx context.Context, fileFault basic.Fault) error {
 	var (
-		FileArgsSrc = basic.Args{InjectId: fileFault.ID, ExecType: ExecInject, Key: "src", KeyCn: "源文件路径", Description: "source file path", DescriptionCn: "源文件路径", ValueType: "string", Required: true}
-		FileArgsDst = basic.Args{InjectId: fileFault.ID, ExecType: ExecInject, Key: "dst", KeyCn: "移动后文件路径", Description: "moved file path", DescriptionCn: "移动后文件路径", ValueType: "string", Required: true}
+		FileArgsSrc = basic.Args{InjectId: fileFault.ID, ExecType: ExecInject, Key: "src", KeyCn: "源文件路径", Description: "Source file path", DescriptionCn: "源文件路径", ValueType: "string", Required: true}
+		FileArgsDst = basic.Args{InjectId: fileFault.ID, ExecType: ExecInject, Key: "dst", KeyCn: "移动后文件路径", Description: "Moved file path", DescriptionCn: "移动后文件路径", ValueType: "string", Required: true}
 	)
 	return basic.InsertArgsMulti(ctx, []*basic.Args{&FileArgsSrc, &FileArgsDst})
 }
@@ -573,7 +589,7 @@ func InitKernelFault(ctx context.Context, kernelTarget basic.Target) error {
 
 func InitKernelTargetArgsFdfull(ctx context.Context, KernelFault basic.Fault) error {
 	var (
-		KernelArgsCount = basic.Args{InjectId: KernelFault.ID, ExecType: ExecInject, Key: "count", KeyCn: "消耗量", DefaultValue: "0", Description: "fd consumption: an integer greater than or equal to 0, 0 means exhausted", DescriptionCn: "fd消耗量:大于等于0的整数,0表示耗尽", ValueType: "int", ValueRule: ">=0"}
+		KernelArgsCount = basic.Args{InjectId: KernelFault.ID, ExecType: ExecInject, Key: "count", KeyCn: "消耗量", DefaultValue: "0", Description: "Fd consumption: an integer greater than or equal to 0, 0 means exhausted", DescriptionCn: "fd消耗量:大于等于0的整数,0表示耗尽", ValueType: "int", ValueRule: ">=0"}
 		KernelArgsMode  = basic.Args{InjectId: KernelFault.ID, ExecType: ExecInject, Key: "mode", KeyCn: "执行模式", DefaultValue: "conf", Description: "Execution mode, conf: by modifying the maximum number of FDs in the system, fill: by real consumption", DescriptionCn: "执行模式,conf:通过修改系统最大fd数,fill:通过真实消耗", ValueType: "string", ValueRule: "conf,fill"}
 	)
 	return basic.InsertArgsMulti(ctx, []*basic.Args{&KernelArgsCount, &KernelArgsMode})
@@ -615,8 +631,8 @@ func InitJvmFault(ctx context.Context, jvmTarget basic.Target) error {
 
 func InitJvmTargetArgsMethod(ctx context.Context, javaFault basic.Fault, argsMethodKeyCn string, argsMethodDescription string, argsMethodDescriptionCn string) error {
 	var (
-		argsKey    = basic.Args{InjectId: javaFault.ID, ExecType: ExecInject, Key: "key", KeyCn: "进程关键词", Description: "will use ps -ef | grep [key] to filter", DescriptionCn: "用来筛选受影响进程的关键词;会使用ps -ef | grep [key]来筛选", ValueType: "string"}
-		argsPid    = basic.Args{InjectId: javaFault.ID, ExecType: ExecInject, Key: "pid", KeyCn: "进程pid", Description: "pid of the running process", DescriptionCn: "存活进程的pid", ValueType: "string"}
+		argsKey    = basic.Args{InjectId: javaFault.ID, ExecType: ExecInject, Key: "key", KeyCn: "进程关键词", Description: "Will use ps -ef | grep [key] to filter", DescriptionCn: "用来筛选受影响进程的关键词;会使用ps -ef | grep [key]来筛选", ValueType: "string"}
+		argsPid    = basic.Args{InjectId: javaFault.ID, ExecType: ExecInject, Key: "pid", KeyCn: "进程pid", Description: "Pid of the running process", DescriptionCn: "存活进程的pid", ValueType: "string"}
 		argsMethod = basic.Args{InjectId: javaFault.ID, ExecType: ExecInject, Key: "method", KeyCn: argsMethodKeyCn, Description: argsMethodDescription, DescriptionCn: argsMethodDescriptionCn, ValueType: "string"}
 	)
 	return basic.InsertArgsMulti(ctx, []*basic.Args{&argsKey, &argsPid, &argsMethod})

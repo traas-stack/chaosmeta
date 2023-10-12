@@ -268,8 +268,10 @@ type ArgsValue struct {
 
 type WorkflowNodesDetail struct {
 	WorkflowNodesInfo
-	ArgsValues []ArgsValue                             `json:"args_value"`
-	Subtasks   *experiment_instance.FaultRangeInstance `json:"subtasks"`
+	ArgsValues      []ArgsValue                               `json:"args_value"`
+	Subtasks        *experiment_instance.FaultRangeInstance   `json:"subtasks"`
+	FlowSubtasks    *experiment_instance.FlowRangeInstance    `json:"flow_subtasks"`
+	MeasureSubtasks *experiment_instance.MeasureRangeInstance `json:"measure_subtasks"`
 }
 
 func (s *ExperimentInstanceService) GetWorkflowNodeInstanceDetailByUUIDAndNodeId(experimentUUID, nodeId string) (*WorkflowNodesDetail, error) {
@@ -293,9 +295,24 @@ func (s *ExperimentInstanceService) GetWorkflowNodeInstanceDetailByUUIDAndNodeId
 
 	faultRange, err := experiment_instance.GetFaultRangeInstancesByWorkflowNodeInstanceUUID(nodeId)
 	if err != nil {
+		log.Error(err)
 		return &workflowNodesDetail, err
 	}
 	workflowNodesDetail.Subtasks = faultRange
+
+	flowRange, err := experiment_instance.GetFlowRangeInstancesByWorkflowNodeInstanceUUID(nodeId)
+	if err != nil {
+		log.Error(err)
+		return &workflowNodesDetail, err
+	}
+	workflowNodesDetail.FlowSubtasks = flowRange
+
+	measureRange, err := experiment_instance.GetMeasureRangeInstancesByWorkflowNodeInstanceUUID(nodeId)
+	if err != nil {
+		log.Error(err)
+		return &workflowNodesDetail, err
+	}
+	workflowNodesDetail.MeasureSubtasks = measureRange
 	return &workflowNodesDetail, nil
 }
 

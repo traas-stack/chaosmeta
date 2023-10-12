@@ -120,7 +120,7 @@ func InitPodTargetArgsContainerKillAndPause(ctx context.Context, podFault basic.
 
 func InitPodTargetArgsContainerImage(ctx context.Context, podFault basic.Fault) error {
 	argsContainerName := basic.Args{InjectId: podFault.ID, ExecType: ExecInject, Key: "containername", KeyCn: "目标容器名称", ValueType: "string", Description: "Target container name; specific container name, or 'firstcontainer' which represents the first container in the pod", DescriptionCn: "目标容器名称;具体的容器名称,或者“firstcontainer”,表示pod中第一个容器"}
-	argsImage := basic.Args{InjectId: podFault.ID, ExecType: ExecInject, Key: "image", KeyCn: "镜像名称", UnitCn: "目标镜像名称", ValueType: "string", DefaultValue: "", Description: "Target image name", DescriptionCn: "目标镜像名称"}
+	argsImage := basic.Args{InjectId: podFault.ID, ExecType: ExecInject, Key: "image", KeyCn: "目标镜像名称", UnitCn: "", ValueType: "string", DefaultValue: "", Description: "Target image name", DescriptionCn: "目标镜像名称"}
 	return basic.InsertArgsMulti(ctx, []*basic.Args{&argsContainerName, &argsImage})
 }
 

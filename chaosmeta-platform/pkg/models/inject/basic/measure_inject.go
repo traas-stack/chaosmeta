@@ -16,10 +16,14 @@
 
 package basic
 
-import models "chaosmeta-platform/pkg/models/common"
+import (
+	models "chaosmeta-platform/pkg/models/common"
+	"github.com/beego/beego/v2/client/orm"
+)
 
 type MeasureInject struct {
-	Id            int    `json:"id" orm:"column(id);pk"`
+	Id            int    `json:"id" orm:"pk;auto;column(id)"`
+	MeasureType   string `json:"measure_type" orm:"column(measure_type);size(32)"`
 	Name          string `json:"name" orm:"column(name);size(255)"`
 	NameCn        string `json:"name_cn" orm:"column(name_cn);size(255)"`
 	Description   string `json:"description" orm:"column(description);size(1024)"`
@@ -30,14 +34,20 @@ func (m *MeasureInject) TableName() string {
 	return TablePrefix + "measure_inject"
 }
 
-func GetMeasureInjectByID(id int) (MeasureInject, error) {
-	measureInject := MeasureInject{Id: id}
+func GetMeasureInjectByID(id int) (*MeasureInject, error) {
+	measureInject := &MeasureInject{Id: id}
 	err := models.GetORM().Read(&measureInject)
-	return measureInject, err
+	if err == orm.ErrNoRows {
+		return nil, nil
+	} else if err == orm.ErrMissPK {
+		return nil, nil
+	} else {
+		return measureInject, err
+	}
 }
 
-// GetAllMeasureInjects retrieves all measure_injects
-func GetAllMeasureInjects(orderBy string, page, pageSize int) (int64, []MeasureInject, error) {
+// ListMeasureInjects retrieves all measure_injects
+func ListMeasureInjects(orderBy string, page, pageSize int) (int64, []MeasureInject, error) {
 	measureInject, measureInjects := MeasureInject{}, new([]MeasureInject)
 	querySeter := models.GetORM().QueryTable(measureInject.TableName())
 	measureInjectQuery, err := models.NewDataSelectQuery(&querySeter)
@@ -61,8 +71,8 @@ func GetAllMeasureInjects(orderBy string, page, pageSize int) (int64, []MeasureI
 	return totalCount, *measureInjects, err
 }
 
-// CreateMeasureInject creates a new measure_inject
-func CreateMeasureInject(measureInject *MeasureInject) error {
+// InsertMeasureInject insert a new measure_inject
+func InsertMeasureInject(measureInject *MeasureInject) error {
 	_, err := models.GetORM().Insert(measureInject)
 	return err
 }

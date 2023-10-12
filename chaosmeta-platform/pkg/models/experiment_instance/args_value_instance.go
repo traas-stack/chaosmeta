@@ -29,7 +29,7 @@ type ArgsValueInstance struct {
 	models.BaseTimeModel
 }
 
-func (a *ArgsValueInstance) TableUnique() [][]string {
+func (av *ArgsValueInstance) TableUnique() [][]string {
 	return [][]string{{"args_id", "workflow_node_instance_uuid"}}
 }
 

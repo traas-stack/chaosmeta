@@ -87,8 +87,10 @@ type ExperimentGet struct {
 
 type WorkflowNode struct {
 	experiment.WorkflowNode
-	ArgsValue  []*experiment.ArgsValue `json:"args_value,omitempty"`
-	FaultRange *experiment.FaultRange  `json:"exec_range,omitempty"`
+	ArgsValue    []*experiment.ArgsValue  `json:"args_value,omitempty"`
+	FaultRange   *experiment.FaultRange   `json:"exec_range,omitempty"`
+	FlowRange    *experiment.FlowRange    `json:"flow_range,omitempty"`
+	MeasureRange *experiment.MeasureRange `json:"measure_range,omitempty"`
 }
 
 func (es *ExperimentService) createUUID(creator int, typeStr string) string {
@@ -292,11 +294,11 @@ func (es *ExperimentService) DeleteExperimentByUUID(uuid string) error {
 		if err := experiment.DeleteWorkflowNodeByUUID(workflowNode.UUID); err != nil {
 			return err
 		}
-		// 删除args_value
+
 		if err := experiment.ClearArgsValuesByWorkflowNodeUUID(workflowNode.UUID); err != nil {
 			return err
 		}
-		// 删除fault_range
+
 		if err := experiment.ClearFaultRangesByWorkflowNodeInstanceUUID(workflowNode.UUID); err != nil {
 			return err
 		}
@@ -403,8 +405,19 @@ func (es *ExperimentService) GetWorkflowNodesByExperiment(uuid string, experimen
 			log.Error(err)
 		}
 		nodeResult.FaultRange = faultRange
-		workflowNodes = append(workflowNodes, &nodeResult)
 
+		flowRange, err := experiment.GetFlowRangeByWorkflowNodeInstanceUUID(workflowNodeGet.UUID)
+		if err != nil {
+			log.Error(err)
+		}
+		nodeResult.FlowRange = flowRange
+
+		measureRange, err := experiment.GetMeasureRangeByWorkflowNodeInstanceUUID(workflowNodeGet.UUID)
+		if err != nil {
+			log.Error(err)
+		}
+		nodeResult.MeasureRange = measureRange
+		workflowNodes = append(workflowNodes, &nodeResult)
 	}
 	experimentReturn.WorkflowNodes = append(experimentReturn.WorkflowNodes, workflowNodes...)
 	return nil

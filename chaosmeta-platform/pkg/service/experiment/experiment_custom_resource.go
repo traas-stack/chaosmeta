@@ -138,10 +138,6 @@ func GetWorkflowStruct(experimentInstanceId string, nodes []*experiment_instance
 	return &newWorkflow
 }
 
-func getWaitStepName(experimentInstanceUUID string, nodeId string) string {
-	return fmt.Sprintf("before-wait-%s-%s", experimentInstanceUUID, nodeId)
-}
-
 func getWaitStep(time string, experimentInstanceUUID string, nodeId string) *v1alpha1.DAGTask {
 	waitStep := v1alpha1.DAGTask{
 		Name:     getWaitStepName(experimentInstanceUUID, nodeId),
@@ -158,11 +154,23 @@ func getWaitStep(time string, experimentInstanceUUID string, nodeId string) *v1a
 	return &waitStep
 }
 
-func getInjectStepName(scopeName, targetName, experimentInstanceUUID, nodeID string) string {
-	return fmt.Sprintf("inject-%s-%s-%s-%s", scopeName, targetName, experimentInstanceUUID, nodeID)
+func getWaitStepName(experimentInstanceUUID string, nodeId string) string {
+	return fmt.Sprintf("before-wait-%s-%s", experimentInstanceUUID, nodeId)
 }
 
-func getInjectStep(experimentInstanceUUID string, node *experiment_instance.WorkflowNodesDetail, phaseType PhaseType) *v1alpha1.DAGTask {
+func getInjectStepName(scopeName, targetName, experimentInstanceUUID, nodeID string) string {
+	return fmt.Sprintf("inject-fault-%s-%s-%s-%s", scopeName, targetName, experimentInstanceUUID, nodeID)
+}
+
+func getFlowStepName(flowtype, flowName, experimentInstanceUUID, nodeID string) string {
+	return fmt.Sprintf("inject-flow-%s-%s-%s-%s", flowtype, flowName, experimentInstanceUUID, nodeID)
+}
+
+func getMeasureStepName(measureType, measureName, experimentInstanceUUID, nodeID string) string {
+	return fmt.Sprintf("inject-measure-%s-%s-%s-%s", measureType, measureName, experimentInstanceUUID, nodeID)
+}
+
+func getFaultStep(experimentInstanceUUID string, node *experiment_instance.WorkflowNodesDetail, phaseType PhaseType) *v1alpha1.DAGTask {
 	if node == nil {
 		log.Error("node is nil")
 		return nil
@@ -264,27 +272,155 @@ func getInjectStep(experimentInstanceUUID string, node *experiment_instance.Work
 	return &injectStep
 }
 
-func getFlowInjectStepName(flowInjectName, experimentInstanceUUID, nodeID string) string {
-	return fmt.Sprintf("inject-flow-%s-%s-%s", flowInjectName, experimentInstanceUUID, nodeID)
-}
+func getFlowStep(experimentInstanceUUID string, node *experiment_instance.WorkflowNodesDetail, phaseType PhaseType) *v1alpha1.DAGTask {
+	if node == nil {
+		log.Error("node is nil")
+		return nil
+	}
+	injectStep := v1alpha1.DAGTask{
+		Template: string(ExperimentInject),
+	}
 
-func getFlowInjectStep(experimentInstanceUUID string, node *experiment_instance.WorkflowNodesDetail, phaseType PhaseType) *v1alpha1.WorkflowStep {
+	ctx := context.Background()
+	flow, err := basic.GetFlowInjectByID(node.ExecId)
+	if err != nil {
+		log.Error(err)
+		return nil
+	}
 
-	return nil
-}
+	injectStep.Name = getFlowStepName(flow.FlowType, flow.Name, experimentInstanceUUID, node.UUID)
 
-func getMaxRowAndColumn(nodes []*experiment_instance.WorkflowNodesDetail) (int, int) {
-	maxRow, maxColumn := 0, 0
-	for _, node := range nodes {
-		if node.Row > maxRow {
-			maxRow = node.Row
+	flowSpec := LoadTest{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "chaosmeta.io/v1alpha1",
+			Kind:       "LoadTest",
+		},
+
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      injectStep.Name,
+			Namespace: config.DefaultRunOptIns.WorkflowNamespace,
+		},
+	}
+
+	if node.FlowSubtasks != nil {
+		flowSpec.Spec.FlowType = node.FlowSubtasks.FlowType
+		flowSpec.Spec.Duration = node.FlowSubtasks.Duration
+		flowSpec.Spec.Parallelism = node.FlowSubtasks.Parallelism
+		flowSpec.Spec.Source = node.FlowSubtasks.Source
+	}
+
+	for _, arg := range node.ArgsValues {
+		argGet, err := basic.GetArgsById(ctx, arg.ArgsId)
+		if err != nil {
+			log.Error(err)
+			return nil
 		}
-		if node.Column > maxColumn {
-			maxColumn = node.Column
+		flowSpec.Spec.Args = append(flowSpec.Spec.Args, FlowArgs{
+			Key:   argGet.Key,
+			Value: arg.Value,
+		})
+	}
+
+	flowSpecBytes, err := yaml.Marshal(flowSpec)
+	if err != nil {
+		log.Error(err)
+		return nil
+	}
+	log.Info("FlowSpecBytes:", string(flowSpecBytes))
+	injectStep.Arguments = v1alpha1.Arguments{
+		Parameters: []v1alpha1.Parameter{
+			{
+				Name:  "experiment",
+				Value: v1alpha1.AnyStringPtr(string(flowSpecBytes)),
+			},
+		},
+	}
+	return &injectStep
+}
+
+func getMeasureStep(experimentInstanceUUID string, node *experiment_instance.WorkflowNodesDetail, phaseType PhaseType) *v1alpha1.DAGTask {
+	if node == nil {
+		log.Error("node is nil")
+		return nil
+	}
+	injectStep := v1alpha1.DAGTask{
+		Template: string(ExperimentInject),
+	}
+
+	ctx := context.Background()
+	measure, err := basic.GetMeasureInjectByID(node.ExecId)
+	if err != nil {
+		log.Error(err)
+		return nil
+	}
+
+	injectStep.Name = getMeasureStepName(measure.MeasureType, measure.Name, experimentInstanceUUID, node.UUID)
+
+	commonMeasureStruct := CommonMeasureStruct{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "chaosmeta.io/v1alpha1",
+			Kind:       "CommonMeasure",
+		},
+
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      injectStep.Name,
+			Namespace: config.DefaultRunOptIns.WorkflowNamespace,
+		},
+	}
+
+	if node.MeasureSubtasks != nil {
+		commonMeasureStruct.Spec.MeasureType = node.MeasureSubtasks.MeasureType
+		commonMeasureStruct.Spec.Duration = node.MeasureSubtasks.Duration
+		commonMeasureStruct.Spec.Interval = node.MeasureSubtasks.Interval
+		commonMeasureStruct.Spec.SuccessCount = node.MeasureSubtasks.SuccessCount
+		commonMeasureStruct.Spec.FailedCount = node.MeasureSubtasks.FailedCount
+		commonMeasureStruct.Spec.Judgement = Judgement{
+			JudgeType:  node.MeasureSubtasks.JudgeType,
+			JudgeValue: node.MeasureSubtasks.JudgeValue,
 		}
 	}
-	return maxRow, maxColumn
+
+	for _, arg := range node.ArgsValues {
+		argGet, err := basic.GetArgsById(ctx, arg.ArgsId)
+		if err != nil {
+			log.Error(err)
+			return nil
+		}
+		commonMeasureStruct.Spec.Args = append(commonMeasureStruct.Spec.Args, MeasureArgs{
+			Key:   argGet.Key,
+			Value: arg.Value,
+		})
+	}
+
+	commonMeasureStructBytes, err := yaml.Marshal(commonMeasureStruct)
+	if err != nil {
+		log.Error(err)
+		return nil
+	}
+	log.Info("CommonMeasureStructBytes:", string(commonMeasureStructBytes))
+	injectStep.Arguments = v1alpha1.Arguments{
+		Parameters: []v1alpha1.Parameter{
+			{
+				Name:  "experiment",
+				Value: v1alpha1.AnyStringPtr(string(commonMeasureStructBytes)),
+			},
+		},
+	}
+	return &injectStep
 }
+
+//func getMaxRowAndColumn(nodes []*experiment_instance.WorkflowNodesDetail) (int, int) {
+//	maxRow, maxColumn := 0, 0
+//	for _, node := range nodes {
+//		if node.Row > maxRow {
+//			maxRow = node.Row
+//		}
+//		if node.Column > maxColumn {
+//			maxColumn = node.Column
+//		}
+//	}
+//	return maxRow, maxColumn
+//}
 
 func getStepArguments(experimentInstanceId string, node *experiment_instance.WorkflowNodesDetail) *v1alpha1.DAGTask {
 	if node == nil {
@@ -294,18 +430,11 @@ func getStepArguments(experimentInstanceId string, node *experiment_instance.Wor
 	case string(WaitExecType):
 		return getWaitStep(node.Duration, experimentInstanceId, node.UUID)
 	case string(FaultExecType):
-		return getInjectStep(experimentInstanceId, node, InjectPhaseType)
-	default:
-		return nil
-	}
-}
-
-func getStepName(experimentInstanceId string, node *experiment_instance.WorkflowNodesDetail) *v1alpha1.DAGTask {
-	switch node.ExecType {
-	case string(WaitExecType):
-		return getWaitStep(node.Duration, experimentInstanceId, node.UUID)
-	case string(FaultExecType):
-		return getInjectStep(experimentInstanceId, node, InjectPhaseType)
+		return getFaultStep(experimentInstanceId, node, InjectPhaseType)
+	case string(FlowExecType):
+		return getFlowStep(experimentInstanceId, node, InjectPhaseType)
+	case string(MeasureExecType):
+		return getMeasureStep(experimentInstanceId, node, InjectPhaseType)
 	default:
 		return nil
 	}
@@ -314,9 +443,7 @@ func getStepName(experimentInstanceId string, node *experiment_instance.Workflow
 func convertToSteps(experimentInstanceId string, nodes []*experiment_instance.WorkflowNodesDetail) *v1alpha1.DAGTemplate {
 	dAGTemplate := v1alpha1.DAGTemplate{}
 	//_, maxColumn := getMaxRowAndColumn(nodes)
-
 	var steps []v1alpha1.DAGTask
-
 	beginTask := v1alpha1.DAGTask{
 		Name:     "BeginWaitTask",
 		Template: string(RawSuspend),
@@ -335,14 +462,12 @@ func convertToSteps(experimentInstanceId string, nodes []*experiment_instance.Wo
 	steps = append(steps, beginTask)
 
 	var prevNode *experiment_instance.WorkflowNodesDetail
-
 	for _, node := range nodes {
 		task := *getStepArguments(experimentInstanceId, node)
 		if prevNode != nil && prevNode.Row != node.Row {
 			endTask.Dependencies = append(endTask.Dependencies, getStepArguments(experimentInstanceId, prevNode).Name)
 			//steps = append(steps, task)
-			log.Debugf("End of row %d\n", prevNode.Row)
-
+			log.Debugf("End of row %d", prevNode.Row)
 			task.Dependencies = []string{"BeginWaitTask"}
 		}
 
@@ -380,9 +505,8 @@ func getExperimentUUIDAndNodeIDFromStepName(name string) (string, string, error)
 	log.Info("ExperimentUUIDAndNodeIDFromStepName:", name)
 	var reg *regexp.Regexp
 	var match []string
-
 	if isInjectStepName(name) {
-		reg = regexp.MustCompile(`inject-\w+-\w+-(\w+)-(\w+)`)
+		reg = regexp.MustCompile(`inject-\w+-\w+-\w+-(\w+)-(\w+)`)
 		match = reg.FindStringSubmatch(name)
 	} else if isWaitStepName(name) {
 		reg = regexp.MustCompile(`before-wait-(\w+)-(\w+)`)
@@ -401,7 +525,7 @@ func getExperimentUUIDAndNodeIDFromStepName(name string) (string, string, error)
 }
 
 func isInjectStepName(name string) bool {
-	reg := regexp.MustCompile(`inject-\w+-\w+-\w+-\w+`)
+	reg := regexp.MustCompile(`inject-\w+-\w+-\w+-\w+-\w+`)
 	return reg.MatchString(name)
 }
 

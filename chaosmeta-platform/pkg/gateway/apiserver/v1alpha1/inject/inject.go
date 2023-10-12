@@ -86,13 +86,91 @@ func (c *InjectController) QueryFaults() {
 	c.Success(&c.Controller, faultsListResponse)
 }
 
-func (c *InjectController) QueryArgs() {
+func (c *InjectController) QueryFlows() {
+	page, _ := c.GetInt("page", 1)
+	pageSize, _ := c.GetInt("page_size", 100)
+	injectService := inject.InjectService{}
+	total, faults, err := injectService.ListFlows(context.Background(), "", page, pageSize)
+	if err != nil {
+		c.Error(&c.Controller, err)
+		return
+	}
+
+	flowsListResponse := FlowsListResponse{
+		Page:     page,
+		PageSize: pageSize,
+		Total:    total,
+		Flows:    faults,
+	}
+	c.Success(&c.Controller, flowsListResponse)
+}
+
+func (c *InjectController) QueryMeasures() {
+	page, _ := c.GetInt("page", 1)
+	pageSize, _ := c.GetInt("page_size", 100)
+	injectService := inject.InjectService{}
+	total, measures, err := injectService.ListMeasures(context.Background(), "", page, pageSize)
+	if err != nil {
+		c.Error(&c.Controller, err)
+		return
+	}
+
+	flowsListResponse := MeasuresListResponse{
+		Page:     page,
+		PageSize: pageSize,
+		Total:    total,
+		Measures: measures,
+	}
+	c.Success(&c.Controller, flowsListResponse)
+}
+
+func (c *InjectController) QueryMeasureArgs() {
 	faultId, _ := c.GetInt(":id")
 	page, _ := c.GetInt("page", 1)
 	pageSize, _ := c.GetInt("page_size", 100)
 	injectService := inject.InjectService{}
 
-	total, args, err := injectService.ListArg(context.Background(), faultId, "", page, pageSize)
+	total, args, err := injectService.ListArg(context.Background(), []string{inject.ExecMeasureCommon, inject.ExecMeasure}, faultId, "", page, pageSize)
+	if err != nil {
+		c.Error(&c.Controller, err)
+		return
+	}
+	argsListResponse := ArgsListResponse{
+		Page:     page,
+		PageSize: pageSize,
+		Total:    total,
+		Args:     args,
+	}
+	c.Success(&c.Controller, argsListResponse)
+}
+
+func (c *InjectController) QueryFaultArgs() {
+	faultId, _ := c.GetInt(":id")
+	page, _ := c.GetInt("page", 1)
+	pageSize, _ := c.GetInt("page_size", 100)
+	injectService := inject.InjectService{}
+
+	total, args, err := injectService.ListArg(context.Background(), []string{inject.ExecInject}, faultId, "", page, pageSize)
+	if err != nil {
+		c.Error(&c.Controller, err)
+		return
+	}
+	argsListResponse := ArgsListResponse{
+		Page:     page,
+		PageSize: pageSize,
+		Total:    total,
+		Args:     args,
+	}
+	c.Success(&c.Controller, argsListResponse)
+}
+
+func (c *InjectController) QueryFlowArgs() {
+	faultId, _ := c.GetInt(":id")
+	page, _ := c.GetInt("page", 1)
+	pageSize, _ := c.GetInt("page_size", 100)
+	injectService := inject.InjectService{}
+
+	total, args, err := injectService.ListArg(context.Background(), []string{inject.ExecFlowCommon, inject.ExecFlow}, faultId, "", page, pageSize)
 	if err != nil {
 		c.Error(&c.Controller, err)
 		return

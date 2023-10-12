@@ -36,8 +36,8 @@ func Setup() {
 		new(cluster.Cluster),
 		new(agent.Agent),
 		new(basic.Scope), new(basic.Target), new(basic.Fault), new(basic.FlowInject), new(basic.MeasureInject), new(basic.Args),
-		new(experiment.WorkflowNode), new(experiment.LabelExperiment), new(experiment.FaultRange), new(experiment.Experiment), new(experiment.ArgsValue),
-		new(experiment_instance.WorkflowNodeInstance), new(experiment_instance.LabelExperimentInstance), new(experiment_instance.FaultRangeInstance), new(experiment_instance.ExperimentInstance), new(experiment_instance.ArgsValueInstance),
+		new(experiment.WorkflowNode), new(experiment.LabelExperiment), new(experiment.FaultRange), new(experiment.FlowRange), new(experiment.MeasureRange), new(experiment.Experiment), new(experiment.ArgsValue),
+		new(experiment_instance.WorkflowNodeInstance), new(experiment_instance.LabelExperimentInstance), new(experiment_instance.FaultRangeInstance), new(experiment_instance.FlowRangeInstance), new(experiment_instance.MeasureRangeInstance), new(experiment_instance.ExperimentInstance), new(experiment_instance.ArgsValueInstance),
 	)
 
 	if err := orm.RegisterDataBase("default", "mysql", fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8&loc=Local", DefaultRunOptIns.DB.User, DefaultRunOptIns.DB.Passwd, DefaultRunOptIns.DB.Url, DefaultRunOptIns.DB.Name), orm.MaxIdleConnections(DefaultRunOptIns.DB.MaxIdle), orm.MaxOpenConnections(DefaultRunOptIns.DB.MaxConn)); err != nil {
