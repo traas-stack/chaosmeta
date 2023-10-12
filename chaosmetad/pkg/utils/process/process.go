@@ -43,16 +43,24 @@ func getProcessPidCmd(pid int) string {
 	return fmt.Sprintf("ps -eo pid | grep -w %d", pid)
 }
 
-func getProcessKeyCmd(key string) string {
-	return fmt.Sprintf("ps -ef | grep '%s' | grep -v grep | grep -v '%s inject' | grep -v '%s recover' | grep -v 'chaosmeta_process ' | awk '{print $2}'", key, utils.RootName, utils.RootName)
+func getProcessKeyCmd(cr string, key string) string {
+	if cr == "" {
+		return fmt.Sprintf("ps -ef | grep '%s' | grep -v grep | grep -v '%s inject' | grep -v '%s recover' | grep -v 'chaosmeta_execns ' | awk '{print $2}'", key, utils.RootName, utils.RootName)
+	} else {
+		return fmt.Sprintf("ps -ef | grep '%s' | grep -v grep | grep -v '%s inject' | grep -v '%s recover' | grep -v 'chaosmeta_execns ' | awk '{print \\$2}'", key, utils.RootName, utils.RootName)
+	}
 }
 
 func getProcessSignalPidCmd(pid int, signal int) string {
 	return fmt.Sprintf("kill -%d %d", signal, pid)
 }
 
-func getProcessSignalKeyCmd(key string, signal int) string {
-	return fmt.Sprintf("ps -ef | grep '%s' | grep -v grep | grep -v '%s inject' | grep -v '%s recover' | grep -v 'chaosmeta_process ' | awk '{print $2}' | xargs kill -%d", key, utils.RootName, utils.RootName, signal)
+func getProcessSignalKeyCmd(cr string, key string, signal int) string {
+	if cr == "" {
+		return fmt.Sprintf("ps -ef | grep '%s' | grep -v grep | grep -v '%s inject' | grep -v '%s recover' | grep -v 'chaosmeta_execns ' | awk '{print $2}' | xargs kill -%d", key, utils.RootName, utils.RootName, signal)
+	} else {
+		return fmt.Sprintf("ps -ef | grep '%s' | grep -v grep | grep -v '%s inject' | grep -v '%s recover' | grep -v 'chaosmeta_execns ' | awk '{print \\$2}' | xargs kill -%d", key, utils.RootName, utils.RootName, signal)
+	}
 }
 
 // GetProcessByPid in container's pid namespace
@@ -89,7 +97,7 @@ func GetProcessByKey(ctx context.Context, cr, cId string, key string) ([]int, er
 
 	var (
 		reStr   string
-		cmd     = getProcessKeyCmd(key)
+		cmd     = getProcessKeyCmd(cr, key)
 		err     error
 		pidList []int
 	)
@@ -147,7 +155,7 @@ func SignalProcessByKey(ctx context.Context, cr, cId string, key string, signal 
 	}
 
 	var (
-		cmd = getProcessSignalKeyCmd(key, signal)
+		cmd = getProcessSignalKeyCmd(cr, key, signal)
 		err error
 	)
 
@@ -179,7 +187,7 @@ func CheckExistAndKillByKey(ctx context.Context, processKey string) error {
 }
 
 func ExistProcessByKey(ctx context.Context, key string) (bool, error) {
-	re, err := cmdexec.RunBashCmdWithOutput(ctx, fmt.Sprintf("ps -ef | grep '%s' | grep -v grep | grep -v '%s inject' | grep -v '%s recover' | grep -v 'chaosmeta_process ' | wc -l", key, utils.RootName, utils.RootName))
+	re, err := cmdexec.RunBashCmdWithOutput(ctx, fmt.Sprintf("ps -ef | grep '%s' | grep -v grep | grep -v '%s inject' | grep -v '%s recover' | grep -v 'chaosmeta_execns ' | wc -l", key, utils.RootName, utils.RootName))
 	if err != nil {
 		return false, fmt.Errorf("cmd exec error: %s", err.Error())
 	}
@@ -218,7 +226,7 @@ func KillPidWithSignal(ctx context.Context, pid int, signal int) error {
 }
 
 func KillProcessByKey(ctx context.Context, key string, signal int) error {
-	return cmdexec.RunBashCmdWithoutOutput(ctx, fmt.Sprintf("ps -ef | grep '%s' | grep -v grep | grep -v '%s inject' | grep -v '%s recover' | grep -v 'chaosmeta_process ' | awk '{print $2}' | xargs kill -%d", key, utils.RootName, utils.RootName, signal))
+	return cmdexec.RunBashCmdWithoutOutput(ctx, fmt.Sprintf("ps -ef | grep '%s' | grep -v grep | grep -v '%s inject' | grep -v '%s recover' | grep -v 'chaosmeta_execns ' | awk '{print $2}' | xargs kill -%d", key, utils.RootName, utils.RootName, signal))
 }
 
 // GetPidListByPidOrKeyInContainer return pidList in host's or container's pid ns
@@ -249,7 +257,7 @@ func GetPidListByPidOrKeyInContainer(ctx context.Context, cr, cId string, pid in
 func GetPidListByKey(ctx context.Context, cr, cId string, key string) ([]int, error) {
 	var pidList []int
 	if cr == "" {
-		re, err := cmdexec.RunBashCmdWithOutput(ctx, getProcessKeyCmd(key))
+		re, err := cmdexec.RunBashCmdWithOutput(ctx, getProcessKeyCmd(cr, key))
 		if err != nil {
 			return nil, fmt.Errorf("get process list error: %s", err.Error())
 		}

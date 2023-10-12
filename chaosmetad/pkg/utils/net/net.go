@@ -321,8 +321,14 @@ func GetPidByPort(ctx context.Context, cr, cId string, port int, proto string) (
 	)
 	if proto == ProtocolTCP || proto == ProtocolTCP6 {
 		cmd = fmt.Sprintf("netstat -anpt | grep -w %s | awk '{print $4,$7}' | grep -w %d | grep :%d | awk '{print $2}' | awk -F'/' '{print $1}'", proto, port, port)
+		if cr != "" {
+			cmd = fmt.Sprintf("netstat -anpt | grep -w %s | awk '{print \\$4,\\$7}' | grep -w %d | grep :%d | awk '{print \\$2}' | awk -F'/' '{print \\$1}'", proto, port, port)
+		}
 	} else if proto == ProtocolUDP || proto == ProtocolUDP6 {
 		cmd = fmt.Sprintf("netstat -anpu | grep -w %s | awk '{print $4,$6}' | grep -w %d | grep :%d | awk '{print $2}' | awk -F'/' '{print $1}'", proto, port, port)
+		if cr != "" {
+			cmd = fmt.Sprintf("netstat -anpu | grep -w %s | awk '{print \\$4,\\$6}' | grep -w %d | grep :%d | awk '{print \\$2}' | awk -F'/' '{print \\$1}'", proto, port, port)
+		}
 	} else {
 		return utils.NoPid, fmt.Errorf("protocol not support: %s、%s、%s、%s", ProtocolTCP, ProtocolUDP, ProtocolTCP6, ProtocolUDP6)
 	}

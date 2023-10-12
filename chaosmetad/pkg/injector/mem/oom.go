@@ -112,7 +112,13 @@ func (i *OOMInjector) Inject(ctx context.Context) error {
 		}
 
 		toolPath := utils.GetToolPath(MemFillKey)
-		args := fmt.Sprintf("'%s' %d %d '%s' %d", i.Info.Uid, -999, PercentOOM, "", timeout)
+		//args := fmt.Sprintf("'%s' %d %d '%s' %d", i.Info.Uid, -999, PercentOOM, "", timeout)
+		fillKBytes, err := memory.CalculateFillKBytes(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, PercentOOM, "")
+		if err != nil {
+			return fmt.Errorf("calculateFillKBytes error: %s", err.Error())
+		}
+
+		args := fmt.Sprintf("'%s' %d %d '%dKB' %d", i.Info.Uid, -999, 0, fillKBytes, timeout)
 		cmd := fmt.Sprintf("%s %s", toolPath, args)
 		if err := cmdexec.WaitCommonWithNS(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, cmd, []string{namespace.PID}); err != nil {
 			if err := i.Recover(ctx); err != nil {
@@ -123,7 +129,7 @@ func (i *OOMInjector) Inject(ctx context.Context) error {
 		}
 
 	} else {
-		if err := memory.FillCache(ctx, PercentOOM, "", getOOMDir(i.Info.Uid), TmpFsFile); err != nil {
+		if err := memory.FillCache(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, PercentOOM, "", getOOMDir(i.Info.Uid), TmpFsFile); err != nil {
 			return fmt.Errorf("fill cache error: %s", err.Error())
 		}
 	}

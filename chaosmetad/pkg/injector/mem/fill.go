@@ -133,6 +133,15 @@ func (i *FillInjector) Inject(ctx context.Context) error {
 
 		toolPath := utils.GetToolPath(MemFillKey)
 		args := fmt.Sprintf("'%s' %d %d '%s' %d", i.Info.Uid, -999, i.Args.Percent, i.Args.Bytes, timeout)
+		if i.Args.Percent > 0 {
+			fillKBytes, err := memory.CalculateFillKBytes(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, i.Args.Percent, "")
+			if err != nil {
+				return fmt.Errorf("calculateFillKBytes error: %s", err.Error())
+			}
+
+			args = fmt.Sprintf("'%s' %d %d '%dKB' %d", i.Info.Uid, -999, 0, fillKBytes, timeout)
+		}
+
 		cmd := fmt.Sprintf("%s %s", toolPath, args)
 		if err := cmdexec.WaitCommonWithNS(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, cmd, []string{namespace.PID}); err != nil {
 			if err := i.Recover(ctx); err != nil {
@@ -142,7 +151,7 @@ func (i *FillInjector) Inject(ctx context.Context) error {
 			return err
 		}
 	} else {
-		if err := memory.FillCache(ctx, i.Args.Percent, i.Args.Bytes, getFillDir(i.Info.Uid), TmpFsFile); err != nil {
+		if err := memory.FillCache(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, i.Args.Percent, i.Args.Bytes, getFillDir(i.Info.Uid), TmpFsFile); err != nil {
 			return fmt.Errorf("fill cache error: %s", err.Error())
 		}
 	}
