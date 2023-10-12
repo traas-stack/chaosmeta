@@ -107,7 +107,7 @@ func GetProKillTest() []common.TestCase {
 			},
 		},
 		{
-			Args:  fmt.Sprintf("-k '%s' -r '%s' --log-level debug", proKillCmd, "chaosfalsed"),
+			Args:  fmt.Sprintf("-k '%s' -r '%s'", proKillCmd, "chaosfalsed"),
 			Error: false,
 			Check: func() error {
 				return checkProExistByKey(ctx, "", "", proKillCmd, false)
