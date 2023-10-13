@@ -27,7 +27,7 @@ fi
 
 # base info
 BUILD_NAME="chaosmetad"
-VERSION="0.3.7"
+VERSION="0.3.8"
 BUILD_DATE=$(date "+%Y-%m-%d %H:%M:%S")
 
 # env var
