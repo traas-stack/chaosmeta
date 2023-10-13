@@ -46,9 +46,10 @@ func getPathExistCmd(path string) string {
 	return fmt.Sprintf("test -e %s", path)
 }
 
-func getAppendFileCmd(path, content string) string {
+func getAppendFileCmd(flag, path, content string, count, interval int) string {
 	//return fmt.Sprintf("echo -e \"%s\" >> %s", content, path)
-	return fmt.Sprintf("echo -e '%s' >> %s", content, path)
+	//return fmt.Sprintf("echo -e '%s' >> %s", content, path)
+	return fmt.Sprintf("echo %s && for i in {1..%d}; do sleep %d && test -f %s && echo -e '%s' >> %s; done", flag, count, interval, path, content, path)
 }
 
 func getOverWriteFileCmd(path, content string) string {
@@ -244,7 +245,7 @@ func DeleteLineByKey(ctx context.Context, cr, cId string, path, key string) erro
 }
 
 // AppendFile in container's namespace
-func AppendFile(ctx context.Context, cr, cId string, path, content string) error {
+func AppendFile(ctx context.Context, cr, cId, path, content, flag string, count, interval int) error {
 	if path == "" {
 		return fmt.Errorf("\"path\" can not be empty")
 	}
@@ -253,8 +254,8 @@ func AppendFile(ctx context.Context, cr, cId string, path, content string) error
 		return fmt.Errorf("\"path\" can not be empty")
 	}
 
-	_, err := cmdexec.ExecCommonWithNS(ctx, cr, cId, getAppendFileCmd(path, content), []string{namespace.MNT})
-	return err
+	//_, err := cmdexec.ExecCommonWithNS(ctx, cr, cId, getAppendFileCmd(path, content, count, interval), []string{namespace.MNT})
+	return cmdexec.ExecBackGroundCommon(ctx, cr, cId, getAppendFileCmd(flag, path, content, count, interval))
 }
 
 func IfPathAbs(ctx context.Context, path string) bool {

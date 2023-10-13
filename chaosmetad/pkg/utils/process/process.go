@@ -171,6 +171,21 @@ func ExistPid(ctx context.Context, pid int) (bool, error) {
 	return process.PidExists(int32(pid))
 }
 
+func CheckExistAndSignalByKey(ctx context.Context, processKey string, signal int) error {
+	isProExist, err := ExistProcessByKey(ctx, processKey)
+	if err != nil {
+		return fmt.Errorf("check process exist by key[%s] error: %s", processKey, err.Error())
+	}
+
+	if isProExist {
+		if err := KillProcessByKey(ctx, processKey, signal); err != nil {
+			return fmt.Errorf("kill process by key[%s] error: %s", processKey, err.Error())
+		}
+	}
+
+	return nil
+}
+
 func CheckExistAndKillByKey(ctx context.Context, processKey string) error {
 	isProExist, err := ExistProcessByKey(ctx, processKey)
 	if err != nil {

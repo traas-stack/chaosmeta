@@ -22,6 +22,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/injector"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/filesys"
+	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/process"
 	"strings"
 )
 
@@ -36,9 +37,11 @@ type AppendInjector struct {
 }
 
 type AppendArgs struct {
-	Path    string `json:"path"`
-	Content string `json:"content,omitempty"`
-	Raw     bool   `json:"raw,omitempty"`
+	Path     string `json:"path"`
+	Content  string `json:"content,omitempty"`
+	Raw      bool   `json:"raw,omitempty"`
+	Count    int    `json:"count,omitempty"`
+	Interval int    `json:"interval,omitempty"`
 }
 
 type AppendRuntime struct {
@@ -52,15 +55,33 @@ func (i *AppendInjector) GetRuntime() interface{} {
 	return &i.Runtime
 }
 
+func (i *AppendInjector) SetDefault() {
+	i.BaseInjector.SetDefault()
+
+	if i.Args.Count == 0 {
+		i.Args.Count = 1
+	}
+}
+
 func (i *AppendInjector) SetOption(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&i.Args.Path, "path", "p", "", "file path, include dir and file name")
 	cmd.Flags().StringVarP(&i.Args.Content, "content", "c", "", "append content to the existed file")
 	cmd.Flags().BoolVarP(&i.Args.Raw, "raw", "r", false, "if raw content, raw content can not recover")
+	cmd.Flags().IntVarP(&i.Args.Count, "count", "C", 1, "repeat times")
+	cmd.Flags().IntVarP(&i.Args.Interval, "interval", "i", 0, "repeat interval, unit is second")
 }
 
 func (i *AppendInjector) Validator(ctx context.Context) error {
 	if err := i.BaseInjector.Validator(ctx); err != nil {
 		return err
+	}
+
+	if i.Args.Count <= 0 {
+		return fmt.Errorf("\"count\" must larger than 0")
+	}
+
+	if i.Args.Interval < 0 {
+		return fmt.Errorf("\"interval\" can not less than 0")
 	}
 
 	if i.Args.Path == "" {
@@ -96,7 +117,7 @@ func (i *AppendInjector) Inject(ctx context.Context) error {
 	}
 
 	i.Args.Content = fmt.Sprintf("\n%s", i.Args.Content)
-	if err := filesys.AppendFile(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, i.Args.Path, i.Args.Content); err != nil {
+	if err := filesys.AppendFile(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, i.Args.Path, i.Args.Content, getAppendFlag(i.Info.Uid), i.Args.Count, i.Args.Interval); err != nil {
 		return fmt.Errorf("append content to %s error: %s", i.Args.Path, err.Error())
 	}
 
@@ -106,6 +127,10 @@ func (i *AppendInjector) Inject(ctx context.Context) error {
 func (i *AppendInjector) Recover(ctx context.Context) error {
 	if i.BaseInjector.Recover(ctx) == nil {
 		return nil
+	}
+
+	if err := process.CheckExistAndSignalByKey(ctx, getAppendFlag(i.Info.Uid), process.SIGTERM); err != nil {
+		return fmt.Errorf("kill append process with key[%s] error: %s", getAppendFlag(i.Info.Uid), err.Error())
 	}
 
 	if i.Args.Raw {
