@@ -37,6 +37,7 @@ const (
 	Version             = "v1alpha1"
 	ExperimentKind      = "Experiment"
 	ExperimentsResource = "experiments"
+	RecoverTargetPhase  = "recover"
 )
 
 type ChaosmetaInterface interface {
@@ -47,6 +48,7 @@ type ChaosmetaInterface interface {
 	Delete(ctx context.Context, namespace, name string) error
 	Patch(ctx context.Context, namespace, name string, pt types.PatchType, data []byte) error
 	DeleteExpiredList(ctx context.Context, namespace string) error
+	Recover(namespace, name string) error
 }
 
 type ChaosmetaService struct {
@@ -221,6 +223,20 @@ func (c *ChaosmetaService) DeleteExpiredList(ctx context.Context, namespace stri
 				log.Infof("chaosmeta experiment %s deleted", experiment.Name)
 			}
 		}
+	}
+	return nil
+}
+
+func (c *ChaosmetaService) Recover(namespace, name string) error {
+	chaosmetaCR, err := c.Get(context.Background(), namespace, name)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	chaosmetaCR.Spec.TargetPhase = RecoverTargetPhase
+	if _, err := c.Update(context.Background(), chaosmetaCR); err != nil {
+		log.Error(err)
+		return err
 	}
 	return nil
 }

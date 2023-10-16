@@ -33,16 +33,17 @@ func InitFlow() error {
 	return InitHttpFlow(ctx)
 }
 
-func initFlowCommon(ctx context.Context, injectId int) error {
+func initFlowCommon(ctx context.Context, injectId int, flowType string) error {
+	argFlowType := basic.Args{InjectId: injectId, ExecType: ExecFlowCommon, Key: "flowType", KeyCn: "flowType", ValueType: "string", ValueRule: flowType, DescriptionCn: "流量注入类型", Description: "Traffic injection type"}
 	argDuration := basic.Args{InjectId: injectId, ExecType: ExecFlowCommon, Key: "duration", KeyCn: "duration", ValueType: "string", Unit: "s,m,h", UnitCn: "s,m,h", DescriptionCn: "持续度量时间", Description: "Duration measurement time"}
 	argsParallelism := basic.Args{InjectId: injectId, ExecType: ExecFlowCommon, Key: "parallelism", KeyCn: "parallelism", ValueType: "int", ValueRule: ">0", DescriptionCn: "并发度", Description: "Concurrency"}
 	argsSource := basic.Args{InjectId: injectId, ExecType: ExecFlowCommon, Key: "source", KeyCn: "source", ValueType: "int", ValueRule: ">0", DescriptionCn: "请求源", Description: "Request source"}
-	return basic.InsertArgsMulti(ctx, []*basic.Args{&argDuration, &argsParallelism, &argsSource})
+	return basic.InsertArgsMulti(ctx, []*basic.Args{&argFlowType, &argDuration, &argsParallelism, &argsSource})
 }
 
 func InitHttpFlow(ctx context.Context) error {
 	var (
-		httpFlow = basic.FlowInject{FlowType: "HTTP", Name: "HTTP", NameCn: "HTTP", Description: "continuously inject http request traffic to the target http server", DescriptionCn: "对目标http服务器持续注入http请求流量"}
+		httpFlow = basic.FlowInject{FlowType: "http", Name: "http", NameCn: "http", Description: "continuously inject http request traffic to the target http server", DescriptionCn: "对目标http服务器持续注入http请求流量"}
 	)
 	if err := basic.InsertFlowInject(&httpFlow); err != nil {
 		return err
@@ -51,7 +52,7 @@ func InitHttpFlow(ctx context.Context) error {
 }
 
 func InitHttpFlowArgs(ctx context.Context, flowInject basic.FlowInject) error {
-	if err := initFlowCommon(ctx, flowInject.Id); err != nil {
+	if err := initFlowCommon(ctx, flowInject.Id, "http"); err != nil {
 		log.Error(err)
 		return err
 	}

@@ -24,14 +24,13 @@ import (
 type MeasureRangeInstance struct {
 	Id                       int    `json:"id" orm:"pk;auto;column(id)"`
 	WorkflowNodeInstanceUUID string `json:"workflow_node_instance_uuid" orm:"index;column(workflow_node_instance_uuid);size(64)"`
-	JudgeValue               string `json:"judge_value" orm:"column(judge_value);size(255)"`
-	JudgeType                string `json:"judge_type" orm:"column(judge_type);size(64)"`
-	Stopped                  bool   `json:"stopped" orm:"column(stopped)"`
-	FailedCount              int    `json:"failed_Count" orm:"column(failed_Count)"`
-	SuccessCount             int    `json:"success_count" orm:"column(success_count)"`
+	JudgeValue               string `json:"judgeValue" orm:"column(judge_value);size(255)"`
+	JudgeType                string `json:"judgeType" orm:"column(judge_type);size(64)"`
+	FailedCount              string `json:"failedCount" orm:"column(failed_Count);size(32)"`
+	SuccessCount             string `json:"successCount" orm:"column(success_count);size(32)"`
 	Interval                 string `json:"interval" orm:"column(interval);size(32)"`
 	Duration                 string `json:"duration" orm:"column(duration);size(32)"`
-	MeasureType              string `json:"measure_type" orm:"column(measure_type);size(32)"`
+	MeasureType              string `json:"measureType" orm:"column(measure_type);size(32)"`
 	ExecLog                  string `json:"exec_log" orm:"column(exec_log);type:TEXT"`
 	Status                   string `json:"status" orm:"column(status);size(32);index"`
 	Message                  string `json:"message" orm:"column(message);size(1024)"`

@@ -24,11 +24,10 @@ import (
 type FlowRange struct {
 	Id                       int    `json:"id,omitempty" orm:"pk;auto;column(id)"`
 	WorkflowNodeInstanceUUID string `json:"workflow_node_instance_uuid,omitempty" orm:"index;column(workflow_node_instance_uuid);size(64)"`
-	Stopped                  bool   `json:"stopped" orm:"column(stopped)"`
-	Source                   int    `json:"source" orm:"column(source)"`
-	Parallelism              int    `json:"parallelism" orm:"column(parallelism)"`
+	Source                   string `json:"source" orm:"column(source);size(32)"`
+	Parallelism              string `json:"parallelism" orm:"column(parallelism);size(32)"`
 	Duration                 string `json:"duration" orm:"column(duration);size(32)"`
-	FlowType                 string `json:"flow_type" orm:"column(flow_type);size(32)"`
+	FlowType                 string `json:"flowType" orm:"column(flow_type);size(32)"`
 	models.BaseTimeModel
 }
 

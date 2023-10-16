@@ -152,11 +152,27 @@ func (es *ExperimentService) CreateExperiment(experimentParam *ExperimentCreate)
 			}
 		}
 
-		//exec_range
-		if node.FaultRange != nil {
-			node.FaultRange.WorkflowNodeInstanceUUID = node.UUID
-			if err := experiment.CreateFaultRange(node.FaultRange); err != nil {
-				return "", err
+		switch node.ExecType {
+		case string(FaultExecType):
+			if node.FaultRange != nil {
+				node.FaultRange.WorkflowNodeInstanceUUID = node.UUID
+				if err := experiment.CreateFaultRange(node.FaultRange); err != nil {
+					return "", err
+				}
+			}
+		case string(FlowExecType):
+			if node.FlowRange != nil {
+				node.FlowRange.WorkflowNodeInstanceUUID = node.UUID
+				if err := experiment.CreateFlowRange(node.FlowRange); err != nil {
+					return "", err
+				}
+			}
+		case string(MeasureExecType):
+			if node.MeasureRange != nil {
+				node.MeasureRange.WorkflowNodeInstanceUUID = node.UUID
+				if err := experiment.CreateMeasureRange(node.MeasureRange); err != nil {
+					return "", err
+				}
 			}
 		}
 	}
@@ -400,23 +416,26 @@ func (es *ExperimentService) GetWorkflowNodesByExperiment(uuid string, experimen
 		}
 		nodeResult.ArgsValue = append(nodeResult.ArgsValue, argsValue...)
 
-		faultRange, err := experiment.GetFaultRangeByWorkflowNodeInstanceUUID(workflowNodeGet.UUID)
-		if err != nil {
-			log.Error(err)
+		switch workflowNodeGet.ExecType {
+		case string(FaultExecType):
+			faultRange, err := experiment.GetFaultRangeByWorkflowNodeInstanceUUID(workflowNodeGet.UUID)
+			if err != nil {
+				log.Error(err)
+			}
+			nodeResult.FaultRange = faultRange
+		case string(FlowExecType):
+			flowRange, err := experiment.GetFlowRangeByWorkflowNodeInstanceUUID(workflowNodeGet.UUID)
+			if err != nil {
+				log.Error(err)
+			}
+			nodeResult.FlowRange = flowRange
+		case string(MeasureExecType):
+			measureRange, err := experiment.GetMeasureRangeByWorkflowNodeInstanceUUID(workflowNodeGet.UUID)
+			if err != nil {
+				log.Error(err)
+			}
+			nodeResult.MeasureRange = measureRange
 		}
-		nodeResult.FaultRange = faultRange
-
-		flowRange, err := experiment.GetFlowRangeByWorkflowNodeInstanceUUID(workflowNodeGet.UUID)
-		if err != nil {
-			log.Error(err)
-		}
-		nodeResult.FlowRange = flowRange
-
-		measureRange, err := experiment.GetMeasureRangeByWorkflowNodeInstanceUUID(workflowNodeGet.UUID)
-		if err != nil {
-			log.Error(err)
-		}
-		nodeResult.MeasureRange = measureRange
 		workflowNodes = append(workflowNodes, &nodeResult)
 	}
 	experimentReturn.WorkflowNodes = append(experimentReturn.WorkflowNodes, workflowNodes...)

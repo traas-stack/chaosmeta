@@ -45,6 +45,7 @@ type ChaosmetaMeasureInterface interface {
 	Delete(ctx context.Context, namespace, name string) error
 	Patch(ctx context.Context, namespace, name string, pt types.PatchType, data []byte) error
 	DeleteExpiredList(ctx context.Context, namespace string) error
+	Recover(namespace, name string) error
 }
 
 type ChaosmetaMeasureService struct {
@@ -219,6 +220,20 @@ func (c *ChaosmetaMeasureService) DeleteExpiredList(ctx context.Context, namespa
 				log.Infof("chaosmeta measure %s deleted", measure.Name)
 			}
 		}
+	}
+	return nil
+}
+
+func (c *ChaosmetaMeasureService) Recover(namespace, name string) error {
+	chaosmetaCR, err := c.Get(context.Background(), namespace, name)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	chaosmetaCR.Spec.Stopped = true
+	if _, err := c.Update(context.Background(), chaosmetaCR); err != nil {
+		log.Error(err)
+		return err
 	}
 	return nil
 }

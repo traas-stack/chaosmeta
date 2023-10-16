@@ -36,7 +36,7 @@ func (m *MeasureInject) TableName() string {
 
 func GetMeasureInjectByID(id int) (*MeasureInject, error) {
 	measureInject := &MeasureInject{Id: id}
-	err := models.GetORM().Read(&measureInject)
+	err := models.GetORM().Read(measureInject)
 	if err == orm.ErrNoRows {
 		return nil, nil
 	} else if err == orm.ErrMissPK {

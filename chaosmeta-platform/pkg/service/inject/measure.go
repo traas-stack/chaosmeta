@@ -49,12 +49,13 @@ func InitMeasure() error {
 	return nil
 }
 
-func initMeasureCommon(ctx context.Context, injectId int) error {
-	argDuration := basic.Args{InjectId: injectId, ExecType: ExecMeasureCommon, Key: "duration", KeyCn: "duration", ValueType: "string", Unit: "s,m,h", UnitCn: "s,m,h", DescriptionCn: "度量任务持续时间", Description: "Measure task duration"}
+func initMeasureCommon(ctx context.Context, injectId int, measureType string) error {
+	argMeasureType := basic.Args{InjectId: injectId, ExecType: ExecMeasureCommon, Key: "measureType", KeyCn: "measureType", ValueType: "string", ValueRule: measureType, DescriptionCn: "度量操作类型", Description: "Metric operation type"}
+	argDuration := basic.Args{InjectId: injectId, ExecType: ExecMeasureCommon, Key: "duration", KeyCn: "duration", ValueType: "string", Unit: "s", UnitCn: "s", DescriptionCn: "度量任务持续时间", Description: "Measure task duration"}
 	argsInterval := basic.Args{InjectId: injectId, ExecType: ExecMeasureCommon, Key: "interval", KeyCn: "interval", ValueType: "string", Unit: "s,m,h", UnitCn: "s,m,h", DescriptionCn: "度量操作执行间隔", Description: "Measuring operation execution interval"}
 	argsSuccessCount := basic.Args{InjectId: injectId, ExecType: ExecMeasureCommon, Key: "successCount", KeyCn: "successCount", ValueType: "int", ValueRule: ">0", DescriptionCn: "成功次数阈值,度量任务结束时,度量成功次数不小于successCount,则CR任务状态为success", Description: "Threshold of the number of successes. When the measurement task ends, if the number of successes is not less than successCount, then the CR task status is success."}
-	argsFailedCount := basic.Args{InjectId: injectId, ExecType: ExecMeasureCommon, Key: "failedCount", KeyCn: "failedCount", ValueType: "int", ValueRule: ">0", DescriptionCn: "失败次数阈值,度量任务结束时,度量失败次数不小于failedCount，则CR任务状态为failed", Description: "Failure count threshold. When the measurement task ends, if the number of measurement failures is not less than failedCount, then the CR task status is failed."}
-	return basic.InsertArgsMulti(ctx, []*basic.Args{&argDuration, &argsInterval, &argsSuccessCount, &argsFailedCount})
+	argsFailedCount := basic.Args{InjectId: injectId, ExecType: ExecMeasureCommon, Key: "failedCount", KeyCn: "failedCount", ValueType: "int", ValueRule: ">=0", DescriptionCn: "失败次数阈值,度量任务结束时,度量失败次数不小于failedCount，则CR任务状态为failed", Description: "Failure count threshold. When the measurement task ends, if the number of measurement failures is not less than failedCount, then the CR task status is failed."}
+	return basic.InsertArgsMulti(ctx, []*basic.Args{&argMeasureType, &argDuration, &argsInterval, &argsSuccessCount, &argsFailedCount})
 }
 
 func InitMonitorMeasure(ctx context.Context) error {
@@ -74,7 +75,7 @@ func initMonitorMeasureJudge(ctx context.Context, measureInject basic.MeasureInj
 }
 
 func InitMonitorMeasureArgs(ctx context.Context, measureInject basic.MeasureInject) error {
-	if err := initMeasureCommon(ctx, measureInject.Id); err != nil {
+	if err := initMeasureCommon(ctx, measureInject.Id, "monitor"); err != nil {
 		log.Error(err)
 		return err
 	}
@@ -103,7 +104,7 @@ func initTcpMeasureJudge(ctx context.Context, measureInject basic.MeasureInject)
 }
 
 func InitTcpMeasureArgs(ctx context.Context, measureInject basic.MeasureInject) error {
-	if err := initMeasureCommon(ctx, measureInject.Id); err != nil {
+	if err := initMeasureCommon(ctx, measureInject.Id, "tcp"); err != nil {
 		log.Error(err)
 		return err
 	}
@@ -134,7 +135,7 @@ func initPodMeasureJudge(ctx context.Context, measureInject basic.MeasureInject)
 }
 
 func InitPodMeasureArgs(ctx context.Context, measureInject basic.MeasureInject) error {
-	if err := initMeasureCommon(ctx, measureInject.Id); err != nil {
+	if err := initMeasureCommon(ctx, measureInject.Id, "pod"); err != nil {
 		log.Error(err)
 		return err
 	}
@@ -165,7 +166,7 @@ func initHTTPMeasureJudge(ctx context.Context, measureInject basic.MeasureInject
 }
 
 func InitHTTPMeasureArgs(ctx context.Context, measureInject basic.MeasureInject) error {
-	if err := initMeasureCommon(ctx, measureInject.Id); err != nil {
+	if err := initMeasureCommon(ctx, measureInject.Id, "http"); err != nil {
 		log.Error(err)
 		return err
 	}

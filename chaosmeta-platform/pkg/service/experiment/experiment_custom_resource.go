@@ -26,6 +26,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/argoproj/argo-workflows/v3/pkg/apis/workflow/v1alpha1"
+	"github.com/spf13/cast"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"regexp"
 	"sigs.k8s.io/yaml"
@@ -59,7 +60,7 @@ const (
 )
 
 func getWorFlowName(experimentInstanceId string) string {
-	return fmt.Sprintf("%s", experimentInstanceId)
+	return experimentInstanceId
 }
 
 func GetWorkflowStruct(experimentInstanceId string, nodes []*experiment_instance.WorkflowNodesDetail) *v1alpha1.Workflow {
@@ -105,27 +106,26 @@ func GetWorkflowStruct(experimentInstanceId string, nodes []*experiment_instance
 						Duration: "{{inputs.parameters.time}}",
 					},
 				},
-				{
-					Name: "experiment-recover",
-					Inputs: v1alpha1.Inputs{
-						Parameters: []v1alpha1.Parameter{
-							{
-								Name: "experiment",
-							},
-						},
-					},
-					Resource: &v1alpha1.ResourceTemplate{
-						Action:           "patch",
-						FailureCondition: "status.status == failed",
-						SuccessCondition: "status.phase == recover,status.status == success",
-						MergeStrategy:    "json",
-						Flags: []string{
-							"experiments.chaosmeta.io",
-							"{{inputs.parameters.experiment}}",
-						},
-						Manifest: Manifest,
-					},
-				},
+				//{
+				//	Name: "experiment-recover",
+				//	Inputs: v1alpha1.Inputs{
+				//		Parameters: []v1alpha1.Parameter{
+				//			{
+				//				Name: "experiment",
+				//			},
+				//		},
+				//	},
+				//	Resource: &v1alpha1.ResourceTemplate{
+				//		Action:           "patch",
+				//		FailureCondition: "status.status == failed",
+				//		SuccessCondition: "status.phase == recover,status.status == success",
+				//		MergeStrategy:    "json",
+				//		Flags: []string{
+				//			"experiments.chaosmeta.io",
+				//			"{{inputs.parameters.experiment}}",
+				//		},
+				//		//Manifest: Manifest,
+				//	},
 			},
 		},
 	}
@@ -159,15 +159,15 @@ func getWaitStepName(experimentInstanceUUID string, nodeId string) string {
 }
 
 func getInjectStepName(scopeName, targetName, experimentInstanceUUID, nodeID string) string {
-	return fmt.Sprintf("inject-fault-%s-%s-%s-%s", scopeName, targetName, experimentInstanceUUID, nodeID)
+	return fmt.Sprintf("inject-fault-%s-%s-%s-%s", scopeName, targetName, "e", nodeID)
 }
 
 func getFlowStepName(flowtype, flowName, experimentInstanceUUID, nodeID string) string {
-	return fmt.Sprintf("inject-flow-%s-%s-%s-%s", flowtype, flowName, experimentInstanceUUID, nodeID)
+	return fmt.Sprintf("inject-flow-%s-%s-%s-%s", flowtype, flowName, "e", nodeID)
 }
 
 func getMeasureStepName(measureType, measureName, experimentInstanceUUID, nodeID string) string {
-	return fmt.Sprintf("inject-measure-%s-%s-%s-%s", measureType, measureName, experimentInstanceUUID, nodeID)
+	return fmt.Sprintf("inject-measure-%s-%s-%s-%s", measureType, measureName, "e", nodeID)
 }
 
 func getFaultStep(experimentInstanceUUID string, node *experiment_instance.WorkflowNodesDetail, phaseType PhaseType) *v1alpha1.DAGTask {
@@ -305,8 +305,8 @@ func getFlowStep(experimentInstanceUUID string, node *experiment_instance.Workfl
 	if node.FlowSubtasks != nil {
 		flowSpec.Spec.FlowType = node.FlowSubtasks.FlowType
 		flowSpec.Spec.Duration = node.FlowSubtasks.Duration
-		flowSpec.Spec.Parallelism = node.FlowSubtasks.Parallelism
-		flowSpec.Spec.Source = node.FlowSubtasks.Source
+		flowSpec.Spec.Parallelism = cast.ToInt(node.FlowSubtasks.Parallelism)
+		flowSpec.Spec.Source = cast.ToInt(node.FlowSubtasks.Source)
 	}
 
 	for _, arg := range node.ArgsValues {
@@ -372,8 +372,8 @@ func getMeasureStep(experimentInstanceUUID string, node *experiment_instance.Wor
 		commonMeasureStruct.Spec.MeasureType = node.MeasureSubtasks.MeasureType
 		commonMeasureStruct.Spec.Duration = node.MeasureSubtasks.Duration
 		commonMeasureStruct.Spec.Interval = node.MeasureSubtasks.Interval
-		commonMeasureStruct.Spec.SuccessCount = node.MeasureSubtasks.SuccessCount
-		commonMeasureStruct.Spec.FailedCount = node.MeasureSubtasks.FailedCount
+		commonMeasureStruct.Spec.SuccessCount = cast.ToInt(node.MeasureSubtasks.SuccessCount)
+		commonMeasureStruct.Spec.FailedCount = cast.ToInt(node.MeasureSubtasks.FailedCount)
 		commonMeasureStruct.Spec.Judgement = Judgement{
 			JudgeType:  node.MeasureSubtasks.JudgeType,
 			JudgeValue: node.MeasureSubtasks.JudgeValue,
@@ -501,7 +501,7 @@ func getExperimentInstanceIdFromWorkflowName(workflowName string) (string, error
 	return experimentID, nil
 }
 
-func getExperimentUUIDAndNodeIDFromStepName(name string) (string, string, error) {
+func getNodeIDFromStepName(name string) (string, error) {
 	log.Info("ExperimentUUIDAndNodeIDFromStepName:", name)
 	var reg *regexp.Regexp
 	var match []string
@@ -512,21 +512,30 @@ func getExperimentUUIDAndNodeIDFromStepName(name string) (string, string, error)
 		reg = regexp.MustCompile(`before-wait-(\w+)-(\w+)`)
 		match = reg.FindStringSubmatch(name)
 	} else {
-		return "", "", errors.New("invalid name")
+		return "", errors.New("invalid name")
 	}
 
 	if len(match) < 3 {
-		return "", "", errors.New("failed to extract experimentInstanceUUID and nodeId from name")
+		return "", errors.New("failed to extract experimentInstanceUUID and nodeId from name")
 	}
-
-	experimentInstanceUUID := match[1]
-	nodeId := match[2]
-	return experimentInstanceUUID, nodeId, nil
+	return match[2], nil
 }
 
 func isInjectStepName(name string) bool {
 	reg := regexp.MustCompile(`inject-\w+-\w+-\w+-\w+-\w+`)
 	return reg.MatchString(name)
+}
+
+func getInjectSecondField(name string) (string, bool) {
+	if !isInjectStepName(name) {
+		return "", false
+	}
+	reg := regexp.MustCompile(`inject-(\w+)-\w+-\w+-\w+-\w+`)
+	match := reg.FindStringSubmatch(name)
+	if len(match) != 2 {
+		return "", true
+	}
+	return match[1], true
 }
 
 func isWaitStepName(name string) bool {
