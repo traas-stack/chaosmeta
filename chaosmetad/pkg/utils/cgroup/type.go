@@ -19,6 +19,7 @@ package cgroup
 const (
 	BLKIO  = "blkio"
 	CPUSET = "cpuset"
+	MEMORY = "memory"
 )
 
 const (

@@ -65,6 +65,10 @@ const (
 	StatusDestroyed = "destroyed"
 )
 
+const (
+	UNLIMIT = 9223372036854771712
+)
+
 func NewUid() string {
 	t := time.Now()
 	timeStr := t.Format("20060102150405")
@@ -200,4 +204,31 @@ func GetNumArrByCount(count int, listArr []int) []int {
 	//})
 
 	return listArr[:count]
+}
+
+func GetNumberByCgroupFile(path, filename string) (float64, error) {
+	content, err := ReadFile(fmt.Sprintf("%s/%s", path, filename))
+	if err != nil {
+		return 0, err
+	}
+	content = strings.TrimSpace(content)
+	value, err := strconv.ParseFloat(content, 64)
+	// Not allowed to use --percent to inject pressure into containers without setting memory limits
+	if value == UNLIMIT {
+		return -1, fmt.Errorf("Container has not set a memory limit and should be filled with a fixed size of pressure using the --bytes.")
+	}
+
+	if err != nil {
+		return 0, err
+	}
+	return value / 1000, nil
+}
+
+func ReadFile(filename string) (str string, err error) {
+	content, err := os.ReadFile(filename)
+	if err != nil {
+		return "", err
+	}
+	str = string(content)
+	return str, nil
 }

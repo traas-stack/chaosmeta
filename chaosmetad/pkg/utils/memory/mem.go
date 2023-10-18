@@ -19,49 +19,25 @@ package memory
 import (
 	"context"
 	"fmt"
-	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/log"
-	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils"
-	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/cmdexec"
-	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/disk"
-	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/filesys"
-	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/namespace"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/log"
+	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils"
+	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/cgroup"
+	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/cmdexec"
+	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/containercgroup"
+	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/disk"
+	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/filesys"
+	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/namespace"
 )
 
-// getMemTotalCmd: KB
-func getMemTotalCmd() string {
-	return fmt.Sprintf("grep -m1 MemTotal /proc/meminfo | sed 's/[^0-9]*//g'")
-}
-
-// getMemAvailableCmd: KB
-func getMemAvailableCmd() string {
-	return fmt.Sprintf("grep -m1 MemAvailable /proc/meminfo | sed 's/[^0-9]*//g'")
-}
-
-func getMemTotal(ctx context.Context, cr, cId string) (float64, error) {
-	totalStr, err := cmdexec.ExecCommonWithNS(ctx, cr, cId, getMemTotalCmd(), []string{namespace.MNT})
-	totalStr = strings.TrimSpace(totalStr)
-	total, err := strconv.ParseFloat(totalStr, 64)
-	if err != nil {
-		return -1, fmt.Errorf("get total mem[%s] error: %s", totalStr, err.Error())
-	}
-
-	return total, err
-}
-
-func getMemAvailable(ctx context.Context, cr, cId string) (float64, error) {
-	availStr, err := cmdexec.ExecCommonWithNS(ctx, cr, cId, getMemAvailableCmd(), []string{namespace.MNT})
-	availStr = strings.TrimSpace(availStr)
-	avail, err := strconv.ParseFloat(availStr, 64)
-	if err != nil {
-		return -1, fmt.Errorf("get avail mem[%s] error: %s", availStr, err.Error())
-	}
-
-	return avail, err
-}
+const (
+	MemoryLimitInBytesFile = "memory.limit_in_bytes"
+	MemoryUsageInBytesFile = "memory.usage_in_bytes"
+)
 
 // CalculateFillKBytes The calculation of memory usage is consistent with the calculation method of the top command: Available/Total.
 // Because whether oom is calculated according to this
@@ -135,4 +111,73 @@ func UndoTmpfs(ctx context.Context, dir string) error {
 	}
 
 	return nil
+}
+
+func getContainerMemTotal(ctx context.Context, cr, cId string) (memTotal float64, err error) {
+	path, err := cgroup.GetContainerCgroupPath(ctx, cr, cId, cgroup.MEMORY)
+	if err != nil {
+		return 0, err
+	}
+	cgPath := fmt.Sprintf("%s/%s%s", containercgroup.RootCgroupPath, cgroup.MEMORY, path)
+
+	return utils.GetNumberByCgroupFile(cgPath, MemoryLimitInBytesFile)
+}
+
+func getContainerMemAvailable(ctx context.Context, cr, cId string) (memAvailable float64, err error) {
+	path, err := cgroup.GetContainerCgroupPath(ctx, cr, cId, cgroup.MEMORY)
+	if err != nil {
+		return 0, err
+	}
+	cgPath := fmt.Sprintf("%s/%s%s", containercgroup.RootCgroupPath, cgroup.MEMORY, path)
+
+	memUsage, err := utils.GetNumberByCgroupFile(cgPath, MemoryUsageInBytesFile)
+	if err != nil {
+		return 0, err
+	}
+	memTotal, err := getContainerMemTotal(ctx, cr, cId)
+	if err != nil {
+		return 0, err
+	}
+
+	return memTotal - memUsage, nil
+}
+
+func getHostMemTotal(ctx context.Context, cr, cId string) (float64, error) {
+	cmd := fmt.Sprintf("grep -m1 MemTotal /proc/meminfo | sed 's/[^0-9]*//g'")
+	totalStr, err := cmdexec.ExecCommonWithNS(ctx, cr, cId, cmd, []string{namespace.MNT})
+	totalStr = strings.TrimSpace(totalStr)
+	total, err := strconv.ParseFloat(totalStr, 64)
+	if err != nil {
+		return -1, fmt.Errorf("get total mem[%s] error: %s", totalStr, err.Error())
+	}
+
+	return total, err
+}
+
+func getHostMemAvailable(ctx context.Context, cr, cId string) (float64, error) {
+	cmd := fmt.Sprintf("grep -m1 MemAvailable /proc/meminfo | sed 's/[^0-9]*//g'")
+	availStr, err := cmdexec.ExecCommonWithNS(ctx, cr, cId, cmd, []string{namespace.MNT})
+	availStr = strings.TrimSpace(availStr)
+	avail, err := strconv.ParseFloat(availStr, 64)
+	if err != nil {
+		return -1, fmt.Errorf("get avail mem[%s] error: %s", availStr, err.Error())
+	}
+
+	return avail, err
+}
+
+func getMemTotal(ctx context.Context, cr, cId string) (float64, error) {
+	if cr == "" {
+		return getHostMemTotal(ctx, cr, cId)
+	} else {
+		return getContainerMemTotal(ctx, cr, cId)
+	}
+}
+
+func getMemAvailable(ctx context.Context, cr, cId string) (float64, error) {
+	if cr == "" {
+		return getHostMemAvailable(ctx, cr, cId)
+	} else {
+		return getContainerMemAvailable(ctx, cr, cId)
+	}
 }
