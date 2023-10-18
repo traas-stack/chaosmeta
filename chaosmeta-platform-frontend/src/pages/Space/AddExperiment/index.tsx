@@ -164,16 +164,26 @@ const AddExperiment = () => {
           target_id,
           exec_type,
           name,
+          measure_range,
+          flow_range,
         } = item;
         let target_name = exec_range?.target_name;
         if (Array.isArray(target_name)) {
           target_name = exec_range?.target_name?.join(',');
         }
-        const newExecRange = {
+        let newExecRange = {
           ...exec_range,
           target_name: target_name || undefined,
         };
-
+        if (exec_type === 'flow' || exec_type === 'measure') {
+          newExecRange = undefined;
+        }
+        if (measure_range) {
+          measure_range.duration = duration;
+        }
+        if (flow_range) {
+          flow_range.duration = duration;
+        }
         return {
           name,
           args_value,
@@ -183,9 +193,11 @@ const AddExperiment = () => {
           column,
           uuid,
           duration,
-          scope_id,
-          target_id,
+          scope_id: scope_id ?? 0,
+          target_id: target_id ?? 0,
           exec_type,
+          measure_range,
+          flow_range,
         };
       });
       const params = {

@@ -126,11 +126,21 @@ export default () => {
     {
       dataIndex: 'name',
       width: 120,
-      render: (text: string, record: { update_time: string }) => {
+      render: (text: string, record: { update_time: string; uuid: string }) => {
         return (
           <>
             <div className="ellipsis row-text-gap">
-              <a>
+              <a
+                onClick={() => {
+                  history.push({
+                    pathname: '/space/experiment/detail',
+                    query: {
+                      experimentId: record.uuid,
+                      spaceId: history?.location?.query?.spaceId,
+                    },
+                  });
+                }}
+              >
                 <span>{text}</span>
               </a>
             </div>
@@ -236,12 +246,24 @@ export default () => {
     {
       dataIndex: 'name',
       width: 160,
-      render: (text: string) => {
+      render: (text: string, record: { uuid: string }) => {
         return (
           <>
             <div className="ellipsis row-text-gap">
               <a>
-                <span>{text}</span>
+                <span
+                  onClick={() => {
+                    history.push({
+                      pathname: '/space/experiment-result/detail',
+                      query: {
+                        resultId: record?.uuid,
+                        spaceId: history?.location?.query?.spaceId as string,
+                      },
+                    });
+                  }}
+                >
+                  {text}
+                </span>
               </a>
             </div>
           </>
