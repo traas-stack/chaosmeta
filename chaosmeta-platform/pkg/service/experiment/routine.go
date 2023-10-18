@@ -323,7 +323,6 @@ func (e *ExperimentRoutine) DealCronExperiment() {
 			}
 
 			experimentGet.Status = experiment.ToBeExecuted
-
 			if err := experiment.UpdateExperiment(experimentGet); err != nil {
 				log.Error(err)
 				continue

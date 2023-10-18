@@ -201,7 +201,7 @@ func InitCpuFault(ctx context.Context, cpuTarget basic.Target) error {
 
 func InitCpuTargetArgsBurn(ctx context.Context, cpuFault basic.Fault) error {
 	var (
-		CpuArgsPercent = basic.Args{InjectId: cpuFault.ID, ExecType: ExecInject, Key: "percent", KeyCn: "使用率", Unit: "", UnitCn: "", Description: "Target cpu usage", DescriptionCn: "目标cpu使用率", ValueType: "int", Required: true, ValueRule: "1-100"}
+		CpuArgsPercent = basic.Args{InjectId: cpuFault.ID, ExecType: ExecInject, Key: "percent", KeyCn: "使用率", Unit: "", UnitCn: "", Description: "Target cpu usage", DescriptionCn: "目标cpu使用率", ValueType: "int", ValueRule: "1-100"}
 		CpuArgsCount   = basic.Args{InjectId: cpuFault.ID, ExecType: ExecInject, Key: "count", KeyCn: "核数", Unit: "", UnitCn: "", DefaultValue: "0", Description: "Number of faulty CPU cores, 0 means all cores", DescriptionCn: "故障cpu核数,0表示全部核", ValueType: "int", ValueRule: ">=0"}
 		CpuArgsList    = basic.Args{InjectId: cpuFault.ID, ExecType: ExecInject, Key: "list", KeyCn: "列表", Unit: "", UnitCn: "", Description: "Faulty cpu list, comma separated core number list, can be confirmed from /proc/cpuinfo", DescriptionCn: "故障cpu列表,逗号分隔的核编号列表,可以从/proc/cpuinfo确认", ValueType: "string"}
 	)
@@ -234,7 +234,7 @@ func InitMemFault(ctx context.Context, memTarget basic.Target) error {
 
 func InitMemTargetArgsFill(ctx context.Context, memFault basic.Fault) error {
 	var (
-		MemArgsPercent = basic.Args{InjectId: memFault.ID, ExecType: ExecInject, Key: "percent", KeyCn: "内存使用率", Unit: "", UnitCn: "", Description: "Target mem usage", DescriptionCn: "目标内存使用率", ValueType: "int", Required: true, ValueRule: "1-100"}
+		MemArgsPercent = basic.Args{InjectId: memFault.ID, ExecType: ExecInject, Key: "percent", KeyCn: "内存使用率", Unit: "", UnitCn: "", Description: "Target mem usage", DescriptionCn: "目标内存使用率", ValueType: "int", ValueRule: "1-100"}
 		MemArgsBytes   = basic.Args{InjectId: memFault.ID, ExecType: ExecInject, Key: "bytes", KeyCn: "填充量", Unit: "KB,MB,GB,TB", UnitCn: "KB,MB,GB,TB", Description: "Memory fill", DescriptionCn: "内存填充量", ValueType: "string"}
 		MemArgsMode    = basic.Args{InjectId: memFault.ID, ExecType: ExecInject, Key: "mode", KeyCn: "填充模式", Unit: "", UnitCn: "", Description: "Memory filling mode, ram is the way to apply for process memory, cache is the way to use tmpfs", DescriptionCn: "内存填充模式,ram是使用进程内存申请的方式,cache是使用tmpfs的方式", ValueType: "string", Required: true, ValueRule: "ram,cache"}
 	)

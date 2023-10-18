@@ -216,6 +216,11 @@ func (es *ExperimentService) UpdateExperiment(uuid string, experimentParam *Expe
 		}
 	}
 
+	if err := experiment.DeleteWorkflowNodeByExperimentUUID(uuid); err != nil {
+		log.Error(err)
+		return err
+	}
+
 	//workflow_nodes
 	for _, node := range experimentParam.WorkflowNodes {
 		node.ExperimentUUID = experimentUUid
@@ -232,10 +237,6 @@ func (es *ExperimentService) UpdateExperiment(uuid string, experimentParam *Expe
 			ExecID:         node.ExecID,
 		}
 
-		if err := experiment.DeleteWorkflowNodeByUUID(node.UUID); err != nil {
-			log.Error(err)
-			return err
-		}
 		if err := experiment.CreateWorkflowNode(&workflowNodeCreate); err != nil {
 			log.Error(err)
 			return err
@@ -252,15 +253,39 @@ func (es *ExperimentService) UpdateExperiment(uuid string, experimentParam *Expe
 			}
 		}
 
-		//exec_range
-		if node.FaultRange != nil {
-			node.FaultRange.WorkflowNodeInstanceUUID = node.UUID
-			if err := experiment.ClearFaultRangesByWorkflowNodeInstanceUUID(node.UUID); err != nil {
-				log.Error(err)
-				return err
+		switch node.ExecType {
+		case string(FaultExecType):
+			if node.FaultRange != nil {
+				if err := experiment.ClearFaultRangesByWorkflowNodeInstanceUUID(node.UUID); err != nil {
+					log.Error(err)
+					return err
+				}
+				node.FaultRange.WorkflowNodeInstanceUUID = node.UUID
+				if err := experiment.CreateFaultRange(node.FaultRange); err != nil {
+					return err
+				}
 			}
-			if err := experiment.CreateFaultRange(node.FaultRange); err != nil {
-				return err
+		case string(FlowExecType):
+			if node.FlowRange != nil {
+				if err := experiment.ClearFlowRangesByWorkflowNodeInstanceUUID(node.UUID); err != nil {
+					log.Error(err)
+					return err
+				}
+				node.FlowRange.WorkflowNodeInstanceUUID = node.UUID
+				if err := experiment.CreateFlowRange(node.FlowRange); err != nil {
+					return err
+				}
+			}
+		case string(MeasureExecType):
+			if node.MeasureRange != nil {
+				if err := experiment.ClearMeasureRangesByWorkflowNodeInstanceUUID(node.UUID); err != nil {
+					log.Error(err)
+					return err
+				}
+				node.MeasureRange.WorkflowNodeInstanceUUID = node.UUID
+				if err := experiment.CreateMeasureRange(node.MeasureRange); err != nil {
+					return err
+				}
 			}
 		}
 	}
