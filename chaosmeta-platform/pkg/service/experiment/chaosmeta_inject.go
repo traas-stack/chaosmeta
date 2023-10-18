@@ -32,14 +32,23 @@ import (
 	"time"
 )
 
+const (
+	Group               = "chaosmeta.io"
+	Version             = "v1alpha1"
+	ExperimentKind      = "Experiment"
+	ExperimentsResource = "experiments"
+	RecoverTargetPhase  = "recover"
+)
+
 type ChaosmetaInterface interface {
 	Get(ctx context.Context, namespace, name string) (result *ExperimentInjectStruct, err error)
-	List(ctx context.Context) (*ExperimentInjectStructList, error)
+	List(ctx context.Context, namespace string) (*ExperimentInjectStructList, error)
 	Create(ctx context.Context, chaosmeta *ExperimentInjectStruct) (*ExperimentInjectStruct, error)
 	Update(ctx context.Context, chaosmeta *ExperimentInjectStruct) (*ExperimentInjectStruct, error)
-	Delete(ctx context.Context, name string) error
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte) error
-	DeleteExpiredList(ctx context.Context) error
+	Delete(ctx context.Context, namespace, name string) error
+	Patch(ctx context.Context, namespace, name string, pt types.PatchType, data []byte) error
+	DeleteExpiredList(ctx context.Context, namespace string) error
+	Recover(namespace, name string) error
 }
 
 type ChaosmetaService struct {
@@ -48,15 +57,15 @@ type ChaosmetaService struct {
 }
 
 var gvr = schema.GroupVersionResource{
-	Group:    "chaosmeta.io",
-	Version:  "v1alpha1",
-	Resource: "experiments",
+	Group:    Group,
+	Version:  Version,
+	Resource: ExperimentsResource,
 }
 
 var gvk = schema.GroupVersionKind{
-	Group:   "chaosmeta.io",
-	Version: "v1alpha1",
-	Kind:    "Experiment",
+	Group:   Group,
+	Version: Version,
+	Kind:    ExperimentKind,
 }
 
 func NewChaosmetaService(config *rest.Config) ChaosmetaInterface {
@@ -89,8 +98,8 @@ func (c *ChaosmetaService) Get(ctx context.Context, namespace, name string) (res
 	return &experiment, nil
 }
 
-func (c *ChaosmetaService) List(ctx context.Context) (*ExperimentInjectStructList, error) {
-	list, err := c.Client.Resource(gvr).List(ctx, v1.ListOptions{})
+func (c *ChaosmetaService) List(ctx context.Context, namespace string) (*ExperimentInjectStructList, error) {
+	list, err := c.Client.Resource(gvr).Namespace(namespace).List(ctx, v1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -184,17 +193,17 @@ func (c *ChaosmetaService) Update(ctx context.Context, chaosmeta *ExperimentInje
 	return &experiment, nil
 }
 
-func (c *ChaosmetaService) Delete(ctx context.Context, name string) error {
-	return c.Client.Resource(gvr).Delete(ctx, name, v1.DeleteOptions{})
+func (c *ChaosmetaService) Delete(ctx context.Context, namespace, name string) error {
+	return c.Client.Resource(gvr).Namespace(namespace).Delete(ctx, name, v1.DeleteOptions{})
 }
 
-func (c *ChaosmetaService) Patch(ctx context.Context, name string, pt types.PatchType, data []byte) error {
-	_, err := c.Client.Resource(gvr).Patch(ctx, name, pt, data, v1.PatchOptions{})
+func (c *ChaosmetaService) Patch(ctx context.Context, namespace, name string, pt types.PatchType, data []byte) error {
+	_, err := c.Client.Resource(gvr).Namespace(namespace).Patch(ctx, name, pt, data, v1.PatchOptions{})
 	return err
 }
 
-func (c *ChaosmetaService) DeleteExpiredList(ctx context.Context) error {
-	chaosmetaList, err := c.List(ctx)
+func (c *ChaosmetaService) DeleteExpiredList(ctx context.Context, namespace string) error {
+	chaosmetaList, err := c.List(ctx, namespace)
 	if err != nil {
 		return err
 	}
@@ -206,7 +215,7 @@ func (c *ChaosmetaService) DeleteExpiredList(ctx context.Context) error {
 		}
 
 		if experiment.Status.Status == SuccessStatusType && experiment.Status.CreateTime != "" && experimentCreateTime.Before(expirationTime) {
-			err := c.Delete(ctx, experiment.Name)
+			err := c.Delete(ctx, experiment.Namespace, experiment.Name)
 			if err != nil {
 				log.Infof("failed to delete chaosmeta experiment %s: %v", experiment.Name, err.Error())
 				return err
@@ -214,6 +223,20 @@ func (c *ChaosmetaService) DeleteExpiredList(ctx context.Context) error {
 				log.Infof("chaosmeta experiment %s deleted", experiment.Name)
 			}
 		}
+	}
+	return nil
+}
+
+func (c *ChaosmetaService) Recover(namespace, name string) error {
+	chaosmetaCR, err := c.Get(context.Background(), namespace, name)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	chaosmetaCR.Spec.TargetPhase = RecoverTargetPhase
+	if _, err := c.Update(context.Background(), chaosmetaCR); err != nil {
+		log.Error(err)
+		return err
 	}
 	return nil
 }

@@ -29,7 +29,11 @@ import (
 	"time"
 )
 
-const TimeLayout = "2006-01-02 15:04:05"
+const (
+	MeasureExecType = "measure"
+	FaultExecType   = "fault"
+	FlowExecType    = "flow"
+)
 
 type ExperimentInstanceService struct{}
 
@@ -108,6 +112,18 @@ func (s *ExperimentInstanceService) CreateExperimentInstance(experimentParam *Ex
 		if node.Subtasks != nil {
 			node.Subtasks.WorkflowNodeInstanceUUID = workflowNodeCreate.UUID
 			if err := experiment_instance.CreateFaultRangeInstance(node.Subtasks); err != nil {
+				return experimentCreate.UUID, err
+			}
+		}
+		if node.FlowSubtasks != nil {
+			node.FlowSubtasks.WorkflowNodeInstanceUUID = workflowNodeCreate.UUID
+			if err := experiment_instance.CreateFlowRangeInstance(node.FlowSubtasks); err != nil {
+				return experimentCreate.UUID, err
+			}
+		}
+		if node.MeasureSubtasks != nil {
+			node.MeasureSubtasks.WorkflowNodeInstanceUUID = workflowNodeCreate.UUID
+			if err := experiment_instance.CreateMeasureRangeInstance(node.MeasureSubtasks); err != nil {
 				return experimentCreate.UUID, err
 			}
 		}
@@ -268,8 +284,10 @@ type ArgsValue struct {
 
 type WorkflowNodesDetail struct {
 	WorkflowNodesInfo
-	ArgsValues []ArgsValue                             `json:"args_value"`
-	Subtasks   *experiment_instance.FaultRangeInstance `json:"subtasks"`
+	ArgsValues      []ArgsValue                               `json:"args_value"`
+	Subtasks        *experiment_instance.FaultRangeInstance   `json:"subtasks"`
+	FlowSubtasks    *experiment_instance.FlowRangeInstance    `json:"flow_subtasks"`
+	MeasureSubtasks *experiment_instance.MeasureRangeInstance `json:"measure_subtasks"`
 }
 
 func (s *ExperimentInstanceService) GetWorkflowNodeInstanceDetailByUUIDAndNodeId(experimentUUID, nodeId string) (*WorkflowNodesDetail, error) {
@@ -291,11 +309,29 @@ func (s *ExperimentInstanceService) GetWorkflowNodeInstanceDetailByUUIDAndNodeId
 		workflowNodesDetail.ArgsValues = append(workflowNodesDetail.ArgsValues, ArgsValue{ArgsId: argsValue.ArgsID, Value: argsValue.Value})
 	}
 
-	faultRange, err := experiment_instance.GetFaultRangeInstancesByWorkflowNodeInstanceUUID(nodeId)
-	if err != nil {
-		return &workflowNodesDetail, err
+	switch workflowNodesDetail.ExecType {
+	case FaultExecType:
+		faultRange, err := experiment_instance.GetFaultRangeInstancesByWorkflowNodeInstanceUUID(nodeId)
+		if err != nil {
+			log.Error(err)
+			return &workflowNodesDetail, err
+		}
+		workflowNodesDetail.Subtasks = faultRange
+	case FlowExecType:
+		flowRange, err := experiment_instance.GetFlowRangeInstancesByWorkflowNodeInstanceUUID(nodeId)
+		if err != nil {
+			log.Error(err)
+			return &workflowNodesDetail, err
+		}
+		workflowNodesDetail.FlowSubtasks = flowRange
+	case MeasureExecType:
+		measureRange, err := experiment_instance.GetMeasureRangeInstancesByWorkflowNodeInstanceUUID(nodeId)
+		if err != nil {
+			log.Error(err)
+			return &workflowNodesDetail, err
+		}
+		workflowNodesDetail.MeasureSubtasks = measureRange
 	}
-	workflowNodesDetail.Subtasks = faultRange
 	return &workflowNodesDetail, nil
 }
 

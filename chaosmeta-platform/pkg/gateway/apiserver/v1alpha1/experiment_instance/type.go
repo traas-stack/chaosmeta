@@ -42,5 +42,7 @@ type ExperimentInstanceListResponse struct {
 }
 
 type GetFaultRangeInstanceResponse struct {
-	FaultRangeInstance experimentInstanceModel.FaultRangeInstance `json:"subtask"`
+	FaultRangeInstance   experimentInstanceModel.FaultRangeInstance   `json:"subtask"`
+	FlowRangeInstance    experimentInstanceModel.FlowRangeInstance    `json:"flow_subtask"`
+	MeasureRangeInstance experimentInstanceModel.MeasureRangeInstance `json:"measure_subtask"`
 }

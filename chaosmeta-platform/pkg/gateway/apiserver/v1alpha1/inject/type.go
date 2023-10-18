@@ -39,6 +39,20 @@ type FaultsListResponse struct {
 	Faults   []basic.Fault `json:"faults"`
 }
 
+type FlowsListResponse struct {
+	Page     int                `json:"page"`
+	PageSize int                `json:"pageSize"`
+	Total    int64              `json:"total"`
+	Flows    []basic.FlowInject `json:"flows"`
+}
+
+type MeasuresListResponse struct {
+	Page     int                   `json:"page"`
+	PageSize int                   `json:"pageSize"`
+	Total    int64                 `json:"total"`
+	Measures []basic.MeasureInject `json:"measures"`
+}
+
 type ArgsListResponse struct {
 	Page     int          `json:"page"`
 	PageSize int          `json:"pageSize"`

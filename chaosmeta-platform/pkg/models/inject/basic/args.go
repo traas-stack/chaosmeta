@@ -87,7 +87,7 @@ func GetArgsById(ctx context.Context, id int) (*Args, error) {
 	}
 }
 
-func ListArgs(ctx context.Context, execType string, injectId int, orderBy string, page, pageSize int) (int64, []Args, error) {
+func ListArgs(ctx context.Context, execType []string, injectId int, orderBy string, page, pageSize int) (int64, []Args, error) {
 	arg, args := Args{}, new([]Args)
 
 	querySeter := models.GetORM().QueryTable(arg.TableName())
@@ -97,8 +97,8 @@ func ListArgs(ctx context.Context, execType string, injectId int, orderBy string
 		argsQuery.Filter("inject_id", models.NEGLECT, false, injectId)
 	}
 
-	if execType != "" {
-		argsQuery.Filter("exec_type", models.NEGLECT, false, execType)
+	if len(execType) != 0 {
+		argsQuery.Filter("exec_type", models.IN, false, execType)
 	}
 
 	var totalCount int64

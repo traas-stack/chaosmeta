@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: chaosmeta-platform
-  namespace: chaosmeta-platform
+  namespace: chaosmeta
 data:
   app.conf: |-
     appname = "chaosmeta-platform"
@@ -14,13 +14,13 @@ data:
     copyrequestbody = true
   app.yaml: |-
     secretkey: chaosmeta1234567
-    argoWorkflowNamespace: default
-    workflowNamespace: chaosmeta-inject
+    argoWorkflowNamespace: chaosmeta
+    workflowNamespace: chaosmeta
     db:
       name: chaosmeta
       user: root
       passwd: chaosmeta
-      url: mysql:3306
+      url: chaosmeta-mysql:3306
       maxidle: 30
       maxconn: 30
     log:
@@ -32,7 +32,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: chaosmeta-platform
-  namespace: default
+  namespace: chaosmeta
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -42,9 +42,9 @@ rules:
   - apiGroups: ["*"]
     resources: ["*"]
     verbs:
-    - get
-    - list
-    - watch
+      - get
+      - list
+      - watch
   - apiGroups: ["argoproj.io"]
     resources: ["*"]
     verbs: ["*"]
@@ -66,87 +66,13 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: chaosmeta-platform
-    namespace: default
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: mysql
-  namespace: chaosmeta-platform
-spec:
-  ports:
-    - port: 3306
-  selector:
-    app: mysql
-  clusterIP: None
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: mysql
-  namespace: chaosmeta-platform
-spec:
-  selector:
-    matchLabels:
-      app: mysql
-  strategy:
-    type: Recreate
-  template:
-    metadata:
-      labels:
-        app: mysql
-    spec:
-      serviceAccountName: chaosmeta-platform
-      containers:
-        - image: mysql:8.0
-          name: mysql
-          env:
-            - name: MYSQL_DATABASE
-              value: "chaosmeta"
-            - name: MYSQL_ROOT_PASSWORD
-              value: "chaosmeta"
-          ports:
-            - containerPort: 3306
-              name: mysql
-          volumeMounts:
-            - name: mysql-persistent-storage
-              mountPath: /var/lib/mysql
-      volumes:
-        - name: mysql-persistent-storage
-          persistentVolumeClaim:
-            claimName: mysql-pv-claim
----
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: mysql-pv-volume
-  labels:
-    type: local
-spec:
-  capacity:
-    storage: 20Gi
-  accessModes:
-    - ReadWriteOnce
-  hostPath:
-    path: "/mnt/data"
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: mysql-pv-claim
-  namespace: chaosmeta-platform
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 2Gi
+    namespace: chaosmeta
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: chaosmeta-platform
-  namespace: chaosmeta-platform
+  namespace: chaosmeta
   labels:
     release: chaosmeta-platform
     app: chaosmeta-platform
@@ -163,8 +89,7 @@ spec:
       serviceAccountName: chaosmeta-platform
       containers:
         - name: chaosmeta-platform
-          imagePullPolicy: Always
-          image:  registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-platform:v0.0.3
+          image:  registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-platform:v0.0.7
           resources:
             requests:
               cpu: "1"
@@ -176,8 +101,7 @@ spec:
             - name: chaosmeta-config
               mountPath: /home/admin/conf
         - name: chaosmeta-platform-frontend
-          imagePullPolicy: Always
-          image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-platform-frontend:v0.0.1
+          image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-platform-frontend:v0.0.4
           ports:
             - containerPort: 8000
       volumes:
@@ -193,10 +117,58 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
+  name: chaosmeta-mysql
+  namespace: chaosmeta
+spec:
+  ports:
+    - port: 3306
+  selector:
+    app: chaosmeta-mysql
+  clusterIP: None
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chaosmeta-mysql
+  namespace: chaosmeta
+spec:
+  selector:
+    matchLabels:
+      app: chaosmeta-mysql
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: chaosmeta-mysql
+    spec:
+      serviceAccountName: chaosmeta-platform
+      containers:
+        - image: mysql:8.0
+          name: chaosmeta-mysql
+          env:
+            - name: MYSQL_DATABASE
+              value: "chaosmeta"
+            - name: MYSQL_ROOT_PASSWORD
+              value: "chaosmeta"
+          ports:
+            - containerPort: 3306
+              name: chaosmeta-mysql
+          volumeMounts:
+            - name: mysql-storage
+              mountPath: /var/lib/mysql
+      volumes:
+        - name: mysql-storage
+          hostPath:
+            path: "/mnt/chaosmeta-platform-mysql"
+---
+apiVersion: v1
+kind: Service
+metadata:
   labels:
     app: chaosmeta-platform
   name: chaosmeta-platform
-  namespace: chaosmeta-platform
+  namespace: chaosmeta
 spec:
   ports:
     - name: http

@@ -14,14 +14,36 @@
  * limitations under the License.
  */
 
-package inject
+package compress
 
 import (
-	"chaosmeta-platform/pkg/models/inject/basic"
-	"context"
+	"bytes"
+	"compress/zlib"
+	"io"
 )
 
-func (i *InjectService) ListArg(ctx context.Context, execType []string, faultId int, orderBy string, page, pageSize int) (int64, []basic.Args, error) {
-	total, targets, err := basic.ListArgs(ctx, execType, faultId, orderBy, page, pageSize)
-	return total, targets, err
+func DoZlibCompress(src string) (string, error) {
+	var in bytes.Buffer
+	w := zlib.NewWriter(&in)
+	if _, err := w.Write([]byte(src)); err != nil {
+		return "", err
+	}
+	if err := w.Close(); err != nil {
+		return "", err
+	}
+	return in.String(), nil
+}
+
+func DoZlibUnCompress(compressSrc string) (string, error) {
+	b := bytes.NewReader([]byte(compressSrc))
+	var out bytes.Buffer
+	r, err := zlib.NewReader(b)
+	if err != nil {
+		return "", err
+	}
+	if _, err := io.Copy(&out, r); err != nil {
+		return "", err
+	}
+
+	return out.String(), nil
 }
