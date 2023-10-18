@@ -167,19 +167,51 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
                 });
                 curNodeDetail.args_value = newArgs;
               }
-              // 为配置信息赋值
-              configForm.setFieldsValue({
-                ...curNodeDetail,
-                exec_range: {
-                  ...curNodeDetail?.subtasks,
-                },
-              });
-              setActiveCol({
-                ...curNodeDetail,
-                exec_range: {
-                  ...curNodeDetail?.subtasks,
-                },
-              });
+              if (el?.exec_type === 'flow') {
+                // 为配置信息赋值
+                configForm.setFieldsValue({
+                  ...curNodeDetail,
+                  flow_range: {
+                    ...curNodeDetail?.flow_subtasks,
+                  },
+                });
+                setActiveCol({
+                  ...curNodeDetail,
+                  flow_range: {
+                    ...curNodeDetail?.flow_subtasks,
+                  },
+                });
+              }
+              if (el?.exec_type === 'measure') {
+                // 为配置信息赋值
+                configForm.setFieldsValue({
+                  ...curNodeDetail,
+                  measure_range: {
+                    ...curNodeDetail?.measure_subtasks,
+                  },
+                });
+                setActiveCol({
+                  ...curNodeDetail,
+                  measure_range: {
+                    ...curNodeDetail?.measure_subtasks,
+                  },
+                });
+              }
+              if (el?.exec_type === 'fault') {
+                // 为配置信息赋值
+                configForm.setFieldsValue({
+                  ...curNodeDetail,
+                  exec_range: {
+                    ...curNodeDetail?.subtasks,
+                  },
+                });
+                setActiveCol({
+                  ...curNodeDetail,
+                  exec_range: {
+                    ...curNodeDetail?.subtasks,
+                  },
+                });
+              }
             }
           });
         return;
