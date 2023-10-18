@@ -1,16 +1,17 @@
 import EmptyCustom from '@/components/EmptyCustom';
-import { triggerTypes } from '@/constants';
+import { experimentResultStatus, triggerTypes } from '@/constants';
 import {
   queryExperimentList,
   queryExperimentResultList,
   stopExperimentResult,
 } from '@/services/chaosmeta/ExperimentController';
 import { querySpaceOverview } from '@/services/chaosmeta/SpaceController';
-import { cronTranstionCN, formatTime } from '@/utils/format';
+import { cronTranstionCN, formatTime, getIntlLabel } from '@/utils/format';
 import { useParamChange } from '@/utils/useParamChange';
 import { RightOutlined } from '@ant-design/icons';
-import { history, useModel, useRequest } from '@umijs/max';
+import { history, useIntl, useModel, useRequest } from '@umijs/max';
 import {
+  Badge,
   Button,
   Card,
   Col,
@@ -23,7 +24,7 @@ import {
   Tabs,
   message,
 } from 'antd';
-import moment from 'moment';
+import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
 
 export default () => {
@@ -36,10 +37,11 @@ export default () => {
   // 选中的tabkey
   const [tabKey, setTabkey] = useState<string>('update');
   // 当前日期范围
-  const [curTime, setCurTime] = useState('7day');
+  const [timeType, setCurTime] = useState('7day');
   const namespaceId = history?.location?.query?.spaceId as string;
   const spaceIdChange = useParamChange('spaceId');
   const { spacePermission } = useModel('global');
+  const intl = useIntl();
   /**
    * 获取实验列表
    */
@@ -111,7 +113,9 @@ export default () => {
           });
         }}
       >
-        查看全部实验
+        {intl.formatMessage({
+          id: 'overview.spaceOverview.tab.more',
+        })}
       </span>
       <RightOutlined />
     </Space>
@@ -122,16 +126,27 @@ export default () => {
     {
       dataIndex: 'name',
       width: 120,
-      render: (text: string, record: { update_time: string }) => {
+      render: (text: string, record: { update_time: string; uuid: string }) => {
         return (
           <>
             <div className="ellipsis row-text-gap">
-              <a>
+              <a
+                onClick={() => {
+                  history.push({
+                    pathname: '/space/experiment/detail',
+                    query: {
+                      experimentId: record.uuid,
+                      spaceId: history?.location?.query?.spaceId,
+                    },
+                  });
+                }}
+              >
                 <span>{text}</span>
               </a>
             </div>
             <div className="shallow">
-              最近编辑时间： {formatTime(record?.update_time)}
+              {intl.formatMessage({ id: 'lastEditTime' })}：{' '}
+              {formatTime(record?.update_time)}
             </div>
           </>
         );
@@ -141,14 +156,15 @@ export default () => {
       dataIndex: 'schedule_type',
       width: 110,
       render: (text: string, record: { schedule_rule: string }) => {
-        const value = triggerTypes?.filter((item) => item?.value === text)[0]
-          ?.label;
+        const temp = triggerTypes?.filter((item) => item?.value === text)[0];
         if (text === 'cron') {
           return (
             <div>
-              <div className="shallow row-text-gap">触发方式</div>
+              <div className="shallow row-text-gap">
+                {intl.formatMessage({ id: 'triggerMode' })}
+              </div>
               <div>
-                <span>{value}</span>
+                <span>{getIntlLabel(temp)}</span>
                 <span className="shallow">
                   {`（${cronTranstionCN(record?.schedule_rule)}）`}
                 </span>
@@ -158,9 +174,11 @@ export default () => {
         }
         return (
           <div>
-            <div className="shallow row-text-gap">触发方式</div>
+            <div className="shallow row-text-gap">
+              {intl.formatMessage({ id: 'triggerMode' })}
+            </div>
             <div>
-              <span>{value}</span>
+              <span>{getIntlLabel(temp)}</span>
             </div>
           </div>
         );
@@ -172,7 +190,9 @@ export default () => {
       render: (text: number, record: { uuid: string }) => {
         return (
           <div>
-            <div className="shallow row-text-gap">实验次数</div>
+            <div className="shallow row-text-gap">
+              {intl.formatMessage({ id: 'numberOfExperiments' })}
+            </div>
             {text > 0 ? (
               <a
                 onClick={() => {
@@ -213,7 +233,7 @@ export default () => {
                 });
               }}
             >
-              编辑
+              {intl.formatMessage({ id: 'edit' })}
             </a>
           </Space>
         );
@@ -226,12 +246,24 @@ export default () => {
     {
       dataIndex: 'name',
       width: 160,
-      render: (text: string) => {
+      render: (text: string, record: { uuid: string }) => {
         return (
           <>
             <div className="ellipsis row-text-gap">
               <a>
-                <span>{text}</span>
+                <span
+                  onClick={() => {
+                    history.push({
+                      pathname: '/space/experiment-result/detail',
+                      query: {
+                        resultId: record?.uuid,
+                        spaceId: history?.location?.query?.spaceId as string,
+                      },
+                    });
+                  }}
+                >
+                  {text}
+                </span>
               </a>
             </div>
           </>
@@ -244,7 +276,9 @@ export default () => {
       render: (text: string) => {
         return (
           <>
-            <div className="shallow row-text-gap">发起时间</div>
+            <div className="shallow row-text-gap">
+              {intl.formatMessage({ id: 'startTime' })}
+            </div>
             {formatTime(text)}
           </>
         );
@@ -256,7 +290,9 @@ export default () => {
       render: (text: string) => {
         return (
           <>
-            <div className="shallow row-text-gap">结束时间</div>
+            <div className="shallow row-text-gap">
+              {intl.formatMessage({ id: 'endTime' })}
+            </div>
             {formatTime(text)}
           </>
         );
@@ -266,10 +302,21 @@ export default () => {
       dataIndex: 'status',
       width: 100,
       render: (text: string) => {
+        const temp: any = experimentResultStatus?.filter(
+          (item) => item?.value === text,
+        )[0];
         return (
           <>
-            <div className="shallow row-text-gap">实验状态</div>
-            {text || '-'}
+            <div className="shallow row-text-gap">
+              {intl.formatMessage({ id: 'experimentStatus' })}
+            </div>
+            {temp ? (
+              <div>
+                <Badge color={temp?.color} /> {getIntlLabel(temp)}
+              </div>
+            ) : (
+              '-'
+            )}
           </>
         );
       },
@@ -313,10 +360,18 @@ export default () => {
           locale={{
             emptyText: (
               <EmptyCustom
-                desc={`当前页面暂无${
-                  tabKey === 'running' ? '即将运行' : '最近编辑'
-                }的实验`}
-                title="您可以前往实验列表查看实验"
+                desc={
+                  tabKey === 'running'
+                    ? intl.formatMessage({
+                        id: 'overview.spaceOverview.tab2.noAuth.empty.description',
+                      })
+                    : intl.formatMessage({
+                        id: 'overview.spaceOverview.tab1.noAuth.empty.description',
+                      })
+                }
+                title={intl.formatMessage({
+                  id: 'overview.spaceOverview.tab1.noAuth.empty.title',
+                })}
                 btns={
                   <Button
                     type="primary"
@@ -324,7 +379,9 @@ export default () => {
                       history?.push('/space/experiment');
                     }}
                   >
-                    前往实验列表
+                    {intl.formatMessage({
+                      id: 'overview.spaceOverview.tab1.noAuth.empty.btn',
+                    })}
                   </Button>
                 }
               />
@@ -340,6 +397,8 @@ export default () => {
           pagination={{
             simple: true,
             total: experimentData?.total,
+            pageSize: experimentData?.page_size,
+            current: experimentData?.page,
           }}
           onChange={(pagination: any) => {
             const { current, pageSize } = pagination;
@@ -363,8 +422,12 @@ export default () => {
           locale={{
             emptyText: (
               <EmptyCustom
-                desc="当前暂无最近运行的实验结果"
-                title="您可以前往实验结果列表查看实验"
+                desc={intl.formatMessage({
+                  id: 'overview.spaceOverview.tab3.noAuth.empty.description',
+                })}
+                title={intl.formatMessage({
+                  id: 'overview.spaceOverview.tab3.noAuth.empty.title',
+                })}
                 btns={
                   <Button
                     type="primary"
@@ -372,7 +435,9 @@ export default () => {
                       history?.push('/space/experiment-result');
                     }}
                   >
-                    前往实验结果列表
+                    {intl.formatMessage({
+                      id: 'overview.spaceOverview.tab3.noAuth.empty.btn',
+                    })}
                   </Button>
                 }
               />
@@ -391,6 +456,8 @@ export default () => {
           pagination={{
             simple: true,
             total: experimentResultData?.total,
+            pageSize: experimentResultData?.page_size,
+            current: experimentResultData?.page,
           }}
           onChange={(pagination: any) => {
             const { current, pageSize } = pagination;
@@ -407,17 +474,23 @@ export default () => {
 
   const items = [
     {
-      label: '最近编辑的实验',
+      label: intl.formatMessage({
+        id: 'overview.spaceOverview.tab1.title',
+      }),
       key: 'update',
       children: <EditExperimental />,
     },
     {
-      label: '即将运行的实验',
+      label: intl.formatMessage({
+        id: 'overview.spaceOverview.tab2.title',
+      }),
       key: 'running',
       children: <EditExperimental />,
     },
     {
-      label: '最近运行的实验结果',
+      label: intl.formatMessage({
+        id: 'overview.spaceOverview.tab3.title',
+      }),
       key: 'runningResult',
       children: <RecentlyRunExperimentalResult />,
     },
@@ -427,15 +500,16 @@ export default () => {
    * 日期转换
    * @returns
    */
-  const transformTime = () => {
+  const transformTime = (value?: string) => {
     let start_time, end_time;
+    const curTime = value || timeType;
     if (curTime === '7day') {
-      start_time = formatTime(moment().subtract(30, 'd').startOf('day'));
-      end_time = formatTime(moment().endOf('day'));
+      start_time = formatTime(dayjs().subtract(6, 'd').startOf('day'));
+      end_time = formatTime(dayjs().endOf('day'));
     }
     if (curTime === '30day') {
-      start_time = formatTime(moment().subtract(30, 'd').startOf('day'));
-      end_time = formatTime(moment().endOf('day'));
+      start_time = formatTime(dayjs().subtract(30, 'd').startOf('day'));
+      end_time = formatTime(dayjs().endOf('day'));
     }
     return {
       start_time,
@@ -444,15 +518,16 @@ export default () => {
   };
 
   // tab栏列表检索
-  const handleTabSearch = (key?: string) => {
+  const handleTabSearch = (params?: { key?: string; curTime?: string }) => {
+    const { key, curTime } = params || {};
     const val = key || tabKey;
     if (val === 'runningResult') {
       getExperimentResultList?.run({
         page: 1,
         page_size: 10,
         time_search_field: 'create_time',
-        start_time: transformTime()?.start_time,
-        end_time: transformTime()?.end_time,
+        start_time: transformTime(curTime)?.start_time,
+        end_time: transformTime(curTime)?.end_time,
         namespace_id: namespaceId,
       });
     }
@@ -462,8 +537,8 @@ export default () => {
         page: 1,
         page_size: 10,
         time_search_field: 'next_exec',
-        start_time: transformTime()?.start_time,
-        end_time: transformTime()?.end_time,
+        start_time: transformTime(curTime)?.start_time,
+        end_time: transformTime(curTime)?.end_time,
         namespace_id: namespaceId,
       });
     }
@@ -473,8 +548,8 @@ export default () => {
         page: 1,
         page_size: 10,
         time_search_field: 'update_time',
-        start_time: transformTime()?.start_time,
-        end_time: transformTime()?.end_time,
+        start_time: transformTime(curTime)?.start_time,
+        end_time: transformTime(curTime)?.end_time,
         namespace_id: namespaceId,
       });
     }
@@ -492,21 +567,33 @@ export default () => {
     <>
       <div className="overview">
         <div className="top">
-          <span className="title">空间总览</span>
+          <span className="title">
+            {intl.formatMessage({ id: 'overview.spaceOverview' })}
+          </span>
           <Select
             onChange={(val) => {
-              setCurTime(val);
+              setCurTime(timeType);
               const recent_day = val === '30day' ? 30 : 7;
               getSpaceOverview?.run({
                 spaceId: history?.location?.query?.spaceId as string,
                 recent_day,
               });
-              handleTabSearch();
+              handleTabSearch({ curTime: val });
             }}
             defaultValue={'7day'}
             options={[
-              { label: '最近7天', value: '7day' },
-              { label: '最近30天', value: '30day' },
+              {
+                label: intl.formatMessage({
+                  id: 'overview.statistics.option.7',
+                }),
+                value: '7day',
+              },
+              {
+                label: intl.formatMessage({
+                  id: 'overview.statistics.option.30',
+                }),
+                value: '30day',
+              },
             ]}
           />
         </div>
@@ -516,11 +603,19 @@ export default () => {
               <Col span={8}>
                 <Card style={{ display: 'flex', alignContent: 'center' }}>
                   <div>
-                    <div className="shallow-65">新增实验</div>
+                    <div className="shallow-65">
+                      {intl.formatMessage({
+                        id: 'overview.statistics.newExperiment',
+                      })}
+                    </div>
                     <span className="count">
                       {overViewInfo?.total_experiments || 0}
                     </span>
-                    <span className="unit">个</span>
+                    <span className="unit">
+                      {intl.formatMessage({
+                        id: 'overview.statistics.count',
+                      })}
+                    </span>
                   </div>
                 </Card>
               </Col>
@@ -529,20 +624,36 @@ export default () => {
                   <Row>
                     <Col span={12}>
                       <div style={{ position: 'relative' }}>
-                        <div className="shallow-65">执行实验</div>
+                        <div className="shallow-65">
+                          {intl.formatMessage({
+                            id: 'overview.statistics.performingExperiments',
+                          })}
+                        </div>
                         <span className="count">
                           {overViewInfo?.total_experiment_instances || 0}
                         </span>
-                        <span className="unit">次</span>
+                        <span className="unit">
+                          {intl.formatMessage({
+                            id: 'overview.statistics.times',
+                          })}
+                        </span>
                       </div>
                     </Col>
                     <Col span={12}>
                       <div>
-                        <div className="shallow-65">执行失败</div>
+                        <div className="shallow-65">
+                          {intl.formatMessage({
+                            id: 'overview.statistics.executionFailed',
+                          })}
+                        </div>
                         <span className="count-error">
                           {overViewInfo?.failed_experiment_instances || 0}
                         </span>
-                        <span className="unit">次</span>
+                        <span className="unit">
+                          {intl.formatMessage({
+                            id: 'overview.statistics.times',
+                          })}
+                        </span>
                       </div>
                     </Col>
                   </Row>
@@ -559,7 +670,7 @@ export default () => {
         activeKey={tabKey}
         onChange={(val) => {
           setTabkey(val);
-          handleTabSearch(val);
+          handleTabSearch({ key: val });
         }}
       />
     </>

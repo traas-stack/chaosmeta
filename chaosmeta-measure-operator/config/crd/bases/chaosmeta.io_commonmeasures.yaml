@@ -107,6 +107,8 @@ spec:
                   - updateTime
                   type: object
                 type: array
+              meetTime:
+                type: string
               message:
                 type: string
               nextTime:
@@ -126,6 +128,7 @@ spec:
             - createTime
             - failedMeasure
             - initialData
+            - meetTime
             - message
             - nextTime
             - status

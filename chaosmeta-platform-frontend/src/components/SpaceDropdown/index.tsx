@@ -3,7 +3,7 @@ import {
   querySpaceUserPermission,
 } from '@/services/chaosmeta/SpaceController';
 import { DownOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
-import { history, useModel, useRequest } from '@umijs/max';
+import { history, useIntl, useModel, useRequest } from '@umijs/max';
 import { Dropdown, Empty, Input, Spin } from 'antd';
 import React, { useEffect, useState } from 'react';
 import AddSpaceDrawer from '../AddSpaceDrawer';
@@ -11,8 +11,10 @@ import { SpaceContent, SpaceMenu } from './style';
 
 export default () => {
   const [addSpaceOpen, setAddSpaceOpen] = useState<boolean>(false);
-  const [spaceList, setSpaceList] = useState<any>([]);
-  const { setSpacePermission, curSpace, setCurSpace } = useModel('global');
+  // const [spaceList, setSpaceList] = useState<any>([]);
+  const { setSpacePermission, curSpace, setCurSpace, spaceList, setSpaceList } =
+    useModel('global');
+  const intl = useIntl();
 
   // 一级路由，切换空间时页面在以下路由时，不需要跳转，刷新页面接口即可，其他页面需要跳转回空间概览
   const parentRoute = [
@@ -132,7 +134,7 @@ export default () => {
             <SpaceMenu>
               <div className="search">
                 <Input
-                  placeholder="请输入关键词"
+                  placeholder={intl.formatMessage({ id: 'keyword' })}
                   onChange={(event) => {
                     const value = event?.target?.value;
                     getSpaceList?.run({
@@ -156,7 +158,7 @@ export default () => {
                     setAddSpaceOpen(true);
                   }}
                 >
-                  <PlusOutlined /> 新建空间
+                  <PlusOutlined /> {intl.formatMessage({ id: 'createSpace' })}
                 </a>
               </div>
               <Spin spinning={getSpaceList?.loading}>
@@ -171,13 +173,13 @@ export default () => {
 
               <div className="more">
                 <span>
-                  没有相关空间？查看{' '}
+                  {intl.formatMessage({ id: 'spaceDropdown.tip' })}{' '}
                   <a
                     onClick={() => {
                       history.push('/setting/space');
                     }}
                   >
-                    更多空间
+                    {intl.formatMessage({ id: 'moreSpace' })}
                   </a>
                 </span>
               </div>

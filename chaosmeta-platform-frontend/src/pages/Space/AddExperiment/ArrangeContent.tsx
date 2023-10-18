@@ -1,5 +1,5 @@
 import { arrangeNodeTypeColors } from '@/constants';
-import { formatDuration } from '@/utils/format';
+import { formatDuration, getIntlName } from '@/utils/format';
 import { InfoCircleOutlined } from '@ant-design/icons';
 import {
   CollisionDetection,
@@ -158,8 +158,7 @@ const ArrangeContent: React.FC<IProps> = (props) => {
    * 拖动中节点的渲染
    */
   const MoveingRender = () => {
-    const { dragtype, name, index, duration, nameCn, exec_type } =
-      curDragData || {};
+    const { dragtype, name, index, duration, exec_type } = curDragData || {};
     const second: number = formatDuration(duration);
     let renderItem = null;
     // 左侧节点拖动
@@ -168,7 +167,7 @@ const ArrangeContent: React.FC<IProps> = (props) => {
         <NodeItem>
           <div className="temp-item">
             <img src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*rOAzRrDGQoAAAAAAAAAAAAAADmKmAQ/original" />
-            {nameCn}
+            {getIntlName(curDragData)}
           </div>
         </NodeItem>
       );
@@ -376,7 +375,7 @@ const ArrangeContent: React.FC<IProps> = (props) => {
           const overParentIndex = values?.findIndex(
             (item) => item?.row === overParentId,
           );
-          const activeItem = active?.data?.current;
+          const activeItem: any = active?.data?.current;
           values[overParentIndex]?.children?.splice(overIndex, 0, {
             ...activeItem,
             // 暂时将uuid设置为当前节点的id用于拖拽，拖拽结束后这里的uuid需要重新生成，避免拖拽绑定重复id
@@ -384,7 +383,7 @@ const ArrangeContent: React.FC<IProps> = (props) => {
             duration: '60s',
             dragtype: 'item',
             exec_id: activeItem?.id,
-            name: activeItem?.nameCn,
+            name: getIntlName(activeItem),
             // 当前节点信息是否进行配置完成, wait类型只需要配置时长，所以这里默认为true
             nodeInfoState: activeItem?.exec_type === 'wait',
           });
@@ -401,7 +400,7 @@ const ArrangeContent: React.FC<IProps> = (props) => {
             dragtype: 'item',
             // 将节点库id保存
             exec_id: activeItem?.id,
-            name: activeItem?.nameCn,
+            name: getIntlName(activeItem),
             // 当前节点信息是否进行配置完成
             nodeInfoState: activeItem?.exec_type === 'wait',
           });
@@ -523,6 +522,18 @@ const ArrangeContent: React.FC<IProps> = (props) => {
       recentlyMovedToNewContainer.current = false;
     });
     handleAddTimeAxis(arrangeList);
+    if (activeCol?.uuid) {
+      // 节点配置过程中，进行拖拽操作后，需要更新节点的位置信息
+      arrangeList?.forEach((item) => {
+        item?.children?.forEach(
+          (el: { uuid: string; row: number }, index: number) => {
+            if (el?.uuid === activeCol?.uuid) {
+              setActiveCol({ ...activeCol, parentId: item?.row, index });
+            }
+          },
+        );
+      });
+    }
   }, [arrangeList]);
 
   return (

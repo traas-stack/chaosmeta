@@ -1,10 +1,24 @@
 import DynamicForm from '@/components/DynamicForm';
 import ShowText from '@/components/ShowText';
-import { arrangeNodeTypeColors, nodeTypeMap, scaleStepMap } from '@/constants';
-import { queryFaultNodeFields } from '@/services/chaosmeta/ExperimentController';
-import { formatDuration, handleTimeTransform } from '@/utils/format';
+import {
+  arrangeNodeTypeColors,
+  nodeTypeMap,
+  nodeTypeMapUS,
+  nodeTypes,
+  scaleStepMap,
+} from '@/constants';
+import {
+  queryFaultNodeFields,
+  queryFlowNodeFields,
+  queryMeasureNodeFields,
+} from '@/services/chaosmeta/ExperimentController';
+import {
+  formatDuration,
+  getIntlLabel,
+  handleTimeTransform,
+} from '@/utils/format';
 import { ZoomInOutlined, ZoomOutOutlined } from '@ant-design/icons';
-import { history, useRequest } from '@umijs/max';
+import { getLocale, history, useIntl, useRequest } from '@umijs/max';
 import { Form, Space, Spin } from 'antd';
 import { useEffect, useState } from 'react';
 import { ArrangeWrap, DroppableCol, DroppableRow } from './style';
@@ -33,6 +47,7 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
   const [activeCol, setActiveCol] = useState<any>({ state: false });
   const [fieldList, setFieldList] = useState<any[]>([]);
   const [configForm] = Form.useForm();
+  const intl = useIntl();
 
   /**
    * 故障节点 - 查询节点表单配置信息
@@ -47,24 +62,31 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
     },
   });
 
-  const nodeTypes = [
-    {
-      name: '故障节点',
-      type: 'fault',
+  /**
+   * 流量注入 - 查询节点表单配置信息
+   */
+  const getFlowNodeFields = useRequest(queryFlowNodeFields, {
+    manual: true,
+    formatResult: (res) => res,
+    onSuccess: (res: any) => {
+      if (res?.code === 200) {
+        setFieldList(res?.data?.args || []);
+      }
     },
-    {
-      name: '度量引擎',
-      type: 'measure',
+  });
+
+  /**
+   * 度量引擎 - 查询节点表单配置信息
+   */
+  const getMeasureNodeFields = useRequest(queryMeasureNodeFields, {
+    manual: true,
+    formatResult: (res) => res,
+    onSuccess: (res: any) => {
+      if (res?.code === 200) {
+        setFieldList(res?.data?.args || []);
+      }
     },
-    {
-      name: '流量注入',
-      type: 'flow',
-    },
-    {
-      name: '其他节点',
-      type: 'other',
-    },
-  ];
+  });
 
   /**
    * @description: 处理函数，计算二级列表中所有子项的总时长并更新到总时长上
@@ -117,7 +139,15 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
         return;
       }
       // 获取节点动态表单部分
-      getFaultNodeFields?.run({ id: el?.exec_id });
+      if (el?.exec_type === 'flow') {
+        getFlowNodeFields?.run({ id: el?.exec_id });
+      }
+      if (el?.exec_type === 'measure') {
+        getMeasureNodeFields?.run({ id: el?.exec_id });
+      }
+      if (el?.exec_type === 'fault') {
+        getFaultNodeFields?.run({ id: el?.exec_id });
+      }
       // 结果详情中需要通过接口获取节点信息，实验详情中则在详情中直接返回了
       if (isResult) {
         // 实验结果时点击节点，获取单个节点详情后赋值
@@ -137,19 +167,51 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
                 });
                 curNodeDetail.args_value = newArgs;
               }
-              // 为配置信息赋值
-              configForm.setFieldsValue({
-                ...curNodeDetail,
-                exec_range: {
-                  ...curNodeDetail?.subtasks,
-                },
-              });
-              setActiveCol({
-                ...curNodeDetail,
-                exec_range: {
-                  ...curNodeDetail?.subtasks,
-                },
-              });
+              if (el?.exec_type === 'flow') {
+                // 为配置信息赋值
+                configForm.setFieldsValue({
+                  ...curNodeDetail,
+                  flow_range: {
+                    ...curNodeDetail?.flow_subtasks,
+                  },
+                });
+                setActiveCol({
+                  ...curNodeDetail,
+                  flow_range: {
+                    ...curNodeDetail?.flow_subtasks,
+                  },
+                });
+              }
+              if (el?.exec_type === 'measure') {
+                // 为配置信息赋值
+                configForm.setFieldsValue({
+                  ...curNodeDetail,
+                  measure_range: {
+                    ...curNodeDetail?.measure_subtasks,
+                  },
+                });
+                setActiveCol({
+                  ...curNodeDetail,
+                  measure_range: {
+                    ...curNodeDetail?.measure_subtasks,
+                  },
+                });
+              }
+              if (el?.exec_type === 'fault') {
+                // 为配置信息赋值
+                configForm.setFieldsValue({
+                  ...curNodeDetail,
+                  exec_range: {
+                    ...curNodeDetail?.subtasks,
+                  },
+                });
+                setActiveCol({
+                  ...curNodeDetail,
+                  exec_range: {
+                    ...curNodeDetail?.subtasks,
+                  },
+                });
+              }
             }
           });
         return;
@@ -192,6 +254,7 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
                     }px`,
                     // 最小宽度为1s对应的px
                     minWidth: `${scaleStepMap[curProportion]?.widthSecond}px`,
+                    flexShrink: 0,
                   }}
                   $activeState={activeCol?.uuid === el?.uuid}
                   onClick={() => {
@@ -238,6 +301,51 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
     );
   };
 
+  // 是否为node下的节点
+  const isNode = () => {
+    // 父节点有两个node，一种是scope_id为2，另一种是scope_id为3下的target_id为23（Kubernetes下的node）
+    return (
+      activeCol?.scope_id === 2 ||
+      (activeCol?.scope_id === 3 && activeCol?.target_id === 23)
+    );
+  };
+
+  // 是否为pod下的节点
+  const isPod = () => {
+    // 父节点有两个pod，一种是scope_id为1，另一种是scope_id为3下的target_id为21（Kubernetes下的node）
+    return (
+      activeCol?.scope_id === 1 ||
+      (activeCol?.scope_id === 3 && activeCol?.target_id === 21)
+    );
+  };
+
+  /**
+   * 遍历编排数组，将其中行中最长秒数对比当前默认时间轴，若时间轴宽度不够就再加长
+   * @param values
+   */
+  const handleAddTimeAxis = (values: any) => {
+    const maxSecondList: any = [];
+    values?.forEach((item: { children: any[] }) => {
+      let secondSum = 0;
+      item?.children?.forEach((el) => {
+        // 将持续时长转化为数字形式进行计算
+        const duration = formatDuration(el?.duration);
+        secondSum += duration;
+      });
+      maxSecondList.push(secondSum);
+    });
+    const maxSecond = maxSecondList.sort((a: number, b: number) => b - a)[0];
+    // 提前一段加长
+    const curSecond = timeCount * 30 - 60;
+    if (maxSecond > curSecond) {
+      setTimeCount(() => {
+        // 多加入90s
+        const newCount = Math.round(maxSecond / 30) + 3;
+        return newCount;
+      });
+    }
+  };
+
   useEffect(() => {
     // 比例变化时，修改时间间隔的数量，不低于屏幕宽度的秒数，避免出现空白区域，默认1000s
     const doc = document.body;
@@ -252,10 +360,11 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
   }, [curProportion]);
 
   useEffect(() => {
+    handleAddTimeAxis(arrangeList);
+  }, [arrangeList]);
+  useEffect(() => {
     handleTotalSecond();
   }, []);
-
-  useEffect(() => {});
 
   return (
     <ArrangeWrap
@@ -295,25 +404,41 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
           <div className="info">
             <Spin spinning={getFaultNodeFields?.loading}>
               <Form form={configForm}>
-                <div className="subtitle">配置信息</div>
-                <Form.Item label="节点名称" name={'name'}>
+                <div className="subtitle">
+                  {intl.formatMessage({ id: 'configInfo' })}
+                </div>
+                <Form.Item
+                  label={intl.formatMessage({ id: 'nodeName' })}
+                  name={'name'}
+                >
                   <ShowText ellipsis />
                 </Form.Item>
-                <Form.Item label="节点类型" name={'exec_type'}>
+                <Form.Item
+                  label={intl.formatMessage({ id: 'nodeType' })}
+                  // name={'exec_type'}
+                >
                   <ShowText
                     value={
-                      nodeTypeMap[activeCol?.exec_type] || activeCol?.exec_type
+                      (getLocale() === 'en-US' ? nodeTypeMapUS : nodeTypeMap)[
+                        activeCol?.exec_type
+                      ] || activeCol?.exec_type
                     }
                   />
                 </Form.Item>
-                <Form.Item
-                  label={`${
-                    activeCol?.exec_type === 'wait' ? '等待时长' : '持续时长'
-                  }`}
-                  name={'duration'}
-                >
-                  <ShowText />
-                </Form.Item>
+                {activeCol?.exec_type !== 'flow' &&
+                  activeCol?.exec_type !== 'measure' && (
+                    <Form.Item
+                      label={`${
+                        activeCol?.exec_type === 'wait'
+                          ? intl.formatMessage({ id: 'waitTime' })
+                          : intl.formatMessage({ id: 'duration' })
+                      }`}
+                      name={'duration'}
+                    >
+                      <ShowText />
+                    </Form.Item>
+                  )}
+
                 {activeCol?.exec_type !== 'wait' && (
                   <>
                     {/* 动态表单部分 */}
@@ -322,40 +447,45 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
                       parentName={'args_value'}
                       readonly
                     />
-                    <div className="subtitle range">攻击范围</div>
-                    <Form.Item
-                      label="Kubernetes Namespace"
-                      name={['exec_range', 'target_namespace']}
-                    >
-                      <ShowText ellipsis />
-                    </Form.Item>
-                    <Form.Item
-                      label="Kubernetes Label"
-                      name={['exec_range', 'target_label']}
-                    >
-                      <ShowText ellipsis />
-                    </Form.Item>
-                    {/* <Form.Item label="应用" name={['exec_range', 'target_app']}>
-                      <ShowText ellipsis />
-                    </Form.Item> */}
-                    <Form.Item
-                      label="name"
-                      name={['exec_range', 'target_name']}
-                    >
-                      <ShowText ellipsis />
-                    </Form.Item>
-                    {activeCol?.scope_id === 2 && (
-                      <Form.Item label="Ip" name={['exec_range', 'target_ip']}>
-                        <ShowText ellipsis />
-                      </Form.Item>
-                    )}
+                    {/* 攻击范围为流量或度量时不展示 */}
+                    {(isNode() || isPod()) && (
+                      <>
+                        <div className="subtitle range">
+                          {intl.formatMessage({ id: 'attackRange' })}
+                        </div>
+                        {/* node下的节点时不展示 */}
+                        {!isNode() && (
+                          <Form.Item
+                            label="Kubernetes Namespace"
+                            name={['exec_range', 'target_namespace']}
+                          >
+                            <ShowText ellipsis />
+                          </Form.Item>
+                        )}
 
-                    {/* <Form.Item
-                      label="Hostname"
-                      name={['exec_range', 'target_hostname']}
-                    >
-                      <ShowText ellipsis />
-                    </Form.Item> */}
+                        <Form.Item
+                          label="Kubernetes Label"
+                          name={['exec_range', 'target_label']}
+                        >
+                          <ShowText ellipsis />
+                        </Form.Item>
+                        <Form.Item
+                          label="name"
+                          name={['exec_range', 'target_name']}
+                        >
+                          <ShowText ellipsis />
+                        </Form.Item>
+                        {/* node下的节点时才展示 */}
+                        {isNode() && (
+                          <Form.Item
+                            label="Ip"
+                            name={['exec_range', 'target_ip']}
+                          >
+                            <ShowText ellipsis />
+                          </Form.Item>
+                        )}
+                      </>
+                    )}
                   </>
                 )}
               </Form>
@@ -367,21 +497,21 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
         <div className="footer">
           <Space style={{ alignItems: 'center' }}>
             <div>
-              总时长：
+              {intl.formatMessage({ id: 'totalDuration' })}：
               <span className="total-time">
                 {handleTimeTransform(totalDuration)}
               </span>
             </div>
             <Space className="node-type">
-              {nodeTypes?.map((item) => {
+              {nodeTypes?.map((item: any) => {
                 return (
-                  <Space key={item.name} className="node-item">
+                  <Space key={item.label} className="node-item">
                     <div
                       style={{
                         background: arrangeNodeTypeColors[item.type],
                       }}
                     ></div>
-                    {item.name}
+                    {getIntlLabel(item)}
                   </Space>
                 );
               })}

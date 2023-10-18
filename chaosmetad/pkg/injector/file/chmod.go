@@ -21,12 +21,7 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/injector"
-	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils"
-	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/cmdexec"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/filesys"
-	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/namespace"
-	"path/filepath"
-	"strings"
 )
 
 func init() {
@@ -62,18 +57,6 @@ func (i *ChmodInjector) SetOption(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&i.Args.Permission, "permission", "P", "", "file's permission, compose format: three number in [0,7], example: 777")
 }
 
-func (i *ChmodInjector) getCmdExecutor(method, args string) *cmdexec.CmdExecutor {
-	return &cmdexec.CmdExecutor{
-		ContainerId:      i.Info.ContainerId,
-		ContainerRuntime: i.Info.ContainerRuntime,
-		ContainerNs:      []string{namespace.MNT},
-		ToolKey:          FileExec,
-		Method:           method,
-		Fault:            FaultFileChmod,
-		Args:             args,
-	}
-}
-
 func (i *ChmodInjector) Validator(ctx context.Context) error {
 	if err := i.BaseInjector.Validator(ctx); err != nil {
 		return err
@@ -87,23 +70,24 @@ func (i *ChmodInjector) Validator(ctx context.Context) error {
 		return fmt.Errorf("\"permission\" is empty")
 	}
 
-	if i.Info.ContainerRuntime != "" {
-		if !filepath.IsAbs(i.Args.Path) {
-			return fmt.Errorf("\"path\" must provide absolute path")
-		}
-	} else {
-		var err error
-		i.Args.Path, err = filesys.GetAbsPath(i.Args.Path)
-		if err != nil {
-			return fmt.Errorf("\"path\"[%s] get absolute path error: %s", i.Args.Path, err.Error())
-		}
+	if !filesys.IfPathAbs(ctx, i.Args.Path) {
+		return fmt.Errorf("\"path\" must provide absolute path")
 	}
 
 	if err := filesys.CheckPermission(i.Args.Permission); err != nil {
 		return fmt.Errorf("\"permission\" is invalid: %s", err.Error())
 	}
 
-	return i.getCmdExecutor(utils.MethodValidator, i.Args.Path).ExecTool(ctx)
+	exist, err := filesys.CheckFile(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, i.Args.Path)
+	if err != nil {
+		return fmt.Errorf("check exist file[%s] error: %s", i.Args.Path, err.Error())
+	}
+
+	if !exist {
+		return fmt.Errorf("file[%s] is not exist", i.Args.Path)
+	}
+
+	return nil
 }
 
 func (i *ChmodInjector) Inject(ctx context.Context) error {
@@ -112,8 +96,8 @@ func (i *ChmodInjector) Inject(ctx context.Context) error {
 		return fmt.Errorf("get perm of path[%s] error: %s", i.Args.Path, err.Error())
 	}
 
-	i.Runtime.Permission = strings.TrimSpace(perm)
-	return i.getCmdExecutor(utils.MethodInject, fmt.Sprintf("%s %s", i.Args.Path, i.Args.Permission)).ExecTool(ctx)
+	i.Runtime.Permission = perm
+	return filesys.Chmod(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, i.Args.Path, i.Args.Permission)
 }
 
 func (i *ChmodInjector) Recover(ctx context.Context) error {
@@ -121,5 +105,14 @@ func (i *ChmodInjector) Recover(ctx context.Context) error {
 		return nil
 	}
 
-	return i.getCmdExecutor(utils.MethodRecover, fmt.Sprintf("%s %s", i.Args.Path, i.Runtime.Permission)).ExecTool(ctx)
+	exist, err := filesys.CheckFile(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, i.Args.Path)
+	if err != nil {
+		return fmt.Errorf("check exist file[%s] error: %s", i.Args.Path, err.Error())
+	}
+
+	if exist {
+		return filesys.Chmod(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, i.Args.Path, i.Runtime.Permission)
+	}
+
+	return nil
 }

@@ -11,7 +11,7 @@ import {
 } from '@/services/chaosmeta/SpaceController';
 import { useParamChange } from '@/utils/useParamChange';
 import { ExclamationCircleFilled, SearchOutlined } from '@ant-design/icons';
-import { history, useModel, useRequest } from '@umijs/max';
+import { history, useIntl, useModel, useRequest } from '@umijs/max';
 import {
   Alert,
   Button,
@@ -52,6 +52,7 @@ const MemberManage: React.FC<unknown> = () => {
     users: [],
   });
   const { spacePermission } = useModel('global');
+  const intl = useIntl();
 
   /**
    * 分页接口
@@ -92,7 +93,9 @@ const MemberManage: React.FC<unknown> = () => {
     formatResult: (res) => res,
     onSuccess: (res) => {
       if (res.code === 200) {
-        message.success('您已成功删除所选成员');
+        message.success(
+          intl.formatMessage({ id: 'memberManageMent.delete.success.tip' }),
+        );
         handlePageSearch();
       }
     },
@@ -106,7 +109,9 @@ const MemberManage: React.FC<unknown> = () => {
     formatResult: (res) => res,
     onSuccess: (res) => {
       if (res.code === 200) {
-        message.success('权限修改成功');
+        message.success(
+          intl.formatMessage({ id: 'memberManageMent.permission.success.tip' }),
+        );
         handlePageSearch();
       }
     },
@@ -118,9 +123,9 @@ const MemberManage: React.FC<unknown> = () => {
   const handleDeleteUser = (id?: number) => {
     const user_ids = id || id === 0 ? [id] : selectedRowKeys;
     Modal.confirm({
-      title: '您确认要删除当前所选成员吗？',
+      title: intl.formatMessage({ id: 'memberManageMent.delete.title' }),
       icon: <ExclamationCircleFilled />,
-      content: '删除空间内成员，该成员将无法进入该空间！',
+      content: intl.formatMessage({ id: 'memberManageMent.delete.content' }),
       onOk() {
         return deleteUser?.run({
           user_ids,
@@ -134,42 +139,46 @@ const MemberManage: React.FC<unknown> = () => {
     {
       label: (
         <Role>
-          <span>读写</span>
-          <span>在当前空间有编辑权限</span>
+          <span>{intl.formatMessage({ id: 'write' })}</span>
+          <span>
+            {intl.formatMessage({ id: 'memberManageMent.write.tip' })}
+          </span>
         </Role>
       ),
       value: '1',
-      name: '读写',
+      name: intl.formatMessage({ id: 'write' }),
     },
     {
       label: (
         <Role>
-          <span>只读</span>
-          <span>在当前空间只能查看</span>
+          <span>{intl.formatMessage({ id: 'readonly' })}</span>
+          <span>
+            {intl.formatMessage({ id: 'memberManageMent.readonly.tip' })}
+          </span>
         </Role>
       ),
       value: '0',
-      name: '只读',
+      name: intl.formatMessage({ id: 'readonly' }),
     },
   ];
 
   const baseColumns: ColumnsType<DataType> = [
     {
-      title: '用户名',
+      title: intl.formatMessage({ id: 'username' }),
       width: 80,
       dataIndex: 'name',
     },
     {
-      title: '权限',
+      title: intl.formatMessage({ id: 'permission' }),
       width: 160,
       dataIndex: 'permission',
       filters: [
         {
-          text: '读写',
+          text: intl.formatMessage({ id: 'write' }),
           value: '1',
         },
         {
-          text: '只读',
+          text: intl.formatMessage({ id: 'readonly' }),
           value: '0',
         },
       ],
@@ -209,7 +218,7 @@ const MemberManage: React.FC<unknown> = () => {
       },
     },
     {
-      title: '加入时间',
+      title: intl.formatMessage({ id: 'joinTime' }),
       width: 160,
       dataIndex: 'create_time',
       sorter: true,
@@ -221,7 +230,7 @@ const MemberManage: React.FC<unknown> = () => {
 
   const operateColumns: ColumnsType<DataType> = [
     {
-      title: '操作',
+      title: intl.formatMessage({ id: 'operate' }),
       width: 60,
       fixed: 'right',
       dataIndex: 'id',
@@ -232,7 +241,7 @@ const MemberManage: React.FC<unknown> = () => {
               handleDeleteUser(text);
             }}
           >
-            删除
+            {intl.formatMessage({ id: 'delete' })}
           </a>
         );
       },
@@ -246,12 +255,12 @@ const MemberManage: React.FC<unknown> = () => {
   return (
     <LightArea>
       <div className="area-operate">
-        <div className="title">成员列表</div>
+        <div className="title">{intl.formatMessage({ id: 'memberList' })}</div>
         <Form form={form}>
           <Space>
             <Form.Item name={'name'} noStyle>
               <Input
-                placeholder="请输入用户名"
+                placeholder={intl.formatMessage({ id: 'usernamePlaceholder' })}
                 onPressEnter={() => {
                   handlePageSearch();
                 }}
@@ -272,7 +281,7 @@ const MemberManage: React.FC<unknown> = () => {
                     setBatchState(!batchState);
                   }}
                 >
-                  批量操作
+                  {intl.formatMessage({ id: 'batchOperate' })}
                 </Button>
                 <Button
                   type="primary"
@@ -280,7 +289,7 @@ const MemberManage: React.FC<unknown> = () => {
                     setAddMemberOpen(true);
                   }}
                 >
-                  添加成员
+                  {intl.formatMessage({ id: 'addMember' })}
                 </Button>
               </>
             )}
@@ -292,14 +301,16 @@ const MemberManage: React.FC<unknown> = () => {
           <Alert
             message={
               <>
-                已选择 <a>{selectedRowKeys.length}</a> 项
+                {intl.formatMessage({ id: 'selected' })}{' '}
+                <a>{selectedRowKeys.length}</a>{' '}
+                {intl.formatMessage({ id: 'item' })}
                 <a
                   style={{ paddingLeft: '16px' }}
                   onClick={() => {
                     setSelectedRowKeys([]);
                   }}
                 >
-                  清空
+                  {intl.formatMessage({ id: 'clear' })}
                 </a>
               </>
             }
@@ -320,7 +331,7 @@ const MemberManage: React.FC<unknown> = () => {
                   handleDeleteUser();
                 }}
               >
-                批量删除
+                {intl.formatMessage({ id: 'batchDelete' })}
               </Button>
             }
             showIcon

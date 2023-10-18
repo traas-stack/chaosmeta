@@ -176,7 +176,7 @@ func (i *HangInjector) Recover(ctx context.Context) error {
 	}
 
 	cgroupPath := cgroup.GetBlkioCPath(i.Info.Uid, containerCgroup)
-	isCgroupExist, err := filesys.ExistPath(cgroupPath)
+	isCgroupExist, err := filesys.ExistPathLocal(cgroupPath)
 	if err != nil {
 		return fmt.Errorf("check cgroup[%s] exist error: %s", cgroupPath, err.Error())
 	}

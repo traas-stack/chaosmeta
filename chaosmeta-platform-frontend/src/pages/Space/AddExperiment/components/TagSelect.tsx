@@ -5,7 +5,7 @@ import {
   spaceAddTag,
 } from '@/services/chaosmeta/SpaceController';
 import { CheckOutlined, PlusOutlined } from '@ant-design/icons';
-import { useRequest } from '@umijs/max';
+import { useIntl, useRequest } from '@umijs/max';
 import { Button, Form, Input, Popover, Space, Tag, message } from 'antd';
 import { useState } from 'react';
 import { AddTagDrawerContainer, AddTagPopContent } from '../style';
@@ -21,6 +21,7 @@ const TagSelect = (props: Props) => {
   const [form] = Form.useForm();
   // 添加标签的展示
   const [addTagOpen, setAddTagOpen] = useState<boolean>(false);
+  const intl = useIntl();
 
   // 是否有重复标签存在的提示
   const [isTip, setIsTip] = useState<boolean>(false);
@@ -70,7 +71,7 @@ const TagSelect = (props: Props) => {
    */
   const hanldeUpdateTagList = (temp: any) => {
     if (addTagList?.some((item: { id: any }) => item.id === temp.id)) {
-      message.info('标签已存在');
+      message.info(intl.formatMessage({ id: 'tag.repeat.check' }));
       return;
     }
     setAddTagList((origin: any) => {
@@ -114,7 +115,12 @@ const TagSelect = (props: Props) => {
         <Form form={form}>
           <Form.Item
             name={'tagName'}
-            rules={[{ message: '请输入', required: true }]}
+            rules={[
+              {
+                message: intl.formatMessage({ id: 'inputPlaceholder' }),
+                required: true,
+              },
+            ]}
           >
             <Input
               placeholder="请输入"
@@ -139,7 +145,11 @@ const TagSelect = (props: Props) => {
           </Form.Item>
         </Form>
 
-        {isTip && <div className="tip">标签已经存在，请重新输入</div>}
+        {isTip && (
+          <div className="tip">
+            {intl.formatMessage({ id: 'tag.repeat.text' })}
+          </div>
+        )}
         <Space size={12} className="tags">
           {tagColors?.map((item) => {
             return (
@@ -180,7 +190,7 @@ const TagSelect = (props: Props) => {
                 setAddTagOpen(false);
               }}
             >
-              取消
+              {intl.formatMessage({ id: 'cancel' })}
             </Button>
             <Button
               size="small"
@@ -190,7 +200,7 @@ const TagSelect = (props: Props) => {
               }}
               loading={handleCheckTag?.loading}
             >
-              确定
+              {intl.formatMessage({ id: 'confirm' })}
             </Button>
           </Space>
         </div>
@@ -201,7 +211,7 @@ const TagSelect = (props: Props) => {
   return (
     <>
       <AddTagDrawerContainer>
-        <div className="label">标签</div>
+        <div className="label">{intl.formatMessage({ id: 'label' })}</div>
         <div className="tag">
           {addTagList?.map((item: { name: string; color: string }) => {
             return (
@@ -234,7 +244,7 @@ const TagSelect = (props: Props) => {
                 setAddTagOpen(true);
               }}
             >
-              <PlusOutlined /> 标签
+              <PlusOutlined /> {intl.formatMessage({ id: 'label' })}
             </Tag>
           </Popover>
         </div>

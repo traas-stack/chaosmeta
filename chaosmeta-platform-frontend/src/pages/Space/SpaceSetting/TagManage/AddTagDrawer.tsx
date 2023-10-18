@@ -4,7 +4,7 @@ import {
   spaceAddTag,
 } from '@/services/chaosmeta/SpaceController';
 import { CheckOutlined, PlusOutlined } from '@ant-design/icons';
-import { useRequest } from '@umijs/max';
+import { useIntl, useRequest } from '@umijs/max';
 import {
   Button,
   Drawer,
@@ -38,6 +38,7 @@ const AddTagDrawer: React.FC<IProps> = (props) => {
     setOpen(false);
   };
   const [submitLoading, setSubmitLoading] = useState<boolean>(false);
+  const intl = useIntl();
   /**
    * 查询标签信息，用于校验标签是否已经添加过
    */
@@ -76,7 +77,7 @@ const AddTagDrawer: React.FC<IProps> = (props) => {
    */
   const handleSubmit = async () => {
     if (!addTagList?.length) {
-      message.info('请添加标签');
+      message.info(intl.formatMessage({ id: 'tag.empty.tip' }));
       return;
     }
     setSubmitLoading(true);
@@ -91,7 +92,7 @@ const AddTagDrawer: React.FC<IProps> = (props) => {
     // 调用成功之后关闭弹窗
     const result = await Promise.all(queryList);
     if (result.every((item) => item.code === 200)) {
-      message.success('您已成功新建标签');
+      message.success(intl.formatMessage({ id: 'tag.create.success.tip' }));
       setSubmitLoading(false);
       setOpen(false);
       handlePageSearch();
@@ -104,10 +105,15 @@ const AddTagDrawer: React.FC<IProps> = (props) => {
         <Form form={form}>
           <Form.Item
             name={'tagName'}
-            rules={[{ message: '请输入', required: true }]}
+            rules={[
+              {
+                message: intl.formatMessage({ id: 'inputPlaceholder' }),
+                required: true,
+              },
+            ]}
           >
             <Input
-              placeholder="请输入"
+              placeholder={intl.formatMessage({ id: 'inputPlaceholder' })}
               onChange={() => {
                 setIsTip(false);
               }}
@@ -115,7 +121,11 @@ const AddTagDrawer: React.FC<IProps> = (props) => {
           </Form.Item>
         </Form>
 
-        {isTip && <div className="tip">标签已经存在，请重新输入</div>}
+        {isTip && (
+          <div className="tip">
+            {intl.formatMessage({ id: 'tag.repeat.text' })}
+          </div>
+        )}
         <Space size={12} className="tags">
           {tagColors?.map((item) => {
             return (
@@ -141,7 +151,7 @@ const AddTagDrawer: React.FC<IProps> = (props) => {
                 setAddTagOpen(false);
               }}
             >
-              取消
+              {intl.formatMessage({ id: 'cancel' })}
             </Button>
             <Button
               size="small"
@@ -151,7 +161,7 @@ const AddTagDrawer: React.FC<IProps> = (props) => {
               }}
               loading={handleCheckTag?.loading}
             >
-              确定
+              {intl.formatMessage({ id: 'confirm' })}
             </Button>
           </Space>
         </div>
@@ -169,25 +179,27 @@ const AddTagDrawer: React.FC<IProps> = (props) => {
     <Drawer
       open={open}
       onClose={handleClose}
-      title="新建标签"
+      title={intl.formatMessage({ id: 'tagManageMent.add.title' })}
       width={480}
       footer={
         <div style={{ textAlign: 'right' }}>
           <Space>
-            <Button onClick={handleClose}>取消</Button>
+            <Button onClick={handleClose}>
+              {intl.formatMessage({ id: 'cancel' })}
+            </Button>
             <Button
               type="primary"
               onClick={handleSubmit}
               loading={submitLoading}
             >
-              确定
+              {intl.formatMessage({ id: 'confirm' })}
             </Button>
           </Space>
         </div>
       }
     >
       <AddTagDrawerContainer>
-        <div className="label">标签</div>
+        <div className="label">{intl.formatMessage({ id: 'label' })}</div>
         <div className="tag">
           {addTagList?.map((item: { name: string; color: string }) => {
             return (
@@ -220,7 +232,7 @@ const AddTagDrawer: React.FC<IProps> = (props) => {
                 setAddTagOpen(true);
               }}
             >
-              <PlusOutlined /> 标签
+              <PlusOutlined /> {intl.formatMessage({ id: 'label' })}
             </Tag>
           </Popover>
         </div>

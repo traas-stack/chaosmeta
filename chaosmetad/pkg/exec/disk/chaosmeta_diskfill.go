@@ -97,7 +97,7 @@ func validatorDiskFill(ctx context.Context, percent int, bytes, dir string) erro
 		return fmt.Errorf("\"dir\" is empty")
 	}
 
-	if err := filesys.CheckDir(dir); err != nil {
+	if err := filesys.CheckDirLocal(dir); err != nil {
 		return fmt.Errorf("\"dir\"[%s] check error: %s", dir, err.Error())
 	}
 
@@ -133,7 +133,7 @@ func injectDiskFill(ctx context.Context, percent int, bytes, dir, uid string) er
 
 func recoverDiskFill(ctx context.Context, dir, uid string) error {
 	fillFile := fmt.Sprintf("%s/%s", dir, getFillFileName(uid))
-	isExist, err := filesys.ExistPath(fillFile)
+	isExist, err := filesys.ExistPathLocal(fillFile)
 	if err != nil {
 		return fmt.Errorf("check file[%s] exist error: %s", fillFile, err.Error())
 	}

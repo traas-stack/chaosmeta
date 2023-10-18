@@ -6,9 +6,10 @@ COMPONENT=$1
 NAMESPACE=$2
 
 BUILD_DIR=`cd $(dirname $0); pwd`
-
-mkdir -p ${BUILD_DIR}/ssl && cd ${BUILD_DIR}/ssl
-docker run --mount type=bind,source=$(pwd),destination=${BUILD_DIR}/ssl registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-openssl:v1.0.0 openssl req -x509 -newkey rsa:4096 -keyout ${BUILD_DIR}/ssl/tls.key -out ${BUILD_DIR}/ssl/tls.crt -days 3650 -nodes -subj "/CN=chaosmeta-${COMPONENT}-webhook-service.${NAMESPACE}.svc" -addext "subjectAltName=DNS:chaosmeta-${COMPONENT}-webhook-service.${NAMESPACE}.svc"
+BUILD_DIR=${BUILD_DIR}/ssl/${COMPONENT}
+echo ${BUILD_DIR}
+mkdir -p ${BUILD_DIR} && cd ${BUILD_DIR}
+docker run --mount type=bind,source=$(pwd),destination=${BUILD_DIR} registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-openssl:v1.0.0 openssl req -x509 -newkey rsa:4096 -keyout ${BUILD_DIR}/tls.key -out ${BUILD_DIR}/tls.crt -days 3650 -nodes -subj "/CN=chaosmeta-${COMPONENT}-webhook-service.${NAMESPACE}.svc" -addext "subjectAltName=DNS:chaosmeta-${COMPONENT}-webhook-service.${NAMESPACE}.svc"
 caBundle=""
 if [ "$(uname -s)" = "Linux" ]; then
     caBundle=$(cat tls.crt | base64 -w 0)

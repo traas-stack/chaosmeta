@@ -82,7 +82,7 @@ func main() {
 	path = filepath.Dir(path)
 	pathArr := strings.Split(path, "/")
 	rootPath := strings.Join(pathArr[:len(pathArr)-1], "/")
-	tool := fmt.Sprintf("%s/build/chaosmetad/chaosmetad", rootPath)
+	tool := fmt.Sprintf("%s/build/chaosmetad-0.3.6/chaosmetad", rootPath)
 	fmt.Println(tool)
 
 	var testCases = getTestCases()

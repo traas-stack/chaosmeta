@@ -2,8 +2,12 @@ import {
   queryFaultNodeItem,
   queryFaultNodeScopes,
   queryFaultNodeTargets,
+  queryFlowList,
+  queryMeasureList,
 } from '@/services/chaosmeta/ExperimentController';
+import { getIntlName } from '@/utils/format';
 import { useSortable } from '@dnd-kit/sortable';
+import { useIntl } from '@umijs/max';
 import { Tooltip, Tree } from 'antd';
 import React, { useState } from 'react';
 import { NodeItem, NodeLibraryContainer } from '../style';
@@ -14,16 +18,26 @@ interface IProps {
 
 // 初始化节点, 度量和流量暂时禁用，后期加入进来
 const initTreeData: any[] = [
-  { nameCn: '故障节点', key: 'fault' },
-  { nameCn: '度量引擎', key: 'measure', disabled: true, isLeaf: true },
-  { nameCn: '流量注入', key: 'flow', disabled: true, isLeaf: true },
+  { nameCn: '故障节点', key: 'fault', name: 'faulty node' },
+  {
+    nameCn: '度量引擎',
+    key: 'measure',
+    name: 'measurement engine',
+  },
+  {
+    nameCn: '流量注入',
+    key: 'flow',
+    name: 'flow injection',
+  },
   {
     nameCn: '其他节点',
+    name: 'other nodes',
     key: 'other',
     children: [
       // 其他节点下默认写死等待时长节点
       {
         nameCn: '等待时长',
+        name: 'waiting time',
         key: 'wait',
         targetId: 'wait-init',
         isLeaf: true,
@@ -42,6 +56,7 @@ const NodeLibrary: React.FC<IProps> = (props) => {
   const { disabled = false } = props;
   const [treeData, setTreeData] = useState(initTreeData);
   const [expandedKeys, setExpandedKeys] = useState<string[]>([]);
+  const intl = useIntl();
 
   /**
    * 更新节点数据
@@ -95,10 +110,10 @@ const NodeLibrary: React.FC<IProps> = (props) => {
         $isDragging={isDragging}
         $disabledItem={disabledItem}
       >
-        <Tooltip title={itemData?.nameCn}>
+        <Tooltip title={getIntlName(itemData)}>
           <div {...listeners} className="temp-item ellipsis">
             <img src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*rOAzRrDGQoAAAAAAAAAAAAAADmKmAQ/original" />
-            {itemData?.nameCn}
+            {getIntlName(itemData)}
           </div>
         </Tooltip>
       </NodeItem>
@@ -125,7 +140,7 @@ const NodeLibrary: React.FC<IProps> = (props) => {
       });
     }
     // 故障节点 - 二级节点list查询
-    if (key && !scopeId) {
+    if (key && !scopeId && key.includes('fault')) {
       return queryFaultNodeTargets({ id }).then((res: any) => {
         if (res?.code === 200) {
           const targetList = res?.data?.targets;
@@ -139,13 +154,13 @@ const NodeLibrary: React.FC<IProps> = (props) => {
       });
     }
     // 故障节点 - 三级节点list查询
-    if (scopeId) {
+    if (scopeId && key.includes('fault')) {
       return queryFaultNodeItem({ scope_id: scopeId, target_id: id }).then(
         (res: any) => {
           if (res?.code === 200) {
             const faults = res?.data?.faults;
             // 设置一些编排配置需要的参数
-            const params = {
+            const faultParams = {
               isLeaf: true,
               // 一级节点的id
               scope_id: scopeId,
@@ -157,7 +172,7 @@ const NodeLibrary: React.FC<IProps> = (props) => {
               nodeInfoState: false,
             };
             const newFaults = faults?.map((item: any) => {
-              return { ...item, key: `${key}-${item.id}`, ...params };
+              return { ...item, key: `${key}-${item.id}`, ...faultParams };
             });
             setTreeData((origin) => {
               return updateTreeData(origin, key, newFaults);
@@ -166,13 +181,60 @@ const NodeLibrary: React.FC<IProps> = (props) => {
         },
       );
     }
+    // 度量引擎
+    if (key === 'measure') {
+      return queryMeasureList()?.then((res: any) => {
+        if (res?.code === 200) {
+          const measures = res?.data?.measures;
+          // 设置一些编排配置需要的参数
+          const measuresParams = {
+            isLeaf: true,
+            isChildrenNode: true,
+            exec_type: 'measure',
+            exec_type_name: '度量引擎',
+            // 当前节点信息是否进行配置完成，默认未完成，需要进行配置
+            nodeInfoState: false,
+          };
+          const newFaults = measures?.map((item: any) => {
+            return { ...item, key: `${key}-${item.id}`, ...measuresParams };
+          });
+          setTreeData((origin) => {
+            return updateTreeData(origin, key, newFaults);
+          });
+        }
+      });
+    }
+    if (key === 'flow') {
+      return queryFlowList()?.then((res: any) => {
+        if (res?.code === 200) {
+          const flows = res?.data?.flows;
+          // 设置一些编排配置需要的参数
+          const flowsParams = {
+            isLeaf: true,
+            isChildrenNode: true,
+            exec_type: 'flow',
+            exec_type_name: '流量注入',
+            // 当前节点信息是否进行配置完成，默认未完成，需要进行配置
+            nodeInfoState: false,
+          };
+          const newFaults = flows?.map((item: any) => {
+            return { ...item, key: `${key}-${item.id}`, ...flowsParams };
+          });
+          setTreeData((origin) => {
+            return updateTreeData(origin, key, newFaults);
+          });
+        }
+      });
+    }
     return Promise.resolve();
   };
 
   return (
     <NodeLibraryContainer>
       <div className="wrap">
-        <div className="title">节点库</div>
+        <div className="title">
+          {intl.formatMessage({ id: 'nodeLibrary.title' })}
+        </div>
         <div className="node">
           {/* <div>
             <Input
@@ -193,7 +255,7 @@ const NodeLibrary: React.FC<IProps> = (props) => {
           <Tree
             loadData={onLoadData}
             treeData={treeData}
-            fieldNames={{ title: 'nameCn' }}
+            fieldNames={{ title: 'name' }}
             onSelect={(keys, params) => {
               // 点击名称时也需要展开或收起
               const expanded = params?.node?.expanded;
@@ -213,10 +275,10 @@ const NodeLibrary: React.FC<IProps> = (props) => {
               const {
                 targetId,
                 key,
-                nameCn,
                 disabled: nodeDisabled,
+                isChildrenNode,
               } = nodeData;
-              if (targetId) {
+              if (targetId || isChildrenNode) {
                 return (
                   <div className="tree-node">
                     <LeftNodeItem
@@ -229,7 +291,7 @@ const NodeLibrary: React.FC<IProps> = (props) => {
               }
               return (
                 <div style={{ color: nodeDisabled ? 'rgba(0,0,0,0.25)' : '' }}>
-                  {nameCn}
+                  {getIntlName(nodeData)}
                 </div>
               );
             }}

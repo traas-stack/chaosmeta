@@ -17,9 +17,8 @@
 package main
 
 import (
-	"context"
 	"fmt"
-	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/memory"
+	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils"
 	"github.com/traas-stack/chaosmeta/chaosmetad/tools/common"
 	"math"
 	"os"
@@ -102,18 +101,19 @@ func main() {
 		common.ExitWithErr("args must at lease 4. format: [uid] [score] [percent] [bytes] [timeout second]")
 	}
 
-	score, percentStr, bytes := args[2], args[3], args[4]
+	score, bytes := args[2], args[4]
 
 	if err := writeScore(score); err != nil {
 		common.ExitWithErr(fmt.Sprintf("set score error: %s", err.Error()))
 	}
 
-	percent, err := strconv.Atoi(percentStr)
-	if err != nil {
-		common.ExitWithErr(fmt.Sprintf("percent is not a num: %s", err.Error()))
-	}
+	//percent, err := strconv.Atoi(percentStr)
+	//if err != nil {
+	//	common.ExitWithErr(fmt.Sprintf("percent is not a num: %s", err.Error()))
+	//}
 
-	fillKBytes, err := memory.CalculateFillKBytes(context.Background(), percent, bytes)
+	//fillKBytes, err := calculateFillKBytes(context.Background(), percent, bytes)
+	fillKBytes, err := utils.GetKBytes(bytes)
 	if err != nil {
 		common.ExitWithErr(fmt.Sprintf("get fill KBytes error: %s", err.Error()))
 	}

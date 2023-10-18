@@ -40,12 +40,100 @@ const (
 	ProtocolUDP6 = "udp6"
 )
 
-func ExistInterface(name string) bool {
-	if _, err := net.InterfaceByName(name); err != nil {
-		return false
+func getExistTCRootQdiscCmd(netInterface string) string {
+	return fmt.Sprintf("tc qdisc ls dev %s | grep -w '1: root' | grep -v grep | wc -l", netInterface)
+}
+
+func GetClearTcRuleCmd(netInterface string) string {
+	return fmt.Sprintf("tc qdisc del dev %s root", netInterface)
+}
+
+func getAddNetemQdiscCmd(netInterface, parent, fault string, args string) string {
+	if parent == "" {
+		parent = "root handle 1:"
+	} else {
+		parent = fmt.Sprintf("parent %s", parent)
 	}
 
-	return true
+	return fmt.Sprintf("tc qdisc add dev %s %s netem %s %s", netInterface, parent, fault, args)
+}
+
+func getAddPrioQdiscCmd(netInterface, parent, name string) string {
+	if parent == "" {
+		parent = "root"
+	} else {
+		parent = fmt.Sprintf("parent %s", parent)
+	}
+
+	return fmt.Sprintf("tc qdisc add dev %s %s handle %s prio bands 4", netInterface, parent, name)
+}
+
+func getAddHTBQdiscCmd(netInterface string) string {
+	return fmt.Sprintf("tc qdisc add dev %s root handle 1: htb default 1", netInterface)
+}
+
+func getAddLimitClassCmd(netInterface, rate, mode string) string {
+	subNum := 1
+	if mode == ModeNormal {
+		subNum = 2
+	}
+
+	return fmt.Sprintf("tc class add dev %s parent 1: classid 1:%d htb rate %s", netInterface, subNum, rate)
+}
+
+func AddLimitClass(ctx context.Context, cr, cId, netInterface, rate, mode string) error {
+	_, err := cmdexec.ExecCommonWithNS(ctx, cr, cId, getAddLimitClassCmd(netInterface, rate, mode), []string{namespace.NET})
+	return err
+}
+
+// AddHTBQdisc default 1:1
+func AddHTBQdisc(ctx context.Context, cr, cId, netInterface string) error {
+	_, err := cmdexec.ExecCommonWithNS(ctx, cr, cId, getAddHTBQdiscCmd(netInterface), []string{namespace.NET})
+	return err
+}
+
+func AddFilter(ctx context.Context, cr, cId, netInterface, target, srcIpListStr, dstIpListStr, srcPortListStr, dstPortListStr string) error {
+	cmd, err := getAddFilterCmd(ctx, netInterface, target, srcIpListStr, dstIpListStr, srcPortListStr, dstPortListStr)
+	if err != nil {
+		return fmt.Errorf("get filter cmd error: %s", err.Error())
+	}
+
+	_, err = cmdexec.ExecCommonWithNS(ctx, cr, cId, cmd, []string{namespace.NET})
+	return err
+}
+
+func AddPrioQdisc(ctx context.Context, cr, cId, netInterface, parent, name string) error {
+	_, err := cmdexec.ExecCommonWithNS(ctx, cr, cId, getAddPrioQdiscCmd(netInterface, parent, name), []string{namespace.NET})
+	return err
+}
+
+func AddNetemQdisc(ctx context.Context, cr, cId, netInterface, parent, fault string, args string) error {
+	_, err := cmdexec.ExecCommonWithNS(ctx, cr, cId, getAddNetemQdiscCmd(netInterface, parent, fault, args), []string{namespace.NET})
+	return err
+}
+
+func ClearTcRule(ctx context.Context, cr, cId, netInterface string) error {
+	_, err := cmdexec.ExecCommonWithNS(ctx, cr, cId, GetClearTcRuleCmd(netInterface), []string{namespace.NET})
+	return err
+}
+
+func ExistTCRootQdisc(ctx context.Context, cr, cId string, netInterface string) (bool, error) {
+	if netInterface == "" {
+		return false, fmt.Errorf("interface is empty")
+	}
+
+	reStr, err := cmdexec.ExecCommonWithNS(ctx, cr, cId, getExistTCRootQdiscCmd(netInterface), []string{namespace.NET})
+	if err != nil {
+		return false, fmt.Errorf("exec cmd error: %s", err.Error())
+	}
+
+	reStr = strings.TrimSpace(reStr)
+	count, err := strconv.Atoi(reStr)
+	if err != nil {
+		return false, fmt.Errorf("tc rule count is not a num: %s, output: %s", err.Error(), reStr)
+	}
+
+	return count != 0, nil
 }
 
 // GetValidIPList only support ipv4
@@ -120,86 +208,6 @@ func getPortMask(mask int) string {
 	}
 
 	return fmt.Sprintf("0x%x", maskValue)
-}
-
-func ClearTcRule(ctx context.Context, netInterface string) error {
-	return cmdexec.RunBashCmdWithoutOutput(ctx, GetClearTcRuleCmd(netInterface))
-}
-
-func GetClearTcRuleCmd(netInterface string) string {
-	return fmt.Sprintf("tc qdisc del dev %s root", netInterface)
-}
-
-func AddNetemQdisc(ctx context.Context, netInterface, parent, fault string, args string) error {
-	if parent == "" {
-		parent = "root handle 1:"
-	} else {
-		parent = fmt.Sprintf("parent %s", parent)
-	}
-
-	cmd := fmt.Sprintf("tc qdisc add dev %s %s netem %s %s", netInterface, parent, fault, args)
-	if err := cmdexec.RunBashCmdWithoutOutput(ctx, cmd); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func AddPrioQdisc(ctx context.Context, netInterface, parent, name string) error {
-	if parent == "" {
-		parent = "root"
-	} else {
-		parent = fmt.Sprintf("parent %s", parent)
-	}
-
-	cmd := fmt.Sprintf("tc qdisc add dev %s %s handle %s prio bands 4", netInterface, parent, name)
-	if err := cmdexec.RunBashCmdWithoutOutput(ctx, cmd); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// AddHTBQdisc default 1:1
-func AddHTBQdisc(ctx context.Context, netInterface string) error {
-	cmdStr := fmt.Sprintf("tc qdisc add dev %s root handle 1: htb default 1", netInterface)
-	log.GetLogger(ctx).Debugf("add htb qdisc cmd: %s", cmdStr)
-
-	if err := cmdexec.RunBashCmdWithoutOutput(ctx, cmdStr); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func AddLimitClass(ctx context.Context, netInterface string, rate string, mode string) error {
-	subNum := 1
-	if mode == ModeNormal {
-		subNum = 2
-	}
-
-	cmdStr := fmt.Sprintf("tc class add dev %s parent 1: classid 1:%d htb rate %s", netInterface, subNum, rate)
-	log.GetLogger(ctx).Debugf("add class cmd: %s", cmdStr)
-
-	if err := cmdexec.RunBashCmdWithoutOutput(ctx, cmdStr); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func AddFilter(ctx context.Context, netInterface, target, srcIpListStr, dstIpListStr, srcPortListStr, dstPortListStr string) error {
-	cmd, err := getAddFilterCmd(ctx, netInterface, target, srcIpListStr, dstIpListStr, srcPortListStr, dstPortListStr)
-	if err != nil {
-		return fmt.Errorf("get filter cmd error: %s", err.Error())
-	}
-
-	log.GetLogger(ctx).Debugf("add filter cmd: %s", cmd)
-	if err := cmdexec.RunBashCmdWithoutOutput(ctx, cmd); err != nil {
-		return fmt.Errorf("run cmd error: %s", err.Error())
-	}
-
-	return nil
 }
 
 func getAddFilterCmd(ctx context.Context, netInterface, target, srcIpListStr, dstIpListStr, srcPortListStr, dstPortListStr string) (tcFilterStr string, err error) {
@@ -305,19 +313,6 @@ func getStrList(srcIpListStr, dstIpListStr, srcPortListStr, dstPortListStr strin
 	return
 }
 
-func ExistTCRootQdisc(ctx context.Context, netInterface string) (bool, error) {
-	out, err := cmdexec.RunBashCmdWithOutput(ctx, fmt.Sprintf("tc qdisc ls dev %s | grep -w \"1: root\" | grep -v grep | wc -l", netInterface))
-	if err != nil {
-		return false, err
-	}
-
-	if strings.TrimSpace(out) == "0" {
-		return false, nil
-	}
-
-	return true, nil
-}
-
 func GetPidByPort(ctx context.Context, cr, cId string, port int, proto string) (int, error) {
 	var (
 		cmd    string
@@ -326,8 +321,14 @@ func GetPidByPort(ctx context.Context, cr, cId string, port int, proto string) (
 	)
 	if proto == ProtocolTCP || proto == ProtocolTCP6 {
 		cmd = fmt.Sprintf("netstat -anpt | grep -w %s | awk '{print $4,$7}' | grep -w %d | grep :%d | awk '{print $2}' | awk -F'/' '{print $1}'", proto, port, port)
+		if cr != "" {
+			cmd = fmt.Sprintf("netstat -anpt | grep -w %s | awk '{print \\$4,\\$7}' | grep -w %d | grep :%d | awk '{print \\$2}' | awk -F'/' '{print \\$1}'", proto, port, port)
+		}
 	} else if proto == ProtocolUDP || proto == ProtocolUDP6 {
 		cmd = fmt.Sprintf("netstat -anpu | grep -w %s | awk '{print $4,$6}' | grep -w %d | grep :%d | awk '{print $2}' | awk -F'/' '{print $1}'", proto, port, port)
+		if cr != "" {
+			cmd = fmt.Sprintf("netstat -anpu | grep -w %s | awk '{print \\$4,\\$6}' | grep -w %d | grep :%d | awk '{print \\$2}' | awk -F'/' '{print \\$1}'", proto, port, port)
+		}
 	} else {
 		return utils.NoPid, fmt.Errorf("protocol not support: %s、%s、%s、%s", ProtocolTCP, ProtocolUDP, ProtocolTCP6, ProtocolUDP6)
 	}

@@ -25,6 +25,38 @@
 #include <getopt.h>
 #include <signal.h>
 
+int set_env(int pid) {
+    char cmd[64];
+    snprintf(cmd, sizeof(cmd), "cat /proc/%d/environ | tr '\\0' '\\t'", pid);
+
+    FILE* pipe = popen(cmd, "r");
+    if (pipe == NULL) {
+        fprintf(stderr, "Failed to execute command: %s\n", cmd);
+        return -1;
+    }
+
+    char env_data[4096];
+    fgets(env_data, sizeof(env_data), pipe);
+    pclose(pipe);
+
+    char* tmp;
+    int length = strlen(env_data);
+    tmp = (char*)malloc(length + 1);
+    strcpy(tmp, env_data);
+
+    char* env_var;
+    env_var = strtok(tmp, "\t");
+    while (env_var != NULL) {
+        if (putenv(env_var) != 0) {
+            fprintf(stderr, "failed to set environment variable[%s].\n", env_var);
+            return -1;
+        }
+        env_var = strtok(NULL, "\t");
+    }
+
+    return 0;
+}
+
 int enter_ns(int pid, const char* type) {
     char path[64], selfpath[64];
     snprintf(path, sizeof(path), "/proc/%d/ns/%s", pid, type);
@@ -76,7 +108,8 @@ int main(int argc, char *argv[]) {
     int netns = 0;
     int pidns = 0;
     int mntns = 0;
-    char *string = "c:t:mpuni";
+    int envns = 0;
+    char *string = "c:t:mpunie";
 
     while((opt =getopt(argc, argv, string))!= -1) {
         switch (opt) {
@@ -101,6 +134,9 @@ int main(int argc, char *argv[]) {
             case 'i':
                 ipcns = 1;
                 break;
+            case 'e':
+                envns = 1;
+                break;
             default:
                 break;
         }
@@ -114,6 +150,13 @@ int main(int argc, char *argv[]) {
     if (!cmd) {
         fprintf(stderr, "cmd args is empty\n");
         return 1;
+    }
+
+    if(envns) {
+        int re = set_env(target);
+        if (re != 0) {
+            return re;
+        }
     }
 
     if(ipcns) {
@@ -152,8 +195,9 @@ int main(int argc, char *argv[]) {
     }
 
     int re = system(cmd);
+    re = (re >> 8) & 0xFF;
     if (re != 0) {
-//        fprintf(stderr, "cmd exec error\n");
+//        fprintf(stderr, "cmd exec error， exit code: %d\n", re);
         return re;
     }
 

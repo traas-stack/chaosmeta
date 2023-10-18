@@ -47,3 +47,24 @@ export async function queryPodLIst(
     },
   );
 }
+
+/**
+ * 获取podnode列表
+ * @param params
+ * @param options
+ * @returns
+ */
+export async function queryPodNodeList(
+  params?: {
+    page?: number;
+    page_size?: number;
+    namespace?: string;
+  },
+  options?: { [key: string]: any },
+) {
+  return request<any>(`/chaosmeta/api/v1/kubernetes/cluster/${envType}/nodes`, {
+    method: 'GET',
+    params,
+    ...(options || {}),
+  });
+}

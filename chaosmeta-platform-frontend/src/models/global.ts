@@ -20,6 +20,9 @@ const useUser = () => {
   const [spacePermission, setSpacePermission] = useState<number>(0);
   // 当前选中的空间id
   const [curSpace, setCurSpace] = useState<string[]>(['1']);
+  // 空间下拉列表数据
+  const [spaceList, setSpaceList] = useState<any[]>([]);
+  
   return {
     userInfo,
     setUserInfo,
@@ -27,6 +30,8 @@ const useUser = () => {
     setSpacePermission,
     curSpace,
     setCurSpace,
+    setSpaceList,
+    spaceList
   };
 };
 

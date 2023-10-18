@@ -19,7 +19,6 @@ package file
 import (
 	"context"
 	"fmt"
-	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/cmdexec"
 	"github.com/traas-stack/chaosmeta/chaosmetad/test/common"
 	"io/ioutil"
@@ -29,7 +28,7 @@ import (
 )
 
 var (
-	fileAppendFileName = "chaosmeta_file.test"
+	fileAppendFileName = "/tmp/chaosmeta_file.test"
 	fileInitContent    = "init\n123\ng34g"
 	fileAppendContent  = "wdvew\nregewc24\ncf234c\neg34"
 )
@@ -61,10 +60,10 @@ func GetFileAppendTest() []common.TestCase {
 				return cmdexec.RunBashCmdWithoutOutput(ctx, fmt.Sprintf("echo -en \"%s\" > %s", fileInitContent, fileAppendFileName))
 			},
 			Check: func() error {
-				return checkAppend(fmt.Sprintf("%s/%s", utils.GetRunPath(), fileAppendFileName), 3, 4, true)
+				return checkAppend(fileAppendFileName, 3, 4, true)
 			},
 			CheckRecover: func() error {
-				return checkAppend(fmt.Sprintf("%s/%s", utils.GetRunPath(), fileAppendFileName), 3, 0, false)
+				return checkAppend(fileAppendFileName, 3, 0, false)
 			},
 			PostProcessor: func() error {
 				return os.Remove(fileAppendFileName)
@@ -76,10 +75,10 @@ func GetFileAppendTest() []common.TestCase {
 				return cmdexec.RunBashCmdWithoutOutput(ctx, fmt.Sprintf("echo -en \"%s\" > %s", fileInitContent, fileAppendFileName))
 			},
 			Check: func() error {
-				return checkAppend(fmt.Sprintf("%s/%s", utils.GetRunPath(), fileAppendFileName), 3, 4, false)
+				return checkAppend(fileAppendFileName, 3, 4, false)
 			},
 			CheckRecover: func() error {
-				return checkAppend(fmt.Sprintf("%s/%s", utils.GetRunPath(), fileAppendFileName), 3, 4, false)
+				return checkAppend(fileAppendFileName, 3, 4, false)
 			},
 			PostProcessor: func() error {
 				return os.Remove(fileAppendFileName)

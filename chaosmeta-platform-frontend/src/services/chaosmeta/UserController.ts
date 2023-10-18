@@ -1,5 +1,55 @@
 import request from '@/utils/request';
 
+
+
+/**
+ * 用户注册
+ * @param body
+ * @param options
+ * @returns
+ */
+export async function getGitAuth(
+  body: {
+    client_id: string;
+    client_secret: string;
+    code: string;
+  },
+  options?: any,
+) {
+  return request<any>('/oauth/access_token', {
+    method: 'POST',
+    data: body,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    ...(options || {}),
+  });
+}
+
+
+/**
+ * 用户注册
+ * @param body
+ * @param options
+ * @returns
+ */
+export async function getGitUser(
+  params: {
+    access_token: string;
+  },
+  options?: any,
+) {
+  return request<any>('/user', {
+    method: 'GET',
+    params,
+    headers: {
+      'Content-Type': 'application/json',
+      "Authorization": `Bearer ${params?.access_token}`
+    },
+    ...(options || {}),
+  });
+}
+
 /**
  * 用户注册
  * @param body

@@ -1,6 +1,6 @@
 import { tagColors, triggerTypes } from '@/constants';
 import { Popover, Tag } from 'antd';
-import { cronTranstionCN, formatTime } from './format';
+import { cronTranstionCN, formatTime, getIntlLabel } from './format';
 
 /**
  * 用于各重复组件方法的渲染
@@ -12,12 +12,11 @@ import { cronTranstionCN, formatTime } from './format';
  */
 export const renderScheduleType = (baseInfo: any) => {
   const { schedule_type, schedule_rule } = baseInfo;
-  const text = triggerTypes?.filter((item) => item?.value === schedule_type)[0]
-    ?.label;
+  const temp = triggerTypes?.filter((item) => item?.value === schedule_type)[0];
   if (schedule_type === 'cron') {
     return (
       <div>
-        {text}
+        {getIntlLabel(temp)}
         <span>{`（${cronTranstionCN(schedule_rule)}）`}</span>
       </div>
     );
@@ -25,12 +24,12 @@ export const renderScheduleType = (baseInfo: any) => {
   if (schedule_type === 'once') {
     return (
       <div>
-        {text}
+        {getIntlLabel(temp)}
         <span>{`（${formatTime(schedule_rule)}）`}</span>
       </div>
     );
   }
-  return <div>{text}</div>;
+  return <div>{getIntlLabel(temp)}</div>;
 };
 
 /**

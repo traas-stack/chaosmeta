@@ -1,15 +1,16 @@
+import { getLocale } from '@umijs/max';
 import cronstrue from 'cronstrue';
 import 'cronstrue/locales/zh_CN';
-import moment from 'moment';
+import dayjs from 'dayjs';
 import { v1 } from 'uuid';
 
 export function trim(str: string) {
   return str.trim();
 }
 
-export const formatTime = (time: moment.MomentInput) => {
+export const formatTime = (time?: dayjs.Dayjs | string) => {
   if (time) {
-    return moment(time)?.format('YYYY-MM-DD HH:mm:ss');
+    return dayjs(time)?.format('YYYY-MM-DD HH:mm:ss');
   }
   return '--';
 };
@@ -37,11 +38,12 @@ export const handleTimeTransform = (second: number) => {
   // 计算剩余的秒数、分数和小时数
   const renderSecond = second % 60; // 剩余秒数
   const minute = Math.floor(second / 60); // 分钟数
+  const residueMinute = minute % 60; // 剩余分钟数
   const hour = Math.floor(second / 60 / 60); // 小时数
   // 格式化时间字符串
-  const text = `${montageTime(hour)}:${montageTime(minute)}:${montageTime(
-    renderSecond,
-  )}`;
+  const text = `${montageTime(hour)}:${montageTime(
+    residueMinute,
+  )}:${montageTime(renderSecond)}`;
   return text;
 };
 
@@ -175,15 +177,74 @@ export const arrangeDataResultTranstion = (result: any) => {
  * @returns
  */
 export const cronTranstionCN = (cronRule: string) => {
+  // 获取当前语言，用于cron表达式描述展示
+  let curIntl = getLocale();
+  curIntl = curIntl.replace('-', '_');
   let cronCN = '';
   if (cronRule) {
     try {
-      cronCN = cronstrue.toString(cronRule, { locale: 'zh_CN' });
+      cronCN = cronstrue.toString(cronRule, { locale: curIntl });
     } catch (error) {
       cronCN = 'error';
     }
   }
   return cronCN;
+};
+
+/**
+ * 获取国际化文本
+ * @param temp 包含中文文案和对应英文文案的对象
+ * @returns 返回当前环境下的文案
+ */
+export const getIntlLabel = (temp: { label: string; labelUS: string }) => {
+  // 获取当前环境
+  const curIntl = getLocale();
+  // 如果当前环境为英文环境
+  if (curIntl === 'en-US') {
+    // 返回对应的英文文案
+    return temp?.labelUS;
+  }
+  // 返回对应的中文文案
+  return temp?.label;
+};
+
+/**
+ * 获取国际化文本
+ * @param temp 包含中文文案和对应英文文案的对象
+ * @returns 返回当前环境下的文案
+ */
+export const getIntlName = (temp: { name: string; nameCn: string }) => {
+  // 获取当前环境
+  const curIntl = getLocale();
+  if (temp?.name && temp?.nameCn) {
+    // 如果当前环境为英文环境
+    if (curIntl === 'en-US') {
+      // 返回对应的英文文案
+      return temp?.name;
+    }
+    // 返回对应的中文文案
+    return temp?.nameCn;
+  }
+  return temp?.name;
+};
+
+/**
+ * 根据传入的对象和key返回对应的中文/英文文案
+ * @param temp 包含中文文案和对应英文文案的对象
+ * @param cnKey 中文key
+ * @param usKey 英文key
+ * @returns
+ */
+export const getIntlText = (temp: any, cnKey: string, usKey: string) => {
+  // 获取当前环境
+  const curIntl = getLocale();
+  // 如果当前环境为英文环境
+  if (curIntl === 'en-US') {
+    // 返回对应的英文文案
+    return temp?.[usKey];
+  }
+  // 返回对应的中文文案
+  return temp?.[cnKey];
 };
 
 /**
@@ -243,4 +304,35 @@ export const copyExperimentFormatData = (data: any) => {
     labels: newLabels,
   };
   return params;
+};
+
+/**
+ * 格式化表单项名称
+ * @param item 表单项对象，包含id、key和execType三个属性
+ * @param parentName 父级表单项名称，可选参数
+ * @returns 返回格式化后的表单项名称数组
+ */
+export const formatFormName = (
+  item: { id: number; key: string; execType: string },
+  parentName?: string,
+) => {
+  const { id, key, execType } = item;
+  let name: any = '';
+  if (parentName) {
+    // 拼接父name
+    name = [parentName, id.toString()];
+  }
+  if (execType === 'flow_common') {
+    // 如果执行类型为'flow_common'，则和key进行拼接
+    name = ['flow_range', key];
+  }
+  if (execType === 'measure_common') {
+    // 如果执行类型为'measure_common'，则和key进行拼接
+    name = ['measure_range', key];
+  }
+  if (key === 'duration') {
+    // 如果键名为'duration'，则直接返回该键名
+    name = key;
+  }
+  return name;
 };
