@@ -38,11 +38,12 @@ export const handleTimeTransform = (second: number) => {
   // 计算剩余的秒数、分数和小时数
   const renderSecond = second % 60; // 剩余秒数
   const minute = Math.floor(second / 60); // 分钟数
+  const residueMinute = minute % 60; // 剩余分钟数
   const hour = Math.floor(second / 60 / 60); // 小时数
   // 格式化时间字符串
-  const text = `${montageTime(hour)}:${montageTime(minute)}:${montageTime(
-    renderSecond,
-  )}`;
+  const text = `${montageTime(hour)}:${montageTime(
+    residueMinute,
+  )}:${montageTime(renderSecond)}`;
   return text;
 };
 
@@ -303,4 +304,35 @@ export const copyExperimentFormatData = (data: any) => {
     labels: newLabels,
   };
   return params;
+};
+
+/**
+ * 格式化表单项名称
+ * @param item 表单项对象，包含id、key和execType三个属性
+ * @param parentName 父级表单项名称，可选参数
+ * @returns 返回格式化后的表单项名称数组
+ */
+export const formatFormName = (
+  item: { id: number; key: string; execType: string },
+  parentName?: string,
+) => {
+  const { id, key, execType } = item;
+  let name: any = '';
+  if (parentName) {
+    // 拼接父name
+    name = [parentName, id.toString()];
+  }
+  if (execType === 'flow_common') {
+    // 如果执行类型为'flow_common'，则和key进行拼接
+    name = ['flow_range', key];
+  }
+  if (execType === 'measure_common') {
+    // 如果执行类型为'measure_common'，则和key进行拼接
+    name = ['measure_range', key];
+  }
+  if (key === 'duration') {
+    // 如果键名为'duration'，则直接返回该键名
+    name = key;
+  }
+  return name;
 };

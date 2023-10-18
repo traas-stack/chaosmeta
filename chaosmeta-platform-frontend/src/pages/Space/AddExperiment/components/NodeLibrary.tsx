@@ -2,6 +2,8 @@ import {
   queryFaultNodeItem,
   queryFaultNodeScopes,
   queryFaultNodeTargets,
+  queryFlowList,
+  queryMeasureList,
 } from '@/services/chaosmeta/ExperimentController';
 import { getIntlName } from '@/utils/format';
 import { useSortable } from '@dnd-kit/sortable';
@@ -20,15 +22,11 @@ const initTreeData: any[] = [
   {
     nameCn: '度量引擎',
     key: 'measure',
-    disabled: true,
-    isLeaf: true,
     name: 'measurement engine',
   },
   {
     nameCn: '流量注入',
     key: 'flow',
-    disabled: true,
-    isLeaf: true,
     name: 'flow injection',
   },
   {
@@ -142,7 +140,7 @@ const NodeLibrary: React.FC<IProps> = (props) => {
       });
     }
     // 故障节点 - 二级节点list查询
-    if (key && !scopeId) {
+    if (key && !scopeId && key.includes('fault')) {
       return queryFaultNodeTargets({ id }).then((res: any) => {
         if (res?.code === 200) {
           const targetList = res?.data?.targets;
@@ -156,13 +154,13 @@ const NodeLibrary: React.FC<IProps> = (props) => {
       });
     }
     // 故障节点 - 三级节点list查询
-    if (scopeId) {
+    if (scopeId && key.includes('fault')) {
       return queryFaultNodeItem({ scope_id: scopeId, target_id: id }).then(
         (res: any) => {
           if (res?.code === 200) {
             const faults = res?.data?.faults;
             // 设置一些编排配置需要的参数
-            const params = {
+            const faultParams = {
               isLeaf: true,
               // 一级节点的id
               scope_id: scopeId,
@@ -174,7 +172,7 @@ const NodeLibrary: React.FC<IProps> = (props) => {
               nodeInfoState: false,
             };
             const newFaults = faults?.map((item: any) => {
-              return { ...item, key: `${key}-${item.id}`, ...params };
+              return { ...item, key: `${key}-${item.id}`, ...faultParams };
             });
             setTreeData((origin) => {
               return updateTreeData(origin, key, newFaults);
@@ -182,6 +180,51 @@ const NodeLibrary: React.FC<IProps> = (props) => {
           }
         },
       );
+    }
+    // 度量引擎
+    if (key === 'measure') {
+      return queryMeasureList()?.then((res: any) => {
+        if (res?.code === 200) {
+          const measures = res?.data?.measures;
+          // 设置一些编排配置需要的参数
+          const measuresParams = {
+            isLeaf: true,
+            isChildrenNode: true,
+            exec_type: 'measure',
+            exec_type_name: '度量引擎',
+            // 当前节点信息是否进行配置完成，默认未完成，需要进行配置
+            nodeInfoState: false,
+          };
+          const newFaults = measures?.map((item: any) => {
+            return { ...item, key: `${key}-${item.id}`, ...measuresParams };
+          });
+          setTreeData((origin) => {
+            return updateTreeData(origin, key, newFaults);
+          });
+        }
+      });
+    }
+    if (key === 'flow') {
+      return queryFlowList()?.then((res: any) => {
+        if (res?.code === 200) {
+          const flows = res?.data?.flows;
+          // 设置一些编排配置需要的参数
+          const flowsParams = {
+            isLeaf: true,
+            isChildrenNode: true,
+            exec_type: 'flow',
+            exec_type_name: '流量注入',
+            // 当前节点信息是否进行配置完成，默认未完成，需要进行配置
+            nodeInfoState: false,
+          };
+          const newFaults = flows?.map((item: any) => {
+            return { ...item, key: `${key}-${item.id}`, ...flowsParams };
+          });
+          setTreeData((origin) => {
+            return updateTreeData(origin, key, newFaults);
+          });
+        }
+      });
     }
     return Promise.resolve();
   };
@@ -233,8 +276,9 @@ const NodeLibrary: React.FC<IProps> = (props) => {
                 targetId,
                 key,
                 disabled: nodeDisabled,
+                isChildrenNode,
               } = nodeData;
-              if (targetId) {
+              if (targetId || isChildrenNode) {
                 return (
                   <div className="tree-node">
                     <LeftNodeItem

@@ -1,8 +1,9 @@
-import { getIntlText } from '@/utils/format';
+import { formatFormName, getIntlText } from '@/utils/format';
 import { useIntl } from '@umijs/max';
 import { Form, Input, Radio, Select } from 'antd';
 import ShowText from '../ShowText';
 import UnitInput from './UnitInput';
+import { DividerLine } from './style';
 
 interface Field {
   id: number;
@@ -38,24 +39,13 @@ const DynamicForm = (props: Props) => {
   const intl = useIntl();
 
   /**
-   * 如果存在父级名字，则将其与当前名字合并成一个字符串数组返回；否则直接返回当前名字。
-   * @param name
-   * @returns
-   */
-  const formatName = (name: number) => {
-    if (parentName) {
-      return [parentName, name.toString()];
-    }
-    return name;
-  };
-
-  /**
    * 解析动态表单配置内容，根据不同条件渲染为不同表单元素
    * @param field
    * @returns
    */
   const renderItem = (field: any) => {
     const { valueRule, valueType } = field;
+    // 无论valueType类型是什么，后端统一接收string
     // if (valueType === 'int') {
     //   return (
     //     <InputNumber
@@ -182,43 +172,65 @@ const DynamicForm = (props: Props) => {
 
   return (
     <>
-      {fieldList?.map((item: Field) => {
+      {fieldList?.map((item: Field, index: number) => {
         const { id, required, defaultValue } = item;
         if (readonly) {
           return (
-            <Form.Item
-              name={formatName(id)}
-              label={getIntlText(item, 'keyCn', 'key')}
-              key={id}
-              initialValue={initValue(defaultValue)}
-            >
-              <ShowText />
-            </Form.Item>
+            <>
+              {index === 0 && item?.execType?.includes('common') && (
+                <div className="subtitle range">
+                  {intl.formatMessage({ id: 'generalParameters' })}
+                </div>
+              )}
+              {!item?.execType?.includes('common') &&
+                fieldList[index - 1]?.execType?.includes('common') && (
+                  <DividerLine />
+                )}
+              <Form.Item
+                name={formatFormName(item, parentName)}
+                label={getIntlText(item, 'keyCn', 'key')}
+                key={id}
+                initialValue={initValue(defaultValue)}
+              >
+                <ShowText ellipsis />
+              </Form.Item>
+            </>
           );
         }
         return (
-          <Form.Item
-            tooltip={getIntlText(item, 'descriptionCn', 'description')}
-            name={formatName(id)}
-            label={getIntlText(item, 'keyCn', 'key')}
-            key={id}
-            rules={[
-              { required },
-              {
-                validator: (_, value) => {
-                  return rule(item, value);
-                },
-              },
-            ]}
-            initialValue={initValue(defaultValue)}
-          >
-            {/* 带有单位的特殊处理 */}
-            {item.unit ? (
-              <UnitInput field={item} form={form} parentName={parentName} />
-            ) : (
-              renderItem(item)
+          <>
+            {index === 0 && item?.execType?.includes('common') && (
+              <div className="range">
+                {intl.formatMessage({ id: 'generalParameters' })}
+              </div>
             )}
-          </Form.Item>
+            {!item?.execType?.includes('common') &&
+              fieldList[index - 1]?.execType?.includes('common') && (
+                <DividerLine />
+              )}
+            <Form.Item
+              tooltip={getIntlText(item, 'descriptionCn', 'description')}
+              name={formatFormName(item, parentName)}
+              label={getIntlText(item, 'keyCn', 'key')}
+              key={id}
+              rules={[
+                { required },
+                {
+                  validator: (_, value) => {
+                    return rule(item, value);
+                  },
+                },
+              ]}
+              initialValue={initValue(defaultValue)}
+            >
+              {/* 带有单位的特殊处理 */}
+              {item.unit ? (
+                <UnitInput field={item} form={form} parentName={parentName} />
+              ) : (
+                renderItem(item)
+              )}
+            </Form.Item>
+          </>
         );
       })}
     </>

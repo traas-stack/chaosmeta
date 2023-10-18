@@ -158,8 +158,7 @@ const ArrangeContent: React.FC<IProps> = (props) => {
    * 拖动中节点的渲染
    */
   const MoveingRender = () => {
-    const { dragtype, name, index, duration, exec_type } =
-      curDragData || {};
+    const { dragtype, name, index, duration, exec_type } = curDragData || {};
     const second: number = formatDuration(duration);
     let renderItem = null;
     // 左侧节点拖动
@@ -523,6 +522,18 @@ const ArrangeContent: React.FC<IProps> = (props) => {
       recentlyMovedToNewContainer.current = false;
     });
     handleAddTimeAxis(arrangeList);
+    if (activeCol?.uuid) {
+      // 节点配置过程中，进行拖拽操作后，需要更新节点的位置信息
+      arrangeList?.forEach((item) => {
+        item?.children?.forEach(
+          (el: { uuid: string; row: number }, index: number) => {
+            if (el?.uuid === activeCol?.uuid) {
+              setActiveCol({ ...activeCol, parentId: item?.row, index });
+            }
+          },
+        );
+      });
+    }
   }, [arrangeList]);
 
   return (
