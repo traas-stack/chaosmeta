@@ -25,9 +25,11 @@ import (
 	"chaosmeta-platform/pkg/models/inject/basic"
 	"chaosmeta-platform/pkg/models/namespace"
 	"chaosmeta-platform/pkg/models/user"
+	"chaosmeta-platform/util/log"
 	"fmt"
 	"github.com/beego/beego/v2/client/orm"
 	_ "github.com/go-sql-driver/mysql"
+	"time"
 )
 
 func Setup() {
@@ -40,14 +42,49 @@ func Setup() {
 		new(experiment_instance.WorkflowNodeInstance), new(experiment_instance.LabelExperimentInstance), new(experiment_instance.FaultRangeInstance), new(experiment_instance.FlowRangeInstance), new(experiment_instance.MeasureRangeInstance), new(experiment_instance.ExperimentInstance), new(experiment_instance.ArgsValueInstance),
 	)
 
-	if err := orm.RegisterDataBase("default", "mysql", fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8&loc=Local", DefaultRunOptIns.DB.User, DefaultRunOptIns.DB.Passwd, DefaultRunOptIns.DB.Url, DefaultRunOptIns.DB.Name), orm.MaxIdleConnections(DefaultRunOptIns.DB.MaxIdle), orm.MaxOpenConnections(DefaultRunOptIns.DB.MaxConn)); err != nil {
-		panic(any(fmt.Sprintf("connect database error: %s", err.Error())))
+	ticker := time.NewTicker(5 * time.Second)
+	done := make(chan bool)
+
+	go func() {
+		for range ticker.C {
+			err := orm.RegisterDataBase("default", "mysql", fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8&loc=Local", DefaultRunOptIns.DB.User, DefaultRunOptIns.DB.Passwd, DefaultRunOptIns.DB.Url, DefaultRunOptIns.DB.Name), orm.MaxIdleConnections(DefaultRunOptIns.DB.MaxIdle), orm.MaxOpenConnections(DefaultRunOptIns.DB.MaxConn))
+			if err != nil {
+				log.Error(err)
+			}
+			if err == nil {
+				done <- true
+				break
+			}
+		}
+	}()
+
+	select {
+	case <-done:
+		log.Info("successfully connected to the database")
+	case <-time.After(5 * time.Minute):
+		panic(any("connect database failed"))
 	}
 
+	ticker.Stop()
+
 	orm.Debug = DefaultRunOptIns.DB.Debug
+	modelCommon.GlobalORM = orm.NewOrm()
+
+	if err := DropTablesBeforeCreate(); err != nil {
+		log.Error("drop tables before create error: %s", err.Error())
+	}
 
 	if err := orm.RunSyncdb("default", false, true); err != nil {
 		panic(any(fmt.Sprintf("sync database error: %s", err.Error())))
 	}
-	modelCommon.GlobalORM = orm.NewOrm()
+}
+
+func DropTablesBeforeCreate() error {
+	var dropTables = []string{"args", "fault", "flow_inject", "measure_inject", "scope", "target"}
+	for _, tableName := range dropTables {
+		if _, err := modelCommon.GlobalORM.Raw(fmt.Sprintf("DROP TABLE inject_basic_%s", tableName)).Exec(); err != nil {
+			log.Error("drop table failed, err:", err)
+		}
+	}
+	return nil
 }

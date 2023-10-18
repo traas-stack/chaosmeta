@@ -17,18 +17,12 @@
 package inject
 
 import (
-	models "chaosmeta-platform/pkg/models/common"
 	"chaosmeta-platform/pkg/models/inject/basic"
 	"chaosmeta-platform/util/log"
 	"context"
-	"fmt"
 )
 
 func InitFlow() error {
-	flow := basic.FlowInject{}
-	if _, err := models.GetORM().Raw(fmt.Sprintf("TRUNCATE TABLE %s", flow.TableName())).Exec(); err != nil {
-		return err
-	}
 	ctx := context.Background()
 	return InitHttpFlow(ctx)
 }

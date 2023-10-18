@@ -17,11 +17,9 @@
 package inject
 
 import (
-	models "chaosmeta-platform/pkg/models/common"
 	"chaosmeta-platform/pkg/models/inject/basic"
 	"chaosmeta-platform/util/log"
 	"context"
-	"fmt"
 )
 
 type InjectService struct{}
@@ -60,24 +58,7 @@ func Init() error {
 }
 
 func InitInject() error {
-	scope, target, fault, args := basic.Scope{}, basic.Target{}, basic.Fault{}, basic.Args{}
-	if _, err := models.GetORM().Raw(fmt.Sprintf("TRUNCATE TABLE %s", scope.TableName())).Exec(); err != nil {
-		return err
-	}
-
-	if _, err := models.GetORM().Raw(fmt.Sprintf("TRUNCATE TABLE %s", target.TableName())).Exec(); err != nil {
-		return err
-	}
-
-	if _, err := models.GetORM().Raw(fmt.Sprintf("TRUNCATE TABLE %s", fault.TableName())).Exec(); err != nil {
-		return err
-	}
-
-	if _, err := models.GetORM().Raw(fmt.Sprintf("TRUNCATE TABLE %s", args.TableName())).Exec(); err != nil {
-		return err
-	}
 	ctx := context.Background()
-
 	scopes := []basic.Scope{PodScope, NodeScope}
 	for _, scope := range scopes {
 		scopeId, err := basic.InsertScope(ctx, &scope)

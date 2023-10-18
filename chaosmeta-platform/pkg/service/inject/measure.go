@@ -17,18 +17,12 @@
 package inject
 
 import (
-	models "chaosmeta-platform/pkg/models/common"
 	"chaosmeta-platform/pkg/models/inject/basic"
 	"chaosmeta-platform/util/log"
 	"context"
-	"fmt"
 )
 
 func InitMeasure() error {
-	measure := basic.MeasureInject{}
-	if _, err := models.GetORM().Raw(fmt.Sprintf("TRUNCATE TABLE %s", measure.TableName())).Exec(); err != nil {
-		return err
-	}
 	ctx := context.Background()
 	if err := InitMonitorMeasure(ctx); err != nil {
 		log.Error(err)
