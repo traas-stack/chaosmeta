@@ -7,7 +7,11 @@ import {
   nodeTypes,
   scaleStepMap,
 } from '@/constants';
-import { queryFaultNodeFields } from '@/services/chaosmeta/ExperimentController';
+import {
+  queryFaultNodeFields,
+  queryFlowNodeFields,
+  queryMeasureNodeFields,
+} from '@/services/chaosmeta/ExperimentController';
 import {
   formatDuration,
   getIntlLabel,
@@ -49,6 +53,32 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
    * 故障节点 - 查询节点表单配置信息
    */
   const getFaultNodeFields = useRequest(queryFaultNodeFields, {
+    manual: true,
+    formatResult: (res) => res,
+    onSuccess: (res: any) => {
+      if (res?.code === 200) {
+        setFieldList(res?.data?.args || []);
+      }
+    },
+  });
+
+  /**
+   * 流量注入 - 查询节点表单配置信息
+   */
+  const getFlowNodeFields = useRequest(queryFlowNodeFields, {
+    manual: true,
+    formatResult: (res) => res,
+    onSuccess: (res: any) => {
+      if (res?.code === 200) {
+        setFieldList(res?.data?.args || []);
+      }
+    },
+  });
+
+  /**
+   * 度量引擎 - 查询节点表单配置信息
+   */
+  const getMeasureNodeFields = useRequest(queryMeasureNodeFields, {
     manual: true,
     formatResult: (res) => res,
     onSuccess: (res: any) => {
@@ -109,7 +139,15 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
         return;
       }
       // 获取节点动态表单部分
-      getFaultNodeFields?.run({ id: el?.exec_id });
+      if (el?.exec_type === 'flow') {
+        getFlowNodeFields?.run({ id: el?.exec_id });
+      }
+      if (el?.exec_type === 'measure') {
+        getMeasureNodeFields?.run({ id: el?.exec_id });
+      }
+      if (el?.exec_type === 'fault') {
+        getFaultNodeFields?.run({ id: el?.exec_id });
+      }
       // 结果详情中需要通过接口获取节点信息，实验详情中则在详情中直接返回了
       if (isResult) {
         // 实验结果时点击节点，获取单个节点详情后赋值
@@ -184,6 +222,7 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
                     }px`,
                     // 最小宽度为1s对应的px
                     minWidth: `${scaleStepMap[curProportion]?.widthSecond}px`,
+                    flexShrink: 0,
                   }}
                   $activeState={activeCol?.uuid === el?.uuid}
                   onClick={() => {
@@ -230,6 +269,51 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
     );
   };
 
+  // 是否为node下的节点
+  const isNode = () => {
+    // 父节点有两个node，一种是scope_id为2，另一种是scope_id为3下的target_id为23（Kubernetes下的node）
+    return (
+      activeCol?.scope_id === 2 ||
+      (activeCol?.scope_id === 3 && activeCol?.target_id === 23)
+    );
+  };
+
+  // 是否为pod下的节点
+  const isPod = () => {
+    // 父节点有两个pod，一种是scope_id为1，另一种是scope_id为3下的target_id为21（Kubernetes下的node）
+    return (
+      activeCol?.scope_id === 1 ||
+      (activeCol?.scope_id === 3 && activeCol?.target_id === 21)
+    );
+  };
+
+  /**
+   * 遍历编排数组，将其中行中最长秒数对比当前默认时间轴，若时间轴宽度不够就再加长
+   * @param values
+   */
+  const handleAddTimeAxis = (values: any) => {
+    const maxSecondList: any = [];
+    values?.forEach((item: { children: any[] }) => {
+      let secondSum = 0;
+      item?.children?.forEach((el) => {
+        // 将持续时长转化为数字形式进行计算
+        const duration = formatDuration(el?.duration);
+        secondSum += duration;
+      });
+      maxSecondList.push(secondSum);
+    });
+    const maxSecond = maxSecondList.sort((a: number, b: number) => b - a)[0];
+    // 提前一段加长
+    const curSecond = timeCount * 30 - 60;
+    if (maxSecond > curSecond) {
+      setTimeCount(() => {
+        // 多加入90s
+        const newCount = Math.round(maxSecond / 30) + 3;
+        return newCount;
+      });
+    }
+  };
+
   useEffect(() => {
     // 比例变化时，修改时间间隔的数量，不低于屏幕宽度的秒数，避免出现空白区域，默认1000s
     const doc = document.body;
@@ -244,10 +328,11 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
   }, [curProportion]);
 
   useEffect(() => {
+    handleAddTimeAxis(arrangeList);
+  }, [arrangeList]);
+  useEffect(() => {
     handleTotalSecond();
   }, []);
-
-  useEffect(() => {});
 
   return (
     <ArrangeWrap
@@ -308,16 +393,20 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
                     }
                   />
                 </Form.Item>
-                <Form.Item
-                  label={`${
-                    activeCol?.exec_type === 'wait'
-                      ? intl.formatMessage({ id: 'waitTime' })
-                      : intl.formatMessage({ id: 'duration' })
-                  }`}
-                  name={'duration'}
-                >
-                  <ShowText />
-                </Form.Item>
+                {activeCol?.exec_type !== 'flow' &&
+                  activeCol?.exec_type !== 'measure' && (
+                    <Form.Item
+                      label={`${
+                        activeCol?.exec_type === 'wait'
+                          ? intl.formatMessage({ id: 'waitTime' })
+                          : intl.formatMessage({ id: 'duration' })
+                      }`}
+                      name={'duration'}
+                    >
+                      <ShowText />
+                    </Form.Item>
+                  )}
+
                 {activeCol?.exec_type !== 'wait' && (
                   <>
                     {/* 动态表单部分 */}
@@ -326,42 +415,45 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
                       parentName={'args_value'}
                       readonly
                     />
-                    <div className="subtitle range">
-                      {intl.formatMessage({ id: 'attackRange' })}
-                    </div>
-                    <Form.Item
-                      label="Kubernetes Namespace"
-                      name={['exec_range', 'target_namespace']}
-                    >
-                      <ShowText ellipsis />
-                    </Form.Item>
-                    <Form.Item
-                      label="Kubernetes Label"
-                      name={['exec_range', 'target_label']}
-                    >
-                      <ShowText ellipsis />
-                    </Form.Item>
-                    {/* <Form.Item label="应用" name={['exec_range', 'target_app']}>
-                      <ShowText ellipsis />
-                    </Form.Item> */}
-                    <Form.Item
-                      label="name"
-                      name={['exec_range', 'target_name']}
-                    >
-                      <ShowText ellipsis />
-                    </Form.Item>
-                    {activeCol?.scope_id === 2 && (
-                      <Form.Item label="Ip" name={['exec_range', 'target_ip']}>
-                        <ShowText ellipsis />
-                      </Form.Item>
-                    )}
+                    {/* 攻击范围为流量或度量时不展示 */}
+                    {(isNode() || isPod()) && (
+                      <>
+                        <div className="subtitle range">
+                          {intl.formatMessage({ id: 'attackRange' })}
+                        </div>
+                        {/* node下的节点时不展示 */}
+                        {!isNode() && (
+                          <Form.Item
+                            label="Kubernetes Namespace"
+                            name={['exec_range', 'target_namespace']}
+                          >
+                            <ShowText ellipsis />
+                          </Form.Item>
+                        )}
 
-                    {/* <Form.Item
-                      label="Hostname"
-                      name={['exec_range', 'target_hostname']}
-                    >
-                      <ShowText ellipsis />
-                    </Form.Item> */}
+                        <Form.Item
+                          label="Kubernetes Label"
+                          name={['exec_range', 'target_label']}
+                        >
+                          <ShowText ellipsis />
+                        </Form.Item>
+                        <Form.Item
+                          label="name"
+                          name={['exec_range', 'target_name']}
+                        >
+                          <ShowText ellipsis />
+                        </Form.Item>
+                        {/* node下的节点时才展示 */}
+                        {isNode() && (
+                          <Form.Item
+                            label="Ip"
+                            name={['exec_range', 'target_ip']}
+                          >
+                            <ShowText ellipsis />
+                          </Form.Item>
+                        )}
+                      </>
+                    )}
                   </>
                 )}
               </Form>

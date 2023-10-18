@@ -158,6 +158,7 @@ const publicText = {
   all: '全部',
   selectAll: '全选',
   submit: '提交',
+  generalParameters: '通用参数'
 };
 
 // 实验

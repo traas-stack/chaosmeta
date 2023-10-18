@@ -79,7 +79,7 @@ const request = async <T>(
       // 调取更新token的接口
       const result = await updateToken();
       // 如果更新token的接口返回最新的token之后，重新发起请求
-      if (result.data.token) {
+      if (result?.data?.token) {
         return await requestUmi(url, options);
       }
     }

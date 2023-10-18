@@ -161,6 +161,7 @@ const publicText = {
   all: 'all',
   selectAll: 'select all',
   submit: 'submit',
+  generalParameters: 'General parameters'
 };
 
 // 实验
