@@ -25,10 +25,8 @@ import (
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/cgroup"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/cmdexec"
-	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/containercgroup"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/namespace"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/process"
-	"os"
 )
 
 func init() {
@@ -184,17 +182,22 @@ func getAllCpuList(ctx context.Context, cr, cId string) (cpuList []int, err erro
 		}
 	}
 
-	return getCpuList(cpusetPath)
+	return getCpuList(ctx, cpusetPath)
 }
 
-func getCpuList(path string) ([]int, error) {
-	cpusetFile := fmt.Sprintf("%s/%s%s/%s", containercgroup.RootCgroupPath, cgroup.CPUSET, path, cgroup.CpusetCoreFile)
-	reByte, err := os.ReadFile(cpusetFile)
+func getCpuList(ctx context.Context, path string) ([]int, error) {
+	//cpusetFile := fmt.Sprintf("%s/%s%s/%s", containercgroup.RootCgroupPath, cgroup.CPUSET, path, cgroup.CpusetCoreFile)
+	//reByte, err := os.ReadFile(cpusetFile)
+	//if err != nil {
+	//	return nil, fmt.Errorf("read cpu list info from file[%s] error: %s", cpusetFile, err.Error())
+	//}
+	//
+	//cpuListStr := string(reByte)
+	cpuListStr, err := cgroup.ReadCgroupFileStr(ctx, path, cgroup.CPUSET, cgroup.CpusetCoreFile)
 	if err != nil {
-		return nil, fmt.Errorf("read cpu list info from file[%s] error: %s", cpusetFile, err.Error())
+		return nil, fmt.Errorf("read cpu list string error: %s", err.Error())
 	}
 
-	cpuListStr := string(reByte)
 	cpuList, err := utils.GetNumArrByList(cpuListStr)
 	if err != nil {
 		return nil, fmt.Errorf("format cpu list string error: %s", err.Error())
