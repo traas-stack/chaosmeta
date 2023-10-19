@@ -107,7 +107,7 @@ func UndoTmpfs(ctx context.Context, dir string) error {
 	return nil
 }
 
-func GetContainerMemTotal(ctx context.Context, cr, cId string) (memTotal float64, err error) {
+func getContainerMemTotal(ctx context.Context, cr, cId string) (memTotal float64, err error) {
 	path, err := cgroup.GetContainerCgroupPath(ctx, cr, cId, cgroup.MEMORY)
 	if err != nil {
 		return 0, err
@@ -120,7 +120,7 @@ func GetContainerMemTotal(ctx context.Context, cr, cId string) (memTotal float64
 	return getMemByStr(memTotalStr)
 }
 
-//func GetContainerMemCache(ctx context.Context, cr, cId string) (memTotal float64, err error) {
+//func getContainerMemCache(ctx context.Context, cr, cId string) (memTotal float64, err error) {
 //	path, err := cgroup.GetContainerCgroupPath(ctx, cr, cId, cgroup.MEMORY)
 //	if err != nil {
 //		return 0, err
@@ -160,7 +160,7 @@ func GetContainerMemTotal(ctx context.Context, cr, cId string) (memTotal float64
 //	return cache - rss, nil
 //}
 
-func GetContainerMemAvailable(ctx context.Context, cr, cId string) (memAvailable float64, err error) {
+func getContainerMemAvailable(ctx context.Context, cr, cId string) (memAvailable float64, err error) {
 	path, err := cgroup.GetContainerCgroupPath(ctx, cr, cId, cgroup.MEMORY)
 	if err != nil {
 		return 0, err
@@ -175,12 +175,12 @@ func GetContainerMemAvailable(ctx context.Context, cr, cId string) (memAvailable
 		return 0, fmt.Errorf("get value from mem string[%s] error: %s", memUsageStr, err.Error())
 	}
 
-	//memCache, err := GetContainerMemCache(ctx, cr, cId)
+	//memCache, err := getContainerMemCache(ctx, cr, cId)
 	//if err != nil {
 	//	return 0, fmt.Errorf("get cache mem error: %s", err.Error())
 	//}
 
-	memTotal, err := GetContainerMemTotal(ctx, cr, cId)
+	memTotal, err := getContainerMemTotal(ctx, cr, cId)
 	if err != nil {
 		return 0, fmt.Errorf("get total mem error: %s", err.Error())
 	}
@@ -189,7 +189,7 @@ func GetContainerMemAvailable(ctx context.Context, cr, cId string) (memAvailable
 	return memTotal - memUsage, nil
 }
 
-func GetHostMemTotal(ctx context.Context, cr, cId string) (float64, error) {
+func getHostMemTotal(ctx context.Context, cr, cId string) (float64, error) {
 	cmd := fmt.Sprintf("grep -m1 MemTotal /proc/meminfo | sed 's/[^0-9]*//g'")
 	totalStr, err := cmdexec.ExecCommonWithNS(ctx, cr, cId, cmd, []string{namespace.MNT})
 	totalStr = strings.TrimSpace(totalStr)
@@ -201,7 +201,7 @@ func GetHostMemTotal(ctx context.Context, cr, cId string) (float64, error) {
 	return total, err
 }
 
-func GetHostMemAvailable(ctx context.Context, cr, cId string) (float64, error) {
+func getHostMemAvailable(ctx context.Context, cr, cId string) (float64, error) {
 	cmd := fmt.Sprintf("grep -m1 MemAvailable /proc/meminfo | sed 's/[^0-9]*//g'")
 	availStr, err := cmdexec.ExecCommonWithNS(ctx, cr, cId, cmd, []string{namespace.MNT})
 	availStr = strings.TrimSpace(availStr)
@@ -215,17 +215,17 @@ func GetHostMemAvailable(ctx context.Context, cr, cId string) (float64, error) {
 
 func getMemTotal(ctx context.Context, cr, cId string) (float64, error) {
 	if cr == "" {
-		return GetHostMemTotal(ctx, cr, cId)
+		return getHostMemTotal(ctx, cr, cId)
 	} else {
-		return GetContainerMemTotal(ctx, cr, cId)
+		return getContainerMemTotal(ctx, cr, cId)
 	}
 }
 
 func getMemAvailable(ctx context.Context, cr, cId string) (float64, error) {
 	if cr == "" {
-		return GetHostMemAvailable(ctx, cr, cId)
+		return getHostMemAvailable(ctx, cr, cId)
 	} else {
-		return GetContainerMemAvailable(ctx, cr, cId)
+		return getContainerMemAvailable(ctx, cr, cId)
 	}
 }
 
