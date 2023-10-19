@@ -23,6 +23,7 @@ import (
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/cmdexec"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/containercgroup"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -33,6 +34,16 @@ func NewCgroup(ctx context.Context, cgroupPath string, configCmdStr string) erro
 	}
 
 	return nil
+}
+
+func ReadCgroupFileStr(ctx context.Context, path, subSys, fileName string) (string, error) {
+	cgroupFile := fmt.Sprintf("%s/%s%s/%s", containercgroup.RootCgroupPath, subSys, path, fileName)
+	reByte, err := os.ReadFile(cgroupFile)
+	if err != nil {
+		return "", fmt.Errorf("read from %s error: %s", cgroupFile, err.Error())
+	}
+
+	return strings.TrimSpace(string(reByte)), nil
 }
 
 func GetContainerCgroupPath(ctx context.Context, cr, containerID, subSys string) (string, error) {

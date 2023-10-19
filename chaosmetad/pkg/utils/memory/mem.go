@@ -28,15 +28,9 @@ import (
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/cgroup"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/cmdexec"
-	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/containercgroup"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/disk"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/filesys"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/namespace"
-)
-
-const (
-	MemoryLimitInBytesFile = "memory.limit_in_bytes"
-	MemoryUsageInBytesFile = "memory.usage_in_bytes"
 )
 
 // CalculateFillKBytes The calculation of memory usage is consistent with the calculation method of the top command: Available/Total.
@@ -113,36 +107,89 @@ func UndoTmpfs(ctx context.Context, dir string) error {
 	return nil
 }
 
-func getContainerMemTotal(ctx context.Context, cr, cId string) (memTotal float64, err error) {
+func GetContainerMemTotal(ctx context.Context, cr, cId string) (memTotal float64, err error) {
 	path, err := cgroup.GetContainerCgroupPath(ctx, cr, cId, cgroup.MEMORY)
 	if err != nil {
 		return 0, err
 	}
-	cgPath := fmt.Sprintf("%s/%s%s", containercgroup.RootCgroupPath, cgroup.MEMORY, path)
+	memTotalStr, err := cgroup.ReadCgroupFileStr(ctx, path, cgroup.MEMORY, cgroup.MemoryLimitInBytesFile)
+	if err != nil {
+		return 0, fmt.Errorf("read total mem error: %s", err.Error())
+	}
 
-	return utils.GetNumberByCgroupFile(cgPath, MemoryLimitInBytesFile)
+	return getMemByStr(memTotalStr)
 }
 
-func getContainerMemAvailable(ctx context.Context, cr, cId string) (memAvailable float64, err error) {
+//func GetContainerMemCache(ctx context.Context, cr, cId string) (memTotal float64, err error) {
+//	path, err := cgroup.GetContainerCgroupPath(ctx, cr, cId, cgroup.MEMORY)
+//	if err != nil {
+//		return 0, err
+//	}
+//	memStatStr, err := cgroup.ReadCgroupFileStr(ctx, path, cgroup.MEMORY, cgroup.MemoryStatFile)
+//	if err != nil {
+//		return 0, fmt.Errorf("read total mem error: %s", err.Error())
+//	}
+//
+//	memStatStrList := strings.Split(memStatStr, "\n")
+//
+//	var cacheStr, rssStr string
+//	for _, unitStr := range memStatStrList {
+//		kvList := strings.Split(unitStr, " ")
+//		if kvList[0] == "cache" {
+//			cacheStr = kvList[1]
+//		}
+//		if kvList[0] == "rss" {
+//			rssStr = kvList[1]
+//		}
+//	}
+//
+//	if cacheStr == "" || rssStr == "" {
+//		return 0, fmt.Errorf("not found cache or rss data")
+//	}
+//
+//	cache, err := getMemByStr(cacheStr)
+//	if err != nil {
+//		return 0, fmt.Errorf("cache[%s] is not a valid float: %s", cacheStr, err.Error())
+//	}
+//
+//	rss, err := getMemByStr(rssStr)
+//	if err != nil {
+//		return 0, fmt.Errorf("rss[%s] is not a valid float: %s", cacheStr, err.Error())
+//	}
+//
+//	return cache - rss, nil
+//}
+
+func GetContainerMemAvailable(ctx context.Context, cr, cId string) (memAvailable float64, err error) {
 	path, err := cgroup.GetContainerCgroupPath(ctx, cr, cId, cgroup.MEMORY)
 	if err != nil {
 		return 0, err
 	}
-	cgPath := fmt.Sprintf("%s/%s%s", containercgroup.RootCgroupPath, cgroup.MEMORY, path)
-
-	memUsage, err := utils.GetNumberByCgroupFile(cgPath, MemoryUsageInBytesFile)
+	memUsageStr, err := cgroup.ReadCgroupFileStr(ctx, path, cgroup.MEMORY, cgroup.MemoryUsageInBytesFile)
 	if err != nil {
-		return 0, err
-	}
-	memTotal, err := getContainerMemTotal(ctx, cr, cId)
-	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("read usage mem error: %s", err.Error())
 	}
 
+	memUsage, err := getMemByStr(memUsageStr)
+	if err != nil {
+		return 0, fmt.Errorf("get value from mem string[%s] error: %s", memUsageStr, err.Error())
+	}
+
+	//memCache, err := GetContainerMemCache(ctx, cr, cId)
+	//if err != nil {
+	//	return 0, fmt.Errorf("get cache mem error: %s", err.Error())
+	//}
+
+	memTotal, err := GetContainerMemTotal(ctx, cr, cId)
+	if err != nil {
+		return 0, fmt.Errorf("get total mem error: %s", err.Error())
+	}
+
+	//return memTotal - memUsage + memCache, nil
 	return memTotal - memUsage, nil
 }
 
-func getHostMemTotal(ctx context.Context, cr, cId string) (float64, error) {
+func GetHostMemTotal(ctx context.Context, cr, cId string) (float64, error) {
 	cmd := fmt.Sprintf("grep -m1 MemTotal /proc/meminfo | sed 's/[^0-9]*//g'")
 	totalStr, err := cmdexec.ExecCommonWithNS(ctx, cr, cId, cmd, []string{namespace.MNT})
 	totalStr = strings.TrimSpace(totalStr)
@@ -154,7 +201,7 @@ func getHostMemTotal(ctx context.Context, cr, cId string) (float64, error) {
 	return total, err
 }
 
-func getHostMemAvailable(ctx context.Context, cr, cId string) (float64, error) {
+func GetHostMemAvailable(ctx context.Context, cr, cId string) (float64, error) {
 	cmd := fmt.Sprintf("grep -m1 MemAvailable /proc/meminfo | sed 's/[^0-9]*//g'")
 	availStr, err := cmdexec.ExecCommonWithNS(ctx, cr, cId, cmd, []string{namespace.MNT})
 	availStr = strings.TrimSpace(availStr)
@@ -168,16 +215,29 @@ func getHostMemAvailable(ctx context.Context, cr, cId string) (float64, error) {
 
 func getMemTotal(ctx context.Context, cr, cId string) (float64, error) {
 	if cr == "" {
-		return getHostMemTotal(ctx, cr, cId)
+		return GetHostMemTotal(ctx, cr, cId)
 	} else {
-		return getContainerMemTotal(ctx, cr, cId)
+		return GetContainerMemTotal(ctx, cr, cId)
 	}
 }
 
 func getMemAvailable(ctx context.Context, cr, cId string) (float64, error) {
 	if cr == "" {
-		return getHostMemAvailable(ctx, cr, cId)
+		return GetHostMemAvailable(ctx, cr, cId)
 	} else {
-		return getContainerMemAvailable(ctx, cr, cId)
+		return GetContainerMemAvailable(ctx, cr, cId)
 	}
+}
+
+func getMemByStr(content string) (float64, error) {
+	value, err := strconv.ParseFloat(content, 64)
+	// Not allowed to use --percent to inject pressure into containers without setting memory limits
+	if value == cgroup.MemUnLimit {
+		return -1, fmt.Errorf("Container has not set a memory limit and should be filled with a fixed size of pressure using the --bytes.")
+	}
+
+	if err != nil {
+		return 0, err
+	}
+	return value / 1024, nil
 }

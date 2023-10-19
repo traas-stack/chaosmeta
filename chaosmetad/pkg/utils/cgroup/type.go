@@ -23,10 +23,14 @@ const (
 )
 
 const (
-	CpusetCoreFile  = "cpuset.cpus"
-	WriteBytesFile  = "blkio.throttle.write_bps_device"
-	ReadBytesFile   = "blkio.throttle.read_bps_device"
-	WriteIOFile     = "blkio.throttle.write_iops_device"
-	ReadIOFile      = "blkio.throttle.read_iops_device"
-	BlkioCgroupName = "chaosmeta_blkio"
+	MemUnLimit             = 9223372036854771712
+	MemoryLimitInBytesFile = "memory.limit_in_bytes"
+	MemoryStatFile         = "memory.stat"
+	MemoryUsageInBytesFile = "memory.usage_in_bytes"
+	CpusetCoreFile         = "cpuset.cpus"
+	WriteBytesFile         = "blkio.throttle.write_bps_device"
+	ReadBytesFile          = "blkio.throttle.read_bps_device"
+	WriteIOFile            = "blkio.throttle.write_iops_device"
+	ReadIOFile             = "blkio.throttle.read_iops_device"
+	BlkioCgroupName        = "chaosmeta_blkio"
 )
