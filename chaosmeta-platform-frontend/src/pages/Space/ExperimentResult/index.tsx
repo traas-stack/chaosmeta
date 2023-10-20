@@ -107,7 +107,7 @@ const ExperimentResult: React.FC<unknown> = () => {
       end_time = formatTime(time[1]?.format());
     }
     // 默认使用更新时间倒序
-    const sort = params?.sort || '-update_time';
+    const sort = params?.sort || '-create_time';
     const queryParam = {
       sort,
       name,
@@ -120,6 +120,7 @@ const ExperimentResult: React.FC<unknown> = () => {
       start_time,
       end_time,
       namespace_id: history?.location?.query?.spaceId as string,
+      time_type: end_time ? 'range' : undefined,
     };
     queryByPage.run(queryParam);
   };
