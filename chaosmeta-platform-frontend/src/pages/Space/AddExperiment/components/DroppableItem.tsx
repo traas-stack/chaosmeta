@@ -1,5 +1,5 @@
 import { arrangeNodeTypeColors, scaleStepMap } from '@/constants';
-import { formatDuration, getIntlName } from '@/utils/format';
+import { formatDuration } from '@/utils/format';
 import { InfoCircleOutlined } from '@ant-design/icons';
 import { useSortable } from '@dnd-kit/sortable';
 import { useIntl } from '@umijs/max';
@@ -161,7 +161,7 @@ const DroppableItem: React.FC<IProps> = (props) => {
                     style={{ color: '#FF4D4F', marginRight: '4px' }}
                   />
                 )}
-                <span>{getIntlName(item)}</span>
+                <span>{item?.name}</span>
               </div>
               <div>{curDuration}s</div>
             </>

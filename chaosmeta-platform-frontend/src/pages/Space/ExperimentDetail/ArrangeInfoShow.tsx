@@ -1,4 +1,3 @@
-import DynamicForm from '@/components/DynamicForm';
 import ShowText from '@/components/ShowText';
 import {
   arrangeNodeTypeColors,
@@ -21,6 +20,7 @@ import { ZoomInOutlined, ZoomOutOutlined } from '@ant-design/icons';
 import { getLocale, history, useIntl, useRequest } from '@umijs/max';
 import { Form, Space, Spin } from 'antd';
 import { useEffect, useState } from 'react';
+import DynamicFormRender from '../AddExperiment/components/DynamicFormRender';
 import { ArrangeWrap, DroppableCol, DroppableRow } from './style';
 
 interface IProps {
@@ -427,24 +427,35 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
                 </Form.Item>
                 {activeCol?.exec_type !== 'flow' &&
                   activeCol?.exec_type !== 'measure' && (
-                    <Form.Item
-                      label={`${
-                        activeCol?.exec_type === 'wait'
-                          ? intl.formatMessage({ id: 'waitTime' })
-                          : intl.formatMessage({ id: 'duration' })
-                      }`}
-                      name={'duration'}
-                    >
-                      <ShowText />
-                    </Form.Item>
+                    <>
+                      <Form.Item
+                        label={intl.formatMessage({ id: 'atomicCapabilities' })}
+                        name="exec_name"
+                      >
+                        <ShowText />
+                      </Form.Item>
+                      <div className="subtitle range">
+                        {intl.formatMessage({ id: 'commonParameters' })}
+                      </div>
+                      <Form.Item
+                        label={`${
+                          activeCol?.exec_type === 'wait'
+                            ? intl.formatMessage({ id: 'waitTime' })
+                            : intl.formatMessage({ id: 'duration' })
+                        }`}
+                        name={'duration'}
+                      >
+                        <ShowText />
+                      </Form.Item>
+                    </>
                   )}
 
                 {activeCol?.exec_type !== 'wait' && (
                   <>
                     {/* 动态表单部分 */}
-                    <DynamicForm
+                    <DynamicFormRender
                       fieldList={fieldList}
-                      parentName={'args_value'}
+                      nodeType={activeCol?.exec_type}
                       readonly
                     />
                     {/* 攻击范围为流量或度量时不展示 */}

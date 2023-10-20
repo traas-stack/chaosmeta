@@ -1,4 +1,3 @@
-import DynamicForm from '@/components/DynamicForm';
 import KubernetesNamespaceSelect from '@/components/Select/KubernetesNamespaceSelect';
 import KubernetesPodNodeSelect from '@/components/Select/KubernetesPodNodeSelect';
 import KubernetesPodSelect from '@/components/Select/KubernetesPodSelect';
@@ -30,6 +29,7 @@ import {
 } from 'antd';
 import React, { useEffect, useState } from 'react';
 import { NodeConfigContainer } from '../style';
+import DynamicFormRender from './DynamicFormRender';
 
 interface IProps {
   form: any;
@@ -70,13 +70,18 @@ const NodeConfig: React.FC<IProps> = (props) => {
       const parentIndex = values?.findIndex(
         (item: { row: any }) => item?.row === activeCol?.parentId,
       );
-      if (parentIndex !== -1 && activeCol?.index >= 0) {
+      if (
+        parentIndex !== -1 &&
+        activeCol?.index >= 0 &&
+        values[parentIndex]?.children?.length > 0
+      ) {
         values[parentIndex].children[activeCol.index][key] = value;
         // 同时更新保存当前节点信息
         setActiveCol((origin: any) => {
           return { ...origin, [key]: value, state: true };
         });
       }
+
       return values; // 返回更新后的 values 数组
     });
   };
@@ -373,52 +378,66 @@ const NodeConfig: React.FC<IProps> = (props) => {
             >
               <Input disabled />
             </Form.Item>
+
             {/* 为度量引擎或流量注入时不展示 */}
             {activeCol?.exec_type !== 'flow' &&
               activeCol?.exec_type !== 'measure' && (
-                <Form.Item
-                  label={
-                    activeCol?.exec_type === 'wait'
-                      ? intl.formatMessage({ id: 'waitTime' })
-                      : intl.formatMessage({ id: 'duration' })
-                  }
-                  name="duration"
-                  rules={[
-                    { required: true },
-                    {
-                      validator: (_, value) => {
-                        if ((value || value === 0) && value <= 0) {
-                          return Promise.reject(
-                            `${
-                              activeCol?.exec_type === 'wait'
-                                ? intl.formatMessage({ id: 'waitTime' })
-                                : intl.formatMessage({ id: 'duration' })
-                            } ${intl.formatMessage({ id: 'limit' })}`,
-                          );
-                        }
-                        return Promise.resolve();
+                <>
+                  <Form.Item
+                    label={intl.formatMessage({ id: 'atomicCapabilities' })}
+                    name="exec_name"
+                  >
+                    <Input disabled />
+                  </Form.Item>
+                  <div className="range">
+                    {intl.formatMessage({ id: 'commonParameters' })}
+                  </div>
+                  <Form.Item
+                    label={
+                      activeCol?.exec_type === 'wait'
+                        ? intl.formatMessage({ id: 'waitTime' })
+                        : intl.formatMessage({ id: 'duration' })
+                    }
+                    name="duration"
+                    rules={[
+                      { required: true },
+                      {
+                        validator: (_, value) => {
+                          if ((value || value === 0) && value <= 0) {
+                            return Promise.reject(
+                              `${
+                                activeCol?.exec_type === 'wait'
+                                  ? intl.formatMessage({ id: 'waitTime' })
+                                  : intl.formatMessage({ id: 'duration' })
+                              } ${intl.formatMessage({ id: 'limit' })}`,
+                            );
+                          }
+                          return Promise.resolve();
+                        },
                       },
-                    },
-                  ]}
-                >
-                  <InputNumber
-                    addonAfter={selectAfter}
-                    placeholder={intl.formatMessage({ id: 'inputPlaceholder' })}
-                    style={{ width: '100%' }}
-                  />
-                </Form.Item>
+                    ]}
+                  >
+                    <InputNumber
+                      addonAfter={selectAfter}
+                      placeholder={intl.formatMessage({
+                        id: 'inputPlaceholder',
+                      })}
+                      style={{ width: '100%' }}
+                    />
+                  </Form.Item>
+                </>
               )}
 
             {/* 等待时长类型没有以下配置信息 */}
             {activeCol?.exec_type !== 'wait' && (
               <>
                 {/* 动态表单部分 */}
-                <DynamicForm
+                <DynamicFormRender
                   fieldList={fieldList}
-                  parentName={'args_value'}
                   form={form}
+                  nodeType={activeCol?.exec_type}
                 />
-                {/* 节点类型为node或pod时才展示 */}
+                {/* 节点类型为node或pod时才展示 攻击范围 */}
                 {(isNode() || isPod()) && (
                   <>
                     <div className="range">
