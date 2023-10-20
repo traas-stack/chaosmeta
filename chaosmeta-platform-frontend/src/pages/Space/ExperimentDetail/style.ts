@@ -37,7 +37,7 @@ export const ArrangeWrap = styled.div<{
     border: 1px solid rgba(0, 10, 26, 0.1);
     position: relative;
     .arrange {
-      min-height: calc(100vh - 380px);
+      height: calc(100vh - 380px);
       padding-left: 38px;
       margin-bottom: 40px;
       flex: 1;
@@ -72,7 +72,6 @@ export const ArrangeWrap = styled.div<{
         .time-item {
           position: relative;
           color: rgba(0, 10, 26, 0.47);
-
           font-weight: 400;
           flex-shrink: 0;
           background-color: #fafafc;
@@ -90,6 +89,8 @@ export const ArrangeWrap = styled.div<{
       }
     }
     .info {
+      overflow: auto;
+      height: calc(100vh - 380px);
       width: 230px;
       padding: 16px;
       right: 0;
