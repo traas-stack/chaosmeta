@@ -138,6 +138,7 @@ const ExperimentList: React.FC<unknown> = () => {
       end_time,
       time_search_field: timeType,
       namespace_id: history?.location?.query?.spaceId as string,
+      time_type: end_time ? 'range' : undefined,
     };
     queryByPage.run(queryParam);
   };

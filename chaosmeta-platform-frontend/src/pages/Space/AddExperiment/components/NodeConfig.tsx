@@ -108,11 +108,11 @@ const NodeConfig: React.FC<IProps> = (props) => {
    */
   const hanldeUpdateNode = (params: any) => {
     let curTime = form.getFieldValue('duration');
-    if (durationType === 'minute') {
-      curTime = `${curTime}m`;
-    } else {
-      curTime = `${curTime}s`;
-    }
+    // if (durationType === 'minute') {
+    //   curTime = `${curTime}m`;
+    // } else {
+    //   curTime = `${curTime}s`;
+    // }
 
     setArrangeList((result: any) => {
       const values = JSON.parse(JSON.stringify(result)); // 将 result 对象深拷贝一份
@@ -165,7 +165,7 @@ const NodeConfig: React.FC<IProps> = (props) => {
     setKubernetesNamespace(activeCol?.exec_range?.target_namespace);
     form.setFieldsValue({
       ...activeCol,
-      duration: initSecond,
+      duration: `${initSecond}s`,
       exec_type_name: (getLocale() === 'en-US' ? nodeTypeMapUS : nodeTypeMap)[
         activeCol?.exec_type
       ],
@@ -288,7 +288,7 @@ const NodeConfig: React.FC<IProps> = (props) => {
   useEffect(() => {
     const initSecond = formatDuration(activeCol?.duration);
     form.setFieldsValue({
-      duration: initSecond,
+      duration: `${initSecond}s`,
     });
   }, [activeCol?.duration]);
 

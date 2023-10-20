@@ -82,6 +82,81 @@ export default () => {
   });
 
   /**
+   * 日期转换
+   * @returns
+   */
+  const transformTime = (value?: string) => {
+    let start_time, end_time;
+    const curTime = value || timeType;
+    if (curTime === '7day') {
+      start_time = formatTime(dayjs().subtract(6, 'd').startOf('day'));
+      end_time = formatTime(dayjs().endOf('day'));
+    }
+    if (curTime === '30day') {
+      start_time = formatTime(dayjs().subtract(30, 'd').startOf('day'));
+      end_time = formatTime(dayjs().endOf('day'));
+    }
+    return {
+      start_time,
+      end_time,
+    };
+  };
+
+  // 最近运行实验结果接口
+  const handleExperimentResultList = (params: {
+    curTime?: string;
+    pageSize?: number;
+    pageIndex?: number;
+  }) => {
+    const { curTime, pageIndex, pageSize } = params;
+    getExperimentResultList?.run({
+      page: pageIndex || 1,
+      page_size: pageSize || 10,
+      time_search_field: 'create_time',
+      start_time: transformTime(curTime)?.start_time,
+      end_time: transformTime(curTime)?.end_time,
+      namespace_id: namespaceId,
+      time_type: 'range',
+    });
+  };
+
+  // 实验列表
+  const handleExperimentList = (params: {
+    curTime?: string;
+    pageSize?: number;
+    pageIndex?: number;
+    timeField?: string;
+  }) => {
+    const { curTime, pageIndex, pageSize } = params;
+    getExperimentList?.run({
+      page: pageIndex || 1,
+      page_size: pageSize || 10,
+      time_search_field: 'create_time',
+      start_time: transformTime(curTime)?.start_time,
+      end_time: transformTime(curTime)?.end_time,
+      namespace_id: namespaceId,
+      time_type: 'range',
+    });
+  };
+
+  // tab栏列表检索
+  const handleTabSearch = (params?: { key?: string; curTime?: string }) => {
+    const { key, curTime } = params || {};
+    const val = key || tabKey;
+    if (val === 'runningResult') {
+      handleExperimentResultList({ curTime });
+    }
+    // 即将运行
+    if (val === 'running') {
+      handleExperimentList({ timeField: 'next_exec', curTime });
+    }
+    // 最近编辑
+    if (val === 'update') {
+      handleExperimentList({ timeField: 'update_time', curTime });
+    }
+  };
+
+  /**
    * 停止实验
    */
   const handleStopExperiment = useRequest(
@@ -93,10 +168,9 @@ export default () => {
       onSuccess: (res, params) => {
         if (res?.code === 200) {
           message.success(`${params[0]?.name}实验已停止`);
-          getExperimentResultList?.run({
-            page: experimentResultData?.page || 1,
-            page_size: experimentResultData?.pageSize || 10,
-            namespace_id: namespaceId,
+          handleExperimentResultList({
+            pageIndex: experimentResultData?.page || 1,
+            pageSize: experimentResultData?.pageSize || 10,
           });
         }
       },
@@ -402,11 +476,7 @@ export default () => {
           }}
           onChange={(pagination: any) => {
             const { current, pageSize } = pagination;
-            getExperimentList?.run({
-              page: current,
-              page_size: pageSize,
-              namespace_id: namespaceId,
-            });
+            handleExperimentList({ pageIndex: current, pageSize });
           }}
           scroll={{ x: 760 }}
         />
@@ -461,10 +531,9 @@ export default () => {
           }}
           onChange={(pagination: any) => {
             const { current, pageSize } = pagination;
-            getExperimentResultList?.run({
-              page: current,
-              page_size: pageSize,
-              namespace_id: namespaceId,
+            handleExperimentResultList({
+              pageSize: pageSize,
+              pageIndex: current,
             });
           }}
         />
@@ -495,65 +564,6 @@ export default () => {
       children: <RecentlyRunExperimentalResult />,
     },
   ];
-
-  /**
-   * 日期转换
-   * @returns
-   */
-  const transformTime = (value?: string) => {
-    let start_time, end_time;
-    const curTime = value || timeType;
-    if (curTime === '7day') {
-      start_time = formatTime(dayjs().subtract(6, 'd').startOf('day'));
-      end_time = formatTime(dayjs().endOf('day'));
-    }
-    if (curTime === '30day') {
-      start_time = formatTime(dayjs().subtract(30, 'd').startOf('day'));
-      end_time = formatTime(dayjs().endOf('day'));
-    }
-    return {
-      start_time,
-      end_time,
-    };
-  };
-
-  // tab栏列表检索
-  const handleTabSearch = (params?: { key?: string; curTime?: string }) => {
-    const { key, curTime } = params || {};
-    const val = key || tabKey;
-    if (val === 'runningResult') {
-      getExperimentResultList?.run({
-        page: 1,
-        page_size: 10,
-        time_search_field: 'create_time',
-        start_time: transformTime(curTime)?.start_time,
-        end_time: transformTime(curTime)?.end_time,
-        namespace_id: namespaceId,
-      });
-    }
-    // 即将运行
-    if (val === 'running') {
-      getExperimentList?.run({
-        page: 1,
-        page_size: 10,
-        time_search_field: 'next_exec',
-        start_time: transformTime(curTime)?.start_time,
-        end_time: transformTime(curTime)?.end_time,
-        namespace_id: namespaceId,
-      });
-    }
-    // 最近编辑
-    if (val === 'update') {
-      getExperimentList?.run({
-        page: 1,
-        page_size: 10,
-        time_search_field: 'update_time',
-        start_time: transformTime(curTime)?.start_time,
-        end_time: transformTime(curTime)?.end_time,
-        namespace_id: namespaceId,
-      });
-    }
-  };
 
   useEffect(() => {
     handleTabSearch();
