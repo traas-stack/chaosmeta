@@ -108,6 +108,7 @@ func convertToExperimentInstance(experiment *ExperimentGet, status string) *expe
 				ScopeId:  node.ScopeId,
 				TargetId: node.TargetId,
 				ExecType: node.ExecType,
+				ExecName: node.ExecName,
 				ExecId:   node.ExecID,
 			},
 			Subtasks: &experimentInstanceModel.FaultRangeInstance{

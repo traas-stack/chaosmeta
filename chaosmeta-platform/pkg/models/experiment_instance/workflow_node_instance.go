@@ -31,6 +31,7 @@ type WorkflowNodeInstance struct {
 	Duration               string `json:"duration" orm:"column(duration);size(32)"`
 	ScopeId                int    `json:"scope_id" orm:"column(scope_id); int(11)"`
 	TargetId               int    `json:"target_id" orm:"column(target_id); int(11)"`
+	ExecName               string `json:"exec_name" orm:"column(exec_name);size(32)"`
 	ExecType               string `json:"exec_type" orm:"column(exec_type);size(32)"`
 	ExecID                 int    `json:"exec_id" orm:"column(exec_id)"`
 	Status                 string `json:"status" orm:"column(status);size(32);default(to_be_executed);index"`

@@ -139,6 +139,7 @@ func (es *ExperimentService) CreateExperiment(experimentParam *ExperimentCreate)
 			ScopeId:        node.ScopeId,
 			TargetId:       node.TargetId,
 			ExecType:       node.ExecType,
+			ExecName:       node.ExecName,
 			ExecID:         node.ExecID,
 		}
 		if err := experiment.CreateWorkflowNode(&workflowNodeCreate); err != nil {
@@ -234,6 +235,7 @@ func (es *ExperimentService) UpdateExperiment(uuid string, experimentParam *Expe
 			ScopeId:        node.ScopeId,
 			TargetId:       node.TargetId,
 			ExecType:       node.ExecType,
+			ExecName:       node.ExecName,
 			ExecID:         node.ExecID,
 		}
 
@@ -431,6 +433,7 @@ func (es *ExperimentService) GetWorkflowNodesByExperiment(uuid string, experimen
 				ScopeId:  workflowNodeGet.ScopeId,
 				TargetId: workflowNodeGet.TargetId,
 				ExecType: workflowNodeGet.ExecType,
+				ExecName: workflowNodeGet.ExecName,
 				ExecID:   workflowNodeGet.ExecID,
 			},
 		}
