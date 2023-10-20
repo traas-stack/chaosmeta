@@ -158,7 +158,11 @@ const publicText = {
   all: '全部',
   selectAll: '全选',
   submit: '提交',
-  generalParameters: '通用参数'
+  commonParameters: '通用参数',
+  atomicCapabilities: '原子能力',
+  faultParameters: '故障参数',
+  executionParameters:'执行参数',
+  judgmentParameters: '判定参数'
 };
 
 // 实验

@@ -384,6 +384,7 @@ const ArrangeContent: React.FC<IProps> = (props) => {
             dragtype: 'item',
             exec_id: activeItem?.id,
             name: getIntlName(activeItem),
+            exec_name: getIntlName(activeItem),
             // 当前节点信息是否进行配置完成, wait类型只需要配置时长，所以这里默认为true
             nodeInfoState: activeItem?.exec_type === 'wait',
           });
@@ -401,6 +402,7 @@ const ArrangeContent: React.FC<IProps> = (props) => {
             // 将节点库id保存
             exec_id: activeItem?.id,
             name: getIntlName(activeItem),
+            exec_name: getIntlName(activeItem),
             // 当前节点信息是否进行配置完成
             nodeInfoState: activeItem?.exec_type === 'wait',
           });

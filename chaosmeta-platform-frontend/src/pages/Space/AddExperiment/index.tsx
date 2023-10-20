@@ -164,6 +164,7 @@ const AddExperiment = () => {
           target_id,
           exec_type,
           name,
+          exec_name,
           measure_range,
           flow_range,
         } = item;
@@ -175,8 +176,10 @@ const AddExperiment = () => {
           ...exec_range,
           target_name: target_name || undefined,
         };
+        let newExecName = exec_name;
         if (exec_type === 'flow' || exec_type === 'measure') {
           newExecRange = undefined;
+          newExecName = undefined;
         }
         if (measure_range) {
           measure_range.duration = duration;
@@ -186,6 +189,7 @@ const AddExperiment = () => {
         }
         return {
           name,
+          exec_name: newExecName,
           args_value,
           exec_range: newExecRange,
           exec_id,
