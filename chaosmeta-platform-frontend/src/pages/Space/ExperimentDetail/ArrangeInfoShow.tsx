@@ -11,6 +11,7 @@ import {
   queryFlowNodeFields,
   queryMeasureNodeFields,
 } from '@/services/chaosmeta/ExperimentController';
+import { queryFaultNodeDetail } from '@/services/chaosmeta/KubernetesController';
 import {
   formatDuration,
   getIntlLabel,
@@ -48,7 +49,8 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
   const [fieldList, setFieldList] = useState<any[]>([]);
   const [configForm] = Form.useForm();
   const intl = useIntl();
-
+  // 用于判断当前节点是否为 kubernetes node或 kubernetes pod节点下
+  const [targetName, setTargetName] = useState<string>('');
   /**
    * 故障节点 - 查询节点表单配置信息
    */
@@ -84,6 +86,19 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
     onSuccess: (res: any) => {
       if (res?.code === 200) {
         setFieldList(res?.data?.args || []);
+      }
+    },
+  });
+
+  /**
+   * 根据targetid获取该节点信息，用于判断该节点是否位于node或pod下
+   */
+  const getFaultNodeDetail = useRequest(queryFaultNodeDetail, {
+    manual: true,
+    formatResult: (res) => res,
+    onSuccess: (res: any) => {
+      if (res?.code === 200) {
+        setTargetName(res?.data?.name);
       }
     },
   });
@@ -147,6 +162,7 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
       }
       if (el?.exec_type === 'fault') {
         getFaultNodeFields?.run({ id: el?.exec_id });
+        getFaultNodeDetail?.run({ targetId: el?.target_id });
       }
       // 结果详情中需要通过接口获取节点信息，实验详情中则在详情中直接返回了
       if (isResult) {
@@ -303,20 +319,22 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
 
   // 是否为node下的节点
   const isNode = () => {
-    // 父节点有两个node，一种是scope_id为2，另一种是scope_id为3下的target_id为23（Kubernetes下的node）
-    return (
-      activeCol?.scope_id === 2 ||
-      (activeCol?.scope_id === 3 && activeCol?.target_id === 23)
-    );
+    // 只有故障节点下的才有可能有node节点
+    if (activeCol?.exec_type !== 'fault') {
+      return false;
+    }
+    // 父节点有两个node，一种是scope_id为2，另一种是通过接口查询name为node
+    return activeCol?.scope_id === 2 || targetName === 'node';
   };
 
   // 是否为pod下的节点
   const isPod = () => {
-    // 父节点有两个pod，一种是scope_id为1，另一种是scope_id为3下的target_id为21（Kubernetes下的node）
-    return (
-      activeCol?.scope_id === 1 ||
-      (activeCol?.scope_id === 3 && activeCol?.target_id === 21)
-    );
+    // 只有故障节点下的才有可能有node节点
+    if (activeCol?.exec_type !== 'fault') {
+      return false;
+    }
+    // 父节点有两个pod，一种是scope_id为1，另一种是通过接口查询name为pod
+    return activeCol?.scope_id === 1 || targetName === 'pod';
   };
 
   /**
@@ -481,7 +499,7 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
                           <ShowText ellipsis />
                         </Form.Item>
                         <Form.Item
-                          label="name"
+                          label={isNode() ? 'NodeName' : 'PodName'}
                           name={['exec_range', 'target_name']}
                         >
                           <ShowText ellipsis />

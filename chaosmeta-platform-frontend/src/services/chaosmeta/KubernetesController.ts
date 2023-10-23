@@ -68,3 +68,25 @@ export async function queryPodNodeList(
     ...(options || {}),
   });
 }
+
+/**
+ * 获取故障节点详情信息，属于那个target下的
+ * @param params
+ * @param options
+ * @returns
+ */
+export async function queryFaultNodeDetail(
+  params?: {
+    targetId?: number;
+  },
+  options?: { [key: string]: any },
+) {
+  return request<any>(
+    `/chaosmeta/api/v1/injects/scopes/target/${params?.targetId}`,
+    {
+      method: 'GET',
+      params,
+      ...(options || {}),
+    },
+  );
+}
