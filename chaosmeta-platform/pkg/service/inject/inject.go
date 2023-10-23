@@ -82,6 +82,7 @@ func InitTarget(ctx context.Context, scope basic.Scope) error {
 	var (
 		CpuTarget       = basic.Target{Name: "cpu", NameCn: "cpu", Description: "Fault injection capabilities related to cpu faults", DescriptionCn: "cpu故障相关的故障注入能力"}
 		MemTarget       = basic.Target{Name: "mem", NameCn: "mem", Description: "Fault injection capabilities related to memory faults", DescriptionCn: "内存故障相关的故障注入能力"}
+		DnsTarget       = basic.Target{Name: "dns", NameCn: "dns", Description: "Fault injection capabilities related to dns faults", DescriptionCn: "dns故障相关的故障注入能力"}
 		DiskTarget      = basic.Target{Name: "disk", NameCn: "disk", Description: "Fault injection capabilities related to disk failures", DescriptionCn: "磁盘故障相关的故障注入能力"}
 		DiskioTarget    = basic.Target{Name: "diskIO", NameCn: "diskIO", Description: "Fault injection capabilities related to disk IO faults", DescriptionCn: "磁盘IO故障相关的故障注入能力"}
 		NetworkTarget   = basic.Target{Name: "network", NameCn: "network", Description: "Fault injection capabilities related to disk failures", DescriptionCn: "磁盘故障相关的故障注入能力"}
@@ -104,6 +105,13 @@ func InitTarget(ctx context.Context, scope basic.Scope) error {
 		return err
 	}
 	if err := InitMemFault(ctx, MemTarget); err != nil {
+		return err
+	}
+	DnsTarget.ScopeId = scope.ID
+	if err := basic.InsertTarget(ctx, &DnsTarget); err != nil {
+		return err
+	}
+	if err := InitDnsFault(ctx, DnsTarget); err != nil {
 		return err
 	}
 	DiskTarget.ScopeId = scope.ID
@@ -225,6 +233,42 @@ func InitMemTargetArgsFill(ctx context.Context, memFault basic.Fault) error {
 func InitMemTargetArgsOom(ctx context.Context, memFault basic.Fault) error {
 	var MemArgsMode = basic.Args{InjectId: memFault.ID, ExecType: ExecInject, Key: "mode", KeyCn: "内存填充模式", Unit: "", UnitCn: "", DefaultValue: "cache", Description: "Memory filling mode, ram is the way to apply for process memory, cache is the way to use tmpfs", DescriptionCn: "内存填充模式,ram是使用进程内存申请的方式,cache是使用tmpfs的方式", ValueType: "string", Required: true, ValueRule: "ram,cache"}
 	return basic.InsertArgsMulti(ctx, []*basic.Args{&MemArgsMode})
+}
+
+func InitDnsFault(ctx context.Context, memTarget basic.Target) error {
+	var (
+		DnsFaultRecord = basic.Fault{TargetId: memTarget.ID, Name: "record", NameCn: "篡改dns记录", Description: "Modify the /etc/hosts file to mutate the target domain name resolution", DescriptionCn: "修改/etc/hosts文件,使目标域名解析变异"}
+		DnsFaultServer = basic.Fault{TargetId: memTarget.ID, Name: "server", NameCn: "dns服务器篡改", Description: "Modify /etc/resolv.conf to make the dns server abnormal", DescriptionCn: "修改/etc/resolv.conf，使dns服务器异常"}
+	)
+
+	if err := basic.InsertFault(ctx, &DnsFaultRecord); err != nil {
+		return err
+	}
+	if err := InitDnsTargetArgsRecord(ctx, DnsFaultRecord); err != nil {
+		return err
+	}
+	if err := basic.InsertFault(ctx, &DnsFaultServer); err != nil {
+		return err
+	}
+
+	return InitDnsTargetArgsServer(ctx, DnsFaultServer)
+}
+
+func InitDnsTargetArgsRecord(ctx context.Context, dnsFault basic.Fault) error {
+	var (
+		DiskArgsDomain = basic.Args{InjectId: dnsFault.ID, ExecType: ExecInject, Key: "domain", KeyCn: "目标域名", Unit: "", UnitCn: "", Description: "Target domain name", DescriptionCn: "目标域名", ValueType: "string", Required: true}
+		DiskArgsIp     = basic.Args{InjectId: dnsFault.ID, ExecType: ExecInject, Key: "ip", KeyCn: "域名对应的ip", Unit: "", UnitCn: "", Description: "The IP corresponding to the domain name", DescriptionCn: "域名对应的ip", ValueType: "string"}
+		DiskArgsMode   = basic.Args{InjectId: dnsFault.ID, ExecType: ExecInject, Key: "mode", KeyCn: "模式", Unit: "", UnitCn: "", DefaultValue: "add", Description: "", DescriptionCn: "", ValueType: "string", ValueRule: "add,delete"}
+	)
+	return basic.InsertArgsMulti(ctx, []*basic.Args{&DiskArgsDomain, &DiskArgsIp, &DiskArgsMode})
+}
+
+func InitDnsTargetArgsServer(ctx context.Context, dnsFault basic.Fault) error {
+	var (
+		DiskArgsIp   = basic.Args{InjectId: dnsFault.ID, ExecType: ExecInject, Key: "ip", KeyCn: "服务器ip", Unit: "", UnitCn: "", Description: "server ip", DescriptionCn: "服务器ip", ValueType: "string"}
+		DiskArgsMode = basic.Args{InjectId: dnsFault.ID, ExecType: ExecInject, Key: "mode", KeyCn: "模式", Unit: "", UnitCn: "", DefaultValue: "add", Description: "", DescriptionCn: "", ValueType: "string", ValueRule: "add,delete"}
+	)
+	return basic.InsertArgsMulti(ctx, []*basic.Args{&DiskArgsIp, &DiskArgsMode})
 }
 
 func InitDiskFault(ctx context.Context, diskTarget basic.Target) error {
@@ -526,11 +570,13 @@ func InitFileTargetArgsDelete(ctx context.Context, fileFault basic.Fault) error 
 
 func InitFileTargetArgsAppend(ctx context.Context, fileFault basic.Fault) error {
 	var (
-		FileArgsPath    = basic.Args{InjectId: fileFault.ID, ExecType: ExecInject, Key: "path", KeyCn: "目标文件", Description: "Target file path", DescriptionCn: "目标文件路径", ValueType: "string", Required: true}
-		FileArgsContent = basic.Args{InjectId: fileFault.ID, ExecType: ExecInject, Key: "content", KeyCn: "追加内容", Description: "Append content", DescriptionCn: "追加内容", ValueType: "string"}
-		FileArgsRaw     = basic.Args{InjectId: fileFault.ID, ExecType: ExecInject, Key: "raw", KeyCn: "是否追加纯字符串", DefaultValue: "false", Description: "Whether to append pure string. By default, it will add some additional identifiers to delete the appended content when recovering; if true, it will append pure string, and the appended content will not be deleted when recovering", DescriptionCn: "是否追加纯字符串,默认false会添加一些额外标识,用于恢复时删掉追加的内容;true追加纯字符串，则恢复时不删掉追加的内容", ValueType: "bool", ValueRule: "true,false"}
+		FileArgsPath     = basic.Args{InjectId: fileFault.ID, ExecType: ExecInject, Key: "path", KeyCn: "目标文件", Description: "Target file path", DescriptionCn: "目标文件路径", ValueType: "string", Required: true}
+		FileArgsContent  = basic.Args{InjectId: fileFault.ID, ExecType: ExecInject, Key: "content", KeyCn: "追加内容", Description: "Append content", DescriptionCn: "追加内容", ValueType: "string"}
+		FileArgsRaw      = basic.Args{InjectId: fileFault.ID, ExecType: ExecInject, Key: "raw", KeyCn: "是否追加纯字符串", DefaultValue: "false", Description: "Whether to append pure string. By default, it will add some additional identifiers to delete the appended content when recovering; if true, it will append pure string, and the appended content will not be deleted when recovering", DescriptionCn: "是否追加纯字符串,默认false会添加一些额外标识,用于恢复时删掉追加的内容;true追加纯字符串，则恢复时不删掉追加的内容", ValueType: "bool", ValueRule: "true,false"}
+		FileArgsCount    = basic.Args{InjectId: fileFault.ID, ExecType: ExecInject, Key: "count", KeyCn: "循环次数", Description: "", DescriptionCn: "", DefaultValue: "1", ValueType: "int", ValueRule: ">0"}
+		FileArgsInterval = basic.Args{InjectId: fileFault.ID, ExecType: ExecInject, Key: "interval", KeyCn: "循环间隔", Description: "Unit: seconds", DescriptionCn: "单位:秒", DefaultValue: "0", ValueType: "int", ValueRule: ">=0"}
 	)
-	return basic.InsertArgsMulti(ctx, []*basic.Args{&FileArgsPath, &FileArgsContent, &FileArgsRaw})
+	return basic.InsertArgsMulti(ctx, []*basic.Args{&FileArgsPath, &FileArgsContent, &FileArgsRaw, &FileArgsCount, &FileArgsInterval})
 }
 
 func InitFileTargetArgsAdd(ctx context.Context, fileFault basic.Fault) error {

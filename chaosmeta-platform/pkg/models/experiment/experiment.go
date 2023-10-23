@@ -189,6 +189,7 @@ func SearchExperiments(lastInstance string, namespaceId int, creator int, name s
 			experimentQuery.Filter(timeSearchField, models.GTE, false, start)
 		}
 	}
+
 	if timeType == string(RangeTimeType) {
 		if !startTime.IsZero() && !endTime.IsZero() {
 			experimentQuery.Filter(timeSearchField, models.GTE, false, startTime.Format(TimeLayout))
@@ -202,7 +203,7 @@ func SearchExperiments(lastInstance string, namespaceId int, creator int, name s
 		return 0, nil, err
 	}
 
-	orderByStr := "uuid"
+	orderByStr := "-create_time"
 	if orderBy != "" {
 		orderByStr = orderBy
 	}

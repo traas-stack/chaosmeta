@@ -30,6 +30,7 @@ import (
 	"fmt"
 	"github.com/argoproj/argo-workflows/v3/pkg/apis/workflow/v1alpha1"
 	"github.com/robfig/cron"
+	"k8s.io/client-go/rest"
 	"time"
 )
 
@@ -170,15 +171,56 @@ func StartExperiment(experimentID string, creatorName string) error {
 	return err
 }
 
-func StopExperiment(experimentInstanceID string) error {
-	experimentInstanceInfo, err := experimentInstanceModel.GetExperimentInstanceByUUID(experimentInstanceID)
-	if err != nil || experimentInstanceInfo == nil {
-		return fmt.Errorf("can not find experimentInstance")
-	}
-	if experimentInstanceInfo.Status == WorkflowSucceeded {
-		return errors.New("walkthrough is over")
-	}
+func injectRecoverByArgo(node v1alpha1.NodeStatus, experimentStatus *string, restConfig *rest.Config) error {
+	injectType, isInject := getInjectSecondField(node.DisplayName)
+	if isInject {
+		if node.Phase == v1alpha1.NodeFailed || node.Phase == v1alpha1.NodeError {
+			*experimentStatus = string(v1alpha1.WorkflowFailed)
+			nodeId, err := getNodeIDFromStepName(node.DisplayName)
+			if err != nil {
+				log.Error(err)
+				return err
+			}
+			if err := experimentInstanceModel.UpdateWorkflowNodeInstanceStatus(nodeId, string(node.Phase), ""); err != nil {
+				log.Error(err)
+			}
+			return err
+		}
+		switch injectType {
+		case string(FaultExecType):
+			chaosmetaService := NewChaosmetaService(restConfig)
+			if err := chaosmetaService.Recover(config.DefaultRunOptIns.WorkflowNamespace, node.DisplayName); err != nil {
+				log.Error("fault CR recover failed, err:", err)
+				return err
+			}
+		case string(FlowExecType):
+			chaosmetaService := NewChaosmetaFlowService(restConfig)
+			if err := chaosmetaService.Recover(config.DefaultRunOptIns.WorkflowNamespace, node.DisplayName); err != nil {
+				log.Error("flow CR recover failed, err:", err)
+				return err
+			}
+		case string(MeasureExecType):
+			chaosmetaService := NewChaosmetaMeasureService(restConfig)
+			if err := chaosmetaService.Recover(config.DefaultRunOptIns.WorkflowNamespace, node.DisplayName); err != nil {
+				log.Error("measure CR recover failed, err:", err)
+				return err
+			}
+		}
+		nodeId, err := getNodeIDFromStepName(node.DisplayName)
+		if err != nil {
+			log.Error(err)
+			return err
+		}
 
+		if err := experimentInstanceModel.UpdateWorkflowNodeInstanceStatus(nodeId, WorkflowSucceeded, ""); err != nil {
+			log.Error(err)
+			return err
+		}
+	}
+	return nil
+}
+
+func stopExperiment(experimentInstanceID string, experimentStatus *string, tolerateFailure bool) error {
 	clusterService := cluster.ClusterService{}
 	_, restConfig, err := clusterService.GetRestConfig(context.Background(), config.DefaultRunOptIns.RunMode.Int())
 	if err != nil {
@@ -196,62 +238,50 @@ func StopExperiment(experimentInstanceID string) error {
 		log.Error(err)
 		return nil
 	}
+
 	if status == WorkflowSucceeded {
 		return errors.New("experiment has ended")
 	}
 
 	for _, node := range workFlowGet.Status.Nodes {
-		injectType, isInject := getInjectSecondField(node.DisplayName)
-		if isInject {
-			switch injectType {
-			case string(FaultExecType):
-				chaosmetaService := NewChaosmetaService(restConfig)
-				if err := chaosmetaService.Recover(config.DefaultRunOptIns.WorkflowNamespace, node.DisplayName); err != nil {
-					log.Error("fault CR recover failed, err:", err)
-					return err
-				}
-			case string(FlowExecType):
-				chaosmetaService := NewChaosmetaFlowService(restConfig)
-				if err := chaosmetaService.Recover(config.DefaultRunOptIns.WorkflowNamespace, node.DisplayName); err != nil {
-					log.Error("flow CR recover failed, err:", err)
-					return err
-				}
-			case string(MeasureExecType):
-				chaosmetaService := NewChaosmetaMeasureService(restConfig)
-				if err := chaosmetaService.Recover(config.DefaultRunOptIns.WorkflowNamespace, node.DisplayName); err != nil {
-					log.Error("measure CR recover failed, err:", err)
-					return err
-				}
-			}
-			nodeId, err := getNodeIDFromStepName(node.DisplayName)
-			if err != nil {
+		if err := injectRecoverByArgo(node, experimentStatus, restConfig); err != nil {
+			if !tolerateFailure {
 				log.Error(err)
-				continue
-			}
-
-			if err := experimentInstanceModel.UpdateWorkflowNodeInstanceStatus(nodeId, WorkflowSucceeded, ""); err != nil {
-				log.Error(err)
-				continue
+				return err
 			}
 		}
 	}
 
-	if err := argoWorkFlowCtl.Delete(getWorFlowName(experimentInstanceID)); err != nil {
+	workFlowGet.Spec.Shutdown = v1alpha1.ShutdownStrategyStop
+	if _, err := argoWorkFlowCtl.Update(*workFlowGet); err != nil {
 		log.Error(err)
 		return err
 	}
+	return argoWorkFlowCtl.Delete(getWorFlowName(experimentInstanceID))
+}
 
-	experimentInstanceInfo.Status = WorkflowSucceeded
-	for _, node := range workFlowGet.Status.Nodes {
-		if node.TemplateName == string(ExperimentInject) || node.TemplateName == string(RawSuspend) {
-			if node.Phase == WorkflowFailed || node.Phase == WorkflowError {
-				experimentInstanceInfo.Status = string(node.Phase)
-				return experimentInstanceModel.UpdateExperimentInstance(experimentInstanceInfo)
-			}
-		}
+func StopExperiment(experimentInstanceID string, tolerateFailure bool) error {
+	experimentInstanceInfo, err := experimentInstanceModel.GetExperimentInstanceByUUID(experimentInstanceID)
+	if err != nil || experimentInstanceInfo == nil {
+		return fmt.Errorf("can not find experimentInstance")
 	}
-
+	var experimentStatus = WorkflowSucceeded
+	if err := stopExperiment(experimentInstanceID, &experimentStatus, tolerateFailure); err != nil {
+		log.Error("stopExperiment error:", err)
+	}
+	experimentInstanceInfo.Status = experimentStatus
 	return experimentInstanceModel.UpdateExperimentInstance(experimentInstanceInfo)
+}
+
+func UserStopExperiment(experimentInstanceID string) error {
+	experimentInstanceInfo, err := experimentInstanceModel.GetExperimentInstanceByUUID(experimentInstanceID)
+	if err != nil || experimentInstanceInfo == nil {
+		return fmt.Errorf("can not find experimentInstance")
+	}
+	if experimentInstanceInfo.Status == WorkflowSucceeded || experimentInstanceInfo.Status == WorkflowFailed || experimentInstanceInfo.Status == WorkflowError {
+		return errors.New("experiment is over")
+	}
+	return StopExperiment(experimentInstanceID, false)
 }
 
 func (e *ExperimentRoutine) DealOnceExperiment() {
@@ -333,7 +363,7 @@ func (e *ExperimentRoutine) DealCronExperiment() {
 }
 
 func (e *ExperimentRoutine) syncExperimentStatus(workflow v1alpha1.Workflow) error {
-	log.Info("syncExperimentStatus.Name:", workflow.Name)
+	log.Info("syncExperimentStatus.Name:", workflow.Name, "workflow.Status", workflow.Status)
 	experimentInstanceId, err := getExperimentInstanceIdFromWorkflowName(workflow.Name)
 	if err != nil {
 		log.Error(err)
@@ -352,7 +382,9 @@ func (e *ExperimentRoutine) syncExperimentStatus(workflow v1alpha1.Workflow) err
 				log.Error("getExperimentUUIDAndNodeIDFromStepName", err)
 				continue
 			}
-
+			if node.Phase == v1alpha1.NodeFailed || node.Phase == v1alpha1.NodeError {
+				return StopExperiment(experimentInstanceId, true)
+			}
 			if err := experimentInstanceModel.UpdateWorkflowNodeInstanceStatus(nodeId, string(node.Phase), node.Message); err != nil {
 				log.Error("UpdateWorkflowNodeInstanceStatus", err)
 				continue
@@ -393,11 +425,6 @@ func (e *ExperimentRoutine) SyncExperimentsStatus() {
 			go func(argo v1alpha1.Workflow) {
 				if err := e.syncExperimentStatus(argo); err != nil {
 					errCh <- err
-				}
-				if argo.Status.Phase == WorkflowSucceeded {
-					if err := argoWorkFlowCtl.Delete(argo.Name); err != nil {
-						errCh <- err
-					}
 				}
 			}(*finishArgo)
 		}

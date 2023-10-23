@@ -18,6 +18,7 @@ package experiment_instance
 
 import (
 	models "chaosmeta-platform/pkg/models/common"
+	"chaosmeta-platform/util/log"
 	"errors"
 	"fmt"
 	"github.com/beego/beego/v2/client/orm"
@@ -80,17 +81,20 @@ func UpdateExperimentInstance(experiment *ExperimentInstance) error {
 
 	if experiment.Version != existing.Version {
 		tx.Rollback()
+		log.Error("Concurrent modification detected")
 		return errors.New("Concurrent modification detected")
 	}
 
 	experiment.Version = existing.Version + 1
 	if _, err = tx.Update(experiment); err != nil {
+		log.Error(err)
 		tx.Rollback()
 		return err
 	}
 
 	if err = tx.Commit(); err != nil {
 		tx.Rollback()
+		log.Error(err)
 		return err
 	}
 
@@ -182,7 +186,7 @@ func SearchExperimentInstances(lastInstance string, experimentUUID string, names
 		return 0, nil, err
 	}
 
-	orderByStr := "uuid"
+	orderByStr := "-create_time"
 	if orderBy != "" {
 		orderByStr = orderBy
 	}

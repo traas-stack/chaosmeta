@@ -77,6 +77,9 @@ func GetWorkflowStruct(experimentInstanceId string, nodes []*experiment_instance
 			Namespace: config.DefaultRunOptIns.ArgoWorkflowNamespace,
 		},
 		Spec: v1alpha1.WorkflowSpec{
+			ArtifactGC: &v1alpha1.ArtifactGC{
+				Strategy: v1alpha1.ArtifactGCOnWorkflowCompletion,
+			},
 			ServiceAccountName: kubernetes.ServiceAccount,
 			Entrypoint:         WorkflowMainStep,
 			Templates: []v1alpha1.Template{
@@ -443,7 +446,10 @@ func getStepArguments(experimentInstanceId string, node *experiment_instance.Wor
 }
 
 func convertToSteps(experimentInstanceId string, nodes []*experiment_instance.WorkflowNodesDetail) *v1alpha1.DAGTemplate {
-	dAGTemplate := v1alpha1.DAGTemplate{}
+	failFast := true
+	dAGTemplate := v1alpha1.DAGTemplate{
+		FailFast: &failFast,
+	}
 	//_, maxColumn := getMaxRowAndColumn(nodes)
 	var steps []v1alpha1.DAGTask
 	beginTask := v1alpha1.DAGTask{
@@ -458,8 +464,8 @@ func convertToSteps(experimentInstanceId string, nodes []*experiment_instance.Wo
 			},
 		},
 	}
-	endTask := beginTask
-	endTask.Name = "EndWaitTask"
+	//endTask := beginTask
+	//endTask.Name = "EndWaitTask"
 
 	steps = append(steps, beginTask)
 
@@ -467,8 +473,7 @@ func convertToSteps(experimentInstanceId string, nodes []*experiment_instance.Wo
 	for _, node := range nodes {
 		task := *getStepArguments(experimentInstanceId, node)
 		if prevNode != nil && prevNode.Row != node.Row {
-			endTask.Dependencies = append(endTask.Dependencies, getStepArguments(experimentInstanceId, prevNode).Name)
-			//steps = append(steps, task)
+			//endTask.Dependencies = append(endTask.Dependencies, getStepArguments(experimentInstanceId, prevNode).Name)
 			log.Debugf("End of row %d", prevNode.Row)
 			task.Dependencies = []string{"BeginWaitTask"}
 		}
@@ -485,8 +490,8 @@ func convertToSteps(experimentInstanceId string, nodes []*experiment_instance.Wo
 		prevNode = node
 
 	}
-	endTask.Dependencies = append(endTask.Dependencies, getStepArguments(experimentInstanceId, prevNode).Name)
-	steps = append(steps, endTask)
+	//endTask.Dependencies = append(endTask.Dependencies, getStepArguments(experimentInstanceId, prevNode).Name)
+	//steps = append(steps, endTask)
 	dAGTemplate.Tasks = steps
 	return &dAGTemplate
 }

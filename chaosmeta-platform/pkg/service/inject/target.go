@@ -25,3 +25,7 @@ func (i *InjectService) ListTargets(ctx context.Context, scopeId int, orderBy st
 	total, targets, err := basic.ListTargets(ctx, scopeId, orderBy, page, pageSize)
 	return total, targets, err
 }
+
+func (i *InjectService) GetTarget(ctx context.Context, id int) (*basic.Target, error) {
+	return basic.GetTargetById(ctx, id)
+}

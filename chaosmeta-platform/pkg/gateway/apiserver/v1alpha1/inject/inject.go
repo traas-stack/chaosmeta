@@ -66,6 +66,17 @@ func (c *InjectController) QueryTargets() {
 	c.Success(&c.Controller, targetsListResponse)
 }
 
+func (c *InjectController) GetTarget() {
+	id, _ := c.GetInt(":id")
+	injectService := inject.InjectService{}
+	target, err := injectService.GetTarget(context.Background(), id)
+	if err != nil {
+		c.Error(&c.Controller, err)
+		return
+	}
+	c.Success(&c.Controller, target)
+}
+
 func (c *InjectController) QueryFaults() {
 	targetId, _ := c.GetInt(":targets_id")
 	page, _ := c.GetInt("page", 1)

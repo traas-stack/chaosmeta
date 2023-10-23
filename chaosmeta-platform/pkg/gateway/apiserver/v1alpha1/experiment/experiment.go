@@ -152,7 +152,7 @@ func (c *ExperimentController) StartExperiment() {
 
 func (c *ExperimentController) StopExperiment() {
 	uuid := c.Ctx.Input.Param(":uuid")
-	if err := experiment.StopExperiment(uuid); err != nil {
+	if err := experiment.UserStopExperiment(uuid); err != nil {
 		c.Error(&c.Controller, err)
 		return
 	}

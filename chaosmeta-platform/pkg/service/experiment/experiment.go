@@ -471,7 +471,7 @@ func (es *ExperimentService) GetWorkflowNodesByExperiment(uuid string, experimen
 }
 
 func (es *ExperimentService) SearchExperiments(lastInstance string, namespaceId int, creatorName string, name string, scheduleType string, timeType string, timeSearchField string, recentDays int, startTime, endTime time.Time, orderBy string, page, pageSize int) (int64, []ExperimentGet, error) {
-	log.Error(lastInstance, namespaceId, creatorName, name, scheduleType, timeType, timeSearchField, recentDays, startTime, endTime, orderBy, page, pageSize)
+	log.Info(lastInstance, namespaceId, creatorName, name, scheduleType, timeType, timeSearchField, recentDays, startTime, endTime, orderBy, page, pageSize)
 	var experimentList []ExperimentGet
 	creator := 0
 	if creatorName != "" {
