@@ -1,6 +1,7 @@
 import { formatFormName, getIntlText } from '@/utils/format';
 import { useIntl } from '@umijs/max';
 import { Form, Input, Radio, Select } from 'antd';
+import KubernetesNamespaceSelect from '../Select/KubernetesNamespaceSelect';
 import ShowText from '../ShowText';
 import UnitInput from './UnitInput';
 
@@ -53,6 +54,10 @@ const DynamicForm = (props: Props) => {
     //     />
     //   );
     // }
+    // key 为namespace时需要特殊渲染
+    if (key === 'namespace') {
+      return <KubernetesNamespaceSelect />;
+    }
     if (valueType === 'bool') {
       return (
         <Radio.Group>
