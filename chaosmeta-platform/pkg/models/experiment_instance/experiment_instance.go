@@ -52,7 +52,7 @@ type ExperimentInstance struct {
 	Creator        int    `json:"creator" orm:"index;column(creator)"`
 	Status         string `json:"status" orm:"column(status);size(32);index"`
 	Message        string `json:"message" orm:"column(message);size(1024)"`
-	Version        int    `json:"-" orm:"column(version);default(0);version"`
+	Version        int    `json:"-" orm:"column(version);default(0);index"`
 	models.BaseTimeModel
 }
 

@@ -35,8 +35,8 @@ type WorkflowNodeInstance struct {
 	ExecType               string `json:"exec_type" orm:"column(exec_type);size(32)"`
 	ExecID                 int    `json:"exec_id" orm:"column(exec_id)"`
 	Status                 string `json:"status" orm:"column(status);size(32);default(to_be_executed);index"`
-	Message                string `json:"message" orm:"column(message);size(1024)"`
-	Version                int    `json:"-" orm:"column(version);default(0);column(version)"`
+	Message                string `json:"message" orm:"column(message);size(2048)"`
+	Version                int    `json:"-" orm:"column(version);default(0);index"`
 	models.BaseTimeModel
 }
 

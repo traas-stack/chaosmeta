@@ -58,7 +58,7 @@ type Experiment struct {
 	NextExec     time.Time        `json:"next_exec,omitempty" orm:"null;column(next_exec);type(datetime)"`
 	Status       ExperimentStatus `json:"-" orm:"index;column(status);type:tinyint(1)"`
 	LastInstance string           `json:"last_instance" orm:"column(last_instance);size(64)"`
-	Version      int              `json:"-" orm:"column(version);default(0);version"`
+	Version      int              `json:"-" orm:"column(version);default(0);index"`
 	models.BaseTimeModel
 }
 

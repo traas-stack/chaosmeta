@@ -26,16 +26,16 @@ type WorkflowNode struct {
 	Id             int    `json:"id,omitempty" orm:"pk;auto;column(id)"`
 	Name           string `json:"name" orm:"index;column(name);size(255)"`
 	UUID           string `json:"uuid,omitempty" orm:"column(uuid);index"`
-	ExperimentUUID string `json:"experiment_uuid" orm:"index;column(experiment_uuid);size(64)"`
+	ExperimentUUID string `json:"experiment_uuid" orm:"index;column(experiment_uuid);size(64);index"`
 	Row            int    `json:"row" orm:"column(row)"`
 	Column         int    `json:"column" orm:"column(column)"`
 	Duration       string `json:"duration" orm:"column(duration);size(32)"`
-	ScopeId        int    `json:"scope_id" orm:"column(scope_id); int(11)"`
-	TargetId       int    `json:"target_id" orm:"column(target_id); int(11)"`
+	ScopeId        int    `json:"scope_id" orm:"column(scope_id);int(11)"`
+	TargetId       int    `json:"target_id" orm:"column(target_id);int(11)"`
 	ExecName       string `json:"exec_name" orm:"column(exec_name);size(32)"`
 	ExecType       string `json:"exec_type" orm:"column(exec_type);size(32)"`
-	ExecID         int    `json:"exec_id" orm:"column(exec_id); int(11)"`
-	Version        int    `json:"-" orm:"column(version);default(0);version"`
+	ExecID         int    `json:"exec_id" orm:"column(exec_id);int(11)"`
+	Version        int    `json:"-" orm:"column(version);default(0);index"`
 	models.BaseTimeModel
 }
 
