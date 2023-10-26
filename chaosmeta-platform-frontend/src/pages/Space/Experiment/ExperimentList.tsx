@@ -333,8 +333,9 @@ const ExperimentList: React.FC<unknown> = () => {
         </>
       ),
       width: 180,
-      sorter: true,
-      render: (record: any) => {
+      // sorter: true,
+      dataIndex: 'last_instance',
+      render: (text: string, record: any) => {
         const statusTemp: any = experimentStatus.filter(
           (item) => item.value === record?.status,
         )[0];
