@@ -36,12 +36,15 @@ import (
 type WorkflowTemplateName string
 
 var (
-	RawSuspend       = WorkflowTemplateName("raw-suspend")
-	ExperimentInject = WorkflowTemplateName("experiment-inject")
+	RawSuspend           = WorkflowTemplateName("raw-suspend")
+	ExperimentInjecFault = WorkflowTemplateName("experiment-fault")
+	ExperimentInject     = WorkflowTemplateName("experiment-inject")
 )
 
 const (
+	APIVersion       = "chaosmeta.io/v1alpha1"
 	WorkflowMainStep = "main"
+	ParametersName   = "Experiment"
 )
 
 var Manifest = `
@@ -74,15 +77,18 @@ func GetWorkflowStruct(experimentInstanceId string, nodes []*experiment_instance
 			Namespace: config.DefaultRunOptIns.ArgoWorkflowNamespace,
 		},
 		Spec: v1alpha1.WorkflowSpec{
+			ArtifactGC: &v1alpha1.ArtifactGC{
+				Strategy: v1alpha1.ArtifactGCOnWorkflowCompletion,
+			},
 			ServiceAccountName: kubernetes.ServiceAccount,
 			Entrypoint:         WorkflowMainStep,
 			Templates: []v1alpha1.Template{
 				{
-					Name: string(ExperimentInject),
+					Name: string(ExperimentInjecFault),
 					Inputs: v1alpha1.Inputs{
 						Parameters: []v1alpha1.Parameter{
 							{
-								Name: "experiment",
+								Name: ParametersName,
 							},
 						},
 					},
@@ -90,7 +96,23 @@ func GetWorkflowStruct(experimentInstanceId string, nodes []*experiment_instance
 						Action:           "create",
 						FailureCondition: "status.status == failed",
 						SuccessCondition: "status.phase == recover,status.status == success",
-						Manifest:         "{{inputs.parameters.experiment}}",
+						Manifest:         fmt.Sprintf("{{inputs.parameters.%s}}", ParametersName),
+					},
+				},
+				{
+					Name: string(ExperimentInject),
+					Inputs: v1alpha1.Inputs{
+						Parameters: []v1alpha1.Parameter{
+							{
+								Name: ParametersName,
+							},
+						},
+					},
+					Resource: &v1alpha1.ResourceTemplate{
+						Action:           "create",
+						FailureCondition: "status.status == failed",
+						SuccessCondition: "status.status == success",
+						Manifest:         fmt.Sprintf("{{inputs.parameters.%s}}", ParametersName),
 					},
 				},
 				{
@@ -106,26 +128,6 @@ func GetWorkflowStruct(experimentInstanceId string, nodes []*experiment_instance
 						Duration: "{{inputs.parameters.time}}",
 					},
 				},
-				//{
-				//	Name: "experiment-recover",
-				//	Inputs: v1alpha1.Inputs{
-				//		Parameters: []v1alpha1.Parameter{
-				//			{
-				//				Name: "experiment",
-				//			},
-				//		},
-				//	},
-				//	Resource: &v1alpha1.ResourceTemplate{
-				//		Action:           "patch",
-				//		FailureCondition: "status.status == failed",
-				//		SuccessCondition: "status.phase == recover,status.status == success",
-				//		MergeStrategy:    "json",
-				//		Flags: []string{
-				//			"experiments.chaosmeta.io",
-				//			"{{inputs.parameters.experiment}}",
-				//		},
-				//		//Manifest: Manifest,
-				//	},
 			},
 		},
 	}
@@ -176,7 +178,7 @@ func getFaultStep(experimentInstanceUUID string, node *experiment_instance.Workf
 		return nil
 	}
 	injectStep := v1alpha1.DAGTask{
-		Template: string(ExperimentInject),
+		Template: string(ExperimentInjecFault),
 	}
 
 	ctx := context.Background()
@@ -196,10 +198,11 @@ func getFaultStep(experimentInstanceUUID string, node *experiment_instance.Workf
 		log.Error(err)
 		return nil
 	}
+	log.Error(scope.Name, target.Name, experimentInstanceUUID, node.UUID)
 	injectStep.Name = getInjectStepName(scope.Name, target.Name, experimentInstanceUUID, node.UUID)
 	experimentTemplate := ExperimentInjectStruct{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "chaosmeta.io/v1alpha1",
+			APIVersion: APIVersion,
 			Kind:       "Experiment",
 		},
 
@@ -235,7 +238,9 @@ func getFaultStep(experimentInstanceUUID string, node *experiment_instance.Workf
 			labelMap := make(map[string]string)
 			for _, pair := range strings.Split(node.Subtasks.TargetLabel, ",") {
 				parts := strings.Split(pair, ":")
-				labelMap[strings.TrimSpace(parts[0])] = strings.TrimSpace(parts[1])
+				if len(parts) >= 2 {
+					labelMap[strings.TrimSpace(parts[0])] = strings.TrimSpace(parts[1])
+				}
 			}
 			selector.Label = labelMap
 		}
@@ -264,7 +269,7 @@ func getFaultStep(experimentInstanceUUID string, node *experiment_instance.Workf
 	injectStep.Arguments = v1alpha1.Arguments{
 		Parameters: []v1alpha1.Parameter{
 			{
-				Name:  "experiment",
+				Name:  ParametersName,
 				Value: v1alpha1.AnyStringPtr(string(experimentTemplateBytes)),
 			},
 		},
@@ -272,7 +277,7 @@ func getFaultStep(experimentInstanceUUID string, node *experiment_instance.Workf
 	return &injectStep
 }
 
-func getFlowStep(experimentInstanceUUID string, node *experiment_instance.WorkflowNodesDetail, phaseType PhaseType) *v1alpha1.DAGTask {
+func getFlowStep(experimentInstanceUUID string, node *experiment_instance.WorkflowNodesDetail) *v1alpha1.DAGTask {
 	if node == nil {
 		log.Error("node is nil")
 		return nil
@@ -292,7 +297,7 @@ func getFlowStep(experimentInstanceUUID string, node *experiment_instance.Workfl
 
 	flowSpec := LoadTest{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "chaosmeta.io/v1alpha1",
+			APIVersion: APIVersion,
 			Kind:       "LoadTest",
 		},
 
@@ -330,7 +335,7 @@ func getFlowStep(experimentInstanceUUID string, node *experiment_instance.Workfl
 	injectStep.Arguments = v1alpha1.Arguments{
 		Parameters: []v1alpha1.Parameter{
 			{
-				Name:  "experiment",
+				Name:  ParametersName,
 				Value: v1alpha1.AnyStringPtr(string(flowSpecBytes)),
 			},
 		},
@@ -338,7 +343,7 @@ func getFlowStep(experimentInstanceUUID string, node *experiment_instance.Workfl
 	return &injectStep
 }
 
-func getMeasureStep(experimentInstanceUUID string, node *experiment_instance.WorkflowNodesDetail, phaseType PhaseType) *v1alpha1.DAGTask {
+func getMeasureStep(experimentInstanceUUID string, node *experiment_instance.WorkflowNodesDetail) *v1alpha1.DAGTask {
 	if node == nil {
 		log.Error("node is nil")
 		return nil
@@ -358,7 +363,7 @@ func getMeasureStep(experimentInstanceUUID string, node *experiment_instance.Wor
 
 	commonMeasureStruct := CommonMeasureStruct{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "chaosmeta.io/v1alpha1",
+			APIVersion: APIVersion,
 			Kind:       "CommonMeasure",
 		},
 
@@ -401,7 +406,7 @@ func getMeasureStep(experimentInstanceUUID string, node *experiment_instance.Wor
 	injectStep.Arguments = v1alpha1.Arguments{
 		Parameters: []v1alpha1.Parameter{
 			{
-				Name:  "experiment",
+				Name:  ParametersName,
 				Value: v1alpha1.AnyStringPtr(string(commonMeasureStructBytes)),
 			},
 		},
@@ -432,16 +437,19 @@ func getStepArguments(experimentInstanceId string, node *experiment_instance.Wor
 	case string(FaultExecType):
 		return getFaultStep(experimentInstanceId, node, InjectPhaseType)
 	case string(FlowExecType):
-		return getFlowStep(experimentInstanceId, node, InjectPhaseType)
+		return getFlowStep(experimentInstanceId, node)
 	case string(MeasureExecType):
-		return getMeasureStep(experimentInstanceId, node, InjectPhaseType)
+		return getMeasureStep(experimentInstanceId, node)
 	default:
 		return nil
 	}
 }
 
 func convertToSteps(experimentInstanceId string, nodes []*experiment_instance.WorkflowNodesDetail) *v1alpha1.DAGTemplate {
-	dAGTemplate := v1alpha1.DAGTemplate{}
+	failFast := true
+	dAGTemplate := v1alpha1.DAGTemplate{
+		FailFast: &failFast,
+	}
 	//_, maxColumn := getMaxRowAndColumn(nodes)
 	var steps []v1alpha1.DAGTask
 	beginTask := v1alpha1.DAGTask{
@@ -456,8 +464,8 @@ func convertToSteps(experimentInstanceId string, nodes []*experiment_instance.Wo
 			},
 		},
 	}
-	endTask := beginTask
-	endTask.Name = "EndWaitTask"
+	//endTask := beginTask
+	//endTask.Name = "EndWaitTask"
 
 	steps = append(steps, beginTask)
 
@@ -465,8 +473,7 @@ func convertToSteps(experimentInstanceId string, nodes []*experiment_instance.Wo
 	for _, node := range nodes {
 		task := *getStepArguments(experimentInstanceId, node)
 		if prevNode != nil && prevNode.Row != node.Row {
-			endTask.Dependencies = append(endTask.Dependencies, getStepArguments(experimentInstanceId, prevNode).Name)
-			//steps = append(steps, task)
+			//endTask.Dependencies = append(endTask.Dependencies, getStepArguments(experimentInstanceId, prevNode).Name)
 			log.Debugf("End of row %d", prevNode.Row)
 			task.Dependencies = []string{"BeginWaitTask"}
 		}
@@ -483,8 +490,8 @@ func convertToSteps(experimentInstanceId string, nodes []*experiment_instance.Wo
 		prevNode = node
 
 	}
-	endTask.Dependencies = append(endTask.Dependencies, getStepArguments(experimentInstanceId, prevNode).Name)
-	steps = append(steps, endTask)
+	//endTask.Dependencies = append(endTask.Dependencies, getStepArguments(experimentInstanceId, prevNode).Name)
+	//steps = append(steps, endTask)
 	dAGTemplate.Tasks = steps
 	return &dAGTemplate
 }

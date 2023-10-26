@@ -28,7 +28,7 @@ type FlowRangeInstance struct {
 	Parallelism              string `json:"parallelism" orm:"column(parallelism);size(32)"`
 	Duration                 string `json:"duration" orm:"column(duration);size(32)"`
 	FlowType                 string `json:"flowType" orm:"column(flow_type);size(32)"`
-	ExecLog                  string `json:"exec_log" orm:"column(exec_log);type:TEXT"`
+	ExecLog                  string `json:"exec_log" orm:"column(exec_log);size(2048)"`
 	Status                   string `json:"status" orm:"column(status);size(32);index"`
 	Message                  string `json:"message" orm:"column(message);size(1024)"`
 	models.BaseTimeModel

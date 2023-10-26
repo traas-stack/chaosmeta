@@ -31,7 +31,7 @@ type FaultRangeInstance struct {
 	TargetApp                string `json:"target_app" orm:"column(target_app);size(255)"`
 	TargetNamespace          string `json:"target_namespace" orm:"column(target_namespace);size(255)"`
 	RangeType                string `json:"range_type" orm:"column(range_type);size(32)"`
-	ExecLog                  string `json:"exec_log" orm:"column(exec_log);type:TEXT"`
+	ExecLog                  string `json:"exec_log" orm:"column(exec_log);size(2048)"`
 	Status                   string `json:"status" orm:"column(status);size(32);index"`
 	Message                  string `json:"message" orm:"column(message);size(1024)"`
 	models.BaseTimeModel

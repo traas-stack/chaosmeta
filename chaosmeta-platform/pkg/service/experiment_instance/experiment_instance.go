@@ -86,6 +86,7 @@ func (s *ExperimentInstanceService) CreateExperimentInstance(experimentParam *Ex
 			ScopeId:                node.ScopeId,
 			TargetId:               node.TargetId,
 			ExecType:               node.ExecType,
+			ExecName:               node.ExecName,
 			ExecID:                 node.ExecId,
 			Message:                node.Message,
 		}
@@ -205,6 +206,7 @@ type WorkflowNodesInfo struct {
 	Duration   string `json:"duration"`
 	ScopeId    int    `json:"scope_id"`
 	TargetId   int    `json:"target_id"`
+	ExecName   string `json:"exec_name"`
 	ExecType   string `json:"exec_type"`
 	ExecId     int    `json:"exec_id"`
 	Status     string `json:"status"`
@@ -239,6 +241,7 @@ func (s *ExperimentInstanceService) GetWorkflowNodesInstanceInfoByUUID(experimen
 			ScopeId:    workflowNodeGet.ScopeId,
 			TargetId:   workflowNodeGet.TargetId,
 			ExecType:   workflowNodeGet.ExecType,
+			ExecName:   workflowNodeGet.ExecName,
 			ExecId:     workflowNodeGet.ExecID,
 			Status:     workflowNodeGet.Status,
 			Message:    workflowNodeGet.Message,
@@ -270,6 +273,7 @@ func (s *ExperimentInstanceService) GetWorkflowNodeInstanceByUUIDAndNodeId(exper
 		ScopeId:    node.ScopeId,
 		TargetId:   node.TargetId,
 		ExecType:   node.ExecType,
+		ExecName:   node.ExecName,
 		ExecId:     node.ExecID,
 		Status:     node.Status,
 		Message:    node.Message,

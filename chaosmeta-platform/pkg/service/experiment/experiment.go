@@ -139,6 +139,7 @@ func (es *ExperimentService) CreateExperiment(experimentParam *ExperimentCreate)
 			ScopeId:        node.ScopeId,
 			TargetId:       node.TargetId,
 			ExecType:       node.ExecType,
+			ExecName:       node.ExecName,
 			ExecID:         node.ExecID,
 		}
 		if err := experiment.CreateWorkflowNode(&workflowNodeCreate); err != nil {
@@ -234,6 +235,7 @@ func (es *ExperimentService) UpdateExperiment(uuid string, experimentParam *Expe
 			ScopeId:        node.ScopeId,
 			TargetId:       node.TargetId,
 			ExecType:       node.ExecType,
+			ExecName:       node.ExecName,
 			ExecID:         node.ExecID,
 		}
 
@@ -431,6 +433,7 @@ func (es *ExperimentService) GetWorkflowNodesByExperiment(uuid string, experimen
 				ScopeId:  workflowNodeGet.ScopeId,
 				TargetId: workflowNodeGet.TargetId,
 				ExecType: workflowNodeGet.ExecType,
+				ExecName: workflowNodeGet.ExecName,
 				ExecID:   workflowNodeGet.ExecID,
 			},
 		}
@@ -468,7 +471,7 @@ func (es *ExperimentService) GetWorkflowNodesByExperiment(uuid string, experimen
 }
 
 func (es *ExperimentService) SearchExperiments(lastInstance string, namespaceId int, creatorName string, name string, scheduleType string, timeType string, timeSearchField string, recentDays int, startTime, endTime time.Time, orderBy string, page, pageSize int) (int64, []ExperimentGet, error) {
-	log.Error(lastInstance, namespaceId, creatorName, name, scheduleType, timeType, timeSearchField, recentDays, startTime, endTime, orderBy, page, pageSize)
+	log.Info(lastInstance, namespaceId, creatorName, name, scheduleType, timeType, timeSearchField, recentDays, startTime, endTime, orderBy, page, pageSize)
 	var experimentList []ExperimentGet
 	creator := 0
 	if creatorName != "" {

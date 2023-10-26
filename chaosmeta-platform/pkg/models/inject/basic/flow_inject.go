@@ -25,9 +25,9 @@ type FlowInject struct {
 	Id            int    `json:"id" orm:"pk;auto;column(id)"`
 	FlowType      string `json:"flow_type" orm:"column(flow_type);size(32)"`
 	Name          string `json:"name" orm:"column(name);size(255)"`
-	NameCn        string `json:"name_cn" orm:"column(name_cn);size(255)"`
+	NameCn        string `json:"nameCn" orm:"column(name_cn);size(255)"`
 	Description   string `json:"description" orm:"column(description);size(1024)"`
-	DescriptionCn string `json:"description_cn" orm:"column(description_cn);size(1024)"`
+	DescriptionCn string `json:"descriptionCn" orm:"column(description_cn);size(1024)"`
 }
 
 func (m *FlowInject) TableName() string {
