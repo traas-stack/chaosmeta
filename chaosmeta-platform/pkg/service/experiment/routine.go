@@ -229,13 +229,14 @@ func getInjectMessage(node v1alpha1.NodeStatus) string {
 func injectRecoverByArgo(node v1alpha1.NodeStatus, experimentStatus *string, restConfig *rest.Config) error {
 	injectType, isInject := getInjectSecondField(node.DisplayName)
 	if isInject {
+		nodeId, err := getNodeIDFromStepName(node.DisplayName)
+		if err != nil {
+			log.Error(err)
+			return err
+		}
 		if node.Phase == v1alpha1.NodeFailed || node.Phase == v1alpha1.NodeError {
 			*experimentStatus = string(v1alpha1.WorkflowFailed)
-			nodeId, err := getNodeIDFromStepName(node.DisplayName)
-			if err != nil {
-				log.Error(err)
-				return err
-			}
+
 			if err := experimentInstanceModel.UpdateWorkflowNodeInstanceStatus(nodeId, string(node.Phase), getInjectMessage(node)); err != nil {
 				log.Error(err)
 			}
@@ -261,16 +262,16 @@ func injectRecoverByArgo(node v1alpha1.NodeStatus, experimentStatus *string, res
 				return err
 			}
 		}
-		nodeId, err := getNodeIDFromStepName(node.DisplayName)
-		if err != nil {
-			log.Error(err)
-			return err
-		}
-
 		if err := experimentInstanceModel.UpdateWorkflowNodeInstanceStatus(nodeId, WorkflowSucceeded, getInjectMessage(node)); err != nil {
 			log.Error(err)
 			return err
 		}
+
+		time.AfterFunc(30*time.Second, func() {
+			if err := experimentInstanceModel.UpdateWorkflowNodeInstanceMessage(nodeId, getInjectMessage(node)); err != nil {
+				log.Error(err)
+			}
+		})
 	}
 	return nil
 }

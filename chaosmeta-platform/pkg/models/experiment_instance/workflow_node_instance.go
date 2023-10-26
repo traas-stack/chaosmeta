@@ -35,7 +35,7 @@ type WorkflowNodeInstance struct {
 	ExecType               string `json:"exec_type" orm:"column(exec_type);size(32)"`
 	ExecID                 int    `json:"exec_id" orm:"column(exec_id)"`
 	Status                 string `json:"status" orm:"column(status);size(32);default(to_be_executed);index"`
-	Message                string `json:"message" orm:"column(message);size(2048)"`
+	Message                string `json:"message" orm:"column(message);size(65535)"`
 	Version                int    `json:"-" orm:"column(version);default(0);index"`
 	models.BaseTimeModel
 }
@@ -95,6 +95,17 @@ func UpdateWorkflowNodeInstanceStatus(uuid string, status, message string) error
 		return err
 	}
 	nodeInstance.Status = status
+	if message != "" {
+		nodeInstance.Message = message
+	}
+	return UpdateWorkflowNodeInstance(nodeInstance)
+}
+
+func UpdateWorkflowNodeInstanceMessage(uuid string, message string) error {
+	nodeInstance, err := GetWorkflowNodeInstanceByUUID(uuid)
+	if err != nil {
+		return err
+	}
 	if message != "" {
 		nodeInstance.Message = message
 	}
