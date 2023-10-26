@@ -24,6 +24,11 @@ import (
 func injectInit() {
 	beego.Router(NewWebServicePath("injects/scopes"), &inject.InjectController{}, "get:QueryScopes")
 	beego.Router(NewWebServicePath("injects/scopes/:id/targets"), &inject.InjectController{}, "get:QueryTargets")
+	beego.Router(NewWebServicePath("injects/scopes/target/:id"), &inject.InjectController{}, "get:GetTarget")
 	beego.Router(NewWebServicePath("injects/scopes/:id/targets/:targets_id/faults"), &inject.InjectController{}, "get:QueryFaults")
-	beego.Router(NewWebServicePath("injects/faults/:id/args"), &inject.InjectController{}, "get:QueryArgs")
+	beego.Router(NewWebServicePath("injects/flows"), &inject.InjectController{}, "get:QueryFlows")
+	beego.Router(NewWebServicePath("injects/measures"), &inject.InjectController{}, "get:QueryMeasures")
+	beego.Router(NewWebServicePath("injects/faults/:id/args"), &inject.InjectController{}, "get:QueryFaultArgs")
+	beego.Router(NewWebServicePath("injects/flows/:id/args"), &inject.InjectController{}, "get:QueryFlowArgs")
+	beego.Router(NewWebServicePath("injects/measures/:id/args"), &inject.InjectController{}, "get:QueryMeasureArgs")
 }

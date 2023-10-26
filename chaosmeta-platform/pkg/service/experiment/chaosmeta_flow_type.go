@@ -18,17 +18,13 @@ package experiment
 
 import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-// flow
-type LoadTest struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec   LoadTestSpec   `json:"spec,omitempty"`
-	Status StatusFlowType `json:"status,omitempty"`
-}
+var (
+	JmeterConfigStr string
+	JobYamlStr      string
+)
 
 type LoadTestSpec struct {
-	FlowType    FlowType   `json:"flowType"`
+	FlowType    string     `json:"flowType"`
 	Duration    string     `json:"duration"`
 	Parallelism int        `json:"parallelism"`
 	Source      int        `json:"source"`
@@ -36,28 +32,31 @@ type LoadTestSpec struct {
 	Args        []FlowArgs `json:"args"`
 }
 
-type LoadTestList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []LoadTest `json:"items"`
-}
-
-type FlowType string
-
-const (
-	HTTPFlowType FlowType = "HTTP"
-)
-
 type FlowArgs struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
 }
 
-type StatusFlowType string
+type LoadTestStatus struct {
+	Status       StatusType `json:"status"`
+	Message      string     `json:"message"`
+	SuccessCount int        `json:"successCount"`
+	TotalCount   int        `json:"totalCount"`
+	AvgRPS       int        `json:"avgRPS"`
+	CreateTime   string     `json:"createTime"`
+	UpdateTime   string     `json:"updateTime"`
+}
 
-const (
-	CreatedStatus StatusFlowType = "created"
-	RunningStatus StatusFlowType = "running"
-	SuccessStatus StatusFlowType = "success"
-	FailedStatus  StatusFlowType = "failed"
-)
+type LoadTest struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   LoadTestSpec   `json:"spec,omitempty"`
+	Status LoadTestStatus `json:"status,omitempty"`
+}
+
+type LoadTestList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []LoadTest `json:"items"`
+}

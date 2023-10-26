@@ -17,10 +17,9 @@
 package inject
 
 import (
-	models "chaosmeta-platform/pkg/models/common"
 	"chaosmeta-platform/pkg/models/inject/basic"
+	"chaosmeta-platform/util/log"
 	"context"
-	"fmt"
 )
 
 type InjectService struct{}
@@ -32,8 +31,11 @@ const (
 	NodeScopeType       ScopeType = "node"
 	KubernetesScopeType ScopeType = "kubernetes"
 
-	ExecInject = "inject"
-	ExecFlow   = "flow"
+	ExecInject        = "fault"
+	ExecFlow          = "flow"
+	ExecFlowCommon    = "flow_common"
+	ExecMeasure       = "measure"
+	ExecMeasureCommon = "measure_common"
 )
 
 var (
@@ -43,25 +45,20 @@ var (
 )
 
 func Init() error {
-	scope, target, fault, args := basic.Scope{}, basic.Target{}, basic.Fault{}, basic.Args{}
-	if _, err := models.GetORM().Raw(fmt.Sprintf("TRUNCATE TABLE %s", scope.TableName())).Exec(); err != nil {
-		return err
+	if err := InitInject(); err != nil {
+		log.Fatal(err)
 	}
+	if err := InitFlow(); err != nil {
+		log.Fatal(err)
+	}
+	if err := InitMeasure(); err != nil {
+		log.Fatal(err)
+	}
+	return nil
+}
 
-	if _, err := models.GetORM().Raw(fmt.Sprintf("TRUNCATE TABLE %s", target.TableName())).Exec(); err != nil {
-		return err
-	}
-
-	if _, err := models.GetORM().Raw(fmt.Sprintf("TRUNCATE TABLE %s", fault.TableName())).Exec(); err != nil {
-		return err
-	}
-
-	if _, err := models.GetORM().Raw(fmt.Sprintf("TRUNCATE TABLE %s", args.TableName())).Exec(); err != nil {
-		return err
-	}
+func InitInject() error {
 	ctx := context.Background()
-
-	// 开始初始化数据
 	scopes := []basic.Scope{PodScope, NodeScope}
 	for _, scope := range scopes {
 		scopeId, err := basic.InsertScope(ctx, &scope)
@@ -85,6 +82,7 @@ func InitTarget(ctx context.Context, scope basic.Scope) error {
 	var (
 		CpuTarget       = basic.Target{Name: "cpu", NameCn: "cpu", Description: "Fault injection capabilities related to cpu faults", DescriptionCn: "cpu故障相关的故障注入能力"}
 		MemTarget       = basic.Target{Name: "mem", NameCn: "mem", Description: "Fault injection capabilities related to memory faults", DescriptionCn: "内存故障相关的故障注入能力"}
+		DnsTarget       = basic.Target{Name: "dns", NameCn: "dns", Description: "Fault injection capabilities related to dns faults", DescriptionCn: "dns故障相关的故障注入能力"}
 		DiskTarget      = basic.Target{Name: "disk", NameCn: "disk", Description: "Fault injection capabilities related to disk failures", DescriptionCn: "磁盘故障相关的故障注入能力"}
 		DiskioTarget    = basic.Target{Name: "diskIO", NameCn: "diskIO", Description: "Fault injection capabilities related to disk IO faults", DescriptionCn: "磁盘IO故障相关的故障注入能力"}
 		NetworkTarget   = basic.Target{Name: "network", NameCn: "network", Description: "Fault injection capabilities related to disk failures", DescriptionCn: "磁盘故障相关的故障注入能力"}
@@ -107,6 +105,13 @@ func InitTarget(ctx context.Context, scope basic.Scope) error {
 		return err
 	}
 	if err := InitMemFault(ctx, MemTarget); err != nil {
+		return err
+	}
+	DnsTarget.ScopeId = scope.ID
+	if err := basic.InsertTarget(ctx, &DnsTarget); err != nil {
+		return err
+	}
+	if err := InitDnsFault(ctx, DnsTarget); err != nil {
 		return err
 	}
 	DiskTarget.ScopeId = scope.ID
@@ -185,7 +190,7 @@ func InitCpuFault(ctx context.Context, cpuTarget basic.Target) error {
 
 func InitCpuTargetArgsBurn(ctx context.Context, cpuFault basic.Fault) error {
 	var (
-		CpuArgsPercent = basic.Args{InjectId: cpuFault.ID, ExecType: ExecInject, Key: "percent", KeyCn: "使用率", Unit: "%", UnitCn: "%", Description: "Target cpu usage", DescriptionCn: "目标cpu使用率", ValueType: "int", Required: true, ValueRule: "1-100"}
+		CpuArgsPercent = basic.Args{InjectId: cpuFault.ID, ExecType: ExecInject, Key: "percent", KeyCn: "使用率", Unit: "", UnitCn: "", Description: "Target cpu usage", DescriptionCn: "目标cpu使用率", ValueType: "int", ValueRule: "1-100"}
 		CpuArgsCount   = basic.Args{InjectId: cpuFault.ID, ExecType: ExecInject, Key: "count", KeyCn: "核数", Unit: "", UnitCn: "", DefaultValue: "0", Description: "Number of faulty CPU cores, 0 means all cores", DescriptionCn: "故障cpu核数,0表示全部核", ValueType: "int", ValueRule: ">=0"}
 		CpuArgsList    = basic.Args{InjectId: cpuFault.ID, ExecType: ExecInject, Key: "list", KeyCn: "列表", Unit: "", UnitCn: "", Description: "Faulty cpu list, comma separated core number list, can be confirmed from /proc/cpuinfo", DescriptionCn: "故障cpu列表,逗号分隔的核编号列表,可以从/proc/cpuinfo确认", ValueType: "string"}
 	)
@@ -218,16 +223,52 @@ func InitMemFault(ctx context.Context, memTarget basic.Target) error {
 
 func InitMemTargetArgsFill(ctx context.Context, memFault basic.Fault) error {
 	var (
-		MemArgsPercent = basic.Args{InjectId: memFault.ID, ExecType: ExecInject, Key: "percent", KeyCn: "内存使用率", Unit: "%", UnitCn: "%", Description: "Target mem usage", DescriptionCn: "目标内存使用率", ValueType: "int", Required: true, ValueRule: "1-100"}
+		MemArgsPercent = basic.Args{InjectId: memFault.ID, ExecType: ExecInject, Key: "percent", KeyCn: "内存使用率", Unit: "", UnitCn: "", Description: "Target mem usage", DescriptionCn: "目标内存使用率", ValueType: "int", ValueRule: "1-100"}
 		MemArgsBytes   = basic.Args{InjectId: memFault.ID, ExecType: ExecInject, Key: "bytes", KeyCn: "填充量", Unit: "KB,MB,GB,TB", UnitCn: "KB,MB,GB,TB", Description: "Memory fill", DescriptionCn: "内存填充量", ValueType: "string"}
-		MemArgsMode    = basic.Args{InjectId: memFault.ID, ExecType: ExecInject, Key: "mode", KeyCn: "填充模式", Unit: "mode", UnitCn: "模式", Description: "Memory filling mode, ram is the way to apply for process memory, cache is the way to use tmpfs", DescriptionCn: "内存填充模式,ram是使用进程内存申请的方式,cache是使用tmpfs的方式", ValueType: "string", Required: true, ValueRule: "ram,cache"}
+		MemArgsMode    = basic.Args{InjectId: memFault.ID, ExecType: ExecInject, Key: "mode", KeyCn: "填充模式", Unit: "", UnitCn: "", Description: "Memory filling mode, ram is the way to apply for process memory, cache is the way to use tmpfs", DescriptionCn: "内存填充模式,ram是使用进程内存申请的方式,cache是使用tmpfs的方式", ValueType: "string", Required: true, ValueRule: "ram,cache"}
 	)
 	return basic.InsertArgsMulti(ctx, []*basic.Args{&MemArgsPercent, &MemArgsBytes, &MemArgsMode})
 }
 
 func InitMemTargetArgsOom(ctx context.Context, memFault basic.Fault) error {
-	var MemArgsMode = basic.Args{InjectId: memFault.ID, ExecType: ExecInject, Key: "mode", KeyCn: "内存填充模式", Unit: "mode", UnitCn: "模式", DefaultValue: "cache", Description: "Memory filling mode, ram is the way to apply for process memory, cache is the way to use tmpfs", DescriptionCn: "内存填充模式,ram是使用进程内存申请的方式,cache是使用tmpfs的方式", ValueType: "string", Required: true, ValueRule: "ram,cache"}
+	var MemArgsMode = basic.Args{InjectId: memFault.ID, ExecType: ExecInject, Key: "mode", KeyCn: "内存填充模式", Unit: "", UnitCn: "", DefaultValue: "cache", Description: "Memory filling mode, ram is the way to apply for process memory, cache is the way to use tmpfs", DescriptionCn: "内存填充模式,ram是使用进程内存申请的方式,cache是使用tmpfs的方式", ValueType: "string", Required: true, ValueRule: "ram,cache"}
 	return basic.InsertArgsMulti(ctx, []*basic.Args{&MemArgsMode})
+}
+
+func InitDnsFault(ctx context.Context, memTarget basic.Target) error {
+	var (
+		DnsFaultRecord = basic.Fault{TargetId: memTarget.ID, Name: "record", NameCn: "篡改dns记录", Description: "Modify the /etc/hosts file to mutate the target domain name resolution", DescriptionCn: "修改/etc/hosts文件,使目标域名解析变异"}
+		DnsFaultServer = basic.Fault{TargetId: memTarget.ID, Name: "server", NameCn: "dns服务器篡改", Description: "Modify /etc/resolv.conf to make the dns server abnormal", DescriptionCn: "修改/etc/resolv.conf，使dns服务器异常"}
+	)
+
+	if err := basic.InsertFault(ctx, &DnsFaultRecord); err != nil {
+		return err
+	}
+	if err := InitDnsTargetArgsRecord(ctx, DnsFaultRecord); err != nil {
+		return err
+	}
+	if err := basic.InsertFault(ctx, &DnsFaultServer); err != nil {
+		return err
+	}
+
+	return InitDnsTargetArgsServer(ctx, DnsFaultServer)
+}
+
+func InitDnsTargetArgsRecord(ctx context.Context, dnsFault basic.Fault) error {
+	var (
+		DiskArgsDomain = basic.Args{InjectId: dnsFault.ID, ExecType: ExecInject, Key: "domain", KeyCn: "目标域名", Unit: "", UnitCn: "", Description: "Target domain name", DescriptionCn: "目标域名", ValueType: "string", Required: true}
+		DiskArgsIp     = basic.Args{InjectId: dnsFault.ID, ExecType: ExecInject, Key: "ip", KeyCn: "域名对应的ip", Unit: "", UnitCn: "", Description: "The IP corresponding to the domain name", DescriptionCn: "域名对应的ip", ValueType: "string"}
+		DiskArgsMode   = basic.Args{InjectId: dnsFault.ID, ExecType: ExecInject, Key: "mode", KeyCn: "模式", Unit: "", UnitCn: "", DefaultValue: "add", Description: "", DescriptionCn: "", ValueType: "string", ValueRule: "add,delete"}
+	)
+	return basic.InsertArgsMulti(ctx, []*basic.Args{&DiskArgsDomain, &DiskArgsIp, &DiskArgsMode})
+}
+
+func InitDnsTargetArgsServer(ctx context.Context, dnsFault basic.Fault) error {
+	var (
+		DiskArgsIp   = basic.Args{InjectId: dnsFault.ID, ExecType: ExecInject, Key: "ip", KeyCn: "服务器ip", Unit: "", UnitCn: "", Description: "server ip", DescriptionCn: "服务器ip", ValueType: "string"}
+		DiskArgsMode = basic.Args{InjectId: dnsFault.ID, ExecType: ExecInject, Key: "mode", KeyCn: "模式", Unit: "", UnitCn: "", DefaultValue: "add", Description: "", DescriptionCn: "", ValueType: "string", ValueRule: "add,delete"}
+	)
+	return basic.InsertArgsMulti(ctx, []*basic.Args{&DiskArgsIp, &DiskArgsMode})
 }
 
 func InitDiskFault(ctx context.Context, diskTarget basic.Target) error {
@@ -240,7 +281,7 @@ func InitDiskFault(ctx context.Context, diskTarget basic.Target) error {
 
 func InitDiskTargetArgsFill(ctx context.Context, diskFault basic.Fault) error {
 	var (
-		DiskArgsPercent = basic.Args{InjectId: diskFault.ID, ExecType: ExecInject, Key: "percent", KeyCn: "磁盘使用率", Unit: "%", UnitCn: "%", Description: "Target disk usage", DescriptionCn: "目标磁盘使用率", ValueType: "int", Required: true, ValueRule: "1-100"}
+		DiskArgsPercent = basic.Args{InjectId: diskFault.ID, ExecType: ExecInject, Key: "percent", KeyCn: "磁盘使用率", Unit: "", UnitCn: "", Description: "Target disk usage", DescriptionCn: "目标磁盘使用率", ValueType: "int", Required: true, ValueRule: "1-100"}
 		DiskArgsBytes   = basic.Args{InjectId: diskFault.ID, ExecType: ExecInject, Key: "bytes", KeyCn: "填充量", Unit: "KB,MB,GB,TB", UnitCn: "KB,MB,GB,TB", Description: "Memory fill", DescriptionCn: "磁盘填充量", ValueType: "string"}
 		DiskArgsDir     = basic.Args{InjectId: diskFault.ID, ExecType: ExecInject, Key: "dir", KeyCn: "目录", Unit: "", UnitCn: "", DefaultValue: "/tmp", Description: "Target population directory", DescriptionCn: "目标填充目录", ValueType: "string"}
 	)
@@ -286,7 +327,7 @@ func InitDiskioTargetArgsHang(ctx context.Context, diskioFault basic.Fault) erro
 		DiskioArgsDevList = basic.Args{InjectId: diskioFault.ID, ExecType: ExecInject, Key: "dev-list", KeyCn: "设备列表", Unit: "", UnitCn: "", Description: "Target disk device list, use the command lsblk -a | grep disk to obtain the primary and secondary device numbers of the target device, such as 8:0", DescriptionCn: "目标磁盘设备列表,使用命令lsblk -a | grep disk获取目标设备的主备设备号,比如8:0", ValueType: "stringlist"}
 		DiskioArgsPidList = basic.Args{InjectId: diskioFault.ID, ExecType: ExecInject, Key: "pid-list", KeyCn: "进程pid列表", Unit: "", UnitCn: "", Description: "Affected process pid list, for example: 7850, 7690", DescriptionCn: "受影响的进程pid列表,比如:7850,7690", ValueType: "stringlist"}
 		DiskioArgsKey     = basic.Args{InjectId: diskioFault.ID, ExecType: ExecInject, Key: "key", KeyCn: "关键词", Unit: "", UnitCn: "", Description: "keywords used to filter affected processes will be filtered using ps -ef | grep [key]", DescriptionCn: "用来筛选受影响进程的关键词,会使用ps -ef | grep [key]来筛选", ValueType: "string"}
-		DiskioArgsMode    = basic.Args{InjectId: diskioFault.ID, ExecType: ExecInject, Key: "mode", KeyCn: "IO模式", Unit: "mode", UnitCn: "模式", DefaultValue: "all", Description: "Affected IO operation", DescriptionCn: "受影响的IO操作", ValueType: "string", ValueRule: "all,read,write"}
+		DiskioArgsMode    = basic.Args{InjectId: diskioFault.ID, ExecType: ExecInject, Key: "mode", KeyCn: "IO模式", Unit: "", UnitCn: "", DefaultValue: "all", Description: "Affected IO operation", DescriptionCn: "受影响的IO操作", ValueType: "string", ValueRule: "all,read,write"}
 	)
 	return basic.InsertArgsMulti(ctx, []*basic.Args{&DiskioArgsDevList, &DiskioArgsPidList, &DiskioArgsKey, &DiskioArgsMode})
 }
@@ -365,7 +406,7 @@ func getNetworkCommonFilterParameters(fault basic.Fault) []*basic.Args {
 		NetworkArgsSrcIP     = basic.Args{InjectId: fault.ID, ExecType: ExecInject, Key: "src-ip", KeyCn: "数据包筛选参数：源ip列表", Description: "Source IP list, for example: 1.2.3.4,2.3.4.5,192.168.1.1/24", DescriptionCn: "源ip列表，比如1.2.3.4,2.3.4.5,192.168.1.1/24", ValueType: "stringlist"}
 		NetworkArgsDstPort   = basic.Args{InjectId: fault.ID, ExecType: ExecInject, Key: "dst-port", KeyCn: "数据包筛选参数：目标端口列表", Description: "Target port list, for example: 8080-8090,8095,9099", DescriptionCn: "目标端口列表，比如8080-8090,8095,9099", ValueType: "stringlist"}
 		NetworkArgsSrcPort   = basic.Args{InjectId: fault.ID, ExecType: ExecInject, Key: "src-port", KeyCn: "数据包筛选参数：源端口列表", Description: "Source port list, such as 8080-8090,8095,9099", DescriptionCn: "源端口列表，比如8080-8090,8095,9099", ValueType: "stringlist"}
-		NetworkArgsMode      = basic.Args{InjectId: fault.ID, ExecType: ExecInject, Key: "mode", KeyCn: "数据包筛选模式", Unit: "", UnitCn: "", DefaultValue: "normal", Description: "normal: inject fault to selected targets, exclude: do not inject fault to selected targets", DescriptionCn: "normal:对选中的目标注入故障,exclude:对选中的目标不注入故障", ValueType: "string", ValueRule: "normal,exclude"}
+		NetworkArgsMode      = basic.Args{InjectId: fault.ID, ExecType: ExecInject, Key: "mode", KeyCn: "数据包筛选模式", Unit: "", UnitCn: "", DefaultValue: "normal", Description: "Normal: inject fault to selected targets, exclude: do not inject fault to selected targets", DescriptionCn: "normal:对选中的目标注入故障,exclude:对选中的目标不注入故障", ValueType: "string", ValueRule: "normal,exclude"}
 		NetworkArgsForce     = basic.Args{InjectId: fault.ID, ExecType: ExecInject, Key: "force", KeyCn: "是否强制覆盖", DefaultValue: "false", Description: "Whether to force overwrite", DescriptionCn: "是否强制覆盖", ValueType: "bool", ValueRule: "true,false"}
 	)
 	return []*basic.Args{&NetworkArgsInterface, &NetworkArgsDstIP, &NetworkArgsSrcIP, &NetworkArgsDstPort, &NetworkArgsSrcPort, &NetworkArgsMode, &NetworkArgsForce}
@@ -373,9 +414,9 @@ func getNetworkCommonFilterParameters(fault basic.Fault) []*basic.Args {
 
 func InitNetworkTargetArgsOccupy(ctx context.Context, networkFault basic.Fault) error {
 	var (
-		NetworkArgsPort       = basic.Args{InjectId: networkFault.ID, ExecType: ExecInject, Key: "port", KeyCn: "端口", Description: "target port", DescriptionCn: "目标端口", ValueType: "int"}
-		NetworkArgsProtocol   = basic.Args{InjectId: networkFault.ID, ExecType: ExecInject, Key: "protocol", KeyCn: "协议", DefaultValue: "tcp", Description: "target protocol", DescriptionCn: "目标协议", ValueType: "string", ValueRule: "tcp,udp,tcp6,udp6"}
-		NetworkArgsRecoverCmd = basic.Args{InjectId: networkFault.ID, ExecType: ExecInject, Key: "recover-cmd", KeyCn: "恢复命令", Description: "resume command, it will be executed last when resuming operation", DescriptionCn: "恢复命令，恢复操作时会最后执行", ValueType: "string"}
+		NetworkArgsPort       = basic.Args{InjectId: networkFault.ID, ExecType: ExecInject, Key: "port", KeyCn: "端口", Description: "Target port", DescriptionCn: "目标端口", ValueType: "int"}
+		NetworkArgsProtocol   = basic.Args{InjectId: networkFault.ID, ExecType: ExecInject, Key: "protocol", KeyCn: "协议", DefaultValue: "tcp", Description: "Target protocol", DescriptionCn: "目标协议", ValueType: "string", ValueRule: "tcp,udp,tcp6,udp6"}
+		NetworkArgsRecoverCmd = basic.Args{InjectId: networkFault.ID, ExecType: ExecInject, Key: "recover-cmd", KeyCn: "恢复命令", Description: "Resume command, it will be executed last when resuming operation", DescriptionCn: "恢复命令，恢复操作时会最后执行", ValueType: "string"}
 	)
 	return basic.InsertArgsMulti(ctx, []*basic.Args{&NetworkArgsPort, &NetworkArgsProtocol, &NetworkArgsRecoverCmd})
 }
@@ -426,7 +467,7 @@ func InitNetworkTargetArgsDuplicate(ctx context.Context, networkFault basic.Faul
 
 func InitNetworkTargetArgsReorder(ctx context.Context, networkFault basic.Fault) error {
 	var (
-		NetworkArgsLatency = basic.Args{InjectId: networkFault.ID, ExecType: ExecInject, Key: "latency", KeyCn: "包延迟", Unit: "us,ms,s", UnitCn: "us,ms,s", DefaultValue: "1s", Description: "delay", DescriptionCn: "延迟时间", ValueType: "int", Required: true}
+		NetworkArgsLatency = basic.Args{InjectId: networkFault.ID, ExecType: ExecInject, Key: "latency", KeyCn: "包延迟", Unit: "us,ms,s", UnitCn: "us,ms,s", DefaultValue: "1s", Description: "Delay", DescriptionCn: "延迟时间", ValueType: "int", Required: true}
 		NetworkArgsGap     = basic.Args{InjectId: networkFault.ID, ExecType: ExecInject, Key: "gap", KeyCn: "KeyCn", DefaultValue: "3", Description: "Select the interval. For example, a gap of 3 means that packets with serial numbers 1, 3, 6, 9, etc. will not be delayed, and the remaining packets will be delayed", DescriptionCn: "选中间隔,比如gap为3表示序号为1、3、6、9等的包不延迟,其余的包会延迟", ValueType: "int", ValueRule: ">0"}
 	)
 	argList := []*basic.Args{&NetworkArgsLatency, &NetworkArgsGap}
@@ -454,10 +495,10 @@ func InitProcessFault(ctx context.Context, processTarget basic.Target) error {
 
 func InitProcessTargetArgsKill(ctx context.Context, processFault basic.Fault) error {
 	var (
-		ProcessArgsKey        = basic.Args{InjectId: processFault.ID, ExecType: ExecInject, Key: "key", KeyCn: "关键词", Description: "keywords used to filter affected processes; Will use ps -ef | grep [key] to filter", DescriptionCn: "用来筛选受影响进程的关键词;会使用ps -ef | grep [key]来筛选", ValueType: "string"}
-		ProcessArgsPid        = basic.Args{InjectId: processFault.ID, ExecType: ExecInject, Key: "pid", KeyCn: "进程pid", Description: "the pid of the living process", DescriptionCn: "存活进程的pid", ValueType: "int"}
-		ProcessArgsSignal     = basic.Args{InjectId: processFault.ID, ExecType: ExecInject, Key: "signal", KeyCn: "信号", DefaultValue: "9", Description: "the signal sent to the process;consistent with the signal value supported by the kill command", DescriptionCn: "对进程发送的信号;和kill命令支持的信号数值一致", ValueType: "int"}
-		ProcessArgsRecoverCmd = basic.Args{InjectId: processFault.ID, ExecType: ExecInject, Key: "recover-cmd", KeyCn: "恢复命令", Description: "resume command, it will be executed last when resuming operation", DescriptionCn: "恢复命令，恢复操作时会最后执行", ValueType: "string"}
+		ProcessArgsKey        = basic.Args{InjectId: processFault.ID, ExecType: ExecInject, Key: "key", KeyCn: "关键词", Description: "Keywords used to filter affected processes; Will use ps -ef | grep [key] to filter", DescriptionCn: "用来筛选受影响进程的关键词;会使用ps -ef | grep [key]来筛选", ValueType: "string"}
+		ProcessArgsPid        = basic.Args{InjectId: processFault.ID, ExecType: ExecInject, Key: "pid", KeyCn: "进程pid", Description: "The pid of the living process", DescriptionCn: "存活进程的pid", ValueType: "int"}
+		ProcessArgsSignal     = basic.Args{InjectId: processFault.ID, ExecType: ExecInject, Key: "signal", KeyCn: "信号", DefaultValue: "9", Description: "The signal sent to the process; consistent with the signal value supported by the kill command", DescriptionCn: "对进程发送的信号;和kill命令支持的信号数值一致", ValueType: "int"}
+		ProcessArgsRecoverCmd = basic.Args{InjectId: processFault.ID, ExecType: ExecInject, Key: "recover-cmd", KeyCn: "恢复命令", Description: "Resume command, it will be executed last when resuming operation", DescriptionCn: "恢复命令，恢复操作时会最后执行", ValueType: "string"}
 	)
 	return basic.InsertArgsMulti(ctx, []*basic.Args{&ProcessArgsKey, &ProcessArgsPid, &ProcessArgsSignal, &ProcessArgsRecoverCmd})
 }
@@ -529,11 +570,13 @@ func InitFileTargetArgsDelete(ctx context.Context, fileFault basic.Fault) error 
 
 func InitFileTargetArgsAppend(ctx context.Context, fileFault basic.Fault) error {
 	var (
-		FileArgsPath    = basic.Args{InjectId: fileFault.ID, ExecType: ExecInject, Key: "path", KeyCn: "目标文件", Description: "Target file path", DescriptionCn: "目标文件路径", ValueType: "string", Required: true}
-		FileArgsContent = basic.Args{InjectId: fileFault.ID, ExecType: ExecInject, Key: "content", KeyCn: "追加内容", Description: "Append content", DescriptionCn: "追加内容", ValueType: "string"}
-		FileArgsRaw     = basic.Args{InjectId: fileFault.ID, ExecType: ExecInject, Key: "raw", KeyCn: "是否追加纯字符串", DefaultValue: "false", Description: "Whether to append pure string. By default, it will add some additional identifiers to delete the appended content when recovering; if true, it will append pure string, and the appended content will not be deleted when recovering", DescriptionCn: "是否追加纯字符串,默认false会添加一些额外标识,用于恢复时删掉追加的内容;true追加纯字符串，则恢复时不删掉追加的内容", ValueType: "bool", ValueRule: "true,false"}
+		FileArgsPath     = basic.Args{InjectId: fileFault.ID, ExecType: ExecInject, Key: "path", KeyCn: "目标文件", Description: "Target file path", DescriptionCn: "目标文件路径", ValueType: "string", Required: true}
+		FileArgsContent  = basic.Args{InjectId: fileFault.ID, ExecType: ExecInject, Key: "content", KeyCn: "追加内容", Description: "Append content", DescriptionCn: "追加内容", ValueType: "string"}
+		FileArgsRaw      = basic.Args{InjectId: fileFault.ID, ExecType: ExecInject, Key: "raw", KeyCn: "是否追加纯字符串", DefaultValue: "false", Description: "Whether to append pure string. By default, it will add some additional identifiers to delete the appended content when recovering; if true, it will append pure string, and the appended content will not be deleted when recovering", DescriptionCn: "是否追加纯字符串,默认false会添加一些额外标识,用于恢复时删掉追加的内容;true追加纯字符串，则恢复时不删掉追加的内容", ValueType: "bool", ValueRule: "true,false"}
+		FileArgsCount    = basic.Args{InjectId: fileFault.ID, ExecType: ExecInject, Key: "count", KeyCn: "循环次数", Description: "", DescriptionCn: "", DefaultValue: "1", ValueType: "int", ValueRule: ">0"}
+		FileArgsInterval = basic.Args{InjectId: fileFault.ID, ExecType: ExecInject, Key: "interval", KeyCn: "循环间隔", Description: "Unit: seconds", DescriptionCn: "单位:秒", DefaultValue: "0", ValueType: "int", ValueRule: ">=0"}
 	)
-	return basic.InsertArgsMulti(ctx, []*basic.Args{&FileArgsPath, &FileArgsContent, &FileArgsRaw})
+	return basic.InsertArgsMulti(ctx, []*basic.Args{&FileArgsPath, &FileArgsContent, &FileArgsRaw, &FileArgsCount, &FileArgsInterval})
 }
 
 func InitFileTargetArgsAdd(ctx context.Context, fileFault basic.Fault) error {
@@ -548,8 +591,8 @@ func InitFileTargetArgsAdd(ctx context.Context, fileFault basic.Fault) error {
 
 func InitFileTargetArgsMove(ctx context.Context, fileFault basic.Fault) error {
 	var (
-		FileArgsSrc = basic.Args{InjectId: fileFault.ID, ExecType: ExecInject, Key: "src", KeyCn: "源文件路径", Description: "source file path", DescriptionCn: "源文件路径", ValueType: "string", Required: true}
-		FileArgsDst = basic.Args{InjectId: fileFault.ID, ExecType: ExecInject, Key: "dst", KeyCn: "移动后文件路径", Description: "moved file path", DescriptionCn: "移动后文件路径", ValueType: "string", Required: true}
+		FileArgsSrc = basic.Args{InjectId: fileFault.ID, ExecType: ExecInject, Key: "src", KeyCn: "源文件路径", Description: "Source file path", DescriptionCn: "源文件路径", ValueType: "string", Required: true}
+		FileArgsDst = basic.Args{InjectId: fileFault.ID, ExecType: ExecInject, Key: "dst", KeyCn: "移动后文件路径", Description: "Moved file path", DescriptionCn: "移动后文件路径", ValueType: "string", Required: true}
 	)
 	return basic.InsertArgsMulti(ctx, []*basic.Args{&FileArgsSrc, &FileArgsDst})
 }
@@ -573,7 +616,7 @@ func InitKernelFault(ctx context.Context, kernelTarget basic.Target) error {
 
 func InitKernelTargetArgsFdfull(ctx context.Context, KernelFault basic.Fault) error {
 	var (
-		KernelArgsCount = basic.Args{InjectId: KernelFault.ID, ExecType: ExecInject, Key: "count", KeyCn: "消耗量", DefaultValue: "0", Description: "fd consumption: an integer greater than or equal to 0, 0 means exhausted", DescriptionCn: "fd消耗量:大于等于0的整数,0表示耗尽", ValueType: "int", ValueRule: ">=0"}
+		KernelArgsCount = basic.Args{InjectId: KernelFault.ID, ExecType: ExecInject, Key: "count", KeyCn: "消耗量", DefaultValue: "0", Description: "Fd consumption: an integer greater than or equal to 0, 0 means exhausted", DescriptionCn: "fd消耗量:大于等于0的整数,0表示耗尽", ValueType: "int", ValueRule: ">=0"}
 		KernelArgsMode  = basic.Args{InjectId: KernelFault.ID, ExecType: ExecInject, Key: "mode", KeyCn: "执行模式", DefaultValue: "conf", Description: "Execution mode, conf: by modifying the maximum number of FDs in the system, fill: by real consumption", DescriptionCn: "执行模式,conf:通过修改系统最大fd数,fill:通过真实消耗", ValueType: "string", ValueRule: "conf,fill"}
 	)
 	return basic.InsertArgsMulti(ctx, []*basic.Args{&KernelArgsCount, &KernelArgsMode})
@@ -615,8 +658,8 @@ func InitJvmFault(ctx context.Context, jvmTarget basic.Target) error {
 
 func InitJvmTargetArgsMethod(ctx context.Context, javaFault basic.Fault, argsMethodKeyCn string, argsMethodDescription string, argsMethodDescriptionCn string) error {
 	var (
-		argsKey    = basic.Args{InjectId: javaFault.ID, ExecType: ExecInject, Key: "key", KeyCn: "进程关键词", Description: "will use ps -ef | grep [key] to filter", DescriptionCn: "用来筛选受影响进程的关键词;会使用ps -ef | grep [key]来筛选", ValueType: "string"}
-		argsPid    = basic.Args{InjectId: javaFault.ID, ExecType: ExecInject, Key: "pid", KeyCn: "进程pid", Description: "pid of the running process", DescriptionCn: "存活进程的pid", ValueType: "string"}
+		argsKey    = basic.Args{InjectId: javaFault.ID, ExecType: ExecInject, Key: "key", KeyCn: "进程关键词", Description: "Will use ps -ef | grep [key] to filter", DescriptionCn: "用来筛选受影响进程的关键词;会使用ps -ef | grep [key]来筛选", ValueType: "string"}
+		argsPid    = basic.Args{InjectId: javaFault.ID, ExecType: ExecInject, Key: "pid", KeyCn: "进程pid", Description: "Pid of the running process", DescriptionCn: "存活进程的pid", ValueType: "string"}
 		argsMethod = basic.Args{InjectId: javaFault.ID, ExecType: ExecInject, Key: "method", KeyCn: argsMethodKeyCn, Description: argsMethodDescription, DescriptionCn: argsMethodDescriptionCn, ValueType: "string"}
 	)
 	return basic.InsertArgsMulti(ctx, []*basic.Args{&argsKey, &argsPid, &argsMethod})

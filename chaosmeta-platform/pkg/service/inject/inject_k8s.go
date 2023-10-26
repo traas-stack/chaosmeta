@@ -24,10 +24,10 @@ import (
 // k8S-Target
 func InitK8STarget(ctx context.Context, scope basic.Scope) error {
 	var (
-		K8SPodTarget        = basic.Target{Name: "pod", NameCn: "Pod", Description: "Fault injection capabilities related to cloud-native resource pod instances", DescriptionCn: "云原生资源pod实例相关的故障注入能力"}
-		K8SDeploymentTarget = basic.Target{Name: "deployment", NameCn: "Deployment", Description: "Fault injection capabilities related to cloud-native resource deployment instances", DescriptionCn: "云原生资源deployment实例相关的故障注入能力"}
-		K8SNodeTarget       = basic.Target{Name: "node", NameCn: "Node", Description: "Fault injection capabilities related to cloud-native resource node instances", DescriptionCn: "云原生资源node实例相关的故障注入能力"}
-		K8SClusterTarget    = basic.Target{Name: "cluster", NameCn: "Cluster", Description: "Fault injection capabilities related to kubernetes macro cluster risks", DescriptionCn: "kubernetes宏观的集群性风险相关的故障注入能力"}
+		K8SPodTarget        = basic.Target{Name: "pod", NameCn: "pod", Description: "Fault injection capabilities related to cloud-native resource pod instances", DescriptionCn: "云原生资源pod实例相关的故障注入能力"}
+		K8SDeploymentTarget = basic.Target{Name: "deployment", NameCn: "deployment", Description: "Fault injection capabilities related to cloud-native resource deployment instances", DescriptionCn: "云原生资源deployment实例相关的故障注入能力"}
+		K8SNodeTarget       = basic.Target{Name: "node", NameCn: "node", Description: "Fault injection capabilities related to cloud-native resource node instances", DescriptionCn: "云原生资源node实例相关的故障注入能力"}
+		K8SClusterTarget    = basic.Target{Name: "cluster", NameCn: "cluster", Description: "Fault injection capabilities related to kubernetes macro cluster risks", DescriptionCn: "kubernetes宏观的集群性风险相关的故障注入能力"}
 	)
 	K8SPodTarget.ScopeId = scope.ID
 	if err := basic.InsertTarget(ctx, &K8SPodTarget); err != nil {
@@ -120,7 +120,7 @@ func InitPodTargetArgsContainerKillAndPause(ctx context.Context, podFault basic.
 
 func InitPodTargetArgsContainerImage(ctx context.Context, podFault basic.Fault) error {
 	argsContainerName := basic.Args{InjectId: podFault.ID, ExecType: ExecInject, Key: "containername", KeyCn: "目标容器名称", ValueType: "string", Description: "Target container name; specific container name, or 'firstcontainer' which represents the first container in the pod", DescriptionCn: "目标容器名称;具体的容器名称,或者“firstcontainer”,表示pod中第一个容器"}
-	argsImage := basic.Args{InjectId: podFault.ID, ExecType: ExecInject, Key: "image", KeyCn: "镜像名称", UnitCn: "目标镜像名称", ValueType: "string", DefaultValue: "", Description: "Target image name", DescriptionCn: "目标镜像名称"}
+	argsImage := basic.Args{InjectId: podFault.ID, ExecType: ExecInject, Key: "image", KeyCn: "目标镜像名称", UnitCn: "", ValueType: "string", DefaultValue: "", Description: "Target image name", DescriptionCn: "目标镜像名称"}
 	return basic.InsertArgsMulti(ctx, []*basic.Args{&argsContainerName, &argsImage})
 }
 

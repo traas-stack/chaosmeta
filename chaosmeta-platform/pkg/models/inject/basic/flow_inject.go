@@ -16,47 +16,57 @@
 
 package basic
 
-import models "chaosmeta-platform/pkg/models/common"
+import (
+	models "chaosmeta-platform/pkg/models/common"
+	"github.com/beego/beego/v2/client/orm"
+)
 
 type FlowInject struct {
-	Id            int    `json:"id" orm:"column(id);pk"`
+	Id            int    `json:"id" orm:"pk;auto;column(id)"`
+	FlowType      string `json:"flow_type" orm:"column(flow_type);size(32)"`
 	Name          string `json:"name" orm:"column(name);size(255)"`
-	NameCn        string `json:"name_cn" orm:"column(name_cn);size(255)"`
+	NameCn        string `json:"nameCn" orm:"column(name_cn);size(255)"`
 	Description   string `json:"description" orm:"column(description);size(1024)"`
-	DescriptionCn string `json:"description_cn" orm:"column(description_cn);size(1024)"`
+	DescriptionCn string `json:"descriptionCn" orm:"column(description_cn);size(1024)"`
 }
 
 func (m *FlowInject) TableName() string {
 	return TablePrefix + "flow_inject"
 }
 
-func GetFlowInjectByID(id int) (FlowInject, error) {
-	FlowInject := FlowInject{Id: id}
-	err := models.GetORM().Read(&FlowInject)
-	return FlowInject, err
+func GetFlowInjectByID(id int) (*FlowInject, error) {
+	flowInject := &FlowInject{Id: id}
+	err := models.GetORM().Read(flowInject)
+	if err == orm.ErrNoRows {
+		return nil, nil
+	} else if err == orm.ErrMissPK {
+		return nil, nil
+	} else {
+		return flowInject, err
+	}
 }
 
 func ListFlowInjects(orderBy string, page, pageSize int) (int64, []FlowInject, error) {
 	flowInject, flowInjects := FlowInject{}, new([]FlowInject)
 	querySeter := models.GetORM().QueryTable(flowInject.TableName())
-	FlowInjectQuery, err := models.NewDataSelectQuery(&querySeter)
+	flowInjectQuery, err := models.NewDataSelectQuery(&querySeter)
 	if err != nil {
 		return 0, nil, err
 	}
 
 	var totalCount int64
-	totalCount, err = FlowInjectQuery.GetOamQuerySeter().Count()
+	totalCount, err = flowInjectQuery.GetOamQuerySeter().Count()
 
 	orderByList := []string{"id"}
 	if len(orderBy) > 0 {
 		orderByList = append(orderByList, orderBy)
 	}
-	FlowInjectQuery.OrderBy(orderByList...)
-	if err := FlowInjectQuery.Limit(pageSize, (page-1)*pageSize); err != nil {
+	flowInjectQuery.OrderBy(orderByList...)
+	if err := flowInjectQuery.Limit(pageSize, (page-1)*pageSize); err != nil {
 		return 0, nil, err
 	}
 
-	_, err = FlowInjectQuery.GetOamQuerySeter().All(flowInjects)
+	_, err = flowInjectQuery.GetOamQuerySeter().All(flowInjects)
 	return totalCount, *flowInjects, err
 }
 
@@ -70,7 +80,6 @@ func UpdateFlowInject(FlowInject *FlowInject) error {
 	return err
 }
 
-// DeleteFlowInject deletes a Flow_inject by its ID
 func DeleteFlowInject(id int) error {
 	FlowInject := FlowInject{Id: id}
 	_, err := models.GetORM().Delete(&FlowInject)

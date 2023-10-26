@@ -58,7 +58,7 @@ type Experiment struct {
 	NextExec     time.Time        `json:"next_exec,omitempty" orm:"null;column(next_exec);type(datetime)"`
 	Status       ExperimentStatus `json:"-" orm:"index;column(status);type:tinyint(1)"`
 	LastInstance string           `json:"last_instance" orm:"column(last_instance);size(64)"`
-	Version      int              `json:"-" orm:"column(version);default(0);version"`
+	Version      int              `json:"-" orm:"column(version);default(0);index"`
 	models.BaseTimeModel
 }
 
@@ -189,6 +189,7 @@ func SearchExperiments(lastInstance string, namespaceId int, creator int, name s
 			experimentQuery.Filter(timeSearchField, models.GTE, false, start)
 		}
 	}
+
 	if timeType == string(RangeTimeType) {
 		if !startTime.IsZero() && !endTime.IsZero() {
 			experimentQuery.Filter(timeSearchField, models.GTE, false, startTime.Format(TimeLayout))
@@ -202,7 +203,7 @@ func SearchExperiments(lastInstance string, namespaceId int, creator int, name s
 		return 0, nil, err
 	}
 
-	orderByStr := "uuid"
+	orderByStr := "-create_time"
 	if orderBy != "" {
 		orderByStr = orderBy
 	}

@@ -27,7 +27,7 @@ type Cluster struct {
 	Name       string `json:"name" orm:"unique;index;column(name);size(255)"`
 	KubeConfig string `json:"kubeConfig" orm:"column(kube_config);type(text)"`
 	//AppKey     string `json:"appKey" orm:"column(app_key);size(255)"`
-	Version string `json:"version" orm:"column(version);size(32)"`
+	Version string `json:"version" orm:"column(version);size(32);index"`
 	models.BaseTimeModel
 }
 
