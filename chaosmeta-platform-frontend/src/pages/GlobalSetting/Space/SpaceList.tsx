@@ -17,7 +17,20 @@ const SpaceList: React.FC<IProps> = (props) => {
 
   const items = (spaceId: number) => [
     {
-      label: <div>{intl.formatMessage({ id: 'spaceSetting' })}</div>,
+      label: (
+        <div
+          onClick={() => {
+            history.push({
+              pathname: '/space/setting',
+              query: {
+                spaceId: spaceId?.toString(),
+              },
+            });
+          }}
+        >
+          {intl.formatMessage({ id: 'spaceSetting' })}
+        </div>
+      ),
       key: 'spaceSetting',
     },
     {

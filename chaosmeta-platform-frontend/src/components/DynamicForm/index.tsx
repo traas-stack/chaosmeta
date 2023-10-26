@@ -27,6 +27,8 @@ interface Props {
   parentName?: string;
   readonly?: boolean;
   form?: any;
+  // 用于更新节点信息
+  handleEditNode?: any;
 }
 
 /**
@@ -35,7 +37,7 @@ interface Props {
  * @returns
  */
 const DynamicForm = (props: Props) => {
-  const { fieldList, parentName, readonly, form } = props;
+  const { fieldList, parentName, readonly, form, handleEditNode } = props;
   const intl = useIntl();
 
   /**
@@ -238,7 +240,12 @@ const DynamicForm = (props: Props) => {
             >
               {/* 带有单位的特殊处理 */}
               {item.unit ? (
-                <UnitInput field={item} form={form} parentName={parentName} />
+                <UnitInput
+                  field={item}
+                  form={form}
+                  parentName={parentName}
+                  handleEditNode={handleEditNode}
+                />
               ) : (
                 renderItem(item)
               )}

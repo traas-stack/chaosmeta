@@ -1,4 +1,4 @@
-import { queryPodNodeList } from '@/services/chaosmeta/KubernetesController';
+import { queryNodeNameList } from '@/services/chaosmeta/KubernetesController';
 import { useIntl, useRequest } from '@umijs/max';
 import { Empty, Select, Spin, message } from 'antd';
 import { useEffect, useState } from 'react';
@@ -32,7 +32,7 @@ const KubernetesPodSelect = (props: IProps) => {
     }
   }, [list]);
 
-  const getPodList = useRequest(queryPodNodeList, {
+  const getPodList = useRequest(queryNodeNameList, {
     manual: true,
     formatResult: (res: any) => res,
     debounceInterval: 300,
