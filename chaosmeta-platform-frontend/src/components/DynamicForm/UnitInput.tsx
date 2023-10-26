@@ -18,10 +18,11 @@ interface IProps {
   parentName?: string;
   onChange?: any;
   value?: string;
+  handleEditNode?: any;
 }
 
 const UnitInpt = (props: IProps) => {
-  const { field, form, parentName, onChange, value } = props;
+  const { field, form, parentName, onChange, value, handleEditNode } = props;
   const [options, setOptions] = useState<any>([]);
   const [curUnitValue, setCurUnitValue] = useState<string>('');
 
@@ -34,11 +35,8 @@ const UnitInpt = (props: IProps) => {
     isBlur?: boolean;
   }) => {
     const unitValue = value || curUnitValue;
-    // 如果存在值, key为持续时长时不做处理
-    if (
-      form.getFieldValue(formatFormName(field, parentName)) &&
-      field.key !== 'duration'
-    ) {
+    // 如果存在值
+    if (form.getFieldValue(formatFormName(field, parentName))) {
       const inputValue = form.getFieldValue(formatFormName(field, parentName));
       let newValue = inputValue;
       // 找出原始单位
@@ -55,6 +53,9 @@ const UnitInpt = (props: IProps) => {
       } else {
         // 没有单位直接将填充值与新单位拼接
         newValue = inputValue + unitValue;
+      }
+      if (field?.key === 'duration') {
+        handleEditNode('duration', newValue);
       }
       form.setFieldValue(formatFormName(field, parentName), newValue);
     }

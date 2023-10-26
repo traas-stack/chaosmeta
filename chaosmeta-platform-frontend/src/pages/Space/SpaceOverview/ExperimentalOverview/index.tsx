@@ -271,7 +271,7 @@ export default () => {
               <a
                 onClick={() => {
                   history?.push({
-                    pathname: '/space/space/experiment-result',
+                    pathname: '/space/experiment-result',
                     query: {
                       experimentId: record?.uuid,
                     },

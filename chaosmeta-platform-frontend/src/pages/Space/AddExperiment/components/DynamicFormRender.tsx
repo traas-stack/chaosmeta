@@ -7,13 +7,14 @@ interface IProps {
   form?: any;
   nodeType: string;
   readonly?: boolean;
+  handleEditNode?: any;
 }
 /**
  * 动态表单模块区分渲染
  * @returns
  */
 const DynamicFormRender: React.FC<IProps> = (props) => {
-  const { fieldList, form, nodeType, readonly } = props;
+  const { fieldList, form, nodeType, readonly, handleEditNode } = props;
   const intl = useIntl();
   // 度量通用参数表单
   const [measureCommonFields, setMeasureCommonFields] = useState<any[]>([]);
@@ -111,6 +112,7 @@ const DynamicFormRender: React.FC<IProps> = (props) => {
             parentName={'args_value'}
             form={form}
             readonly={readonly}
+            handleEditNode={handleEditNode}
           />
         </>
       )

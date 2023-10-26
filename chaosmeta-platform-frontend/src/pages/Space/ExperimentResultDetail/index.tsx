@@ -249,6 +249,7 @@ const AddExperiment = () => {
             curExecSecond={formatDuration(curExecSecond)}
             isResult
             getExperimentArrangeNodeDetail={getExperimentArrangeNodeDetail}
+            setCurNodeDetail={setCurNodeDetail}
           />
           {/* 日志信息 */}
           <div className="log">

@@ -214,6 +214,10 @@ export const DroppableCol = styled.div<{
     if (props?.$nodeStutas === 'Failed' || props?.$nodeStutas === 'error') {
       border = '2px solid #FF4D4F';
     }
+    if(props?.$nodeStutas === 'Succeeded') {
+      border = '2px solid #52c41a';
+
+    }
     if (props?.$activeState) {
       border = '2px solid #597EF7';
     }
@@ -237,10 +241,10 @@ export const DroppableCol = styled.div<{
       justify-content: space-between;
       padding-right: 10px;
     }
-    .error-icon {
+    .tip-icon {
       position: absolute;
       top: 6px;
-      right: 0;
+      right: 2px;
     }
   }
 `;

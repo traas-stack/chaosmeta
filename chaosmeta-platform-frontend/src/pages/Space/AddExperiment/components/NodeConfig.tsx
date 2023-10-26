@@ -1,3 +1,4 @@
+import KubernetesDeploymentNameSelect from '@/components/Select/KubernetesDeploymentNameSelect';
 import KubernetesNamespaceSelect from '@/components/Select/KubernetesNamespaceSelect';
 import KubernetesPodNodeSelect from '@/components/Select/KubernetesPodNodeSelect';
 import KubernetesPodSelect from '@/components/Select/KubernetesPodSelect';
@@ -21,7 +22,6 @@ import {
   Button,
   Form,
   Input,
-  InputNumber,
   Popconfirm,
   Select,
   Space,
@@ -58,7 +58,7 @@ const NodeConfig: React.FC<IProps> = (props) => {
   const [fieldList, setFieldList] = useState<any[]>([]);
   const [durationType, setDurationType] = useState<string>('second');
   const [kubernetesNamespace, setKubernetesNamespace] = useState<string>('');
-  // 用于判断当前节点是否为 kubernetes node或 kubernetes pod节点下
+  // 用于判断当前节点位于哪个父节点下
   const [targetName, setTargetName] = useState<string>('');
   const intl = useIntl();
 
@@ -300,6 +300,127 @@ const NodeConfig: React.FC<IProps> = (props) => {
     }
   }, [activeCol?.uuid]);
 
+  // 持续时长失去焦点的操作
+  const handleDurationBlur = () => {
+    const durationValue = form.getFieldValue('duration');
+    let newDuration = durationValue;
+    // 输入框有值且没有单位时拼接单位
+    if (durationValue && !durationValue?.includes('s')) {
+      newDuration = `${durationValue}s`;
+      form.setFieldValue('duration', newDuration);
+    }
+    // 修改后更新时长
+    handleEditNode('duration', newDuration)
+  };
+
+  // 攻击范围下不同节点渲染不同
+  const attackRangeRender = () => {
+    // 父节点为node时
+    if (isNode()) {
+      return (
+        <>
+          <Form.Item
+            label="Kubernetes Label"
+            name={['exec_range', 'target_label']}
+          >
+            <Input
+              placeholder={intl.formatMessage({
+                id: 'inputPlaceholder',
+              })}
+            />
+          </Form.Item>
+          <Form.Item label={'NodeName'} name={['exec_range', 'target_name']}>
+            <KubernetesPodNodeSelect mode="multiple" />
+          </Form.Item>
+          <Form.Item label="Ip" name={['exec_range', 'target_ip']}>
+            <Input
+              placeholder={intl.formatMessage({
+                id: 'inputPlaceholder',
+              })}
+            />
+          </Form.Item>
+        </>
+      );
+    }
+    // 父节点为pod时
+    if (isPod()) {
+      return (
+        <>
+          <Form.Item
+            label="Kubernetes Namespace"
+            name={['exec_range', 'target_namespace']}
+            rules={[
+              {
+                required: true,
+                message: intl.formatMessage({
+                  id: 'inputPlaceholder',
+                }),
+              },
+            ]}
+          >
+            <KubernetesNamespaceSelect
+              onChange={(val: any) => {
+                setKubernetesNamespace(val);
+              }}
+            />
+          </Form.Item>
+          <Form.Item
+            label="Kubernetes Label"
+            name={['exec_range', 'target_label']}
+          >
+            <Input
+              placeholder={intl.formatMessage({
+                id: 'inputPlaceholder',
+              })}
+            />
+          </Form.Item>
+          <Form.Item label={'PodName'} name={['exec_range', 'target_name']}>
+            <KubernetesPodSelect
+              mode="multiple"
+              form={form}
+              kubernetesNamespace={kubernetesNamespace}
+            />
+          </Form.Item>
+        </>
+      );
+    }
+    // 父节点为deployment时
+    if (targetName === 'deployment') {
+      return (
+        <>
+          <Form.Item
+            label="Kubernetes Namespace"
+            name={['exec_range', 'target_namespace']}
+            rules={[
+              {
+                required: true,
+                message: intl.formatMessage({
+                  id: 'inputPlaceholder',
+                }),
+              },
+            ]}
+          >
+            <KubernetesNamespaceSelect
+              onChange={(val: any) => {
+                setKubernetesNamespace(val);
+              }}
+            />
+          </Form.Item>
+          <Form.Item
+            label={'DeploymentName'}
+            name={['exec_range', 'target_name']}
+          >
+            <KubernetesDeploymentNameSelect
+              mode="multiple"
+              form={form}
+              kubernetesNamespace={kubernetesNamespace}
+            />
+          </Form.Item>
+        </>
+      );
+    }
+  };
+
   useEffect(() => {
     const initSecond = formatDuration(activeCol?.duration);
     form.setFieldsValue({
@@ -432,11 +553,14 @@ const NodeConfig: React.FC<IProps> = (props) => {
                       },
                     ]}
                   >
-                    <InputNumber
+                    <Input
                       addonAfter={selectAfter}
                       placeholder={intl.formatMessage({
                         id: 'inputPlaceholder',
                       })}
+                      onBlur={() => {
+                        handleDurationBlur();
+                      }}
                       style={{ width: '100%' }}
                     />
                   </Form.Item>
@@ -451,74 +575,15 @@ const NodeConfig: React.FC<IProps> = (props) => {
                   fieldList={fieldList}
                   form={form}
                   nodeType={activeCol?.exec_type}
+                  handleEditNode={handleEditNode}
                 />
-                {/* 节点类型为node或pod时才展示 攻击范围 */}
-                {(isNode() || isPod()) && (
+                {/* 节点父类型为node或pod 或deployment时才展示 攻击范围 */}
+                {(isNode() || isPod() || targetName === 'deployment') && (
                   <>
                     <div className="range">
                       {intl.formatMessage({ id: 'attackRange' })}
                     </div>
-                    {/* 一级节点为node时不展示Namespace */}
-                    {!isNode() && (
-                      <Form.Item
-                        label="Kubernetes Namespace"
-                        name={['exec_range', 'target_namespace']}
-                        rules={[
-                          {
-                            required: true,
-                            message: intl.formatMessage({
-                              id: 'inputPlaceholder',
-                            }),
-                          },
-                        ]}
-                      >
-                        <KubernetesNamespaceSelect
-                          onChange={(val: any) => {
-                            setKubernetesNamespace(val);
-                          }}
-                        />
-                      </Form.Item>
-                    )}
-
-                    <Form.Item
-                      label="Kubernetes Label"
-                      name={['exec_range', 'target_label']}
-                    >
-                      <Input
-                        placeholder={intl.formatMessage({
-                          id: 'inputPlaceholder',
-                        })}
-                      />
-                    </Form.Item>
-                    <Form.Item
-                      label={isNode() ? 'NodeName' : 'PodName'}
-                      name={['exec_range', 'target_name']}
-                    >
-                      {isNode() ? (
-                        <KubernetesPodNodeSelect mode="multiple" />
-                      ) : (
-                        <KubernetesPodSelect
-                          mode="multiple"
-                          form={form}
-                          kubernetesNamespace={kubernetesNamespace}
-                        />
-                      )}
-                    </Form.Item>
-                    {/* 一级节点为node时展示，node的id为2 */}
-                    {isNode() && (
-                      <>
-                        <Form.Item
-                          label="Ip"
-                          name={['exec_range', 'target_ip']}
-                        >
-                          <Input
-                            placeholder={intl.formatMessage({
-                              id: 'inputPlaceholder',
-                            })}
-                          />
-                        </Form.Item>
-                      </>
-                    )}
+                    {attackRangeRender()}
                   </>
                 )}
               </>

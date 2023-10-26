@@ -17,7 +17,11 @@ import {
   getIntlLabel,
   handleTimeTransform,
 } from '@/utils/format';
-import { ZoomInOutlined, ZoomOutOutlined } from '@ant-design/icons';
+import {
+  CheckCircleFilled,
+  ZoomInOutlined,
+  ZoomOutOutlined,
+} from '@ant-design/icons';
 import { getLocale, history, useIntl, useRequest } from '@umijs/max';
 import { Form, Space, Spin } from 'antd';
 import { useEffect, useState } from 'react';
@@ -30,6 +34,7 @@ interface IProps {
   // 以下都是结果详情需要的
   isResult?: boolean;
   getExperimentArrangeNodeDetail?: any;
+  setCurNodeDetail?: any;
 }
 const ArrangeInfoShow: React.FC<IProps> = (props) => {
   const {
@@ -37,6 +42,7 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
     curExecSecond,
     isResult,
     getExperimentArrangeNodeDetail,
+    setCurNodeDetail,
   } = props;
   // 当前占比
   const [curProportion, setCurProportion] = useState<number>(100);
@@ -151,6 +157,9 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
         setActiveCol({
           ...el,
         });
+        if (setCurNodeDetail) {
+          setCurNodeDetail(el);
+        }
         return;
       }
       // 获取节点动态表单部分
@@ -292,11 +301,19 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
                           <span>{curDuration}s</span>
                         </div>
                         {isError && (
-                          <span className="error-icon">
+                          <span className="tip-icon">
                             <img
                               src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*Qp1MT7UkGCQAAAAAAAAAAAAADmKmAQ/original"
                               alt=""
                             />
+                          </span>
+                        )}
+                        {el?.status === 'Succeeded' && (
+                          <span
+                            className="tip-icon"
+                            style={{ color: '#52c41a' }}
+                          >
+                            <CheckCircleFilled />
                           </span>
                         )}
                       </div>
@@ -377,9 +394,75 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
     });
   }, [curProportion]);
 
+  // 攻击范围下不同节点渲染不同
+  const attackRangeRender = () => {
+    // 父节点为node时
+    if (isNode()) {
+      return (
+        <>
+          <Form.Item
+            label="Kubernetes Label"
+            name={['exec_range', 'target_label']}
+          >
+            <ShowText ellipsis />
+          </Form.Item>
+          <Form.Item label={'NodeName'} name={['exec_range', 'target_name']}>
+            <ShowText ellipsis />
+          </Form.Item>
+          <Form.Item label="Ip" name={['exec_range', 'target_ip']}>
+            <ShowText ellipsis />
+          </Form.Item>
+        </>
+      );
+    }
+
+    // 父节点为pod时
+    if (isPod()) {
+      return (
+        <>
+          <Form.Item
+            label="Kubernetes Namespace"
+            name={['exec_range', 'target_namespace']}
+          >
+            <ShowText ellipsis />
+          </Form.Item>
+          <Form.Item
+            label="Kubernetes Label"
+            name={['exec_range', 'target_label']}
+          >
+            <ShowText ellipsis />
+          </Form.Item>
+          <Form.Item label={'PodName'} name={['exec_range', 'target_name']}>
+            <ShowText ellipsis />
+          </Form.Item>
+        </>
+      );
+    }
+    // 父节点为deployment时
+    if (targetName === 'deployment') {
+      return (
+        <>
+          <Form.Item
+            label="Kubernetes Namespace"
+            name={['exec_range', 'target_namespace']}
+          >
+            <ShowText ellipsis />
+          </Form.Item>
+          <Form.Item
+            label={'DeploymentName'}
+            name={['exec_range', 'target_name']}
+          >
+            <ShowText ellipsis />
+          </Form.Item>
+        </>
+      );
+    }
+  };
+
   useEffect(() => {
     handleAddTimeAxis(arrangeList);
   }, [arrangeList]);
+
   useEffect(() => {
     handleTotalSecond();
   }, []);
@@ -476,43 +559,14 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
                       nodeType={activeCol?.exec_type}
                       readonly
                     />
-                    {/* 攻击范围为流量或度量时不展示 */}
-                    {(isNode() || isPod()) && (
+                    {/* 节点父类型为node或pod 或deployment时才展示 攻击范围 */}
+                    {(isNode() || isPod() || targetName === 'deployment') && (
                       <>
                         <div className="subtitle range">
                           {intl.formatMessage({ id: 'attackRange' })}
                         </div>
                         {/* node下的节点时不展示 */}
-                        {!isNode() && (
-                          <Form.Item
-                            label="Kubernetes Namespace"
-                            name={['exec_range', 'target_namespace']}
-                          >
-                            <ShowText ellipsis />
-                          </Form.Item>
-                        )}
-
-                        <Form.Item
-                          label="Kubernetes Label"
-                          name={['exec_range', 'target_label']}
-                        >
-                          <ShowText ellipsis />
-                        </Form.Item>
-                        <Form.Item
-                          label={isNode() ? 'NodeName' : 'PodName'}
-                          name={['exec_range', 'target_name']}
-                        >
-                          <ShowText ellipsis />
-                        </Form.Item>
-                        {/* node下的节点时才展示 */}
-                        {isNode() && (
-                          <Form.Item
-                            label="Ip"
-                            name={['exec_range', 'target_ip']}
-                          >
-                            <ShowText ellipsis />
-                          </Form.Item>
-                        )}
+                        {attackRangeRender()}
                       </>
                     )}
                   </>
