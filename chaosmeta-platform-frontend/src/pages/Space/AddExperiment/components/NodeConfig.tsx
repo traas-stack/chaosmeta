@@ -310,7 +310,7 @@ const NodeConfig: React.FC<IProps> = (props) => {
       form.setFieldValue('duration', newDuration);
     }
     // 修改后更新时长
-    handleEditNode('duration', newDuration)
+    handleEditNode('duration', newDuration);
   };
 
   // 攻击范围下不同节点渲染不同
@@ -361,6 +361,7 @@ const NodeConfig: React.FC<IProps> = (props) => {
             <KubernetesNamespaceSelect
               onChange={(val: any) => {
                 setKubernetesNamespace(val);
+                form.setFieldValue(['exec_range', 'target_name'], undefined);
               }}
             />
           </Form.Item>
@@ -403,6 +404,7 @@ const NodeConfig: React.FC<IProps> = (props) => {
             <KubernetesNamespaceSelect
               onChange={(val: any) => {
                 setKubernetesNamespace(val);
+                form.setFieldValue(['exec_range', 'target_name'], undefined);
               }}
             />
           </Form.Item>

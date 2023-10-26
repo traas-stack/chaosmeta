@@ -52,7 +52,6 @@ const KubernetesPodSelect = (props: IProps) => {
   useEffect(() => {
     // 此项的展示是要依赖namespace的值进行检索，所以当namespace值改变时需要清空列表项和值
     setNamespaceList([]);
-    form.setFieldValue(['exec_range', 'target_name'], undefined);
   }, [kubernetesNamespace]);
 
   return (
