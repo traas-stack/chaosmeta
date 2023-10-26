@@ -14,16 +14,14 @@
     "@ant-design/pro-components": "^2.4.4",
     "@dnd-kit/core": "^6.0.8",
     "@dnd-kit/sortable": "^7.0.2",
-    "@types/react-syntax-highlighter": "^15.5.7",
     "@umijs/max": "^4.0.72",
     "antd": "^5.4.0",
     "cronstrue": "^2.31.0",
     "crypto-js": "^4.1.1",
     "dayjs": "^1.11.10",
     "echarts": "^5.4.3",
+    "react-ace": "^10.1.0",
     "react-cookies": "^0.1.1",
-    "react-markdown": "^8.0.7",
-    "react-syntax-highlighter": "^15.5.0",
     "uuid": "^9.0.0"
   },
   "devDependencies": {

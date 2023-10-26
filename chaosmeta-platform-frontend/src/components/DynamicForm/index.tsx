@@ -1,9 +1,9 @@
 import { formatFormName, getIntlText } from '@/utils/format';
 import { useIntl } from '@umijs/max';
 import { Form, Input, Radio, Select } from 'antd';
+import KubernetesNamespaceSelect from '../Select/KubernetesNamespaceSelect';
 import ShowText from '../ShowText';
 import UnitInput from './UnitInput';
-import { DividerLine } from './style';
 
 interface Field {
   id: number;
@@ -27,6 +27,8 @@ interface Props {
   parentName?: string;
   readonly?: boolean;
   form?: any;
+  // 用于更新节点信息
+  handleEditNode?: any;
 }
 
 /**
@@ -35,7 +37,7 @@ interface Props {
  * @returns
  */
 const DynamicForm = (props: Props) => {
-  const { fieldList, parentName, readonly, form } = props;
+  const { fieldList, parentName, readonly, form, handleEditNode } = props;
   const intl = useIntl();
 
   /**
@@ -44,7 +46,7 @@ const DynamicForm = (props: Props) => {
    * @returns
    */
   const renderItem = (field: any) => {
-    const { valueRule, valueType } = field;
+    const { valueRule, valueType, key } = field;
     // 无论valueType类型是什么，后端统一接收string
     // if (valueType === 'int') {
     //   return (
@@ -54,6 +56,10 @@ const DynamicForm = (props: Props) => {
     //     />
     //   );
     // }
+    // key 为namespace时需要特殊渲染
+    if (key === 'namespace') {
+      return <KubernetesNamespaceSelect />;
+    }
     if (valueType === 'bool') {
       return (
         <Radio.Group>
@@ -62,6 +68,7 @@ const DynamicForm = (props: Props) => {
         </Radio.Group>
       );
     }
+    // valueType为stringlist渲染为tags类型的select组件
     if (valueType === 'stringlist') {
       let options: string[] = [];
       if (valueRule) {
@@ -79,6 +86,7 @@ const DynamicForm = (props: Props) => {
         </Select>
       );
     }
+    // 如果valueRule不包含-、>、<、=，则渲染Select组件
     if (
       valueRule &&
       !valueRule.includes('-') &&
@@ -91,7 +99,10 @@ const DynamicForm = (props: Props) => {
         options = valueRule?.split(',');
       }
       return (
-        <Select placeholder={getIntlText(field, 'keyCn', 'key')}>
+        <Select
+          placeholder={getIntlText(field, 'keyCn', 'key')}
+          disabled={key === 'measureType' || key === 'flowType'}
+        >
           {options.map((option) => {
             return (
               <Select.Option key={option} value={option}>
@@ -106,11 +117,25 @@ const DynamicForm = (props: Props) => {
     return <Input placeholder={getIntlText(field, 'keyCn', 'key')} />;
   };
 
-  const initValue = (defaultValue: any) => {
-    if (defaultValue || defaultValue === 0) {
-      return defaultValue;
+  const initValue = (item: any) => {
+    const { defaultValue, valueRule } = item;
+    let value = undefined;
+    // 默认值不存在且为select时，默认值为第一个选项
+    if (
+      valueRule &&
+      !valueRule.includes('-') &&
+      !valueRule.includes('>') &&
+      !valueRule.includes('<') &&
+      !valueRule.includes('=') &&
+      !defaultValue
+    ) {
+      const options = valueRule?.split(',');
+      value = options[0];
     }
-    return undefined;
+    if (defaultValue || defaultValue === 0) {
+      value = defaultValue;
+    }
+    return value;
   };
 
   /**
@@ -172,23 +197,18 @@ const DynamicForm = (props: Props) => {
 
   return (
     <>
-      {fieldList?.map((item: Field, index: number) => {
+      {fieldList?.map((item: Field) => {
         const { id, required, defaultValue } = item;
         if (readonly) {
           return (
             <>
-              {index === 0 && item?.execType?.includes('common') && (
-                <div className="subtitle range">
-                  {intl.formatMessage({ id: 'generalParameters' })}
-                </div>
-              )}
-              {!item?.execType?.includes('common') &&
-                fieldList[index - 1]?.execType?.includes('common') && (
-                  <DividerLine />
-                )}
               <Form.Item
                 name={formatFormName(item, parentName)}
-                label={getIntlText(item, 'keyCn', 'key')}
+                label={
+                  item?.key === 'measureType' || item?.key === 'flowType'
+                    ? intl.formatMessage({ id: 'atomicCapabilities' })
+                    : getIntlText(item, 'keyCn', 'key')
+                }
                 key={id}
                 initialValue={initValue(defaultValue)}
               >
@@ -199,19 +219,14 @@ const DynamicForm = (props: Props) => {
         }
         return (
           <>
-            {index === 0 && item?.execType?.includes('common') && (
-              <div className="range">
-                {intl.formatMessage({ id: 'generalParameters' })}
-              </div>
-            )}
-            {!item?.execType?.includes('common') &&
-              fieldList[index - 1]?.execType?.includes('common') && (
-                <DividerLine />
-              )}
             <Form.Item
               tooltip={getIntlText(item, 'descriptionCn', 'description')}
               name={formatFormName(item, parentName)}
-              label={getIntlText(item, 'keyCn', 'key')}
+              label={
+                item?.key === 'measureType' || item?.key === 'flowType'
+                  ? intl.formatMessage({ id: 'atomicCapabilities' })
+                  : getIntlText(item, 'keyCn', 'key')
+              }
               key={id}
               rules={[
                 { required },
@@ -221,11 +236,16 @@ const DynamicForm = (props: Props) => {
                   },
                 },
               ]}
-              initialValue={initValue(defaultValue)}
+              initialValue={initValue(item)}
             >
               {/* 带有单位的特殊处理 */}
               {item.unit ? (
-                <UnitInput field={item} form={form} parentName={parentName} />
+                <UnitInput
+                  field={item}
+                  form={form}
+                  parentName={parentName}
+                  handleEditNode={handleEditNode}
+                />
               ) : (
                 renderItem(item)
               )}

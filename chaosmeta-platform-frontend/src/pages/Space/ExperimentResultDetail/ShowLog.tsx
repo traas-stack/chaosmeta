@@ -1,7 +1,8 @@
-import ReactMarkdown from 'react-markdown';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { atomOneDark } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import { LogConainer } from './style';
+// 编辑器相关, 顺序不能变更
+import AceEditor from 'react-ace';
+import 'ace-builds/src-noconflict/mode-java';
+import 'ace-builds/src-noconflict/theme-monokai';
 
 interface Props {
   message?: string;
@@ -18,30 +19,30 @@ const ShowLog = (props: Props) => {
         </div>
         <Select options={options} style={{ width: '200px' }}></Select>
       </Space> */}
-      <div className="log-contet">
-        <ReactMarkdown
-          components={{
-            code({ children, ...props }) {
-              return (
-                <SyntaxHighlighter
-                  {...props}
-                  customStyle={{ maxHeight: 400, borderRadius: 8, margin: 0 }}
-                  style={atomOneDark}
-                  language={'jsx'}
-                  PreTag="div"
-                  showLineNumbers
-                >
-                  {children as string}
-                </SyntaxHighlighter>
-              );
-            },
-          }}
-        >
-          {`
-          ${markdown}
-          `}
-        </ReactMarkdown>
-      </div>
+      <AceEditor
+        style={{
+          marginTop: '8px',
+          borderRadius: '6px',
+          maxHeight: '200px',
+          backgroundColor: '#292e33',
+        }}
+        mode="java"
+        theme="monokai"
+        showGutter={true}
+        fontSize={14}
+        showPrintMargin={false}
+        wrapEnabled
+        value={markdown}
+        readOnly
+        width="100%"
+        name="UNIQUE_ID_OF_DIV"
+        editorProps={{ $blockScrolling: true }}
+        setOptions={{
+          enableBasicAutocompletion: true,
+          enableLiveAutocompletion: true,
+          highlightActiveLine: false,
+        }}
+      />
     </LogConainer>
   );
 };

@@ -138,6 +138,7 @@ const ExperimentList: React.FC<unknown> = () => {
       end_time,
       time_search_field: timeType,
       namespace_id: history?.location?.query?.spaceId as string,
+      time_type: end_time ? 'range' : undefined,
     };
     queryByPage.run(queryParam);
   };
@@ -332,8 +333,9 @@ const ExperimentList: React.FC<unknown> = () => {
         </>
       ),
       width: 180,
-      sorter: true,
-      render: (record: any) => {
+      // sorter: true,
+      dataIndex: 'last_instance',
+      render: (text: string, record: any) => {
         const statusTemp: any = experimentStatus.filter(
           (item) => item.value === record?.status,
         )[0];

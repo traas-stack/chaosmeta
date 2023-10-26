@@ -161,7 +161,11 @@ const publicText = {
   all: 'all',
   selectAll: 'select all',
   submit: 'submit',
-  generalParameters: 'General parameters'
+  commonParameters: 'Common parameters',
+  atomicCapabilities: 'atomic capabilities',
+  faultParameters: 'Fault parameters',
+  executionParameters: 'Execution parameters',
+  judgmentParameters: 'Judgment parameters',
 };
 
 // 实验
@@ -292,7 +296,7 @@ const login = {
     'The username can be in Chinese and English, and the length should not exceed 64 characters.',
   notAccount: 'Don’t have an account yet?',
   haveAccount: 'Already have an account?',
-  'reister.success': 'Registration successful, please log in'
+  'reister.success': 'Registration successful, please log in',
 };
 // 账号相关
 const account = {
@@ -303,29 +307,38 @@ const account = {
   admin: 'admin',
   generalUser: 'general user',
   adminDescription: 'Have all permissions',
-  generalUserDescription: 'You can log in to view, and superimpose the permissions in the space.',
-  'account.delete.title': 'Are you sure you want to delete the currently selected account?',
-  'account.delete.content': 'Users who delete their accounts will not be able to log in to the platform, and they can only re-register if they want to use it again!',
-  'account.delete.success': 'You have successfully deleted the selected members',
-  'account.role.update': 'User role modified successfully'
-}
+  generalUserDescription:
+    'You can log in to view, and superimpose the permissions in the space.',
+  'account.delete.title':
+    'Are you sure you want to delete the currently selected account?',
+  'account.delete.content':
+    'Users who delete their accounts will not be able to log in to the platform, and they can only re-register if they want to use it again!',
+  'account.delete.success':
+    'You have successfully deleted the selected members',
+  'account.role.update': 'User role modified successfully',
+};
 
 // 空间管理
 const spaceManagement = {
   'spaceManagement.title': 'Space management',
   'spaceManagement.spaceName.placeholder': 'Please enter the space name',
   'spaceManagement.spaceMember.placeholder': 'Please enter space members',
-  'spaceManagement.alert': 'Members with read and write permissions in the contact space can be added as space members',
+  'spaceManagement.alert':
+    'Members with read and write permissions in the contact space can be added as space members',
   'spaceManagement.member': 'space member',
   'spaceManagement.tab.all': 'All spaces',
   'spaceManagement.tab.related': 'My related',
-  'spaceManagement.delete.title': 'Are you sure you want to delete the currently selected space?',
-  'spaceManagement.delete.success': 'You have successfully deleted the selected space',
-  'spaceManagement.noAuth.tip': 'You do not have permission to this space, please contact a read-write member',
-  'spaceManagement.noAuth.readonly.tip': 'Read-only users are currently unable to use this feature',
+  'spaceManagement.delete.title':
+    'Are you sure you want to delete the currently selected space?',
+  'spaceManagement.delete.success':
+    'You have successfully deleted the selected space',
+  'spaceManagement.noAuth.tip':
+    'You do not have permission to this space, please contact a read-write member',
+  'spaceManagement.noAuth.readonly.tip':
+    'Read-only users are currently unable to use this feature',
   'spaceManagement.write': 'read and write members',
   'spaceManagement.experimentCount': 'number of experiments',
-}
+};
 
 export default {
   ...routeMenu,
@@ -344,5 +357,5 @@ export default {
   ...tagManageMent,
   ...login,
   ...account,
-  ...spaceManagement
+  ...spaceManagement,
 };

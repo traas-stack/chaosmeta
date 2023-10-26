@@ -30,7 +30,7 @@ export async function queryNamespaceList(
  * @param options
  * @returns
  */
-export async function queryPodLIst(
+export async function queryPodNameList(
   params?: {
     page?: number;
     page_size?: number;
@@ -49,12 +49,12 @@ export async function queryPodLIst(
 }
 
 /**
- * 获取podnode列表
+ * 获取nodename列表
  * @param params
  * @param options
  * @returns
  */
-export async function queryPodNodeList(
+export async function queryNodeNameList(
   params?: {
     page?: number;
     page_size?: number;
@@ -63,6 +63,50 @@ export async function queryPodNodeList(
   options?: { [key: string]: any },
 ) {
   return request<any>(`/chaosmeta/api/v1/kubernetes/cluster/${envType}/nodes`, {
+    method: 'GET',
+    params,
+    ...(options || {}),
+  });
+}
+
+/**
+ * 获取故障节点详情信息，属于那个target下的
+ * @param params
+ * @param options
+ * @returns
+ */
+export async function queryFaultNodeDetail(
+  params?: {
+    targetId?: number;
+  },
+  options?: { [key: string]: any },
+) {
+  return request<any>(
+    `/chaosmeta/api/v1/injects/scopes/target/${params?.targetId}`,
+    {
+      method: 'GET',
+      params,
+      ...(options || {}),
+    },
+  );
+}
+
+
+/**
+ * 获取deploymentName列表
+ * @param params
+ * @param options
+ * @returns
+ */
+export async function queryDeploymentNameList(
+  params?: {
+    page?: number;
+    page_size?: number;
+    namespace?: string;
+  },
+  options?: { [key: string]: any },
+) {
+  return request<any>(`/chaosmeta/api/v1/kubernetes/cluster/${envType}/namespace/${params?.namespace}/deployments`, {
     method: 'GET',
     params,
     ...(options || {}),
