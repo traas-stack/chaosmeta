@@ -1217,6 +1217,9 @@ kind: ConfigMap
 metadata:
   name: workflow-controller-configmap
   namespace: DEPLOYNAMESPACE
+data:
+  executor: |
+    image: DEPLOYREGISTRY/argoexec:v3.4.10
 ---
 apiVersion: v1
 kind: Service
@@ -1255,7 +1258,7 @@ spec:
       - args:
         - server
         env: []
-        image: quay.io/argoproj/argocli:v3.4.10
+        image: DEPLOYREGISTRY/argocli:v3.4.10
         name: argo-server
         ports:
         - containerPort: 2746
@@ -1310,7 +1313,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.name
-        image: quay.io/argoproj/workflow-controller:v3.4.10
+        image: DEPLOYREGISTRY/workflow-controller:v3.4.10
         livenessProbe:
           failureThreshold: 3
           httpGet:
