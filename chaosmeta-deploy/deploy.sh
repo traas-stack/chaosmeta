@@ -55,10 +55,10 @@ function process_args() {
         REGISTRY=$OPTARG
         ;;
       h)
-        echo "-n：existed namespace of kubernetes"
-        echo "-r：image registry"
-        echo "-o：install、uninstall"
-        echo "-c：all、$COMPONENT_PLATFORM、$COMPONENT_WORKFLOW、$COMPONENT_INJECT、$COMPONENT_DAEMON、$COMPONENT_MEASURE、$COMPONENT_FLOW"
+        echo "-n：existed namespace of kubernetes, default: ${NAMESPACE}"
+        echo "-r：image registry, default: ${REGISTRY}"
+        echo "-o：${OP_INSTALL}、${OP_UNINSTALL}, default: ${OP}"
+        echo "-c：${COMPONENT_ALL}、${COMPONENT_PLATFORM}、${COMPONENT_WORKFLOW}、${COMPONENT_INJECT}、${COMPONENT_DAEMON}、${COMPONENT_MEASURE}、${COMPONENT_FLOW}, default: ${COMPONENT_ALL}"
         exit 1
         ;;
       \?)
