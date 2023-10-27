@@ -89,7 +89,7 @@ spec:
       serviceAccountName: chaosmeta-platform
       containers:
         - name: chaosmeta-platform
-          image:  registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-platform:v0.0.7
+          image: DEPLOYREGISTRY/chaosmeta-platform:v0.6.0
           resources:
             requests:
               cpu: "1"
@@ -101,7 +101,7 @@ spec:
             - name: chaosmeta-config
               mountPath: /home/admin/conf
         - name: chaosmeta-platform-frontend
-          image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-platform-frontend:v0.0.4
+          image: DEPLOYREGISTRY/chaosmeta-platform-frontend:v0.6.0
           ports:
             - containerPort: 8000
       volumes:
@@ -144,7 +144,7 @@ spec:
     spec:
       serviceAccountName: chaosmeta-platform
       containers:
-        - image: mysql:8.0
+        - image: DEPLOYREGISTRY/mysql:8.0
           name: chaosmeta-mysql
           env:
             - name: MYSQL_DATABASE

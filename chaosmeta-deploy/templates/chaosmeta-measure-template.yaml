@@ -320,7 +320,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-measure-controller:v0.0.6
+        image: DEPLOYREGISTRY/chaosmeta-measure-controller:v0.0.6
         livenessProbe:
           httpGet:
             path: /healthz
