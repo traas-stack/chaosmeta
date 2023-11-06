@@ -24,7 +24,7 @@ import (
 
 func ExitWithErr(msg string) {
 	fmt.Printf("[error]%s\n", msg)
-	os.Exit(1)
+	os.Exit(99)
 }
 
 func SleepWait(timeout int) {

@@ -21,7 +21,7 @@ const (
 
 	FaultMemFill = "fill"
 	FaultMemOOM  = "oom"
-	PercentOOM   = 200
+	PercentOOM   = 101
 
 	ModeRam   = "ram"
 	ModeCache = "cache"

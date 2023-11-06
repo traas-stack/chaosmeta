@@ -18,6 +18,7 @@ export async function queryExperimentList(
     start_time?: string;
     end_time?: string;
     namespace_id: string;
+    time_type?: string;
   },
   options?: { [key: string]: any },
 ) {
@@ -140,6 +141,7 @@ export async function queryExperimentResultList(
     start_time?: string;
     end_time?: string;
     namespace_id: string;
+    time_type?: string
   },
   options?: { [key: string]: any },
 ) {
@@ -374,6 +376,78 @@ export async function queryFaultNodeFields(
 ) {
   const { id } = params;
   return request<any>(`/chaosmeta/api/v1/injects/faults/${id}/args`, {
+    method: 'GET',
+    params,
+    ...(options || {}),
+  });
+}
+
+/**
+ * 度量注入能力列表 - 一级节点
+ * @param params
+ * @param options
+ * @returns
+ */
+export async function queryMeasureList(
+  params?: any,
+  options?: { [key: string]: any },
+) {
+  return request<any>(`/chaosmeta/api/v1/injects/measures`, {
+    method: 'GET',
+    params,
+    ...(options || {}),
+  });
+}
+
+/**
+ * 度量注入能力列表 - 查询度量注入能力节点 - 根据节点id查询节点表单配置信息 - 动态表单
+ * @param params
+ * @param options
+ * @returns
+ */
+export async function queryMeasureNodeFields(
+  params?: {
+    id: number;
+  },
+  options?: { [key: string]: any },
+) {
+  return request<any>(`/chaosmeta/api/v1/injects/measures/${params?.id}/args`, {
+    method: 'GET',
+    params,
+    ...(options || {}),
+  });
+}
+
+/**
+ * 流量注入能力列表 - 一级节点
+ * @param params
+ * @param options
+ * @returns
+ */
+export async function queryFlowList(
+  params?: any,
+  options?: { [key: string]: any },
+) {
+  return request<any>(`/chaosmeta/api/v1/injects/flows`, {
+    method: 'GET',
+    params,
+    ...(options || {}),
+  });
+}
+
+/**
+ * 流量注入能力列表 - 查询流量注入能力列表节点 - 根据节点id查询节点表单配置信息 - 动态表单
+ * @param params
+ * @param options
+ * @returns
+ */
+export async function queryFlowNodeFields(
+  params?: {
+    id: number;
+  },
+  options?: { [key: string]: any },
+) {
+  return request<any>(`/chaosmeta/api/v1/injects/flows/${params?.id}/args`, {
     method: 'GET',
     params,
     ...(options || {}),

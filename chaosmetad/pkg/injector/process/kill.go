@@ -21,10 +21,7 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/injector"
-	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/log"
-	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/cmdexec"
-	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/namespace"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/process"
 )
 
@@ -64,18 +61,6 @@ func (i *KillInjector) SetDefault() {
 	}
 }
 
-func (i *KillInjector) getCmdExecutor(method, args string) *cmdexec.CmdExecutor {
-	return &cmdexec.CmdExecutor{
-		ContainerId:      i.Info.ContainerId,
-		ContainerRuntime: i.Info.ContainerRuntime,
-		ContainerNs:      []string{namespace.MNT, namespace.PID},
-		ToolKey:          ProcessExec,
-		Method:           method,
-		Fault:            FaultProcessKill,
-		Args:             args,
-	}
-}
-
 func (i *KillInjector) SetOption(cmd *cobra.Command) {
 	// i.BaseInjector.SetOption(cmd)
 
@@ -89,11 +74,38 @@ func (i *KillInjector) Validator(ctx context.Context) error {
 	if err := i.BaseInjector.Validator(ctx); err != nil {
 		return err
 	}
-	return i.getCmdExecutor(utils.MethodValidator, fmt.Sprintf("%d '%s' %d", i.Args.Pid, i.Args.Key, i.Args.Signal)).ExecTool(ctx)
+
+	if i.Args.Signal <= 0 {
+		return fmt.Errorf("signal[%d] is invalid, must larget than 0", i.Args.Signal)
+	}
+
+	if i.Args.Pid > 0 {
+		if _, err := process.GetProcessByPid(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, i.Args.Pid); err != nil {
+			return fmt.Errorf("get process by pid[%d] error: %s", i.Args.Pid, err.Error())
+		}
+	} else if i.Args.Key != "" {
+		if _, err := process.GetProcessByKey(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, i.Args.Key); err != nil {
+			return fmt.Errorf("get process by key[%s] error: %s", i.Args.Key, err.Error())
+		}
+	} else {
+		return fmt.Errorf("must provide \"pid\" or \"key\"")
+	}
+
+	return nil
 }
 
 func (i *KillInjector) Inject(ctx context.Context) error {
-	return i.getCmdExecutor(utils.MethodInject, fmt.Sprintf("%d '%s' %d", i.Args.Pid, i.Args.Key, i.Args.Signal)).ExecTool(ctx)
+	if i.Args.Pid > 0 {
+		if err := process.SignalProcessByPid(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, i.Args.Pid, i.Args.Signal); err != nil {
+			return err
+		}
+	} else {
+		if err := process.SignalProcessByKey(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, i.Args.Key, i.Args.Signal); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (i *KillInjector) Recover(ctx context.Context) error {
@@ -101,11 +113,9 @@ func (i *KillInjector) Recover(ctx context.Context) error {
 		return nil
 	}
 
-	if i.Args.RecoverCmd == "" {
-		return nil
+	if i.Args.RecoverCmd != "" {
+		return cmdexec.ExecBackGroundCommon(ctx, i.Info.ContainerRuntime, i.Info.ContainerId, i.Args.RecoverCmd)
 	}
 
-	re, err := i.getCmdExecutor(utils.MethodRecover, "").Exec(ctx, i.Args.RecoverCmd)
-	log.GetLogger(ctx).Debug(re)
-	return err
+	return nil
 }

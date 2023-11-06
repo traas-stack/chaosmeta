@@ -23,11 +23,12 @@ import (
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/filesys"
 	"github.com/traas-stack/chaosmeta/chaosmetad/test/common"
 	"os"
+	"path/filepath"
 	"strconv"
 )
 
 var (
-	fileDeleteFileName = "chaosmeta_file.test"
+	fileDeleteFileName = "/tmp/chaosmeta_file.test"
 )
 
 const (
@@ -96,7 +97,7 @@ func checkDelete(file string, ifExist bool) error {
 		return fmt.Errorf("expected exist status: %v, actually: %v", ifExist, exist)
 	}
 
-	backupFile := fmt.Sprintf("%s%s/%s", BackUpDir, common.UID, file)
+	backupFile := fmt.Sprintf("%s%s/%s", BackUpDir, common.UID, filepath.Base(file))
 	exist, err = filesys.ExistFile(backupFile)
 	if err != nil {
 		return fmt.Errorf("check file[%s] exist error: %s", backupFile, err.Error())

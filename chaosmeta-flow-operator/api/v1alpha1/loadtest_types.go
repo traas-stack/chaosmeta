@@ -59,7 +59,7 @@ type LoadTestSpec struct {
 type FlowType string
 
 const (
-	HTTPFlowType FlowType = "HTTP"
+	HTTPFlowType FlowType = "http"
 )
 
 type FlowArgs struct {

@@ -25,7 +25,6 @@ import (
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/cmdexec"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/filesys"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/namespace"
-	"path/filepath"
 )
 
 func init() {
@@ -88,16 +87,8 @@ func (i *FillInjector) Validator(ctx context.Context) error {
 		return err
 	}
 
-	if i.Info.ContainerRuntime != "" {
-		if !filepath.IsAbs(i.Args.Dir) {
-			return fmt.Errorf("\"dir\" must provide absolute path")
-		}
-	} else {
-		var err error
-		i.Args.Dir, err = filesys.GetAbsPath(i.Args.Dir)
-		if err != nil {
-			return fmt.Errorf("\"dir\"[%s] get absolute path error: %s", i.Args.Dir, err.Error())
-		}
+	if !filesys.IfPathAbs(ctx, i.Args.Dir) {
+		return fmt.Errorf("\"dir\" must provide absolute path")
 	}
 
 	return i.getCmdExecutor(utils.MethodValidator, fmt.Sprintf("%d '%s' %s", i.Args.Percent, i.Args.Bytes, i.Args.Dir)).ExecTool(ctx)

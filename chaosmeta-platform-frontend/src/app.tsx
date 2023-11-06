@@ -6,7 +6,12 @@ import SpaceDropdown from './components/SpaceDropdown';
 import UserRightArea from './components/UserRightArea';
 import cookie from './utils/cookie';
 import errorHandler from './utils/errorHandler';
+import dayjs from 'dayjs';
+import localeData from 'dayjs/plugin/localeData';
+import weekday from 'dayjs/plugin/weekday';
 
+dayjs.extend(weekday);
+dayjs.extend(localeData);
 // 更多信息见文档：https://umijs.org/docs/api/runtime-config#getinitialstate
 // export async function getInitialState(): Promise<{
 //   userInfo: {
@@ -69,8 +74,8 @@ export const request: RequestConfig = {
         options: {
           ...options,
           headers: {
-            ...options.headers,
             Authorization: token,
+            ...options.headers,
           },
         },
       };
@@ -92,7 +97,7 @@ export const layout = () => {
     logo: 'https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*lMXkRKmd8WcAAAAAAAAAAAAADmKmAQ/original',
     title: '',
     menu: {
-      locale: false,
+      locale: true,
     },
     siderWidth: 208,
     layout: 'mix',

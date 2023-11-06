@@ -1,5 +1,9 @@
-import { Form, Input, InputNumber, Radio, Select } from 'antd';
+import { formatFormName, getIntlText } from '@/utils/format';
+import { useIntl } from '@umijs/max';
+import { Form, Input, Radio, Select } from 'antd';
+import KubernetesNamespaceSelect from '../Select/KubernetesNamespaceSelect';
 import ShowText from '../ShowText';
+import UnitInput from './UnitInput';
 
 interface Field {
   id: number;
@@ -22,6 +26,9 @@ interface Props {
   fieldList: Field[];
   parentName?: string;
   readonly?: boolean;
+  form?: any;
+  // 用于更新节点信息
+  handleEditNode?: any;
 }
 
 /**
@@ -30,33 +37,45 @@ interface Props {
  * @returns
  */
 const DynamicForm = (props: Props) => {
-  const { fieldList, parentName, readonly } = props;
+  const { fieldList, parentName, readonly, form, handleEditNode } = props;
+  const intl = useIntl();
 
   /**
    * 解析动态表单配置内容，根据不同条件渲染为不同表单元素
    * @param field
    * @returns
    */
-  const renderItem = (field: Field) => {
-    const { valueRule, valueType, keyCn } = field;
-    if (valueType === 'int') {
-      return <InputNumber placeholder={keyCn} style={{ width: '100%' }} />;
+  const renderItem = (field: any) => {
+    const { valueRule, valueType, key } = field;
+    // 无论valueType类型是什么，后端统一接收string
+    // if (valueType === 'int') {
+    //   return (
+    //     <InputNumber
+    //       placeholder={getIntlText(field, 'descriptionCn', 'description')}
+    //       style={{ width: '100%' }}
+    //     />
+    //   );
+    // }
+    // key 为namespace时需要特殊渲染
+    if (key === 'namespace') {
+      return <KubernetesNamespaceSelect />;
     }
     if (valueType === 'bool') {
       return (
         <Radio.Group>
-          <Radio value={true}>是</Radio>
-          <Radio value={false}>否</Radio>
+          <Radio value={'true'}>{intl.formatMessage({ id: 'yes' })}</Radio>
+          <Radio value={'false'}>{intl.formatMessage({ id: 'no' })}</Radio>
         </Radio.Group>
       );
     }
+    // valueType为stringlist渲染为tags类型的select组件
     if (valueType === 'stringlist') {
       let options: string[] = [];
       if (valueRule) {
         options = valueRule?.split(',');
       }
       return (
-        <Select mode={'tags'} placeholder={keyCn}>
+        <Select mode={'tags'} placeholder={getIntlText(field, 'keyCn', 'key')}>
           {options.map((option) => {
             return (
               <Select.Option key={option} value={option}>
@@ -67,13 +86,23 @@ const DynamicForm = (props: Props) => {
         </Select>
       );
     }
-    if (valueRule) {
+    // 如果valueRule不包含-、>、<、=，则渲染Select组件
+    if (
+      valueRule &&
+      !valueRule.includes('-') &&
+      !valueRule.includes('>') &&
+      !valueRule.includes('<') &&
+      !valueRule.includes('=')
+    ) {
       let options: string[] = [];
       if (valueRule) {
         options = valueRule?.split(',');
       }
       return (
-        <Select placeholder={keyCn}>
+        <Select
+          placeholder={getIntlText(field, 'keyCn', 'key')}
+          disabled={key === 'measureType' || key === 'flowType'}
+        >
           {options.map((option) => {
             return (
               <Select.Option key={option} value={option}>
@@ -84,26 +113,29 @@ const DynamicForm = (props: Props) => {
         </Select>
       );
     }
-    return <Input placeholder={keyCn} />;
+
+    return <Input placeholder={getIntlText(field, 'keyCn', 'key')} />;
   };
 
-  const initValue = (defaultValue: any) => {
+  const initValue = (item: any) => {
+    const { defaultValue, valueRule } = item;
+    let value = undefined;
+    // 默认值不存在且为select时，默认值为第一个选项
+    if (
+      valueRule &&
+      !valueRule.includes('-') &&
+      !valueRule.includes('>') &&
+      !valueRule.includes('<') &&
+      !valueRule.includes('=') &&
+      !defaultValue
+    ) {
+      const options = valueRule?.split(',');
+      value = options[0];
+    }
     if (defaultValue || defaultValue === 0) {
-      return defaultValue;
+      value = defaultValue;
     }
-    return undefined;
-  };
-
-  /**
-   * 如果存在父级名字，则将其与当前名字合并成一个字符串数组返回；否则直接返回当前名字。
-   * @param name
-   * @returns
-   */
-  const formatName = (name: number) => {
-    if (parentName) {
-      return [parentName, name.toString()];
-    }
-    return name;
+    return value;
   };
 
   /**
@@ -114,7 +146,7 @@ const DynamicForm = (props: Props) => {
    */
   const rule = (item: any, value: number) => {
     // 获取规则信息中的 valueType、valueRule 和 keyCn 属性
-    const { valueType, valueRule, keyCn } = item;
+    const { valueType, valueRule } = item;
     if (!value && value !== 0) {
       // 其他情况都返回通过, 为空时让form自动去判断
       return Promise.resolve();
@@ -129,21 +161,33 @@ const DynamicForm = (props: Props) => {
           value > Number(valueRuleList[1])
         ) {
           // 不满足大于规定范围条件，返回错误信息
-          return Promise.reject(`${keyCn}的取值为 ${valueRule}`);
+          return Promise.reject(
+            `${getIntlText(item, 'keyCn', 'key')} ${intl.formatMessage({
+              id: 'ruleText',
+            })} ${valueRule}`,
+          );
         }
       }
       if (valueRule?.includes('>=')) {
         const valueRuleList = valueRule.split('>=');
         if (value < Number(valueRuleList[1])) {
           // 不满足大于规定范围条件，返回错误信息
-          return Promise.reject(`${keyCn}的取值为 ${valueRule}`);
+          return Promise.reject(
+            `${getIntlText(item, 'keyCn', 'key')} ${intl.formatMessage({
+              id: 'ruleText',
+            })} ${valueRule}`,
+          );
         }
       }
       if (valueRule?.includes('>')) {
         const valueRuleList = valueRule.split('>');
         if (value <= Number(valueRuleList[1])) {
           // 不满足大于规定范围条件，返回错误信息
-          return Promise.reject(`${keyCn}的取值为 ${valueRule}`);
+          return Promise.reject(
+            `${getIntlText(item, 'keyCn', 'key')} ${intl.formatMessage({
+              id: 'ruleText',
+            })} ${valueRule}`,
+          );
         }
       }
     }
@@ -154,37 +198,59 @@ const DynamicForm = (props: Props) => {
   return (
     <>
       {fieldList?.map((item: Field) => {
-        const { keyCn, id, required, defaultValue } = item;
+        const { id, required, defaultValue } = item;
         if (readonly) {
           return (
-            <Form.Item
-              name={formatName(id)}
-              label={keyCn}
-              key={id}
-              // rules={[{ required, message: keyCn }]}
-              initialValue={initValue(defaultValue)}
-            >
-              <ShowText />
-            </Form.Item>
+            <>
+              <Form.Item
+                name={formatFormName(item, parentName)}
+                label={
+                  item?.key === 'measureType' || item?.key === 'flowType'
+                    ? intl.formatMessage({ id: 'atomicCapabilities' })
+                    : getIntlText(item, 'keyCn', 'key')
+                }
+                key={id}
+                initialValue={initValue(defaultValue)}
+              >
+                <ShowText ellipsis />
+              </Form.Item>
+            </>
           );
         }
         return (
-          <Form.Item
-            name={formatName(id)}
-            label={keyCn}
-            key={id}
-            rules={[
-              { required },
-              {
-                validator: (_, value) => {
-                  return rule(item, value);
+          <>
+            <Form.Item
+              tooltip={getIntlText(item, 'descriptionCn', 'description')}
+              name={formatFormName(item, parentName)}
+              label={
+                item?.key === 'measureType' || item?.key === 'flowType'
+                  ? intl.formatMessage({ id: 'atomicCapabilities' })
+                  : getIntlText(item, 'keyCn', 'key')
+              }
+              key={id}
+              rules={[
+                { required },
+                {
+                  validator: (_, value) => {
+                    return rule(item, value);
+                  },
                 },
-              },
-            ]}
-            initialValue={initValue(defaultValue)}
-          >
-            {renderItem(item)}
-          </Form.Item>
+              ]}
+              initialValue={initValue(item)}
+            >
+              {/* 带有单位的特殊处理 */}
+              {item.unit ? (
+                <UnitInput
+                  field={item}
+                  form={form}
+                  parentName={parentName}
+                  handleEditNode={handleEditNode}
+                />
+              ) : (
+                renderItem(item)
+              )}
+            </Form.Item>
+          </>
         );
       })}
     </>

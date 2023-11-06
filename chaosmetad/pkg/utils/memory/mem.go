@@ -19,38 +19,45 @@ package memory
 import (
 	"context"
 	"fmt"
-	"github.com/shirou/gopsutil/mem"
+	"os"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/log"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils"
+	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/cgroup"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/cmdexec"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/disk"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/filesys"
-	"os"
-	"time"
+	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/namespace"
 )
 
 // CalculateFillKBytes The calculation of memory usage is consistent with the calculation method of the top command: Available/Total.
 // Because whether oom is calculated according to this
-func CalculateFillKBytes(ctx context.Context, percent int, fillBytes string) (int64, error) {
+func CalculateFillKBytes(ctx context.Context, cr, cId string, percent int, fillBytes string) (int64, error) {
 	var fillKBytes int64
 	if percent != 0 {
-		v, err := mem.VirtualMemory()
+		total, err := getMemTotal(ctx, cr, cId)
 		if err != nil {
-			return -1, fmt.Errorf("check vm error: %s", err.Error())
+			return -1, fmt.Errorf("get total mem error: %s", err.Error())
 		}
 
-		usedPercent := float64(v.Total-v.Available) / float64(v.Total) * 100
+		avail, err := getMemAvailable(ctx, cr, cId)
+		if err != nil {
+			return -1, fmt.Errorf("get avail mem error: %s", err.Error())
+		}
 
+		usedPercent := (total - avail) / total * 100
 		if float64(percent) < usedPercent {
 			return -1, fmt.Errorf("current mem usage is %.2f%%, no need to fill any mem", usedPercent)
 		}
 
-		fillKBytes = int64((float64(percent) - usedPercent) / 100 * (float64(v.Total) / 1024))
+		fillKBytes = int64((float64(percent) - usedPercent) / 100 * total)
 	} else {
 		fillKBytes, _ = utils.GetKBytes(fillBytes)
 	}
 
-	// prevent overflow
 	if fillKBytes <= 0 {
 		return -1, fmt.Errorf("fill bytes[%dKB]must larget than 0", fillKBytes)
 	}
@@ -58,8 +65,8 @@ func CalculateFillKBytes(ctx context.Context, percent int, fillBytes string) (in
 	return fillKBytes, nil
 }
 
-func FillCache(ctx context.Context, percent int, bytes string, dir string, filename string) error {
-	fillKBytes, err := CalculateFillKBytes(ctx, percent, bytes)
+func FillCache(ctx context.Context, cr, cId string, percent int, bytes string, dir string, filename string) error {
+	fillKBytes, err := CalculateFillKBytes(ctx, cr, cId, percent, bytes)
 	if err != nil {
 		return err
 	}
@@ -98,4 +105,139 @@ func UndoTmpfs(ctx context.Context, dir string) error {
 	}
 
 	return nil
+}
+
+func getContainerMemTotal(ctx context.Context, cr, cId string) (memTotal float64, err error) {
+	path, err := cgroup.GetContainerCgroupPath(ctx, cr, cId, cgroup.MEMORY)
+	if err != nil {
+		return 0, err
+	}
+	memTotalStr, err := cgroup.ReadCgroupFileStr(ctx, path, cgroup.MEMORY, cgroup.MemoryLimitInBytesFile)
+	if err != nil {
+		return 0, fmt.Errorf("read total mem error: %s", err.Error())
+	}
+
+	return getMemByStr(memTotalStr)
+}
+
+//func getContainerMemCache(ctx context.Context, cr, cId string) (memTotal float64, err error) {
+//	path, err := cgroup.GetContainerCgroupPath(ctx, cr, cId, cgroup.MEMORY)
+//	if err != nil {
+//		return 0, err
+//	}
+//	memStatStr, err := cgroup.ReadCgroupFileStr(ctx, path, cgroup.MEMORY, cgroup.MemoryStatFile)
+//	if err != nil {
+//		return 0, fmt.Errorf("read total mem error: %s", err.Error())
+//	}
+//
+//	memStatStrList := strings.Split(memStatStr, "\n")
+//
+//	var cacheStr, rssStr string
+//	for _, unitStr := range memStatStrList {
+//		kvList := strings.Split(unitStr, " ")
+//		if kvList[0] == "cache" {
+//			cacheStr = kvList[1]
+//		}
+//		if kvList[0] == "rss" {
+//			rssStr = kvList[1]
+//		}
+//	}
+//
+//	if cacheStr == "" || rssStr == "" {
+//		return 0, fmt.Errorf("not found cache or rss data")
+//	}
+//
+//	cache, err := getMemByStr(cacheStr)
+//	if err != nil {
+//		return 0, fmt.Errorf("cache[%s] is not a valid float: %s", cacheStr, err.Error())
+//	}
+//
+//	rss, err := getMemByStr(rssStr)
+//	if err != nil {
+//		return 0, fmt.Errorf("rss[%s] is not a valid float: %s", cacheStr, err.Error())
+//	}
+//
+//	return cache - rss, nil
+//}
+
+func getContainerMemAvailable(ctx context.Context, cr, cId string) (memAvailable float64, err error) {
+	path, err := cgroup.GetContainerCgroupPath(ctx, cr, cId, cgroup.MEMORY)
+	if err != nil {
+		return 0, err
+	}
+	memUsageStr, err := cgroup.ReadCgroupFileStr(ctx, path, cgroup.MEMORY, cgroup.MemoryUsageInBytesFile)
+	if err != nil {
+		return 0, fmt.Errorf("read usage mem error: %s", err.Error())
+	}
+
+	memUsage, err := getMemByStr(memUsageStr)
+	if err != nil {
+		return 0, fmt.Errorf("get value from mem string[%s] error: %s", memUsageStr, err.Error())
+	}
+
+	//memCache, err := getContainerMemCache(ctx, cr, cId)
+	//if err != nil {
+	//	return 0, fmt.Errorf("get cache mem error: %s", err.Error())
+	//}
+
+	memTotal, err := getContainerMemTotal(ctx, cr, cId)
+	if err != nil {
+		return 0, fmt.Errorf("get total mem error: %s", err.Error())
+	}
+
+	//return memTotal - memUsage + memCache, nil
+	return memTotal - memUsage, nil
+}
+
+func getHostMemTotal(ctx context.Context, cr, cId string) (float64, error) {
+	cmd := fmt.Sprintf("grep -m1 MemTotal /proc/meminfo | sed 's/[^0-9]*//g'")
+	totalStr, err := cmdexec.ExecCommonWithNS(ctx, cr, cId, cmd, []string{namespace.MNT})
+	totalStr = strings.TrimSpace(totalStr)
+	total, err := strconv.ParseFloat(totalStr, 64)
+	if err != nil {
+		return -1, fmt.Errorf("get total mem[%s] error: %s", totalStr, err.Error())
+	}
+
+	return total, err
+}
+
+func getHostMemAvailable(ctx context.Context, cr, cId string) (float64, error) {
+	cmd := fmt.Sprintf("grep -m1 MemAvailable /proc/meminfo | sed 's/[^0-9]*//g'")
+	availStr, err := cmdexec.ExecCommonWithNS(ctx, cr, cId, cmd, []string{namespace.MNT})
+	availStr = strings.TrimSpace(availStr)
+	avail, err := strconv.ParseFloat(availStr, 64)
+	if err != nil {
+		return -1, fmt.Errorf("get avail mem[%s] error: %s", availStr, err.Error())
+	}
+
+	return avail, err
+}
+
+func getMemTotal(ctx context.Context, cr, cId string) (float64, error) {
+	if cr == "" {
+		return getHostMemTotal(ctx, cr, cId)
+	} else {
+		return getContainerMemTotal(ctx, cr, cId)
+	}
+}
+
+func getMemAvailable(ctx context.Context, cr, cId string) (float64, error) {
+	if cr == "" {
+		return getHostMemAvailable(ctx, cr, cId)
+	} else {
+		return getContainerMemAvailable(ctx, cr, cId)
+	}
+}
+
+func getMemByStr(content string) (float64, error) {
+	value, err := strconv.ParseFloat(content, 64)
+	// Not allowed to use --percent to inject pressure into containers without setting memory limits
+	if value == cgroup.MemUnLimit {
+		return -1, fmt.Errorf("Container has not set a memory limit and should be filled with a fixed size of pressure using the --bytes.")
+	}
+
+	if err != nil {
+		return 0, err
+	}
+	return value / 1024, nil
 }

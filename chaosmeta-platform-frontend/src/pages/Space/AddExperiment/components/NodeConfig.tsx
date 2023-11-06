@@ -1,8 +1,15 @@
-import DynamicForm from '@/components/DynamicForm';
+import KubernetesDeploymentNameSelect from '@/components/Select/KubernetesDeploymentNameSelect';
 import KubernetesNamespaceSelect from '@/components/Select/KubernetesNamespaceSelect';
+import KubernetesPodNodeSelect from '@/components/Select/KubernetesPodNodeSelect';
 import KubernetesPodSelect from '@/components/Select/KubernetesPodSelect';
 import ShowText from '@/components/ShowText';
-import { queryFaultNodeFields } from '@/services/chaosmeta/ExperimentController';
+import { nodeTypeMap, nodeTypeMapUS } from '@/constants';
+import {
+  queryFaultNodeFields,
+  queryFlowNodeFields,
+  queryMeasureNodeFields,
+} from '@/services/chaosmeta/ExperimentController';
+import { queryFaultNodeDetail } from '@/services/chaosmeta/KubernetesController';
 import { formatDuration } from '@/utils/format';
 import {
   CheckOutlined,
@@ -10,12 +17,11 @@ import {
   DeleteOutlined,
   EditOutlined,
 } from '@ant-design/icons';
-import { useRequest } from '@umijs/max';
+import { getLocale, useIntl, useRequest } from '@umijs/max';
 import {
   Button,
   Form,
   Input,
-  InputNumber,
   Popconfirm,
   Select,
   Space,
@@ -24,6 +30,7 @@ import {
 } from 'antd';
 import React, { useEffect, useState } from 'react';
 import { NodeConfigContainer } from '../style';
+import DynamicFormRender from './DynamicFormRender';
 
 interface IProps {
   form: any;
@@ -51,6 +58,9 @@ const NodeConfig: React.FC<IProps> = (props) => {
   const [fieldList, setFieldList] = useState<any[]>([]);
   const [durationType, setDurationType] = useState<string>('second');
   const [kubernetesNamespace, setKubernetesNamespace] = useState<string>('');
+  // 用于判断当前节点位于哪个父节点下
+  const [targetName, setTargetName] = useState<string>('');
+  const intl = useIntl();
 
   /**
    * 更新节点属性的方法
@@ -63,13 +73,18 @@ const NodeConfig: React.FC<IProps> = (props) => {
       const parentIndex = values?.findIndex(
         (item: { row: any }) => item?.row === activeCol?.parentId,
       );
-      if (parentIndex !== -1 && activeCol?.index >= 0) {
+      if (
+        parentIndex !== -1 &&
+        activeCol?.index >= 0 &&
+        values[parentIndex]?.children?.length > 0
+      ) {
         values[parentIndex].children[activeCol.index][key] = value;
         // 同时更新保存当前节点信息
         setActiveCol((origin: any) => {
           return { ...origin, [key]: value, state: true };
         });
       }
+
       return values; // 返回更新后的 values 数组
     });
   };
@@ -80,7 +95,12 @@ const NodeConfig: React.FC<IProps> = (props) => {
   const handleEditTitle = () => {
     const curTitle = form.getFieldValue('name');
     if (!curTitle) {
-      message.info('请输入名称');
+      message.info(
+        `${intl.formatMessage({ id: 'inputPlaceholder' })} ${intl.formatMessage(
+          { id: 'name' },
+        )}`,
+      );
+      return;
     }
     handleEditNode('name', curTitle);
     setEditTitleState(false);
@@ -91,11 +111,12 @@ const NodeConfig: React.FC<IProps> = (props) => {
    */
   const hanldeUpdateNode = (params: any) => {
     let curTime = form.getFieldValue('duration');
-    if (durationType === 'minute') {
-      curTime = `${curTime}m`;
-    } else {
-      curTime = `${curTime}s`;
-    }
+    // if (durationType === 'minute') {
+    //   curTime = `${curTime}m`;
+    // } else {
+    //   curTime = `${curTime}s`;
+    // }
+
     setArrangeList((result: any) => {
       const values = JSON.parse(JSON.stringify(result)); // 将 result 对象深拷贝一份
       const parentIndex = values?.findIndex(
@@ -123,12 +144,40 @@ const NodeConfig: React.FC<IProps> = (props) => {
       onChange={(value) => {
         setDurationType(value);
       }}
-      style={{ width: 60 }}
+      style={{ width: 90 }}
     >
-      <Select.Option value="second">秒</Select.Option>
-      <Select.Option value="minute">分</Select.Option>
+      <Select.Option value="second">
+        {intl.formatMessage({ id: 'second' })}
+      </Select.Option>
+      {/* <Select.Option value="minute">
+        {intl.formatMessage({ id: 'minute' })}
+      </Select.Option> */}
     </Select>
   );
+
+  // 表单赋值
+  const handleFormAssignment = () => {
+    // 初始化给表单赋值
+    const initSecond = formatDuration(activeCol?.duration);
+    let target_name = activeCol?.exec_range?.target_name;
+    if (!Array.isArray(target_name)) {
+      target_name = activeCol?.exec_range?.target_name
+        ? activeCol?.exec_range?.target_name?.split(',')
+        : undefined;
+    }
+    setKubernetesNamespace(activeCol?.exec_range?.target_namespace);
+    form.setFieldsValue({
+      ...activeCol,
+      duration: `${initSecond}s`,
+      exec_type_name: (getLocale() === 'en-US' ? nodeTypeMapUS : nodeTypeMap)[
+        activeCol?.exec_type
+      ],
+      exec_range: {
+        ...activeCol?.exec_range,
+        target_name,
+      },
+    });
+  };
 
   /**
    * 故障节点 - 查询节点表单配置信息
@@ -139,20 +188,48 @@ const NodeConfig: React.FC<IProps> = (props) => {
     onSuccess: (res: any) => {
       if (res?.code === 200) {
         setFieldList(res?.data?.args || []);
-        // 初始化给表单赋值
-        const initSecond = formatDuration(activeCol?.duration);
-        const target_name = activeCol?.exec_range?.target_name
-          ? activeCol?.exec_range?.target_name?.split(',')
-          : undefined;
-        setKubernetesNamespace(activeCol?.exec_range?.target_namespace);
-        form.setFieldsValue({
-          ...activeCol,
-          duration: initSecond,
-          exec_range: {
-            ...activeCol?.exec_range,
-            target_name,
-          },
-        });
+        handleFormAssignment();
+      }
+    },
+  });
+
+  /**
+   * 流量注入 - 查询节点表单配置信息
+   */
+  const getFlowNodeFields = useRequest(queryFlowNodeFields, {
+    manual: true,
+    formatResult: (res) => res,
+    onSuccess: (res: any) => {
+      if (res?.code === 200) {
+        setFieldList(res?.data?.args || []);
+        handleFormAssignment();
+      }
+    },
+  });
+
+  /**
+   * 度量引擎 - 查询节点表单配置信息
+   */
+  const getMeasureNodeFields = useRequest(queryMeasureNodeFields, {
+    manual: true,
+    formatResult: (res) => res,
+    onSuccess: (res: any) => {
+      if (res?.code === 200) {
+        setFieldList(res?.data?.args || []);
+        handleFormAssignment();
+      }
+    },
+  });
+
+  /**
+   * 根据targetid获取该节点信息，用于判断该节点是否位于node或pod下
+   */
+  const getFaultNodeDetail = useRequest(queryFaultNodeDetail, {
+    manual: true,
+    formatResult: (res) => res,
+    onSuccess: (res: any) => {
+      if (res?.code === 200) {
+        setTargetName(res?.data?.name);
       }
     },
   });
@@ -184,29 +261,174 @@ const NodeConfig: React.FC<IProps> = (props) => {
     });
   };
 
+  // 是否为node下的节点
+  const isNode = () => {
+    // 只有故障节点下的才有可能有node节点
+    if (activeCol?.exec_type !== 'fault') {
+      return false;
+    }
+    // 父节点有两个node，一种是scope_id为2，另一种是通过接口查询name为node
+    return activeCol?.scope_id === 2 || targetName === 'node';
+  };
+
+  // 是否为pod下的节点
+  const isPod = () => {
+    // 父节点有两个pod，一种是scope_id为1，另一种是通过接口查询name为pod
+    return activeCol?.scope_id === 1 || targetName === 'pod';
+  };
+
   useEffect(() => {
     form.resetFields();
     if (activeCol?.uuid) {
       // 请求动态表单渲染
       if (activeCol?.exec_id) {
-        getFaultNodeFields?.run({ id: activeCol?.exec_id });
+        // 度量引擎
+        if (activeCol?.exec_type === 'measure') {
+          getMeasureNodeFields?.run({ id: activeCol?.exec_id });
+        }
+        // 故障注入节点
+        if (activeCol?.exec_type === 'fault') {
+          getFaultNodeFields?.run({ id: activeCol?.exec_id });
+          getFaultNodeDetail?.run({ targetId: activeCol?.target_id });
+        }
+        // 流量注入
+        if (activeCol?.exec_type === 'flow') {
+          getFlowNodeFields?.run({ id: activeCol?.exec_id });
+        }
       }
-      // 初始化给表单赋值
-      const initSecond = formatDuration(activeCol?.duration);
-      const target_name = activeCol?.exec_range?.target_name
-        ? activeCol?.exec_range?.target_name?.split(',')
-        : undefined;
-      setKubernetesNamespace(activeCol?.exec_range?.target_namespace);
-      form.setFieldsValue({
-        ...activeCol,
-        duration: initSecond,
-        exec_range: {
-          ...activeCol?.exec_range,
-          target_name,
-        },
-      });
+      handleFormAssignment();
     }
   }, [activeCol?.uuid]);
+
+  // 持续时长失去焦点的操作
+  const handleDurationBlur = () => {
+    const durationValue = form.getFieldValue('duration');
+    let newDuration = durationValue;
+    // 输入框有值且没有单位时拼接单位
+    if (durationValue && !durationValue?.includes('s')) {
+      newDuration = `${durationValue}s`;
+      form.setFieldValue('duration', newDuration);
+    }
+    // 修改后更新时长
+    handleEditNode('duration', newDuration);
+  };
+
+  // 攻击范围下不同节点渲染不同
+  const attackRangeRender = () => {
+    // 父节点为node时
+    if (isNode()) {
+      return (
+        <>
+          <Form.Item
+            label="Kubernetes Label"
+            name={['exec_range', 'target_label']}
+          >
+            <Input
+              placeholder={intl.formatMessage({
+                id: 'inputPlaceholder',
+              })}
+            />
+          </Form.Item>
+          <Form.Item label={'NodeName'} name={['exec_range', 'target_name']}>
+            <KubernetesPodNodeSelect mode="multiple" />
+          </Form.Item>
+          <Form.Item label="Ip" name={['exec_range', 'target_ip']}>
+            <Input
+              placeholder={intl.formatMessage({
+                id: 'inputPlaceholder',
+              })}
+            />
+          </Form.Item>
+        </>
+      );
+    }
+    // 父节点为pod时
+    if (isPod()) {
+      return (
+        <>
+          <Form.Item
+            label="Kubernetes Namespace"
+            name={['exec_range', 'target_namespace']}
+            rules={[
+              {
+                required: true,
+                message: intl.formatMessage({
+                  id: 'inputPlaceholder',
+                }),
+              },
+            ]}
+          >
+            <KubernetesNamespaceSelect
+              onChange={(val: any) => {
+                setKubernetesNamespace(val);
+                form.setFieldValue(['exec_range', 'target_name'], undefined);
+              }}
+            />
+          </Form.Item>
+          <Form.Item
+            label="Kubernetes Label"
+            name={['exec_range', 'target_label']}
+          >
+            <Input
+              placeholder={intl.formatMessage({
+                id: 'inputPlaceholder',
+              })}
+            />
+          </Form.Item>
+          <Form.Item label={'PodName'} name={['exec_range', 'target_name']}>
+            <KubernetesPodSelect
+              mode="multiple"
+              form={form}
+              kubernetesNamespace={kubernetesNamespace}
+            />
+          </Form.Item>
+        </>
+      );
+    }
+    // 父节点为deployment时
+    if (targetName === 'deployment') {
+      return (
+        <>
+          <Form.Item
+            label="Kubernetes Namespace"
+            name={['exec_range', 'target_namespace']}
+            rules={[
+              {
+                required: true,
+                message: intl.formatMessage({
+                  id: 'inputPlaceholder',
+                }),
+              },
+            ]}
+          >
+            <KubernetesNamespaceSelect
+              onChange={(val: any) => {
+                setKubernetesNamespace(val);
+                form.setFieldValue(['exec_range', 'target_name'], undefined);
+              }}
+            />
+          </Form.Item>
+          <Form.Item
+            label={'DeploymentName'}
+            name={['exec_range', 'target_name']}
+          >
+            <KubernetesDeploymentNameSelect
+              mode="multiple"
+              form={form}
+              kubernetesNamespace={kubernetesNamespace}
+            />
+          </Form.Item>
+        </>
+      );
+    }
+  };
+
+  useEffect(() => {
+    const initSecond = formatDuration(activeCol?.duration);
+    form.setFieldsValue({
+      duration: `${initSecond}s`,
+    });
+  }, [activeCol?.duration]);
 
   return (
     <NodeConfigContainer>
@@ -219,13 +441,23 @@ const NodeConfig: React.FC<IProps> = (props) => {
                   <Form.Item
                     name={'name'}
                     noStyle
-                    rules={[{ required: true, message: '请输入' }]}
+                    rules={[
+                      {
+                        required: true,
+                        message: intl.formatMessage({ id: 'inputPlaceholder' }),
+                      },
+                    ]}
                   >
-                    <Input placeholder="请输入" style={{ width: '120px' }} />
+                    <Input
+                      placeholder={intl.formatMessage({
+                        id: 'inputPlaceholder',
+                      })}
+                      style={{ width: '120px' }}
+                    />
                   </Form.Item>
                 ) : (
                   <Form.Item name={'name'} noStyle>
-                    <ShowText value="CPU燃烧" />
+                    <ShowText />
                   </Form.Item>
                 )}
                 {editTitleState ? (
@@ -263,7 +495,7 @@ const NodeConfig: React.FC<IProps> = (props) => {
             <Space size={24}>
               {!disabled && (
                 <Popconfirm
-                  title="你确定要删除吗？"
+                  title={intl.formatMessage({ id: 'deleteConfirmText' })}
                   onConfirm={handleDeleteNode}
                 >
                   <DeleteOutlined style={{ color: '#FF4D4F' }} />
@@ -278,92 +510,90 @@ const NodeConfig: React.FC<IProps> = (props) => {
             </Space>
           </div>
           <div className="form">
-            <Form.Item label="节点类型" name="exec_type_name">
-              <Input placeholder="节点类型" disabled />
-            </Form.Item>
             <Form.Item
-              label={activeCol?.exec_type === 'wait' ? '等待时长' : '持续时长'}
-              name="duration"
-              rules={[
-                { required: true },
-                {
-                  validator: (_, value) => {
-                    if ((value || value === 0) && value <= 0) {
-                      return Promise.reject(
-                        `${
-                          activeCol?.exec_type === 'wait'
-                            ? '等待时长'
-                            : '持续时长'
-                        }大于0`,
-                      );
-                    }
-                    return Promise.resolve();
-                  },
-                },
-              ]}
+              label={intl.formatMessage({ id: 'nodeType' })}
+              name="exec_type_name"
             >
-              <InputNumber
-                addonAfter={selectAfter}
-                placeholder="请输入"
-                // onChange={() => {
-                //   handleTimeChange();
-                // }}
-                style={{ width: '100%' }}
-              />
+              <Input disabled />
             </Form.Item>
+
+            {/* 为度量引擎或流量注入时不展示 */}
+            {activeCol?.exec_type !== 'flow' &&
+              activeCol?.exec_type !== 'measure' && (
+                <>
+                  <Form.Item
+                    label={intl.formatMessage({ id: 'atomicCapabilities' })}
+                    name="exec_name"
+                  >
+                    <Input disabled />
+                  </Form.Item>
+                  <div className="range">
+                    {intl.formatMessage({ id: 'commonParameters' })}
+                  </div>
+                  <Form.Item
+                    label={
+                      activeCol?.exec_type === 'wait'
+                        ? intl.formatMessage({ id: 'waitTime' })
+                        : intl.formatMessage({ id: 'duration' })
+                    }
+                    name="duration"
+                    rules={[
+                      { required: true },
+                      {
+                        validator: (_, value) => {
+                          if ((value || value === 0) && value <= 0) {
+                            return Promise.reject(
+                              `${
+                                activeCol?.exec_type === 'wait'
+                                  ? intl.formatMessage({ id: 'waitTime' })
+                                  : intl.formatMessage({ id: 'duration' })
+                              } ${intl.formatMessage({ id: 'limit' })}`,
+                            );
+                          }
+                          return Promise.resolve();
+                        },
+                      },
+                    ]}
+                  >
+                    <Input
+                      addonAfter={selectAfter}
+                      placeholder={intl.formatMessage({
+                        id: 'inputPlaceholder',
+                      })}
+                      onBlur={() => {
+                        handleDurationBlur();
+                      }}
+                      style={{ width: '100%' }}
+                    />
+                  </Form.Item>
+                </>
+              )}
+
             {/* 等待时长类型没有以下配置信息 */}
             {activeCol?.exec_type !== 'wait' && (
               <>
                 {/* 动态表单部分 */}
-                <DynamicForm fieldList={fieldList} parentName={'args_value'} />
-                <div className="range">攻击范围</div>
-                <Form.Item
-                  label="Kubernetes Namespace"
-                  name={['exec_range', 'target_namespace']}
-                  rules={[{ required: true, message: '请输入' }]}
-                >
-                  <KubernetesNamespaceSelect
-                    onChange={(val: any) => {
-                      setKubernetesNamespace(val);
-                    }}
-                  />
-                </Form.Item>
-                <Form.Item
-                  label="Kubernetes Label"
-                  name={['exec_range', 'target_lebel']}
-                >
-                  <Input placeholder="请输入" />
-                </Form.Item>
-                {/* <Form.Item label="应用" name={['exec_range', 'target_app']}>
-                  <Input placeholder="请输入" />
-                </Form.Item> */}
-                <Form.Item label="name" name={['exec_range', 'target_name']}>
-                  <KubernetesPodSelect
-                    mode="multiple"
-                    form={form}
-                    kubernetesNamespace={kubernetesNamespace}
-                  />
-                </Form.Item>
-                {/* 一级节点为node时展示，node的id为2 */}
-                {activeCol?.scope_id === 2 && (
+                <DynamicFormRender
+                  fieldList={fieldList}
+                  form={form}
+                  nodeType={activeCol?.exec_type}
+                  handleEditNode={handleEditNode}
+                />
+                {/* 节点父类型为node或pod 或deployment时才展示 攻击范围 */}
+                {(isNode() || isPod() || targetName === 'deployment') && (
                   <>
-                    <Form.Item label="Ip" name={['exec_range', 'target_ip']}>
-                      <Input placeholder="请输入" />
-                    </Form.Item>
+                    <div className="range">
+                      {intl.formatMessage({ id: 'attackRange' })}
+                    </div>
+                    {attackRangeRender()}
                   </>
                 )}
-                {/* <Form.Item
-                  label="Hostname"
-                  name={['exec_range', 'target_hostname']}
-                >
-                  <Input placeholder="请输入" />
-                </Form.Item> */}
               </>
             )}
           </div>
           <div className="config-footer">
             <Button type="primary" onClick={handleConfirm}>
-              确认
+              {intl.formatMessage({ id: 'confirm' })}
             </Button>
           </div>
         </Form>

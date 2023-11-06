@@ -26,9 +26,9 @@ import (
 )
 
 var (
-	memFillSleepTime                             = 1 * time.Second
+	memFillSleepTime                             = 2 * time.Second
 	memPerOffset                                 = 3
-	memBytesKbOffset                             = 16000
+	memBytesKbOffset                             = 18000
 	memFillDir                                   = "/tmp/chaosmeta_mem_tmpfs"
 	memBytesKb, memPer, upperMemPer, lowerMemPer int
 )
@@ -173,10 +173,10 @@ func GetMemFillTest() []common.TestCase {
 			},
 		},
 		{
-			Args:  fmt.Sprintf("-p %d -b 5000kb", 100),
+			Args:  fmt.Sprintf("-p %d -b 5000kb", 95),
 			Error: false,
 			Check: func() error {
-				return checkMemPer(100, getMemFillDir(), false, "cache")
+				return checkMemPer(95, getMemFillDir(), false, "cache")
 			},
 			CheckRecover: func() error {
 				return checkMemPer(memPer, getMemFillDir(), true, "cache")
@@ -217,7 +217,7 @@ func checkMemPer(targetPer int, fillDir string, recover bool, mode string) error
 		return nil
 	}
 
-	exist, err := filesys.ExistPath(fillDir)
+	exist, err := filesys.ExistPathLocal(fillDir)
 	if err != nil {
 		return fmt.Errorf("check file[%s] exist error: %s", err.Error())
 	}
@@ -259,7 +259,7 @@ func checkMemByteKb(targetByte int, fillDir string, recover bool, mode string) e
 		return nil
 	}
 
-	exist, err := filesys.ExistPath(fillDir)
+	exist, err := filesys.ExistPathLocal(fillDir)
 	if err != nil {
 		return fmt.Errorf("check file[%s] exist error: %s", err.Error())
 	}

@@ -1,6 +1,6 @@
 import { formatTime } from '@/utils/format';
 import { EllipsisOutlined } from '@ant-design/icons';
-import { history, useModel } from '@umijs/max';
+import { history, useIntl, useModel } from '@umijs/max';
 import { Col, Dropdown, Row, Tooltip } from 'antd';
 import React from 'react';
 import { SpaceCard } from './style';
@@ -13,10 +13,24 @@ interface IProps {
 const SpaceList: React.FC<IProps> = (props) => {
   const { pageData, handleDelete } = props;
   const { userInfo, setCurSpace } = useModel('global');
+  const intl = useIntl();
 
   const items = (spaceId: number) => [
     {
-      label: <div>空间设置</div>,
+      label: (
+        <div
+          onClick={() => {
+            history.push({
+              pathname: '/space/setting',
+              query: {
+                spaceId: spaceId?.toString(),
+              },
+            });
+          }}
+        >
+          {intl.formatMessage({ id: 'spaceSetting' })}
+        </div>
+      ),
       key: 'spaceSetting',
     },
     {
@@ -26,7 +40,7 @@ const SpaceList: React.FC<IProps> = (props) => {
             handleDelete(spaceId);
           }}
         >
-          删除
+          {intl.formatMessage({ id: 'delete' })}
         </div>
       ),
       key: 'delete',
@@ -101,7 +115,8 @@ const SpaceList: React.FC<IProps> = (props) => {
               <Tooltip
                 // 未加入的提示
                 title={
-                  permission === -1 && '你没有该空间的权限，请联系读写成员'
+                  permission === -1 &&
+                  intl.formatMessage({ id: 'spaceManagement.noAuth.tip' })
                 }
               >
                 <div className="header">
@@ -135,7 +150,13 @@ const SpaceList: React.FC<IProps> = (props) => {
                     }}
                   >
                     <Tooltip
-                      title={permission === 0 ? '只读用户占无法使用此功能' : ''}
+                      title={
+                        permission === 0
+                          ? intl.formatMessage({
+                              id: 'spaceManagement.noAuth.readonly.tip',
+                            })
+                          : ''
+                      }
                     >
                       <EllipsisOutlined />
                     </Tooltip>
@@ -144,28 +165,36 @@ const SpaceList: React.FC<IProps> = (props) => {
               </Tooltip>
 
               <div className="desc">
-                <div>描述：</div>
+                <div>{intl.formatMessage({ id: 'description' })}：</div>
                 <Tooltip title={item?.namespaceInfo?.description}>
                   <span>{item?.namespaceInfo?.description}</span>
                 </Tooltip>
               </div>
               <Row className="footer">
                 <Col className="ellipsis" span={12}>
-                  <Tooltip title="读写成员">
+                  <Tooltip
+                    title={intl.formatMessage({ id: 'spaceManagement.write' })}
+                  >
                     <img src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*_TiCQ6O9B_oAAAAAAAAAAAAADmKmAQ/original" />
                   </Tooltip>
                   {renderAdmin(item?.users)}
                 </Col>
 
                 <Col span={6}>
-                  <Tooltip title="实验数量">
+                  <Tooltip
+                    title={intl.formatMessage({
+                      id: 'spaceManagement.experimentCount',
+                    })}
+                  >
                     <img src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*lps4TYQ9p4MAAAAAAAAAAAAADmKmAQ/original" />
                     <span>{item?.experimentTotal || 0}</span>
                   </Tooltip>
                 </Col>
 
                 <Col span={6} style={{ textAlign: 'right' }}>
-                  <Tooltip title="空间成员">
+                  <Tooltip
+                    title={intl.formatMessage({ id: 'spaceManagement.member' })}
+                  >
                     <img src="https://mdn.alipayobjects.com/huamei_d3kmvr/afts/img/A*GLyEQrfTN68AAAAAAAAAAAAADmKmAQ/original" />
                     <span>{item?.userTotal || 0}</span>
                   </Tooltip>

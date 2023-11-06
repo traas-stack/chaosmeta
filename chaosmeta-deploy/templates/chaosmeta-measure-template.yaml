@@ -102,6 +102,8 @@ spec:
                   - updateTime
                   type: object
                 type: array
+              meetTime:
+                type: string
               message:
                 type: string
               nextTime:
@@ -119,6 +121,7 @@ spec:
             - createTime
             - failedMeasure
             - initialData
+            - meetTime
             - message
             - nextTime
             - status
@@ -283,6 +286,7 @@ spec:
     targetPort: 9443
   selector:
     control-plane: controller-manager
+    app: chaosmeta-measure
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -302,19 +306,21 @@ spec:
   selector:
     matchLabels:
       control-plane: controller-manager
+      app: chaosmeta-measure
   template:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-container: manager
       labels:
         control-plane: controller-manager
+        app: chaosmeta-measure
     spec:
       containers:
       - args:
         - --leader-elect
         command:
         - /manager
-        image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-measure-controller:v0.0.5
+        image: DEPLOYREGISTRY/chaosmeta-measure-controller:v0.0.6
         livenessProbe:
           httpGet:
             path: /healthz

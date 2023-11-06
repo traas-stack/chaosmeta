@@ -1,5 +1,5 @@
 import { PageContainer } from '@ant-design/pro-components';
-import { history, useRequest } from '@umijs/max';
+import { getLocale, history, useIntl, useRequest } from '@umijs/max';
 import {
   Alert,
   Badge,
@@ -23,7 +23,11 @@ import {
   queryExperimentResultDetail,
   stopExperimentResult,
 } from '@/services/chaosmeta/ExperimentController';
-import { arrangeDataOriginTranstion, formatDuration } from '@/utils/format';
+import {
+  arrangeDataOriginTranstion,
+  formatDuration,
+  getIntlLabel,
+} from '@/utils/format';
 import { ExclamationCircleFilled } from '@ant-design/icons';
 import ArrangeInfoShow from '../ExperimentDetail/ArrangeInfoShow';
 import ShowLog from './ShowLog';
@@ -39,6 +43,7 @@ const AddExperiment = () => {
   const [curNodeDetail, setCurNodeDetail] = useState<any>({});
   // 结果详情
   const [resultDetail, setResultDetail] = useState<any>({});
+  const intl = useIntl();
 
   /**
    * 获取实验结果详情
@@ -96,7 +101,11 @@ const AddExperiment = () => {
     formatResult: (res) => res,
     onSuccess: (res) => {
       if (res?.code === 200) {
-        message.success(`${resultDetail?.name}实验已停止`);
+        message.success(
+          `${resultDetail?.name}${intl.formatMessage({
+            id: 'experimentResult.stop.text',
+          })}`,
+        );
         getResultDetail?.run({
           uuid: history?.location?.query?.resultId as string,
         });
@@ -109,7 +118,7 @@ const AddExperiment = () => {
    */
   const handleDeleteAccount = () => {
     Modal.confirm({
-      title: '确认要停止实验吗？',
+      title: intl.formatMessage({ id: 'stopConfirmText' }),
       icon: <ExclamationCircleFilled />,
       onOk() {
         return stopExperiment?.run({ uuid: resultDetail?.uuid });
@@ -128,7 +137,7 @@ const AddExperiment = () => {
               handleDeleteAccount();
             }}
           >
-            停止
+            {intl.formatMessage({ id: 'stop' })}
           </Button>
         )}
       </Space>
@@ -138,10 +147,10 @@ const AddExperiment = () => {
   const items: TabsProps['items'] = [
     {
       key: 'log',
-      label: `实验日志`,
+      label: intl.formatMessage({ id: 'experimentLog' }),
       children: <ShowLog message={curNodeDetail?.message || ''} />,
     },
-    // todot -- 后端暂不支持
+    // todo -- 后端暂不支持
     // {
     //   key: 'index',
     //   label: `实验观测指标`,
@@ -160,6 +169,12 @@ const AddExperiment = () => {
   };
 
   // 不同状态展示不同文案
+  const statusTextUS: any = {
+    Succeeded: 'The run is over and the experiment is successful.',
+    Failed: 'The run ends and the experiment fails. Reason for failure: ',
+    error: 'End of run, experiment error. wrong reason: ',
+  };
+  // 不同状态展示不同文案
   const statusText: any = {
     Succeeded: '运行结束，实验成功。',
     Failed: '运行结束，实验失败。失败原因：',
@@ -170,7 +185,9 @@ const AddExperiment = () => {
     return (
       <div>
         {resultDetail?.name}{' '}
-        <Tag color={handleMateStatus()?.color}>{handleMateStatus()?.label}</Tag>
+        <Tag color={handleMateStatus()?.color}>
+          {getIntlLabel(handleMateStatus())}
+        </Tag>
       </div>
     );
   };
@@ -198,14 +215,14 @@ const AddExperiment = () => {
       >
         <div className="content">
           <div className="content-title">
-            <div>实验进度</div>
+            <div>{intl.formatMessage({ id: 'experimentProgress' })}</div>
             {/* 后端不支持展示进度，只有成功展示进度条，其他情况展示当前状态 */}
             {resultDetail?.status === 'Succeeded' ? (
               <Progress percent={100} size="small" />
             ) : (
               <span>
                 <Badge color={handleMateStatus()?.color} />{' '}
-                {handleMateStatus()?.label}
+                {getIntlLabel(handleMateStatus())}
               </span>
             )}
           </div>
@@ -214,20 +231,14 @@ const AddExperiment = () => {
             resultDetail?.status !== 'Pending' && (
               <Alert
                 message={
-                  <>{`${statusText[resultDetail?.status]}${
-                    resultDetail?.message || ''
-                  }`}</>
+                  <>{`${
+                    (getLocale() === 'en-US' ? statusTextUS : statusText)[
+                      resultDetail?.status
+                    ]
+                  }${resultDetail?.message || ''}`}</>
                 }
                 style={{ marginBottom: '16px' }}
                 type={handleMateStatus()?.type}
-                // action={
-                //   (resultDetail?.status === 'error' ||
-                //     resultDetail?.status === 'Failed') && (
-                //     <Button type="link" onClick={() => {}}>
-                //       查看详情
-                //     </Button>
-                //   )
-                // }
                 showIcon
               />
             )}
@@ -238,6 +249,7 @@ const AddExperiment = () => {
             curExecSecond={formatDuration(curExecSecond)}
             isResult
             getExperimentArrangeNodeDetail={getExperimentArrangeNodeDetail}
+            setCurNodeDetail={setCurNodeDetail}
           />
           {/* 日志信息 */}
           <div className="log">

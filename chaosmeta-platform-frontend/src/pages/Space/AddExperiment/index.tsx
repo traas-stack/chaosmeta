@@ -13,7 +13,7 @@ import {
 import { renderScheduleType, renderTags } from '@/utils/renderItem';
 import { EditOutlined, ExclamationCircleFilled } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
-import { history, useModel, useRequest } from '@umijs/max';
+import { history, useIntl, useModel, useRequest } from '@umijs/max';
 import { Button, Form, Modal, Space, Spin, message } from 'antd';
 import { useEffect, useState } from 'react';
 import ArrangeContent from './ArrangeContent';
@@ -29,6 +29,7 @@ const AddExperiment = () => {
   // 编辑基本信息抽屉
   const [infoDrawerOpen, setInfoDrawerOpen] = useState(false);
   const [baseInfo, setBaseInfo] = useState<any>({});
+  const intl = useIntl();
 
   /**
    * 获取实验详情
@@ -63,7 +64,7 @@ const AddExperiment = () => {
     formatResult: (res) => res,
     onSuccess: (res) => {
       if (res?.code === 200) {
-        message.success('更新成功');
+        message.success(intl.formatMessage({ id: 'updateText' }));
         history?.push('/space/experiment');
       }
     },
@@ -77,7 +78,7 @@ const AddExperiment = () => {
     formatResult: (res) => res,
     onSuccess: (res) => {
       if (res?.code === 200) {
-        message.success('创建成功');
+        message.success(intl.formatMessage({ id: 'createText' }));
         history?.push('/space/experiment');
       }
     },
@@ -120,7 +121,7 @@ const AddExperiment = () => {
                   setInfoDrawerOpen(true);
                 }}
               >
-                查看
+                {intl.formatMessage({ id: 'check' })}
               </a>
             )}
           </>
@@ -137,14 +138,14 @@ const AddExperiment = () => {
     form.validateFields().then((values) => {
       const arrangeResult = arrangeDataResultTranstion(arrangeList);
       if (!baseInfo?.name || !baseInfo?.schedule_type) {
-        message.info('请完善基本信息');
+        message.info(intl.formatMessage({ id: 'addExperiment.basic.tip' }));
         return;
       }
       if (
         !arrangeResult?.length ||
         arrangeResult?.some((item) => !item?.nodeInfoState)
       ) {
-        message.info('请完善节点信息');
+        message.info(intl.formatMessage({ id: 'addExperiment.node.tip' }));
         return;
       }
       const newLabels = baseInfo?.labels?.map(
@@ -163,19 +164,32 @@ const AddExperiment = () => {
           target_id,
           exec_type,
           name,
+          exec_name,
+          measure_range,
+          flow_range,
         } = item;
-        // return;
         let target_name = exec_range?.target_name;
         if (Array.isArray(target_name)) {
           target_name = exec_range?.target_name?.join(',');
         }
-        const newExecRange = {
+        let newExecRange = {
           ...exec_range,
           target_name: target_name || undefined,
         };
-
+        let newExecName = exec_name;
+        if (exec_type === 'flow' || exec_type === 'measure') {
+          newExecRange = undefined;
+          newExecName = undefined;
+        }
+        if (measure_range) {
+          measure_range.duration = duration;
+        }
+        if (flow_range) {
+          flow_range.duration = duration;
+        }
         return {
           name,
+          exec_name: newExecName,
           args_value,
           exec_range: newExecRange,
           exec_id,
@@ -183,9 +197,11 @@ const AddExperiment = () => {
           column,
           uuid,
           duration,
-          scope_id,
-          target_id,
+          scope_id: scope_id ?? 0,
+          target_id: target_id ?? 0,
           exec_type,
+          measure_range,
+          flow_range,
         };
       });
       const params = {
@@ -212,7 +228,7 @@ const AddExperiment = () => {
     formatResult: (res) => res,
     onSuccess: (res) => {
       if (res?.code === 200) {
-        message.success('删除成功！');
+        message.success(intl.formatMessage({ id: 'deleteText' }));
         history.push('/space/experiment');
       }
     },
@@ -225,9 +241,9 @@ const AddExperiment = () => {
     const uuid = history?.location?.query?.experimentId as string;
     if (uuid) {
       Modal.confirm({
-        title: '确认要删除这个实验吗？',
+        title: intl.formatMessage({ id: 'experiment.delete.title' }),
         icon: <ExclamationCircleFilled />,
-        content: '删除实验将会删除该实验的配置，但不会删除历史实验结果！',
+        content: intl.formatMessage({ id: 'experiment.delete.content' }),
         onOk() {
           handleDeleteExperiment?.run({ uuid });
         },
@@ -240,10 +256,16 @@ const AddExperiment = () => {
       <Form form={form}>
         <div className="header-extra">
           <div>
-            <Form.Item name={'schedule_type'} label="触发方式">
+            <Form.Item
+              name={'schedule_type'}
+              label={intl.formatMessage({ id: 'triggerMode' })}
+            >
               {renderScheduleType(baseInfo)}
             </Form.Item>
-            <Form.Item name={'description'} label="描述">
+            <Form.Item
+              name={'description'}
+              label={intl.formatMessage({ id: 'description' })}
+            >
               <ShowText />
             </Form.Item>
           </div>
@@ -256,7 +278,7 @@ const AddExperiment = () => {
                   handleDeleteConfirm();
                 }}
               >
-                删除
+                {intl.formatMessage({ id: 'delete' })}
               </Button>
               <Button
                 ghost
@@ -266,7 +288,7 @@ const AddExperiment = () => {
                   handleSubmit();
                 }}
               >
-                完成
+                {intl.formatMessage({ id: 'finish' })}
               </Button>
             </Space>
           )}
@@ -286,17 +308,27 @@ const AddExperiment = () => {
 
   useEffect(() => {
     const { experimentId, spaceId } = history?.location?.query || {};
+    const sessionSpaceId = sessionStorage.getItem('spaceId');
     // 地址栏中存在空间id，需要将空间列表选项更新，并保存当前id
-    if (spaceId) {
+    if (spaceId || sessionSpaceId) {
+      if (!spaceId) {
+        history.push({
+          pathname: '/space/experiment/add',
+          query: {
+            spaceId: sessionSpaceId,
+          },
+        });
+      }
+      const curId = spaceId || sessionSpaceId;
       getUserSpaceAuth?.run({
-        id: spaceId as string,
+        id: curId as string,
       });
     }
     if (experimentId) {
       getExperimentDetail?.run({ uuid: experimentId as string });
     } else {
       setArrangeList(arrangeDataOriginTranstion([]));
-      form.setFieldValue('name', '实验名称');
+      form.setFieldValue('name', intl.formatMessage({ id: 'experimentName' }));
     }
   }, [history.location.query]);
 

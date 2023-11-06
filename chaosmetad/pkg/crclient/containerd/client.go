@@ -37,9 +37,9 @@ const (
 	defaultSocket = "/run/containerd/containerd.sock"
 
 	termExitCode = 143
-	// DefaultNS TODO: need to be a command line args
+	// TODO: need to be a command line args
 	defaultNS = "k8s.io"
-	//defaultNS    = "moby"
+	//defaultNS = "moby"
 )
 
 type Client struct {
@@ -277,6 +277,7 @@ func (d *Client) CpFile(ctx context.Context, containerID, src, dst string) error
 	pId := uuid.New().String()
 	var stdout, stderr bytes.Buffer
 
+	// TODO：To be optimized, should not rely on /bin/bash in the container
 	pro, err := task.Exec(ctx, pId, &specs.Process{
 		Args: []string{"/bin/bash", "-c", fmt.Sprintf("touch %s && chmod %s %s && cat > %s", dst, perm, dst, dst)},
 		Cwd:  "/",

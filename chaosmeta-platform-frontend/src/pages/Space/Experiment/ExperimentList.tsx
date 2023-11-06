@@ -11,6 +11,7 @@ import {
   copyExperimentFormatData,
   cronTranstionCN,
   formatTime,
+  getIntlLabel,
 } from '@/utils/format';
 import { renderTags } from '@/utils/renderItem';
 import { useParamChange } from '@/utils/useParamChange';
@@ -19,7 +20,7 @@ import {
   ExclamationCircleFilled,
   QuestionCircleOutlined,
 } from '@ant-design/icons';
-import { history, useModel, useRequest } from '@umijs/max';
+import { history, useIntl, useModel, useRequest } from '@umijs/max';
 import {
   Badge,
   Button,
@@ -59,21 +60,37 @@ const ExperimentList: React.FC<unknown> = () => {
   });
   const spaceIdChange = useParamChange('spaceId');
   const { spacePermission } = useModel('global');
+  const intl = useIntl();
+  // 请输入文案
+  const pleaseInput = intl.formatMessage({
+    id: 'pleaseInput',
+  });
+
+  // 请选择文案
+  const pleaseSelect = intl.formatMessage({
+    id: 'pleaseSelect',
+  });
 
   // 时间类型
   const timeTypes = [
     // 最近实验时间后端暂没有提供该字段，暂时使用update_time -- todo
     {
       value: 'update_time',
-      label: '最近实验时间',
+      label: intl.formatMessage({
+        id: 'latestExperimentalTime',
+      }),
     },
     {
       value: 'update_time',
-      label: '最近编辑时间',
+      label: intl.formatMessage({
+        id: 'lastEditTime',
+      }),
     },
     {
       value: 'next_exec',
-      label: '即将运行时间',
+      label: intl.formatMessage({
+        id: 'upcomingRunningTime',
+      }),
     },
   ];
 
@@ -121,6 +138,7 @@ const ExperimentList: React.FC<unknown> = () => {
       end_time,
       time_search_field: timeType,
       namespace_id: history?.location?.query?.spaceId as string,
+      time_type: end_time ? 'range' : undefined,
     };
     queryByPage.run(queryParam);
   };
@@ -133,7 +151,11 @@ const ExperimentList: React.FC<unknown> = () => {
     formatResult: (res) => res,
     onSuccess: (res) => {
       if (res?.code === 200) {
-        message.success('删除成功！');
+        message.success(
+          intl.formatMessage({
+            id: 'deleteText',
+          }),
+        );
         handleSearch();
       }
     },
@@ -147,7 +169,11 @@ const ExperimentList: React.FC<unknown> = () => {
     formatResult: (res) => res,
     onSuccess: (res) => {
       if (res?.code === 200) {
-        message.success('复制成功');
+        message.success(
+          intl.formatMessage({
+            id: 'copyText',
+          }),
+        );
         handleSearch();
       }
     },
@@ -159,9 +185,13 @@ const ExperimentList: React.FC<unknown> = () => {
   const handleDeleteConfirm = (uuid: string) => {
     if (uuid) {
       Modal.confirm({
-        title: '确认要删除这个实验吗？',
+        title: intl.formatMessage({
+          id: 'experiment.delete.title',
+        }),
         icon: <ExclamationCircleFilled />,
-        content: '删除实验将会删除该实验的配置，但不会删除历史实验结果！',
+        content: intl.formatMessage({
+          id: 'experiment.delete.content',
+        }),
         onOk() {
           handleDeleteExperiment?.run({ uuid });
           handleSearch();
@@ -179,22 +209,6 @@ const ExperimentList: React.FC<unknown> = () => {
     handleCreateExperiment?.run(params);
   };
 
-  // 触发方式
-  const triggerMode = [
-    {
-      text: '手动',
-      value: 'manual',
-    },
-    {
-      text: '单次定时',
-      value: 'once',
-    },
-    {
-      text: '周期性',
-      value: 'cron',
-    },
-  ];
-
   /**
    * 操作下拉列表
    * @param record
@@ -209,7 +223,9 @@ const ExperimentList: React.FC<unknown> = () => {
             handleCopyExperiment(record);
           }}
         >
-          复制
+          {intl.formatMessage({
+            id: 'copy',
+          })}
         </div>
       ),
     },
@@ -221,7 +237,9 @@ const ExperimentList: React.FC<unknown> = () => {
             handleDeleteConfirm(record?.uuid);
           }}
         >
-          删除
+          {intl.formatMessage({
+            id: 'delete',
+          })}
         </div>
       ),
     },
@@ -229,7 +247,9 @@ const ExperimentList: React.FC<unknown> = () => {
 
   const columns: ColumnsType<any> = [
     {
-      title: '名称',
+      title: intl.formatMessage({
+        id: 'name',
+      }),
       width: 160,
       dataIndex: 'name',
       render: (text: string, record: { uuid: string; labels: any[] }) => {
@@ -256,12 +276,16 @@ const ExperimentList: React.FC<unknown> = () => {
       },
     },
     {
-      title: '创建人',
+      title: intl.formatMessage({
+        id: 'creator',
+      }),
       width: 80,
       dataIndex: 'creator_name',
     },
     {
-      title: '实验次数',
+      title: intl.formatMessage({
+        id: 'numberOfExperiments',
+      }),
       width: 120,
       dataIndex: 'number',
       // sorter: true,
@@ -271,7 +295,7 @@ const ExperimentList: React.FC<unknown> = () => {
             <a
               onClick={() => {
                 history?.push({
-                  pathname: '/space/space/experiment-result',
+                  pathname: '/space/experiment-result',
                   query: {
                     experimentId: record?.uuid,
                   },
@@ -288,17 +312,31 @@ const ExperimentList: React.FC<unknown> = () => {
     {
       title: (
         <>
-          <span>最近实验时间</span>
-          <Tooltip title="最近一次实验开始的时间">
+          <span>
+            {intl.formatMessage({
+              id: 'latestExperimentalTime',
+            })}
+          </span>
+          <Tooltip
+            title={intl.formatMessage({
+              id: 'lastStartTime',
+            })}
+          >
             <QuestionCircleOutlined />
           </Tooltip>
-          /<span>状态</span>
+          /
+          <span>
+            {intl.formatMessage({
+              id: 'status',
+            })}
+          </span>
         </>
       ),
       width: 180,
-      sorter: true,
-      render: (record: any) => {
-        const statusTemp = experimentStatus.filter(
+      // sorter: true,
+      dataIndex: 'last_instance',
+      render: (text: string, record: any) => {
+        const statusTemp: any = experimentStatus.filter(
           (item) => item.value === record?.status,
         )[0];
         return (
@@ -310,8 +348,8 @@ const ExperimentList: React.FC<unknown> = () => {
           >
             <div>
               <Popover
-                title={statusTemp?.label}
-                overlayStyle={{ maxWidth: '80px' }}
+                title={getIntlLabel(statusTemp)}
+                overlayStyle={{ textAlign: 'center' }}
               >
                 <Badge color={statusTemp?.color} />{' '}
               </Popover>
@@ -323,18 +361,19 @@ const ExperimentList: React.FC<unknown> = () => {
       },
     },
     {
-      title: '触发方式',
+      title: intl.formatMessage({
+        id: 'triggerMode',
+      }),
       width: 120,
       dataIndex: 'schedule_type',
-      // filters: triggerMode,
       render: (text: string, record: { schedule_rule: string }) => {
-        const value = triggerTypes?.filter((item) => item?.value === text)[0]
-          ?.label;
-
+        const value: any = triggerTypes?.filter(
+          (item) => item?.value === text,
+        )[0];
         if (text === 'cron') {
           return (
             <div>
-              <div>{value}</div>
+              <div>{getIntlLabel(value)}</div>
               <span className="cycle">
                 {cronTranstionCN(record?.schedule_rule)}
               </span>
@@ -343,13 +382,15 @@ const ExperimentList: React.FC<unknown> = () => {
         }
         return (
           <div>
-            <div>{value}</div>
+            <div>{getIntlLabel(value)}</div>
           </div>
         );
       },
     },
     {
-      title: '即将运行时间',
+      title: intl.formatMessage({
+        id: 'upcomingRunningTime',
+      }),
       width: 140,
       dataIndex: 'next_exec',
       sorter: true,
@@ -358,7 +399,9 @@ const ExperimentList: React.FC<unknown> = () => {
       },
     },
     {
-      title: '最近编辑时间',
+      title: intl.formatMessage({
+        id: 'lastEditTime',
+      }),
       width: 180,
       dataIndex: 'update_time',
       sorter: true,
@@ -371,7 +414,9 @@ const ExperimentList: React.FC<unknown> = () => {
   // 操作项columns，管理员才展示
   const operateColumn: any[] = [
     {
-      title: '操作',
+      title: intl.formatMessage({
+        id: 'operate',
+      }),
       width: 90,
       fixed: 'right',
       render: (record: any) => {
@@ -384,7 +429,9 @@ const ExperimentList: React.FC<unknown> = () => {
                 );
               }}
             >
-              编辑
+              {intl.formatMessage({
+                id: 'edit',
+              })}
             </a>
             <Dropdown
               menu={{ items: operateItems(record) }}
@@ -409,22 +456,37 @@ const ExperimentList: React.FC<unknown> = () => {
         <Form form={form} labelCol={{ span: 6 }}>
           <Row gutter={16} style={{ whiteSpace: 'nowrap', overflow: 'hidden' }}>
             <Col span={8}>
-              <Form.Item name={'name'} label="名称">
-                <Input placeholder="请输入" />
+              <Form.Item
+                name={'name'}
+                label={intl.formatMessage({
+                  id: 'name',
+                })}
+              >
+                <Input placeholder={pleaseInput} />
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item name={'creator'} label="创建人">
-                <Input placeholder="请输入" />
+              <Form.Item
+                name={'creator'}
+                label={intl.formatMessage({
+                  id: 'creator',
+                })}
+              >
+                <Input placeholder={pleaseInput} />
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item name={'schedule_type'} label="触发方式">
-                <Select placeholder="请选择">
-                  {triggerMode?.map((item) => {
+              <Form.Item
+                name={'schedule_type'}
+                label={intl.formatMessage({
+                  id: 'triggerMode',
+                })}
+              >
+                <Select placeholder={pleaseSelect}>
+                  {triggerTypes?.map((item: any) => {
                     return (
                       <Select.Option key={item.value} value={item.value}>
-                        {item.text}
+                        {getIntlLabel(item)}
                       </Select.Option>
                     );
                   })}
@@ -440,7 +502,9 @@ const ExperimentList: React.FC<unknown> = () => {
                     handleSearch({ page: 1, pageSize: 10 });
                   }}
                 >
-                  重置
+                  {intl.formatMessage({
+                    id: 'reset',
+                  })}
                 </Button>
                 <Button
                   type="primary"
@@ -448,7 +512,9 @@ const ExperimentList: React.FC<unknown> = () => {
                     handleSearch();
                   }}
                 >
-                  查询
+                  {intl.formatMessage({
+                    id: 'query',
+                  })}
                 </Button>
               </Space>
             </Col>
@@ -458,7 +524,11 @@ const ExperimentList: React.FC<unknown> = () => {
       <LightArea>
         <div className="table">
           <div className="area-operate">
-            <div className="title">实验列表</div>
+            <div className="title">
+              {intl.formatMessage({
+                id: 'experimentList',
+              })}
+            </div>
             {spacePermission === 1 && (
               <Space>
                 <Button
@@ -472,7 +542,9 @@ const ExperimentList: React.FC<unknown> = () => {
                     });
                   }}
                 >
-                  创建实验
+                  {intl.formatMessage({
+                    id: 'createExperiment',
+                  })}
                 </Button>
               </Space>
             )}
@@ -483,10 +555,16 @@ const ExperimentList: React.FC<unknown> = () => {
                 <EmptyCustom
                   desc={
                     spacePermission === 1
-                      ? '请先创建实验，您可选择自己创建实验也可以通过推荐实验来快速构建实验场景，来验证应用系统的可靠性。'
-                      : '您在该空间是只读权限，暂不支持创建实验。若想创建实验请去成员管理中找空间内有读写权限的成员修改权限'
+                      ? intl.formatMessage({
+                          id: 'experiment.table.noAuth.description',
+                        })
+                      : intl.formatMessage({
+                          id: 'experiment.table.description',
+                        })
                   }
-                  topTitle="当前空间还没有实验数据"
+                  topTitle={intl.formatMessage({
+                    id: 'experiment.table.title',
+                  })}
                   btns={
                     <Space>
                       {spacePermission === 1 ? (
@@ -501,7 +579,9 @@ const ExperimentList: React.FC<unknown> = () => {
                             });
                           }}
                         >
-                          创建实验
+                          {intl.formatMessage({
+                            id: 'createExperiment',
+                          })}
                         </Button>
                       ) : (
                         <Button
@@ -516,7 +596,9 @@ const ExperimentList: React.FC<unknown> = () => {
                             });
                           }}
                         >
-                          前往成员管理
+                          {intl.formatMessage({
+                            id: 'goToMemberManagement',
+                          })}
                         </Button>
                       )}
                       {/* <Button
@@ -543,7 +625,6 @@ const ExperimentList: React.FC<unknown> = () => {
             loading={queryByPage?.loading}
             rowKey={'uuid'}
             scroll={{ x: 1000 }}
-            // dataSource={ [{uuid: 1}]}
             dataSource={pageData?.experiments || []}
             pagination={
               pageData?.experiments?.length > 0

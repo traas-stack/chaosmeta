@@ -24,6 +24,7 @@ import (
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/log"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/cmdexec"
+	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/utils/namespace"
 	"os"
 	"strconv"
 	"strings"
@@ -38,8 +39,151 @@ const (
 	SIGCONT = 18
 )
 
+func getProcessPidCmd(pid int) string {
+	return fmt.Sprintf("ps -eo pid | grep -w %d", pid)
+}
+
+func getProcessKeyCmd(cr string, key string) string {
+	if cr == "" {
+		return fmt.Sprintf("ps -ef | grep '%s' | grep -v grep | grep -v '%s inject' | grep -v '%s recover' | grep -v 'chaosmeta_execns ' | awk '{print $2}'", key, utils.RootName, utils.RootName)
+	} else {
+		return fmt.Sprintf("ps -ef | grep '%s' | grep -v grep | grep -v '%s inject' | grep -v '%s recover' | grep -v 'chaosmeta_execns ' | awk '{print \\$2}'", key, utils.RootName, utils.RootName)
+	}
+}
+
+func getProcessSignalPidCmd(pid int, signal int) string {
+	return fmt.Sprintf("kill -%d %d", signal, pid)
+}
+
+func getProcessSignalKeyCmd(cr string, key string, signal int) string {
+	if cr == "" {
+		return fmt.Sprintf("ps -ef | grep '%s' | grep -v grep | grep -v '%s inject' | grep -v '%s recover' | grep -v 'chaosmeta_execns ' | awk '{print $2}' | xargs kill -%d", key, utils.RootName, utils.RootName, signal)
+	} else {
+		return fmt.Sprintf("ps -ef | grep '%s' | grep -v grep | grep -v '%s inject' | grep -v '%s recover' | grep -v 'chaosmeta_execns ' | awk '{print \\$2}' | xargs kill -%d", key, utils.RootName, utils.RootName, signal)
+	}
+}
+
+// GetProcessByPid in container's pid namespace
+func GetProcessByPid(ctx context.Context, cr, cId string, pid int) (int, error) {
+	if pid < 0 {
+		return -1, fmt.Errorf("\"pid\" can not less than 0")
+	}
+
+	var (
+		reStr string
+		cmd   = getProcessPidCmd(pid)
+		err   error
+	)
+
+	//reStr, err = cmdexec.ExecCommon(ctx, cr, cId, cmd)
+	reStr, err = cmdexec.ExecCommonWithNS(ctx, cr, cId, cmd, []string{namespace.PID, namespace.MNT})
+	if err != nil {
+		return -1, fmt.Errorf("exec cmd error: %s", err.Error())
+	}
+
+	reStr = strings.TrimSpace(reStr)
+	if reStr != strconv.Itoa(pid) {
+		return -1, fmt.Errorf("pid[%d] is not exist, get: %s", pid, reStr)
+	}
+
+	return pid, nil
+}
+
+// GetProcessByKey in container's pid namespace
+func GetProcessByKey(ctx context.Context, cr, cId string, key string) ([]int, error) {
+	if key == "" {
+		return nil, fmt.Errorf("\"key\" can not be empty")
+	}
+
+	var (
+		reStr   string
+		cmd     = getProcessKeyCmd(cr, key)
+		err     error
+		pidList []int
+	)
+
+	reStr, err = cmdexec.ExecCommonWithNS(ctx, cr, cId, cmd, []string{namespace.PID, namespace.MNT})
+	//reStr, err = cmdexec.ExecCommon(ctx, cr, cId, cmd)
+	if err != nil {
+		return nil, fmt.Errorf("exec cmd error: %s", err.Error())
+	}
+
+	reStr = strings.TrimSpace(reStr)
+	pStrList := strings.Split(reStr, "\n")
+	for _, unitPStr := range pStrList {
+		unitPStr = strings.TrimSpace(unitPStr)
+		if unitPStr == "" {
+			continue
+		}
+		pid, err := strconv.Atoi(unitPStr)
+		if err != nil {
+			return nil, fmt.Errorf("%s is not a valid pid: %s", unitPStr, err.Error())
+		}
+		pidList = append(pidList, pid)
+	}
+
+	if len(pidList) == 0 {
+		return nil, fmt.Errorf("no pid grep by key: %s", key)
+	}
+
+	return pidList, nil
+}
+
+// SignalProcessByPid in container's pid namespace
+func SignalProcessByPid(ctx context.Context, cr, cId string, pid, signal int) error {
+	if pid < 0 {
+		return fmt.Errorf("\"pid\" can not less than 0")
+	}
+
+	var (
+		cmd = getProcessSignalPidCmd(pid, signal)
+		err error
+	)
+
+	_, err = cmdexec.ExecCommonWithNS(ctx, cr, cId, cmd, []string{namespace.PID, namespace.MNT})
+	if err != nil {
+		return fmt.Errorf("exec cmd error: %s", err.Error())
+	}
+
+	return nil
+}
+
+// SignalProcessByKey in container's pid namespace
+func SignalProcessByKey(ctx context.Context, cr, cId string, key string, signal int) error {
+	if key == "" {
+		return fmt.Errorf("\"key\" can not be empty")
+	}
+
+	var (
+		cmd = getProcessSignalKeyCmd(cr, key, signal)
+		err error
+	)
+
+	_, err = cmdexec.ExecCommonWithNS(ctx, cr, cId, cmd, []string{namespace.PID, namespace.MNT})
+	if err != nil {
+		return fmt.Errorf("exec cmd error: %s", err.Error())
+	}
+
+	return nil
+}
+
 func ExistPid(ctx context.Context, pid int) (bool, error) {
 	return process.PidExists(int32(pid))
+}
+
+func CheckExistAndSignalByKey(ctx context.Context, processKey string, signal int) error {
+	isProExist, err := ExistProcessByKey(ctx, processKey)
+	if err != nil {
+		return fmt.Errorf("check process exist by key[%s] error: %s", processKey, err.Error())
+	}
+
+	if isProExist {
+		if err := KillProcessByKey(ctx, processKey, signal); err != nil {
+			return fmt.Errorf("kill process by key[%s] error: %s", processKey, err.Error())
+		}
+	}
+
+	return nil
 }
 
 func CheckExistAndKillByKey(ctx context.Context, processKey string) error {
@@ -58,7 +202,7 @@ func CheckExistAndKillByKey(ctx context.Context, processKey string) error {
 }
 
 func ExistProcessByKey(ctx context.Context, key string) (bool, error) {
-	re, err := cmdexec.RunBashCmdWithOutput(ctx, fmt.Sprintf("ps -ef | grep '%s' | grep -v grep | grep -v '%s inject' | grep -v '%s recover' | grep -v 'chaosmeta_process ' | wc -l", key, utils.RootName, utils.RootName))
+	re, err := cmdexec.RunBashCmdWithOutput(ctx, fmt.Sprintf("ps -ef | grep '%s' | grep -v grep | grep -v '%s inject' | grep -v '%s recover' | grep -v 'chaosmeta_execns ' | wc -l", key, utils.RootName, utils.RootName))
 	if err != nil {
 		return false, fmt.Errorf("cmd exec error: %s", err.Error())
 	}
@@ -97,13 +241,38 @@ func KillPidWithSignal(ctx context.Context, pid int, signal int) error {
 }
 
 func KillProcessByKey(ctx context.Context, key string, signal int) error {
-	return cmdexec.RunBashCmdWithoutOutput(ctx, fmt.Sprintf("ps -ef | grep '%s' | grep -v grep | grep -v '%s inject' | grep -v '%s recover' | grep -v 'chaosmeta_process ' | awk '{print $2}' | xargs kill -%d", key, utils.RootName, utils.RootName, signal))
+	return cmdexec.RunBashCmdWithoutOutput(ctx, fmt.Sprintf("ps -ef | grep '%s' | grep -v grep | grep -v '%s inject' | grep -v '%s recover' | grep -v 'chaosmeta_execns ' | awk '{print $2}' | xargs kill -%d", key, utils.RootName, utils.RootName, signal))
 }
 
+// GetPidListByPidOrKeyInContainer return pidList in host's or container's pid ns
+func GetPidListByPidOrKeyInContainer(ctx context.Context, cr, cId string, pid int, key string) ([]int, error) {
+	//logger := log.GetLogger(ctx)
+	var pidList []int
+	if pid > 0 {
+		_, err := GetProcessByPid(ctx, cr, cId, pid)
+		if err != nil {
+			return nil, fmt.Errorf("check pid[%d] error: %s", err.Error())
+		}
+
+		pidList = append(pidList, pid)
+	} else if key != "" {
+		return GetProcessByKey(ctx, cr, cId, key)
+	} else {
+		return nil, fmt.Errorf("must provide \"pid\" or \"key\"")
+	}
+
+	if len(pidList) == 0 {
+		return nil, fmt.Errorf("target pid is empty")
+	}
+
+	return pidList, nil
+}
+
+// GetPidListByKey return pidList in host's pid ns, not in container's pid ns
 func GetPidListByKey(ctx context.Context, cr, cId string, key string) ([]int, error) {
 	var pidList []int
 	if cr == "" {
-		re, err := cmdexec.RunBashCmdWithOutput(ctx, fmt.Sprintf("ps -ef | grep '%s' | grep -v grep | grep -v '%s inject' | grep -v '%s recover' | grep -v 'chaosmeta_process ' | awk '{print $2}'", key, utils.RootName, utils.RootName))
+		re, err := cmdexec.RunBashCmdWithOutput(ctx, getProcessKeyCmd(cr, key))
 		if err != nil {
 			return nil, fmt.Errorf("get process list error: %s", err.Error())
 		}

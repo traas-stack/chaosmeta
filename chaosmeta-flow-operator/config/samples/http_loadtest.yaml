@@ -4,7 +4,7 @@ metadata:
   name: loadtest-sample1
   namespace: chaosmeta-flow
 spec:
-  flowType: HTTP
+  flowType: http
   duration: 1m
   parallelism: 4
   source: 2

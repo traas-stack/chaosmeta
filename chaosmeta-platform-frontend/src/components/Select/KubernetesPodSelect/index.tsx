@@ -1,5 +1,5 @@
-import { queryPodLIst } from '@/services/chaosmeta/KubernetesController';
-import { useRequest } from '@umijs/max';
+import { queryPodNameList } from '@/services/chaosmeta/KubernetesController';
+import { useIntl, useRequest } from '@umijs/max';
 import { Empty, Select, Spin, message } from 'antd';
 import { useEffect, useState } from 'react';
 
@@ -16,12 +16,13 @@ interface IProps {
 }
 
 const KubernetesPodSelect = (props: IProps) => {
+  const intl = useIntl();
   const {
     value,
     onChange,
     list,
     mode,
-    placeholder = '请选择',
+    placeholder = intl.formatMessage({ id: 'selectPlaceholder' }),
     style,
     form,
     kubernetesNamespace,
@@ -35,7 +36,7 @@ const KubernetesPodSelect = (props: IProps) => {
     }
   }, [list]);
 
-  const getPodList = useRequest(queryPodLIst, {
+  const getPodList = useRequest(queryPodNameList, {
     manual: true,
     formatResult: (res: any) => res,
     debounceInterval: 300,
@@ -51,7 +52,6 @@ const KubernetesPodSelect = (props: IProps) => {
   useEffect(() => {
     // 此项的展示是要依赖namespace的值进行检索，所以当namespace值改变时需要清空列表项和值
     setNamespaceList([]);
-    form.setFieldValue(['exec_range', 'target_name'], undefined);
   }, [kubernetesNamespace]);
 
   return (

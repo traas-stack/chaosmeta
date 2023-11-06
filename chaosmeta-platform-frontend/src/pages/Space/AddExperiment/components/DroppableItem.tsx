@@ -2,6 +2,7 @@ import { arrangeNodeTypeColors, scaleStepMap } from '@/constants';
 import { formatDuration } from '@/utils/format';
 import { InfoCircleOutlined } from '@ant-design/icons';
 import { useSortable } from '@dnd-kit/sortable';
+import { useIntl } from '@umijs/max';
 import { Descriptions, Popover } from 'antd';
 import React, { useEffect, useRef } from 'react';
 import { DroppableCol, NodeItemHover } from '../style';
@@ -46,6 +47,7 @@ const DroppableItem: React.FC<IProps> = (props) => {
   const scaleRef = useRef<any>(null);
   // nodeInfoState当前节点信息是否配置完成
   const { nodeInfoState } = item || {};
+  const intl = useIntl();
 
   /**
    * 悬浮到节点展示信息
@@ -59,14 +61,18 @@ const DroppableItem: React.FC<IProps> = (props) => {
             {!nodeInfoState && <InfoCircleOutlined className="icon" />}
             <span className="name">{name}</span>
           </div>
-          {!nodeInfoState && <div style={{ color: '#FF4D4F' }}>未完成</div>}
+          {!nodeInfoState && (
+            <div style={{ color: '#FF4D4F' }}>
+              {intl.formatMessage({ id: 'undone' })}
+            </div>
+          )}
         </div>
       );
     };
     return (
       <NodeItemHover>
         <Descriptions title={renterTitle()} column={1}>
-          <Descriptions.Item label="持续时长">
+          <Descriptions.Item label={intl.formatMessage({ id: 'duration' })}>
             {formatDuration(item?.duration)}s
           </Descriptions.Item>
         </Descriptions>
@@ -76,43 +82,47 @@ const DroppableItem: React.FC<IProps> = (props) => {
 
   useEffect(() => {
     if (scaleRef.current) {
-      // 拖动修改节点宽度
-      scaleRef.current.onmousedown = (event: any) => {
-        const duration = formatDuration(item?.duration);
-        // 初始宽度
-        const oldWidth =
-          duration * (scaleStepMap[curProportion]?.widthSecond || 3) - 2;
-        event.preventDefault();
-        const startX = event.clientX;
-        document.onmousemove = (moveEvent: any) => {
-          moveEvent.preventDefault();
-          // 拖动后计算新的节点宽度
-          const newWidth = moveEvent.clientX - startX + oldWidth;
-          // 将宽度计算为对应秒数
-          const second = newWidth / scaleStepMap[curProportion]?.widthSecond;
-          // 更新数据
-          setArrangeList((result: any) => {
-            const values = JSON.parse(JSON.stringify(result)); // 将 result 对象深拷贝一份
-            const parentIndex = values?.findIndex(
-              (item: { row: any }) => item?.row === parentId,
-            );
-            if (parentIndex !== -1 && index >= 0) {
-              values[parentIndex].children[index]['duration'] = `${Math.round(
-                second,
-              )}s`; // 更新子节点对应属性的值
-            }
+      try {
+        // 拖动修改节点宽度
+        scaleRef.current.onmousedown = (event: any) => {
+          const duration = formatDuration(item?.duration);
+          // 初始宽度
+          const oldWidth =
+            duration * (scaleStepMap[curProportion]?.widthSecond || 3) - 2;
+          event.preventDefault();
+          const startX = event.clientX;
+          document.onmousemove = (moveEvent: any) => {
+            moveEvent.preventDefault();
+            // 拖动后计算新的节点宽度
+            const newWidth = moveEvent.clientX - startX + oldWidth;
+            // 将宽度计算为对应秒数
+            const second = newWidth / scaleStepMap[curProportion]?.widthSecond;
+            // 更新数据
+            setArrangeList((result: any) => {
+              const values = JSON.parse(JSON.stringify(result)); // 将 result 对象深拷贝一份
+              const parentIndex = values?.findIndex(
+                (item: { row: any }) => item?.row === parentId,
+              );
+              if (parentIndex !== -1 && index >= 0) {
+                values[parentIndex].children[index]['duration'] = `${Math.round(
+                  second,
+                )}s`; // 更新子节点对应属性的值
+              }
+              return values; // 返回更新后的 values 数组
+            });
             // 同时更新选中项数据
             setActiveCol((value: any) => {
               return { ...value, duration: `${Math.round(second)}s` };
             });
-            return values; // 返回更新后的 values 数组
-          });
+          };
+          // 释放鼠标时，清除移动事件监听器
+          document.onmouseup = () => {
+            document.onmousemove = document.onmouseup = null;
+          };
         };
-        // 释放鼠标时，清除移动事件监听器
-        document.onmouseup = () => {
-          document.onmousemove = document.onmouseup = null;
-        };
-      };
+      } catch (error) {
+        console.log(error);
+      }
     }
   }, []);
 
@@ -151,7 +161,7 @@ const DroppableItem: React.FC<IProps> = (props) => {
                     style={{ color: '#FF4D4F', marginRight: '4px' }}
                   />
                 )}
-                <span>{item.name}</span>
+                <span>{item?.name}</span>
               </div>
               <div>{curDuration}s</div>
             </>

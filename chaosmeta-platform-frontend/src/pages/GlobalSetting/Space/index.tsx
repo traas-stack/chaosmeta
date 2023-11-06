@@ -5,7 +5,7 @@ import {
 } from '@/services/chaosmeta/SpaceController';
 import { ExclamationCircleFilled, SearchOutlined } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
-import { useRequest } from '@umijs/max';
+import { useIntl, useRequest } from '@umijs/max';
 import {
   Alert,
   Button,
@@ -42,6 +42,7 @@ const SpaceManage: React.FC<unknown> = () => {
     total: 0,
     namespaces: [],
   });
+  const intl = useIntl();
 
   /**
    * 获取空间列表接口
@@ -93,7 +94,9 @@ const SpaceManage: React.FC<unknown> = () => {
     formatResult: (res) => res,
     onSuccess: (res) => {
       if (res?.code === 200) {
-        message.success('您已成功删除所选空间');
+        message.success(
+          intl.formatMessage({ id: 'spaceManagement.delete.success' }),
+        );
         handlePageSearch();
       }
     },
@@ -101,11 +104,11 @@ const SpaceManage: React.FC<unknown> = () => {
 
   const tabItems = [
     {
-      label: '全部空间',
+      label: intl.formatMessage({ id: 'spaceManagement.tab.all' }),
       key: 'all',
     },
     {
-      label: '我相关的',
+      label: intl.formatMessage({ id: 'spaceManagement.tab.related' }),
       key: 'relevant',
     },
   ];
@@ -116,7 +119,7 @@ const SpaceManage: React.FC<unknown> = () => {
   const handleDelete = (id: number) => {
     // return
     Modal.confirm({
-      title: '确认要删除当前所选空间吗？',
+      title: intl.formatMessage({ id: 'spaceManagement.delete.title' }),
       icon: <ExclamationCircleFilled />,
       onOk() {
         return handleDeleteSpace?.run({ id });
@@ -127,7 +130,7 @@ const SpaceManage: React.FC<unknown> = () => {
   // 空间权限类型
   const spaceTypes = [
     {
-      label: '全部',
+      label: intl.formatMessage({ id: 'all' }),
       value: 'all',
     },
     // {
@@ -135,11 +138,11 @@ const SpaceManage: React.FC<unknown> = () => {
     //   value: 'not',
     // },
     {
-      label: '只读',
+      label: intl.formatMessage({ id: 'readonly' }),
       value: 'read',
     },
     {
-      label: '读写',
+      label: intl.formatMessage({ id: 'write' }),
       value: 'write',
     },
   ];
@@ -147,11 +150,11 @@ const SpaceManage: React.FC<unknown> = () => {
   // 检索类型
   const searchOptions = [
     {
-      label: '空间名称',
+      label: intl.formatMessage({ id: 'spaceName' }),
       value: 'spaceName',
     },
     {
-      label: '空间成员',
+      label: intl.formatMessage({ id: 'spaceManagement.member' }),
       value: 'spaceMember',
     },
   ];
@@ -161,7 +164,7 @@ const SpaceManage: React.FC<unknown> = () => {
   }, []);
 
   return (
-    <PageContainer title="空间管理">
+    <PageContainer title={intl.formatMessage({ id: 'spaceManagement.title' })}>
       <Container>
         <Form form={form}>
           <Tabs
@@ -215,7 +218,9 @@ const SpaceManage: React.FC<unknown> = () => {
                           <Form.Item name={'name'}>
                             <Input
                               style={{ width: '220px' }}
-                              placeholder="请输入空间名称"
+                              placeholder={intl.formatMessage({
+                                id: 'spaceManagement.spaceName.placeholder',
+                              })}
                               onPressEnter={() => {
                                 handlePageSearch();
                               }}
@@ -234,7 +239,9 @@ const SpaceManage: React.FC<unknown> = () => {
                         <Form.Item name={'member'}>
                           <Input
                             style={{ width: '220px' }}
-                            placeholder="请输入空间成员"
+                            placeholder={intl.formatMessage({
+                              id: 'spaceManagement.spaceMember.placeholder',
+                            })}
                             onPressEnter={() => {
                               handlePageSearch();
                             }}
@@ -258,7 +265,7 @@ const SpaceManage: React.FC<unknown> = () => {
                     setAddSpaceOpen(true);
                   }}
                 >
-                  新建空间
+                  {intl.formatMessage({ id: 'createSpace' })}
                 </Button>
               </Space>
             }
@@ -266,7 +273,7 @@ const SpaceManage: React.FC<unknown> = () => {
         </Form>
 
         <Alert
-          message="可联系空间内具有读写权限的成员添加为空间成员"
+          message={intl.formatMessage({ id: 'spaceManagement.alert' })}
           type="info"
           showIcon
           closable

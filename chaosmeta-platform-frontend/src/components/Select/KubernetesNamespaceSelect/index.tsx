@@ -1,4 +1,5 @@
 import { queryNamespaceList } from '@/services/chaosmeta/KubernetesController';
+import { useIntl } from '@umijs/max';
 import { useRequest } from '@umijs/max';
 import { Select, Spin, message } from 'antd';
 import { useEffect, useState } from 'react';
@@ -14,7 +15,15 @@ interface IProps {
 }
 
 const KubernetesNamespaceSelect = (props: IProps) => {
-  const { value, onChange, list, mode, placeholder = '请选择', style } = props;
+  const intl = useIntl();
+  const {
+    value,
+    onChange,
+    list,
+    mode,
+    placeholder = intl.formatMessage({ id: 'selectPlaceholder' }),
+    style,
+  } = props;
   const [namespaceList, setNamespaceList] = useState<string[]>([]);
   const { Option } = Select;
 

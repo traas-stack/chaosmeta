@@ -23,6 +23,7 @@ import (
 	_ "github.com/traas-stack/chaosmeta/chaosmetad/pkg/injector/cpu"
 	_ "github.com/traas-stack/chaosmeta/chaosmetad/pkg/injector/disk"
 	_ "github.com/traas-stack/chaosmeta/chaosmetad/pkg/injector/diskio"
+	_ "github.com/traas-stack/chaosmeta/chaosmetad/pkg/injector/dns"
 	_ "github.com/traas-stack/chaosmeta/chaosmetad/pkg/injector/file"
 	_ "github.com/traas-stack/chaosmeta/chaosmetad/pkg/injector/jvm"
 	_ "github.com/traas-stack/chaosmeta/chaosmetad/pkg/injector/kernel"
