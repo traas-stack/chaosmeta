@@ -156,11 +156,11 @@ spec:
               name: chaosmeta-mysql
           volumeMounts:
             - name: mysql-storage
-              mountPath: /var/lib/mysql
+              mountPath: /var/lib/
       volumes:
         - name: mysql-storage
           hostPath:
-            path: "/mnt/chaosmeta-platform-mysql"
+            path: "/mnt/chaosmeta-platform-mysql/data"
 ---
 apiVersion: v1
 kind: Service
@@ -172,7 +172,7 @@ metadata:
 spec:
   ports:
     - name: http
-      port: 8000
+      port: 8
       targetPort: 8000
   selector:
     app: chaosmeta-platform
