@@ -1,13 +1,30 @@
-# 设置 Node.js 版本
-FROM node:16-alpine
+FROM node:16-alpine as builder
 
-# 设置工作目录
 WORKDIR /app
 
-# 将 package.json 和 package-lock.json 复制到工作目录中
 COPY . .
 
 RUN yarn install
 
-# 设置容器启动时的命令
-CMD ["yarn", "start"]
+RUN  yarn build
+
+RUN rm -rf node_modules && \
+  NODE_ENV=production yarn install \
+  --prefer-offline \
+  --pure-lockfile \
+  --non-interactive \
+  --production=true
+
+FROM nginx:alpine
+
+ENV TZ=Asia/Shanghai
+
+WORKDIR /app
+
+COPY --from=builder  app/nginx/nginx.conf /etc/nginx/conf.d/nginx.conf
+
+COPY --from=builder  app/dist/ /usr/share/nginx/dist/html/
+
+EXPOSE 8000
+
+CMD ["nginx", "-g", "daemon off;"]
