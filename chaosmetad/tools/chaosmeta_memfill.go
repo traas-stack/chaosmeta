@@ -23,6 +23,7 @@ import (
 	"math"
 	"os"
 	"runtime"
+	"runtime/debug"
 	"strconv"
 	"strings"
 )
@@ -96,6 +97,7 @@ func writeScore(scoreStr string) error {
 // [uid] [score] [fill bytes: KB/MB/GB/TB] [timeout second]
 // [uid] [score] [percent] [bytes] [timeout second]
 func main() {
+	debug.SetGCPercent(-1)
 	args := os.Args
 	if len(args) < 5 {
 		common.ExitWithErr("args must at lease 4. format: [uid] [score] [percent] [bytes] [timeout second]")
