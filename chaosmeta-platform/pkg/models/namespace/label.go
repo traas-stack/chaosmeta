@@ -27,15 +27,21 @@ const TimeLayout = "2006-01-02 15:04:05"
 
 type Label struct {
 	Id          int    `json:"id" orm:"pk;auto;column(id)"`
-	Name        string `json:"name" orm:"column(name);size(255);unique;index"`
+	Name        string `json:"name" orm:"column(name);size(255);index"`
 	Color       string `json:"color" orm:"column(color);size(255);index"`
-	NamespaceId int    `json:"namespaceId" orm:"column(namespace_id);unique;index"`
+	NamespaceId int    `json:"namespaceId" orm:"column(namespace_id);index"`
 	Creator     string `json:"creator" orm:"column(creator); size(255); index"`
 	models.BaseTimeModel
 }
 
 func (l *Label) TableName() string {
 	return "namespace_label"
+}
+
+func (l *Label) TableUnique() [][]string {
+	return [][]string{
+		{"name", "namespace_id"},
+	}
 }
 
 func InsertLabel(ctx context.Context, label *Label) (int64, error) {
