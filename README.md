@@ -114,7 +114,7 @@ chaosmetad recover test-fg3g4
 For details, see: [Function Instructions](https://chaosmeta.gitbook.io/chaosmeta-en/capability-instruction)
 #### Installation Guide
 For details, see: [Installation Guide](https://chaosmeta.gitbook.io/chaosmeta-en/installation-guide)
-# Comminicate
+# Communicate
 Welcome to submit defects, questions, suggestions and new features, all problems can be submitted to [Github Issues](https://github.com/traas-stack/chaosmeta/issues/new), you can also contact us in the following ways:
 - DingTalk group: 21765030887
 - Slack group: [ChaosMeta](https://app.slack.com/client/T057ERYMS8J/C057883SM38?geocode=zh-cn)
