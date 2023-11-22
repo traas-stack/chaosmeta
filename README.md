@@ -8,7 +8,7 @@ ChaosMeta is a cloud-native chaos engineering platform open sourced by Ant Group
 
 ChaosMeta is a platform dedicated to supporting all stages of fault drills, covering platform capabilities in multiple stages such as access detection, traffic injection, fault injection, fault measurement, fault recovery, and recovery measurement. While liberating productivity for users, it is also pursuing the future form of chaos engineering: one-click automated drills, and even intelligent drills.
 
-# core advantages
+# Core advantages
 #### Simple and easy to use, provides user interface, low threshold for use
 Support visual user interface, Kubernetes API, command line, HTTP API, and other methods.
 [![docs/static/componentlink.png
