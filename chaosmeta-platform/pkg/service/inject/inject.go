@@ -84,7 +84,7 @@ func InitTarget(ctx context.Context, scope basic.Scope) error {
 		MemTarget       = basic.Target{Name: "mem", NameCn: "mem", Description: "Fault injection capabilities related to memory faults", DescriptionCn: "内存故障相关的故障注入能力"}
 		DnsTarget       = basic.Target{Name: "dns", NameCn: "dns", Description: "Fault injection capabilities related to dns faults", DescriptionCn: "dns故障相关的故障注入能力"}
 		DiskTarget      = basic.Target{Name: "disk", NameCn: "disk", Description: "Fault injection capabilities related to disk failures", DescriptionCn: "磁盘故障相关的故障注入能力"}
-		DiskioTarget    = basic.Target{Name: "diskIO", NameCn: "diskIO", Description: "Fault injection capabilities related to disk IO faults", DescriptionCn: "磁盘IO故障相关的故障注入能力"}
+		DiskioTarget    = basic.Target{Name: "diskio", NameCn: "diskIO", Description: "Fault injection capabilities related to disk IO faults", DescriptionCn: "磁盘IO故障相关的故障注入能力"}
 		NetworkTarget   = basic.Target{Name: "network", NameCn: "network", Description: "Fault injection capabilities related to disk failures", DescriptionCn: "磁盘故障相关的故障注入能力"}
 		ProcessTarget   = basic.Target{Name: "process", NameCn: "process", Description: "Process-dependent fault injection capability", DescriptionCn: "进程相关的故障注入能力"}
 		FileTarget      = basic.Target{Name: "file", NameCn: "file", Description: "File-related fault injection capabilities", DescriptionCn: "文件相关的故障注入能力"}
