@@ -33,4 +33,6 @@ func kubernetesInit() {
 	beego.Router(NewWebServicePath("kubernetes/cluster/:id/namespaces"), &kube.KubeController{}, "get:ListNamespaces")
 	beego.Router(NewWebServicePath("kubernetes/cluster/:id/namespace/:ns_name/pods"), &kube.KubeController{}, "get:ListPods")
 	beego.Router(NewWebServicePath("kubernetes/cluster/:id/namespace/:ns_name/deployments"), &kube.KubeController{}, "get:ListDeployments")
+	beego.Router(NewWebServicePath("kubernetes/cluster/:id/namespace/:ns_name/containers"), &kube.KubeController{}, "get:ListContainersByNamespace")
+	beego.Router(NewWebServicePath("kubernetes/cluster/:id/namespace/:ns_name/pod/:pod_name/containers"), &kube.KubeController{}, "get:ListContainersByPod")
 }
