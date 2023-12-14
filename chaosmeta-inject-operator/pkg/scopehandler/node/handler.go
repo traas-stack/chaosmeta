@@ -41,10 +41,8 @@ func (h *NodeScopeHandler) ConvertSelector(ctx context.Context, spec *v1alpha1.E
 		isExist = make(map[string]bool)
 	)
 
-	argsList := common.GetArgs(spec.Experiment.Args, []string{v1alpha1.ContainerKey})
-
 	for _, unitSelector := range spec.Selector {
-		resultUnitSelector, err := getNodeObjectList(ctx, unitSelector, argsList[0])
+		resultUnitSelector, err := getNodeObjectList(ctx, unitSelector, unitSelector.SubName)
 		if err != nil {
 			return nil, err
 		}

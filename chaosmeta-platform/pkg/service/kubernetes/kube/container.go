@@ -18,6 +18,7 @@ package kube
 
 import (
 	"bytes"
+	"chaosmeta-platform/pkg/models/common/page"
 	"context"
 	"encoding/base64"
 	"fmt"
@@ -28,6 +29,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -38,6 +40,7 @@ type ContainerService interface {
 	DownLogFile(namespace, pod, container string, usePreviousLogs bool) (io.ReadCloser, error)
 	List(namespace, pod string) (*PodContainerList, error)
 	ExecWithBase64Cmd(namespace, pod, container, command string, args string) (string, error)
+	ListContainers(namespace, targetPods, targetLabel string, dsQuery *page.DataSelectQuery) (*ContainerResponse, error)
 }
 
 var (
@@ -288,6 +291,38 @@ type PodContainerList struct {
 	Containers []string `json:"containers"`
 }
 
+type ContainerResponse struct {
+	Total    int                            `json:"total"`
+	Current  int                            `json:"current"`
+	PageSize int                            `json:"pageSize"`
+	List     []ContainerClassifyStrInstance `json:"list"`
+}
+
+type ContainerClassifyList struct {
+	ContainerList []ContainerClassifyStrInstance `json:"containers"`
+}
+
+type ContainerClassifyStrInstance struct {
+	Container string `json:"container"`
+	Pods      string `json:"pods"`
+}
+
+type ContainerCell ContainerClassifyStrInstance
+
+func (c ContainerCell) GetProperty(name page.PropertyName) page.ComparableValue {
+	switch name {
+	case page.NameProperty:
+		return page.StdComparableString(c.Container)
+	default:
+		return nil
+	}
+}
+
+type ContainerClassifyInstance struct {
+	Container string   `json:"container"`
+	Pods      []string `json:"pods"`
+}
+
 type containerService struct {
 	kubeClient kubernetes.Interface
 	config     *rest.Config
@@ -295,6 +330,67 @@ type containerService struct {
 
 func NewContainerService(kubeClient kubernetes.Interface, config *rest.Config) ContainerService {
 	return &containerService{kubeClient, config}
+}
+
+func (c *containerService) ListContainers(namespace, targetPods, targetLabel string, dsQuery *page.DataSelectQuery) (*ContainerResponse, error) {
+	var containerResponse ContainerResponse
+	targetPodsStr := strings.Replace(targetPods, ",", "|", -1)
+	reg := regexp.MustCompile(targetPodsStr)
+	containerClassifyList := &ContainerClassifyList{}
+	if reg == nil {
+		return nil, fmt.Errorf("regexp err")
+	}
+	containerClassifyMap := make(map[string][]string)
+	podList, err := c.kubeClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: targetLabel})
+	if err != nil {
+		return nil, err
+	}
+	filterPods := v1.PodList{}
+	for _, pod := range podList.Items {
+		if reg.MatchString(pod.Name) {
+			filterPods.Items = append(filterPods.Items, pod)
+			for _, container := range pod.Status.ContainerStatuses {
+				containerClassifyMap[container.Name] = append(containerClassifyMap[container.Name], pod.Name)
+			}
+		}
+	}
+	containerList := make([]ContainerClassifyInstance, 0)
+	for k, v := range containerClassifyMap {
+		containerList = append(containerList, ContainerClassifyInstance{Container: k, Pods: v})
+	}
+	// sort container by related pod's nums
+	sort.Slice(containerList, func(i, j int) bool {
+		return len(containerList[i].Pods) > len(containerList[j].Pods)
+	})
+	containerStrList := make([]ContainerClassifyStrInstance, len(containerList))
+	for i, instance := range containerList {
+		containerStrList[i].Container = instance.Container
+		containerStrList[i].Pods = strings.Join(instance.Pods, ",")
+	}
+	containerClassifyList.ContainerList = containerStrList
+
+	containerCells, filteredTotal := page.GenericDataSelectWithFilter(containerToCells(containerStrList), dsQuery)
+	containerResponse.List = containerFromCells(containerCells)
+	containerResponse.Current = dsQuery.PaginationQuery.Page + 1
+	containerResponse.PageSize = dsQuery.PaginationQuery.ItemsPerPage
+	containerResponse.Total = filteredTotal
+	return &containerResponse, nil
+}
+
+func containerToCells(con []ContainerClassifyStrInstance) []page.DataCell {
+	cells := make([]page.DataCell, len(con))
+	for i := range con {
+		cells[i] = ContainerCell(con[i])
+	}
+	return cells
+}
+
+func containerFromCells(cells []page.DataCell) []ContainerClassifyStrInstance {
+	std := make([]ContainerClassifyStrInstance, len(cells))
+	for i := range std {
+		std[i] = ContainerClassifyStrInstance(cells[i].(ContainerCell))
+	}
+	return std
 }
 
 // List GetPodContainers returns containers that a pod has.

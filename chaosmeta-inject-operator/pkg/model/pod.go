@@ -24,21 +24,44 @@ import (
 // ns/pod
 
 type PodObject struct {
-	Namespace        string
-	PodName          string
-	PodUID           string
-	PodIP            string
-	NodeName         string
-	NodeIP           string
-	ContainerName    string
-	ContainerID      string
+	Namespace  string
+	PodName    string
+	PodUID     string
+	PodIP      string
+	NodeName   string
+	NodeIP     string
+	Containers []ContainerObject
+}
+
+type ContainerObject struct {
 	ContainerRuntime string
+	ContainerId      string
+	ContainerName    string
+}
+
+func (c *ContainerObject) GetObjectName() string {
+	return fmt.Sprintf("%s%s%s%s%s", c.ContainerRuntime, ObjectNameSplit, c.ContainerId, ObjectNameSplit, c.ContainerName)
+}
+
+func (p *PodObject) GetContainersObjectName() []string {
+	podInfo := fmt.Sprintf("%s%s%s%s%s", "pod", ObjectNameSplit, p.Namespace, ObjectNameSplit, p.PodName)
+	if len(p.Containers) == 0 {
+		return []string{podInfo}
+	} else {
+		objects := make([]string, 0)
+		for _, container := range p.Containers {
+			objects = append(objects, container.GetObjectName())
+		}
+		return objects
+	}
 }
 
 func (p *PodObject) GetObjectName() string {
 	podInfo := fmt.Sprintf("%s%s%s%s%s", "pod", ObjectNameSplit, p.Namespace, ObjectNameSplit, p.PodName)
-	if p.ContainerName != "" {
-		podInfo = fmt.Sprintf("%s%s%s", podInfo, ObjectNameSplit, p.ContainerName)
+	if len(p.Containers) != 0 {
+		for _, container := range p.Containers {
+			podInfo = fmt.Sprintf("%s%s%s", podInfo, ObjectNameSplit, container)
+		}
 	}
 
 	return podInfo

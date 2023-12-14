@@ -43,3 +43,7 @@ type QueryDeploymentResponse struct {
 	PageSize int `json:"pageSize"`
 	//Deployments []appv1.Deployment `json:"deployments"`
 }
+type QueryContainerRequest struct {
+	TargetLabel string `json:"target_label,omitempty"`
+	TargetPods  string `json:"target_pods,omitempty"`
+}
