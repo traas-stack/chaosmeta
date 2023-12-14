@@ -97,6 +97,8 @@ spec:
                       type: array
                     namespace:
                       type: string
+                    subName:
+                      type: string
                   type: object
                 type: array
               targetPhase:
