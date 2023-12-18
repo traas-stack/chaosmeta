@@ -195,13 +195,13 @@ func (a *Analyzer) GetPodListByPodName(ctx context.Context, namespace string, po
 	return result, nil
 }
 
-func GetTargetContainers(containerReg string, status []corev1.ContainerStatus) (containers []model.ContainerObject, err error) {
+func GetTargetContainers(containerReg string, status []corev1.ContainerStatus) (containers []model.ContainerInfo, err error) {
 	if len(status) == 0 {
 		err = fmt.Errorf("no container in pod")
 		return
 	}
 	reg := regexp.MustCompile(containerReg)
-	containers = []model.ContainerObject{}
+	containers = []model.ContainerInfo{}
 	var targetContainerInfo corev1.ContainerStatus
 	if containerReg == v1alpha1.FirstContainer {
 		targetContainerInfo = status[0]
@@ -212,7 +212,7 @@ func GetTargetContainers(containerReg string, status []corev1.ContainerStatus) (
 				if err != nil {
 					err = fmt.Errorf("parse container id[%s] error: %s", targetContainerInfo.ContainerID, err.Error())
 				}
-				info := model.ContainerObject{
+				info := model.ContainerInfo{
 					ContainerId:      id,
 					ContainerRuntime: r,
 					ContainerName:    containerStatus.Name,

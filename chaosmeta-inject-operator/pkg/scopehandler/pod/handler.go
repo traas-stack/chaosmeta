@@ -140,9 +140,11 @@ func getPodObjectList(ctx context.Context, selectorUnit v1alpha1.SelectorUnit) (
 		}
 	}
 
-	var result = make([]model.AtomicObject, len(podList))
-	for i := range podList {
-		result[i] = podList[i]
+	var result = make([]model.AtomicObject, 0)
+	for _, pod := range podList {
+		for _, subObject := range pod.GetSubObjects() {
+			result = append(result, &subObject)
+		}
 	}
 
 	return result, err

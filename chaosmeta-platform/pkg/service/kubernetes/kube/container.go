@@ -293,9 +293,9 @@ type PodContainerList struct {
 
 type ContainerResponse struct {
 	Total    int                            `json:"total"`
-	Current  int                            `json:"current"`
+	Page     int                            `json:"page"`
 	PageSize int                            `json:"pageSize"`
-	List     []ContainerClassifyStrInstance `json:"list"`
+	List     []ContainerClassifyStrInstance `json:"containers"`
 }
 
 type ContainerClassifyList struct {
@@ -371,7 +371,7 @@ func (c *containerService) ListContainers(namespace, targetPods, targetLabel str
 
 	containerCells, filteredTotal := page.GenericDataSelectWithFilter(containerToCells(containerStrList), dsQuery)
 	containerResponse.List = containerFromCells(containerCells)
-	containerResponse.Current = dsQuery.PaginationQuery.Page + 1
+	containerResponse.Page = dsQuery.PaginationQuery.Page + 1
 	containerResponse.PageSize = dsQuery.PaginationQuery.ItemsPerPage
 	containerResponse.Total = filteredTotal
 	return &containerResponse, nil

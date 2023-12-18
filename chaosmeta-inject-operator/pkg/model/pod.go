@@ -30,30 +30,47 @@ type PodObject struct {
 	PodIP      string
 	NodeName   string
 	NodeIP     string
-	Containers []ContainerObject
+	Containers []ContainerInfo
+}
+
+type ContainerInfo struct {
+	ContainerRuntime string
+	ContainerId      string
+	ContainerName    string
 }
 
 type ContainerObject struct {
+	Namespace        string
+	PodName          string
+	PodUID           string
+	PodIP            string
+	NodeName         string
+	NodeIP           string
 	ContainerRuntime string
 	ContainerId      string
 	ContainerName    string
 }
 
 func (c *ContainerObject) GetObjectName() string {
-	return fmt.Sprintf("%s%s%s%s%s", c.ContainerRuntime, ObjectNameSplit, c.ContainerId, ObjectNameSplit, c.ContainerName)
+	return fmt.Sprintf("%s%s%s%s%s%s%s", "pod", ObjectNameSplit, c.Namespace, ObjectNameSplit, c.PodName, ObjectNameSplit, c.ContainerName)
 }
 
-func (p *PodObject) GetContainersObjectName() []string {
-	podInfo := fmt.Sprintf("%s%s%s%s%s", "pod", ObjectNameSplit, p.Namespace, ObjectNameSplit, p.PodName)
-	if len(p.Containers) == 0 {
-		return []string{podInfo}
-	} else {
-		objects := make([]string, 0)
-		for _, container := range p.Containers {
-			objects = append(objects, container.GetObjectName())
+func (p *PodObject) GetSubObjects() []ContainerObject {
+	containerObjects := make([]ContainerObject, len(p.Containers))
+	for i, container := range p.Containers {
+		containerObjects[i] = ContainerObject{
+			ContainerId:      container.ContainerId,
+			ContainerRuntime: container.ContainerRuntime,
+			ContainerName:    container.ContainerName,
+			Namespace:        p.Namespace,
+			PodName:          p.PodName,
+			PodUID:           p.PodUID,
+			PodIP:            p.PodIP,
+			NodeName:         p.NodeName,
+			NodeIP:           p.NodeIP,
 		}
-		return objects
 	}
+	return containerObjects
 }
 
 func (p *PodObject) GetObjectName() string {
