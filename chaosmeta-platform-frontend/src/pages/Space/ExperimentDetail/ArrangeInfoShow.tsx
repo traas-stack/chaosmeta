@@ -435,6 +435,9 @@ const ArrangeInfoShow: React.FC<IProps> = (props) => {
           <Form.Item label={'PodName'} name={['exec_range', 'target_name']}>
             <ShowText ellipsis />
           </Form.Item>
+          <Form.Item label={'ContainersName'} name={['exec_range', 'target_sub_name']}>
+            <ShowText ellipsis />
+          </Form.Item>
         </>
       );
     }
