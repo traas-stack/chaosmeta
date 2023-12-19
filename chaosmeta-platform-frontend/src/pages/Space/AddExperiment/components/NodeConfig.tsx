@@ -1,3 +1,4 @@
+import KubernetesContainersNameSelect from '@/components/Select/KubernetesContainersNameSelect';
 import KubernetesDeploymentNameSelect from '@/components/Select/KubernetesDeploymentNameSelect';
 import KubernetesNamespaceSelect from '@/components/Select/KubernetesNamespaceSelect';
 import KubernetesPodNodeSelect from '@/components/Select/KubernetesPodNodeSelect';
@@ -342,6 +343,16 @@ const NodeConfig: React.FC<IProps> = (props) => {
         </>
       );
     }
+    // select 数组转逗号拼接字符串
+    const arrayToString = {
+      valuePropName: 'value',
+      getValueProps: (val: string) => ({
+        value: val ? val.split(',') : undefined,
+      }),
+      getValueFromEvent: (val: string[]) => {
+        return val ? val.join(',') : '';
+      },
+    };
     // 父节点为pod时
     if (isPod()) {
       return (
@@ -380,6 +391,25 @@ const NodeConfig: React.FC<IProps> = (props) => {
               mode="multiple"
               form={form}
               kubernetesNamespace={kubernetesNamespace}
+            />
+          </Form.Item>
+          <Form.Item
+            label="ContainersName"
+            name={['exec_range', 'target_sub_name']}
+            {...arrayToString}
+          >
+            <KubernetesContainersNameSelect
+              mode="multiple"
+              form={form}
+              kubernetesNamespace={kubernetesNamespace}
+              popupMatchSelectWidth={480}
+              onChange={(val: any) => {
+                val = val.filter((item: string) => item !== 'firstcontainer');
+                form.setFieldValue(
+                  ['exec_range', 'target_sub_name'],
+                  val.join(','),
+                );
+              }}
             />
           </Form.Item>
         </>
