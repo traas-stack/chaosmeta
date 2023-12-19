@@ -183,10 +183,10 @@ func (a *Analyzer) GetPodListByPodName(ctx context.Context, namespace string, po
 		if containerName != "" {
 			var err error
 			containers, err := GetTargetContainers(containerName, unitPod.Status.ContainerStatuses)
-			podInfo.Containers = containers
 			if err != nil {
 				return nil, fmt.Errorf("get target container[%s] in pod[%s] error: %s", containerName, unitPod.Name, err.Error())
 			}
+			podInfo.Containers = containers
 		}
 
 		result = append(result, podInfo)
@@ -205,23 +205,36 @@ func GetTargetContainers(containerReg string, status []corev1.ContainerStatus) (
 	var targetContainerInfo corev1.ContainerStatus
 	if containerReg == v1alpha1.FirstContainer {
 		targetContainerInfo = status[0]
+		info, err := getContainerInfo(targetContainerInfo)
+		if err != nil {
+			return nil, err
+		}
+		containers = append(containers, *info)
 	} else {
 		for _, containerStatus := range status {
 			if reg.MatchString(containerStatus.Name) {
-				r, id, err := model.ParseContainerID(containerStatus.ContainerID)
+				info, err := getContainerInfo(containerStatus)
 				if err != nil {
-					err = fmt.Errorf("parse container id[%s] error: %s", targetContainerInfo.ContainerID, err.Error())
+					return nil, err
 				}
-				info := model.ContainerInfo{
-					ContainerId:      id,
-					ContainerRuntime: r,
-					ContainerName:    containerStatus.Name,
-				}
-				containers = append(containers, info)
+				containers = append(containers, *info)
 			}
 		}
 	}
 	return containers, nil
+}
+
+func getContainerInfo(containerStatus corev1.ContainerStatus) (*model.ContainerInfo, error) {
+	r, id, err := model.ParseContainerID(containerStatus.ContainerID)
+	if err != nil {
+		return nil, fmt.Errorf("parse container id[%s] error: %s", containerStatus.ContainerID, err.Error())
+	}
+	info := &model.ContainerInfo{
+		ContainerId:      id,
+		ContainerRuntime: r,
+		ContainerName:    containerStatus.Name,
+	}
+	return info, nil
 }
 
 func GetTargetContainer(containerName string, status []corev1.ContainerStatus) (r, id, name string, err error) {
@@ -435,10 +448,10 @@ func (a *Analyzer) GetPod(ctx context.Context, ns, podName, containerName string
 	if containerName != "" {
 		var err error
 		containers, err := GetTargetContainers(containerName, pod.Status.ContainerStatuses)
-		podInfo.Containers = containers
 		if err != nil {
 			return nil, fmt.Errorf("get target container[%s] in pod[%s] error: %s", containerName, pod.Name, err.Error())
 		}
+		podInfo.Containers = containers
 	}
 
 	return podInfo, nil
