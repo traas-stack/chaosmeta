@@ -180,14 +180,12 @@ func (a *Analyzer) GetPodListByPodName(ctx context.Context, namespace string, po
 			NodeIP:    unitPod.Status.HostIP,
 		}
 
-		if containerName != "" {
-			var err error
-			containers, err := GetTargetContainers(containerName, unitPod.Status.ContainerStatuses)
-			if err != nil {
-				return nil, fmt.Errorf("get target container[%s] in pod[%s] error: %s", containerName, unitPod.Name, err.Error())
-			}
-			podInfo.Containers = containers
+		var err error
+		containers, err := GetTargetContainers(containerName, unitPod.Status.ContainerStatuses)
+		if err != nil {
+			return nil, fmt.Errorf("get target container[%s] in pod[%s] error: %s", containerName, unitPod.Name, err.Error())
 		}
+		podInfo.Containers = containers
 
 		result = append(result, podInfo)
 	}
@@ -203,7 +201,8 @@ func GetTargetContainers(containerReg string, status []corev1.ContainerStatus) (
 	reg := regexp.MustCompile(containerReg)
 	containers = []model.ContainerInfo{}
 	var targetContainerInfo corev1.ContainerStatus
-	if containerReg == v1alpha1.FirstContainer {
+	// no container setting equals to firstcontainer setting
+	if containerReg == v1alpha1.FirstContainer || containerReg == "" {
 		targetContainerInfo = status[0]
 		info, err := getContainerInfo(targetContainerInfo)
 		if err != nil {
@@ -244,7 +243,7 @@ func GetTargetContainer(containerName string, status []corev1.ContainerStatus) (
 	}
 
 	var targetContainerInfo corev1.ContainerStatus
-	if containerName == v1alpha1.FirstContainer {
+	if containerName == v1alpha1.FirstContainer || containerName == "" {
 		targetContainerInfo = status[0]
 	} else {
 		var hasContainer = false
@@ -445,14 +444,12 @@ func (a *Analyzer) GetPod(ctx context.Context, ns, podName, containerName string
 		NodeIP:    pod.Status.HostIP,
 	}
 
-	if containerName != "" {
-		var err error
-		containers, err := GetTargetContainers(containerName, pod.Status.ContainerStatuses)
-		if err != nil {
-			return nil, fmt.Errorf("get target container[%s] in pod[%s] error: %s", containerName, pod.Name, err.Error())
-		}
-		podInfo.Containers = containers
+	var err error
+	containers, err := GetTargetContainers(containerName, pod.Status.ContainerStatuses)
+	if err != nil {
+		return nil, fmt.Errorf("get target container[%s] in pod[%s] error: %s", containerName, pod.Name, err.Error())
 	}
+	podInfo.Containers = containers
 
 	return podInfo, nil
 }
