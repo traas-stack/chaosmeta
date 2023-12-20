@@ -30,10 +30,13 @@ import (
 	"math/rand"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sort"
 	"time"
 )
+
+const defaultConcurrentReconciles = 10
 
 // ExperimentReconciler reconciles a Experiment object
 type ExperimentReconciler struct {
@@ -228,7 +231,7 @@ func (r *ExperimentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	//}
 
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha1.Experiment{}).
+		For(&v1alpha1.Experiment{}).WithOptions(controller.Options{MaxConcurrentReconciles: defaultConcurrentReconciles}).
 		Complete(r)
 }
 
