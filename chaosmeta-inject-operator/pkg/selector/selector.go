@@ -25,6 +25,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"regexp"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strings"
 )
 
 const (
@@ -198,6 +199,7 @@ func GetTargetContainers(containerReg string, status []corev1.ContainerStatus) (
 		err = fmt.Errorf("no container in pod")
 		return
 	}
+	containerReg = strings.ReplaceAll(containerReg, ",", "|")
 	reg := regexp.MustCompile(containerReg)
 	containers = []model.ContainerInfo{}
 	var targetContainerInfo corev1.ContainerStatus
