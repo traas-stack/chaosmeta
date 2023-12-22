@@ -110,6 +110,8 @@ spec:
                       type: array
                     namespace:
                       type: string
+                    subName:
+                      type: string
                   type: object
                 type: array
               targetPhase:
@@ -364,6 +366,7 @@ spec:
     protocol: TCP
     targetPort: 9443
   selector:
+    app: chaosmeta-inject
     control-plane: controller-manager
 ---
 apiVersion: apps/v1
@@ -383,12 +386,14 @@ spec:
   replicas: 1
   selector:
     matchLabels:
+      app: chaosmeta-inject
       control-plane: controller-manager
   template:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-container: manager
       labels:
+        app: chaosmeta-inject
         control-plane: controller-manager
     spec:
       containers:
@@ -396,7 +401,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-inject-controller:v0.1.1
+        image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-inject-controller:v0.1.2
         livenessProbe:
           httpGet:
             path: /healthz

@@ -388,7 +388,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: DEPLOYREGISTRY/chaosmeta-inject-controller:v0.1.1
+        image: DEPLOYREGISTRY/chaosmeta-inject-controller:v0.1.2
         livenessProbe:
           httpGet:
             path: /healthz
