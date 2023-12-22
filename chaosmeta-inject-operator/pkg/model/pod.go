@@ -75,11 +75,6 @@ func (p *PodObject) GetSubObjects() []ContainerObject {
 
 func (p *PodObject) GetObjectName() string {
 	podInfo := fmt.Sprintf("%s%s%s%s%s", "pod", ObjectNameSplit, p.Namespace, ObjectNameSplit, p.PodName)
-	if len(p.Containers) != 0 {
-		for _, container := range p.Containers {
-			podInfo = fmt.Sprintf("%s%s%s", podInfo, ObjectNameSplit, container)
-		}
-	}
 
 	return podInfo
 }
