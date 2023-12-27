@@ -97,33 +97,34 @@ const KubernetesContainersNameSelect = (props: IProps) => {
       filterOption={false}
       onChange={onChange}
       placeholder={placeholder}
-      style={style}
       optionLabelProp={'value'}
+      popupClassName="container-select"
     >
       {containerList.length > 0 && (
-        <OptGroup
-          label={
-            <GroupLabel>
-              <div className="container">container</div>
-              <div className="pods">related pods</div>
-            </GroupLabel>
-          }
-        >
-          {containerList.map(({ pods, container }) => {
-            return (
-              <Option value={container} key={container}>
-                <OptionRow className={'ellipsis'}>
-                  <GrayText>{container}</GrayText>
-                  &nbsp;&nbsp;
-                  <Tooltip title={pods}>
-                    <span>{pods}</span>
-                  </Tooltip>
-                </OptionRow>
-              </Option>
-            );
-          })}
-        </OptGroup>
-      )}
+          <OptGroup
+            label={
+              <GroupLabel>
+                <div className="container">container</div>
+                <div className="pods">related pods</div>
+              </GroupLabel>
+            }
+          >
+            {containerList.map(({ pods, container }) => {
+              return (
+                <Option value={container} key={container}>
+                  <OptionRow>
+                    <Tooltip title={container}>
+                      <GrayText>{container}</GrayText>
+                    </Tooltip>
+                    <Tooltip title={pods}>
+                      <div className="pods">{pods}</div>
+                    </Tooltip>
+                  </OptionRow>
+                </Option>
+              );
+            })}
+          </OptGroup>
+        )}
     </Select>
   );
 };

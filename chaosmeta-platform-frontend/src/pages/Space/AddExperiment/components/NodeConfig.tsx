@@ -314,6 +314,15 @@ const NodeConfig: React.FC<IProps> = (props) => {
     handleEditNode('duration', newDuration);
   };
 
+  //删除Pod、增删目标Pod实例的标签、为目标Pod实例增加finalizer不显示选择containerName,这三个没有额外标识区分故采用id+description判断
+  const isHiddenContainer = () =>
+    [67, 68, 69].includes(activeCol.id) ||
+    [
+      'descDelete the target Pod instanceription',
+      'Add or delete the label of the target Pod instance',
+      'Add a finalizer to the target Pod instance',
+    ].includes(activeCol.description);
+
   // 攻击范围下不同节点渲染不同
   const attackRangeRender = () => {
     // 父节点为node时
@@ -393,25 +402,27 @@ const NodeConfig: React.FC<IProps> = (props) => {
               kubernetesNamespace={kubernetesNamespace}
             />
           </Form.Item>
-          <Form.Item
-            label="ContainersName"
-            name={['exec_range', 'target_sub_name']}
-            {...arrayToString}
-          >
-            <KubernetesContainersNameSelect
-              mode="multiple"
-              form={form}
-              kubernetesNamespace={kubernetesNamespace}
-              popupMatchSelectWidth={480}
-              onChange={(val: any) => {
-                val = val.filter((item: string) => item !== 'firstcontainer');
-                form.setFieldValue(
-                  ['exec_range', 'target_sub_name'],
-                  val.join(','),
-                );
-              }}
-            />
-          </Form.Item>
+          {!isHiddenContainer() && (
+            <Form.Item
+              label="ContainersName"
+              name={['exec_range', 'target_sub_name']}
+              {...arrayToString}
+            >
+              <KubernetesContainersNameSelect
+                mode="tags"
+                form={form}
+                kubernetesNamespace={kubernetesNamespace}
+                popupMatchSelectWidth={480}
+                onChange={(val: any) => {
+                  val = val.filter((item: string) => item !== 'firstcontainer');
+                  form.setFieldValue(
+                    ['exec_range', 'target_sub_name'],
+                    val.join(','),
+                  );
+                }}
+              />
+            </Form.Item>
+          )}
         </>
       );
     }
