@@ -24,29 +24,28 @@ import (
 const (
 	certKey          = "tls.crt"
 	keyKey           = "tls.key"
-	csrKey           = "tls.csr"
 	injectSecretName = "chaosmeta-inject-webhook-server-cert"
 	defaultNamespace = "chaosmeta"
 	namespaceEnv     = "DEFAULTNAMESPACE"
 	secretPath       = "/tmp/k8s-webhook-server/serving-certs/"
 )
 
-func isExistAndValid(client client.Client) bool {
+func isExistAndValid(client client.Client) (*v1.Secret, bool) {
 	secret := &v1.Secret{}
 	err := client.Get(context.Background(), types.NamespacedName{Name: injectSecretName, Namespace: defaultNamespace}, secret)
 	if err == nil {
 		// is it expired
 		cert, err1 := x509.ParseCertificate(secret.Data[certKey])
 		if err1 != nil {
-			return false
+			return secret, false
 		}
 		now := time.Now()
 		if now.After(cert.NotAfter) || now.Before(cert.NotBefore) {
-			return false
+			return secret, false
 		}
-		return true
+		return secret, true
 	}
-	return false
+	return nil, false
 }
 
 func InitCert(log logr.Logger) error {
@@ -60,8 +59,15 @@ func InitCert(log logr.Logger) error {
 		return err
 	}
 
-	// isExist
-	if isExistAndValid(cl) {
+	if oldSecret, valid := isExistAndValid(cl); valid == true {
+		err = saveSecretToFile(log, oldSecret.Data[certKey], oldSecret.Data[keyKey])
+		if err != nil {
+			return err
+		}
+		err = updateWebhookConfig(log, cl, oldSecret.Data[certKey])
+		if err != nil {
+			return err
+		}
 		return nil
 	}
 	ca := &x509.Certificate{
@@ -164,36 +170,45 @@ func InitCert(log logr.Logger) error {
 		log.Error(err, "create secret failed")
 		return err
 	}
-	err = os.MkdirAll(secretPath, 755)
+	err = saveSecretToFile(log, serverCertPEM.Bytes(), serverPrivateKeyPEM.Bytes())
+	if err != nil {
+		return err
+	}
+	err = updateWebhookConfig(log, cl, serverCertPEM.Bytes())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func saveSecretToFile(log logr.Logger, serverCertBytes []byte, serverPrivateKeyBytes []byte) error {
+	err := os.MkdirAll(secretPath, 755)
 	if err != nil {
 		log.Error(err, "create secret dir failed")
 		return err
 	}
-	file, err := os.Create(secretPath + certKey)
+	err = os.WriteFile(secretPath+certKey, serverCertBytes, 0600)
 	if err != nil {
 		log.Error(err, "create secret file failed")
 		return err
 	}
-	_, err = file.Write(serverCertPEM.Bytes())
+
+	err = os.WriteFile(secretPath+keyKey, serverPrivateKeyBytes, 0600)
 	if err != nil {
 		return err
 	}
-	file, err = os.Create(secretPath + keyKey)
-	if err != nil {
-		return err
-	}
-	_, err = file.Write(serverPrivateKeyPEM.Bytes())
-	if err != nil {
-		return err
-	}
+	return nil
+}
+
+func updateWebhookConfig(log logr.Logger, cl client.Client, serverCertBytes []byte) error {
 	mutatingWebhookConfig := &admissionregistrationv1.MutatingWebhookConfiguration{}
-	err = cl.Get(context.Background(), types.NamespacedName{Name: "chaosmeta-inject-mutating-webhook-configuration"}, mutatingWebhookConfig)
+	err := cl.Get(context.Background(), types.NamespacedName{Name: "chaosmeta-inject-mutating-webhook-configuration"}, mutatingWebhookConfig)
 	if err != nil {
 		log.Error(err, "failed to get mutatingWebhookConfig")
 		return err
 	}
 	if mutatingWebhookConfig.Webhooks[0].ClientConfig.CABundle == nil {
-		mutatingWebhookConfig.Webhooks[0].ClientConfig.CABundle = serverCertPEM.Bytes()
+		mutatingWebhookConfig.Webhooks[0].ClientConfig.CABundle = serverCertBytes
 		err = cl.Update(context.Background(), mutatingWebhookConfig)
 		if err != nil {
 			log.Error(err, "failed to get mutatingWebhookConfig")
@@ -208,7 +223,7 @@ func InitCert(log logr.Logger) error {
 		return err
 	}
 	if validatingWebhookConfig.Webhooks[0].ClientConfig.CABundle == nil {
-		validatingWebhookConfig.Webhooks[0].ClientConfig.CABundle = serverCertPEM.Bytes()
+		validatingWebhookConfig.Webhooks[0].ClientConfig.CABundle = serverCertBytes
 		err = cl.Update(context.Background(), validatingWebhookConfig)
 		if err != nil {
 			log.Error(err, "failed to get validatingWebhookConfig")
