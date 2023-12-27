@@ -153,7 +153,7 @@ func Test_initProcess(t *testing.T) {
 		PodIP:     "1.2.3.4",
 		NodeName:  "node-1",
 		NodeIP:    "2.2.2.2",
-		Containers: []model.ContainerObject{
+		Containers: []model.ContainerInfo{
 			{
 				ContainerId:      "g3g3g",
 				ContainerRuntime: "docker",
