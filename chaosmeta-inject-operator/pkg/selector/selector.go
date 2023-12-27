@@ -238,40 +238,6 @@ func getContainerInfo(containerStatus corev1.ContainerStatus) (*model.ContainerI
 	return info, nil
 }
 
-func GetTargetContainer(containerName string, status []corev1.ContainerStatus) (r, id, name string, err error) {
-	if len(status) == 0 {
-		err = fmt.Errorf("no container in pod")
-		return
-	}
-
-	var targetContainerInfo corev1.ContainerStatus
-	if containerName == v1alpha1.FirstContainer || containerName == "" {
-		targetContainerInfo = status[0]
-	} else {
-		var hasContainer = false
-		for _, unitC := range status {
-			if unitC.Name == containerName {
-				targetContainerInfo = unitC
-				hasContainer = true
-				break
-			}
-		}
-
-		if !hasContainer {
-			err = fmt.Errorf("not found container %s", containerName)
-			return
-		}
-	}
-
-	name = targetContainerInfo.Name
-	r, id, err = model.ParseContainerID(targetContainerInfo.ContainerID)
-	if err != nil {
-		err = fmt.Errorf("parse container id[%s] error: %s", targetContainerInfo.ContainerID, err.Error())
-	}
-
-	return
-}
-
 // GetNodeListByLabel return all node when label is empty map or nil
 func (a *Analyzer) GetNodeListByLabel(ctx context.Context, label map[string]string, containerName string) ([]*model.NodeObject, error) {
 	opts := []client.ListOption{
