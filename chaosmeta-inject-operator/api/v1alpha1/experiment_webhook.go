@@ -24,7 +24,6 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -62,7 +61,7 @@ func (r *Experiment) Default() {
 		r.ObjectMeta.Finalizers = append(r.ObjectMeta.Finalizers, FinalizerName)
 	}
 
-	if r.Spec.Scope == PodScopeType || (r.Spec.Scope == KubernetesScopeType && strings.Index(r.Spec.Experiment.Target, "container") >= 0) {
+	if r.Spec.Scope == PodScopeType || (r.Spec.Scope == KubernetesScopeType && r.Spec.Experiment.Target == "pod") {
 		// set default container
 		for i, selector := range r.Spec.Selector {
 			if selector.SubName == "" {
