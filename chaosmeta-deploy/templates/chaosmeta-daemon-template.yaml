@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: chaosmeta-daemon
-  namespace: DEPLOYNAMESPACE
+  namespace: chaosmeta
 spec:
   selector:
     matchLabels:
@@ -19,7 +19,7 @@ spec:
 #        chaos-role.chaosmeta.io: chaosmeta-daemon
       containers:
         - name: chaosmeta-daemon
-          image: DEPLOYREGISTRY/chaosmeta-daemon:v0.5.1
+          image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-daemon:v0.5.1
           securityContext:
             privileged: true
           volumeMounts:
