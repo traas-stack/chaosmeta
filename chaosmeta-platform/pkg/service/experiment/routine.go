@@ -57,6 +57,7 @@ func convertToWorkflowNodesDetail(node *WorkflowNode, workflowNodesDetail *exper
 	if node.FaultRange != nil {
 		workflowNodesDetail.Subtasks = &experimentInstanceModel.FaultRangeInstance{
 			TargetName:      node.FaultRange.TargetName,
+			TargetSubName:   node.FaultRange.TargetSubName,
 			TargetIP:        node.FaultRange.TargetIP,
 			TargetHostname:  node.FaultRange.TargetHostname,
 			TargetLabel:     node.FaultRange.TargetLabel,

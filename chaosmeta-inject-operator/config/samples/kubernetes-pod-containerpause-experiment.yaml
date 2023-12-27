@@ -16,11 +16,8 @@ spec:
     target: pod
     fault: containerpause
     duration: 10m
-    args:
-      - key: containername
-        value: "app"
-        valueType: string
   selector:
     - namespace: default
       name:
         - frontend
+      subName: app

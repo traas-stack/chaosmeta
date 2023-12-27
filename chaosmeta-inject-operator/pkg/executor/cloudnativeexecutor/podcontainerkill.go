@@ -52,12 +52,12 @@ func (e *PodContainerKillExecutor) Inject(ctx context.Context, injectObject, uid
 	}
 
 	hostIP := pod.Status.HostIP
-	r, id, _, err := selector.GetTargetContainer(containerName, pod.Status.ContainerStatuses)
-	if err != nil {
+	containers, err := selector.GetTargetContainers(containerName, pod.Status.ContainerStatuses)
+	if err != nil || len(containers) == 0 {
 		return "", fmt.Errorf("get target container[%s] in pod[%s] error: %s", containerName, pod.Name, err.Error())
 	}
 
-	return hostIP, remoteexecutor.GetRemoteExecutor().Inject(ctx, hostIP, "container", "kill", uid, timeout, id, r, nil)
+	return hostIP, remoteexecutor.GetRemoteExecutor().Inject(ctx, hostIP, "container", "kill", uid, timeout, containers[0].ContainerId, containers[0].ContainerRuntime, nil)
 }
 
 func (e *PodContainerKillExecutor) Recover(ctx context.Context, injectObject, uid, backup string) error {

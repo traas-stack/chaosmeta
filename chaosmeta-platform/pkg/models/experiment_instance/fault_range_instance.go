@@ -25,6 +25,7 @@ type FaultRangeInstance struct {
 	Id                       int    `json:"id" orm:"pk;auto;column(id)"`
 	WorkflowNodeInstanceUUID string `json:"workflow_node_instance_uuid" orm:"index;column(workflow_node_instance_uuid);size(64)"`
 	TargetName               string `json:"target_name" orm:"column(target_name);size(255)"`
+	TargetSubName            string `json:"target_sub_name" orm:"column(target_sub_name);size(255)"`
 	TargetIP                 string `json:"target_ip" orm:"column(target_ip);size(32)"`
 	TargetHostname           string `json:"target_hostname" orm:"column(target_hostname);size(255)"`
 	TargetLabel              string `json:"target_label" orm:"column(target_label);size(1024)"`

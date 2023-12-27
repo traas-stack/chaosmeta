@@ -23,7 +23,9 @@ import (
 	"github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/pkg/model"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"regexp"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strings"
 )
 
 const (
@@ -112,7 +114,7 @@ func (a *Analyzer) GetPodListByLabelInNode(ctx context.Context, namespace string
 	return result, nil
 }
 
-func (a *Analyzer) GetPodListByLabel(ctx context.Context, namespace string, label map[string]string, containerName string) ([]*model.PodObject, error) {
+func (a *Analyzer) GetPodListByLabel(ctx context.Context, namespace string, label map[string]string, containerReg string) ([]*model.PodObject, error) {
 	opts := []client.ListOption{
 		client.InNamespace(namespace),
 		client.MatchingLabels(label),
@@ -134,12 +136,13 @@ func (a *Analyzer) GetPodListByLabel(ctx context.Context, namespace string, labe
 			NodeIP:    unitPod.Status.HostIP,
 		}
 
-		if containerName != "" {
+		if containerReg != "" {
 			var err error
-			podInfo.ContainerRuntime, podInfo.ContainerID, podInfo.ContainerName, err = GetTargetContainer(containerName, unitPod.Status.ContainerStatuses)
+			containers, err := GetTargetContainers(containerReg, unitPod.Status.ContainerStatuses)
 			if err != nil {
-				return nil, fmt.Errorf("get target container[%s] in pod[%s] error: %s", containerName, unitPod.Name, err.Error())
+				return nil, fmt.Errorf("get target container[%s] in pod[%s] error: %s", containerReg, unitPod.Name, err.Error())
 			}
+			podInfo.Containers = containers
 		}
 
 		result = append(result, podInfo)
@@ -178,13 +181,12 @@ func (a *Analyzer) GetPodListByPodName(ctx context.Context, namespace string, po
 			NodeIP:    unitPod.Status.HostIP,
 		}
 
-		if containerName != "" {
-			var err error
-			podInfo.ContainerRuntime, podInfo.ContainerID, podInfo.ContainerName, err = GetTargetContainer(containerName, unitPod.Status.ContainerStatuses)
-			if err != nil {
-				return nil, fmt.Errorf("get target container[%s] in pod[%s] error: %s", containerName, unitPod.Name, err.Error())
-			}
+		var err error
+		containers, err := GetTargetContainers(containerName, unitPod.Status.ContainerStatuses)
+		if err != nil {
+			return nil, fmt.Errorf("get target container[%s] in pod[%s] error: %s", containerName, unitPod.Name, err.Error())
 		}
+		podInfo.Containers = containers
 
 		result = append(result, podInfo)
 	}
@@ -192,38 +194,48 @@ func (a *Analyzer) GetPodListByPodName(ctx context.Context, namespace string, po
 	return result, nil
 }
 
-func GetTargetContainer(containerName string, status []corev1.ContainerStatus) (r, id, name string, err error) {
+func GetTargetContainers(containerReg string, status []corev1.ContainerStatus) (containers []model.ContainerInfo, err error) {
 	if len(status) == 0 {
 		err = fmt.Errorf("no container in pod")
 		return
 	}
-
+	containerReg = strings.ReplaceAll(containerReg, ",", "|")
+	reg := regexp.MustCompile(containerReg)
+	containers = []model.ContainerInfo{}
 	var targetContainerInfo corev1.ContainerStatus
-	if containerName == v1alpha1.FirstContainer {
+	// no container setting equals to firstcontainer setting
+	if containerReg == v1alpha1.FirstContainer || containerReg == "" {
 		targetContainerInfo = status[0]
+		info, err := getContainerInfo(targetContainerInfo)
+		if err != nil {
+			return nil, err
+		}
+		containers = append(containers, *info)
 	} else {
-		var hasContainer = false
-		for _, unitC := range status {
-			if unitC.Name == containerName {
-				targetContainerInfo = unitC
-				hasContainer = true
-				break
+		for _, containerStatus := range status {
+			if reg.MatchString(containerStatus.Name) {
+				info, err := getContainerInfo(containerStatus)
+				if err != nil {
+					return nil, err
+				}
+				containers = append(containers, *info)
 			}
 		}
-
-		if !hasContainer {
-			err = fmt.Errorf("not found container %s", containerName)
-			return
-		}
 	}
+	return containers, nil
+}
 
-	name = targetContainerInfo.Name
-	r, id, err = model.ParseContainerID(targetContainerInfo.ContainerID)
+func getContainerInfo(containerStatus corev1.ContainerStatus) (*model.ContainerInfo, error) {
+	r, id, err := model.ParseContainerID(containerStatus.ContainerID)
 	if err != nil {
-		err = fmt.Errorf("parse container id[%s] error: %s", targetContainerInfo.ContainerID, err.Error())
+		return nil, fmt.Errorf("parse container id[%s] error: %s", containerStatus.ContainerID, err.Error())
 	}
-
-	return
+	info := &model.ContainerInfo{
+		ContainerId:      id,
+		ContainerRuntime: r,
+		ContainerName:    containerStatus.Name,
+	}
+	return info, nil
 }
 
 // GetNodeListByLabel return all node when label is empty map or nil
@@ -400,13 +412,12 @@ func (a *Analyzer) GetPod(ctx context.Context, ns, podName, containerName string
 		NodeIP:    pod.Status.HostIP,
 	}
 
-	if containerName != "" {
-		var err error
-		podInfo.ContainerRuntime, podInfo.ContainerID, podInfo.ContainerName, err = GetTargetContainer(containerName, pod.Status.ContainerStatuses)
-		if err != nil {
-			return nil, fmt.Errorf("get target container[%s] in pod[%s] error: %s", containerName, pod.Name, err.Error())
-		}
+	var err error
+	containers, err := GetTargetContainers(containerName, pod.Status.ContainerStatuses)
+	if err != nil {
+		return nil, fmt.Errorf("get target container[%s] in pod[%s] error: %s", containerName, pod.Name, err.Error())
 	}
+	podInfo.Containers = containers
 
 	return podInfo, nil
 }

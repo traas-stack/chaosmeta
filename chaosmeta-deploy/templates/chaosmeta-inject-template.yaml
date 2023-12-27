@@ -97,6 +97,8 @@ spec:
                       type: array
                     namespace:
                       type: string
+                    subName:
+                      type: string
                   type: object
                 type: array
               targetPhase:
@@ -386,7 +388,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: DEPLOYREGISTRY/chaosmeta-inject-controller:v0.1.1
+        image: DEPLOYREGISTRY/chaosmeta-inject-controller:v0.1.2
         livenessProbe:
           httpGet:
             path: /healthz
@@ -507,7 +509,7 @@ data:
       "executor": {
         "mode": "daemonset",
         "executor": "chaosmetad",
-        "version": "0.3.9",
+        "version": "0.5.1",
         "agentConfig": {
           "agentPort": 29595
         },

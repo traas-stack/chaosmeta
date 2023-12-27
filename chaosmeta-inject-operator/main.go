@@ -45,6 +45,8 @@ import (
 
 	injectv1alpha1 "github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/api/v1alpha1"
 	"github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/controllers"
+	"net/http"
+	_ "net/http/pprof"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -113,7 +115,12 @@ func main() {
 	selector.SetupAnalyzer(mgr.GetClient())
 	common.SetGoroutinePool(mainConfig.Worker.PoolCount)
 	setupLog.Info(fmt.Sprintf("set goroutine pool success: %d", mainConfig.Worker.PoolCount))
-
+	go func() {
+		err = http.ListenAndServe("localhost:8090", nil)
+		if err != nil {
+			setupLog.Error(err, "failed to start pprof")
+		}
+	}()
 	// create APIServer client
 	t := []injectv1alpha1.CloudTargetType{
 		injectv1alpha1.PodCloudTarget,

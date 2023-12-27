@@ -16,11 +16,8 @@ spec:
     target: pod
     fault: containerkill
     duration: 2m
-    args:
-      - key: containername
-        value: "firstcontainer"
-        valueType: string
   selector:
     - namespace: default
       name:
         - frontend
+      subName: firstcontainer

@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/api/v1alpha1"
-	"github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/pkg/common"
 	"github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/pkg/executor/remoteexecutor"
 	"github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/pkg/model"
 	"github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/pkg/selector"
@@ -41,7 +40,7 @@ func (h *PodScopeHandler) ConvertSelector(ctx context.Context, spec *v1alpha1.Ex
 		isExist = make(map[string]bool)
 	)
 
-	argsList := common.GetArgs(spec.Experiment.Args, []string{v1alpha1.ContainerKey})
+	//argsList := common.GetArgs(spec.Experiment.Args, []string{v1alpha1.ContainerKey})
 	//if argsList[0] == "" {
 	//	return nil, fmt.Errorf("container is not provide")
 	//}
@@ -51,7 +50,7 @@ func (h *PodScopeHandler) ConvertSelector(ctx context.Context, spec *v1alpha1.Ex
 			return nil, fmt.Errorf("selector of scope pod must provide namespace")
 		}
 
-		resultUnitSelector, err := getPodObjectList(ctx, unitSelector, argsList[0])
+		resultUnitSelector, err := getPodObjectList(ctx, unitSelector)
 		if err != nil {
 			return nil, err
 		}
@@ -104,11 +103,16 @@ func (h *PodScopeHandler) ExecuteInject(ctx context.Context, injectObject model.
 		return "", fmt.Errorf("inject object change to pod error")
 	}
 
-	if p.ContainerID == "" || p.ContainerRuntime == "" {
+	if len(p.Containers) == 0 {
 		return "", fmt.Errorf("container not provide")
 	}
-
-	return "", remoteexecutor.GetRemoteExecutor().Inject(ctx, p.NodeIP, expArgs.Target, expArgs.Fault, UID, expArgs.Duration, p.ContainerID, p.ContainerRuntime, expArgs.Args)
+	for _, container := range p.Containers {
+		err := remoteexecutor.GetRemoteExecutor().Inject(ctx, p.NodeIP, expArgs.Target, expArgs.Fault, UID, expArgs.Duration, container.ContainerId, container.ContainerRuntime, expArgs.Args)
+		if err != nil {
+			return "", err
+		}
+	}
+	return "", nil
 }
 
 func (h *PodScopeHandler) ExecuteRecover(ctx context.Context, injectObject model.AtomicObject, UID, backup string, expArgs *v1alpha1.ExperimentCommon) error {
@@ -120,25 +124,27 @@ func (h *PodScopeHandler) ExecuteRecover(ctx context.Context, injectObject model
 	return remoteexecutor.GetRemoteExecutor().Recover(ctx, container.NodeIP, UID)
 }
 
-func getPodObjectList(ctx context.Context, selectorUnit v1alpha1.SelectorUnit, containerName string) ([]model.AtomicObject, error) {
+func getPodObjectList(ctx context.Context, selectorUnit v1alpha1.SelectorUnit) ([]model.AtomicObject, error) {
 	var err error
 	analyzer := selector.GetAnalyzer()
 	var podList []*model.PodObject
 	if len(selectorUnit.Name) != 0 {
-		podList, err = analyzer.GetPodListByPodName(ctx, selectorUnit.Namespace, selectorUnit.Name, containerName)
+		podList, err = analyzer.GetPodListByPodName(ctx, selectorUnit.Namespace, selectorUnit.Name, selectorUnit.SubName)
 		if err != nil {
 			return nil, fmt.Errorf("get pod info by podname list error: %s", err.Error())
 		}
 	} else {
-		podList, err = analyzer.GetPodListByLabel(ctx, selectorUnit.Namespace, selectorUnit.Label, containerName)
+		podList, err = analyzer.GetPodListByLabel(ctx, selectorUnit.Namespace, selectorUnit.Label, selectorUnit.SubName)
 		if err != nil {
 			return nil, fmt.Errorf("get pod info by podname list error: %s", err.Error())
 		}
 	}
 
-	var result = make([]model.AtomicObject, len(podList))
-	for i := range podList {
-		result[i] = podList[i]
+	var result = make([]model.AtomicObject, 0)
+	for _, pod := range podList {
+		for _, subObject := range pod.GetSubObjects() {
+			result = append(result, &subObject)
+		}
 	}
 
 	return result, err

@@ -97,9 +97,11 @@ func TestRecoverPhaseHandler_SolveCreated_OneToRunning(t *testing.T) {
 			PodIP:     "1.2.3.4",
 			NodeName:  "node-1",
 			NodeIP:    "2.2.2.2",
-
-			ContainerID:      "g3g3g",
-			ContainerRuntime: "docker",
+			Containers: []model.ContainerInfo{{
+				ContainerId:      "g3g3g",
+				ContainerRuntime: "docker",
+			},
+			},
 		}
 		re = model.AtomicObject(reContainer)
 	)
@@ -203,9 +205,10 @@ func TestRecoverPhaseHandler_SolveRunning(t *testing.T) {
 			PodIP:     "1.2.3.1",
 			NodeName:  "node-1",
 			NodeIP:    "2.2.2.1",
-
-			ContainerID:      "g3g3g1",
-			ContainerRuntime: "docker",
+			Containers: []model.ContainerInfo{{
+				ContainerId:      "g3g3g1",
+				ContainerRuntime: "docker",
+			}},
 		}
 		reContainer2 = &model.PodObject{
 
@@ -215,9 +218,10 @@ func TestRecoverPhaseHandler_SolveRunning(t *testing.T) {
 			PodIP:     "1.2.3.2",
 			NodeName:  "node-2",
 			NodeIP:    "2.2.2.2",
-
-			ContainerID:      "g3g3g2",
-			ContainerRuntime: "docker",
+			Containers: []model.ContainerInfo{{
+				ContainerId:      "g3g3g2",
+				ContainerRuntime: "docker",
+			}},
 		}
 		re1 = model.AtomicObject(reContainer1)
 		re2 = model.AtomicObject(reContainer2)
