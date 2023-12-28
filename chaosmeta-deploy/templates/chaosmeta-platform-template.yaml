@@ -89,7 +89,7 @@ spec:
       serviceAccountName: chaosmeta-platform
       containers:
         - name: chaosmeta-platform
-          image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-platform:v0.6.0
+          image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-platform:v0.6.1
           resources:
             requests:
               cpu: "1"
@@ -101,7 +101,7 @@ spec:
             - name: chaosmeta-config
               mountPath: /home/admin/conf
         - name: chaosmeta-platform-frontend
-          image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-platform-frontend:v0.6.0
+          image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-platform-frontend:v0.6.1
           ports:
             - containerPort: 8000
       volumes:
