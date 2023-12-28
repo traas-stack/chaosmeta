@@ -20,12 +20,12 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	initwebhook "github.com/traas-stack/chaosmeta/chaosmeta-common/webhook"
 	"github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/pkg/restclient"
 	"os"
-	"time"
-
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"time"
 
 	"github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/pkg/common"
 	"github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/pkg/config"
@@ -48,6 +48,10 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	//+kubebuilder:scaffold:imports
+)
+
+const (
+	ComponentInject = "inject"
 )
 
 var (
@@ -135,9 +139,13 @@ func main() {
 		os.Exit(1)
 	}
 	setupLog.Info(fmt.Sprintf("set APIServer for cloud object success: %v", t))
-
+	err = initwebhook.InitCert(setupLog, ComponentInject)
+	if err != nil {
+		setupLog.Error(err, "init cert failed")
+		os.Exit(1)
+	}
 	// set executor
-	if err := remoteexecutor.SetGlobalRemoteExecutor(&mainConfig.Executor, mgr.GetConfig(), mgr.GetScheme()); err != nil {
+	if err = remoteexecutor.SetGlobalRemoteExecutor(&mainConfig.Executor, mgr.GetConfig(), mgr.GetScheme()); err != nil {
 		setupLog.Error(err, "set remote executor error")
 		os.Exit(1)
 	}
