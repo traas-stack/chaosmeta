@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: chaosmeta-platform
-  namespace: DEPLOYNAMESPACE
+  namespace: chaosmeta
 data:
   app.conf: |-
     appname = "chaosmeta-platform"
@@ -14,8 +14,8 @@ data:
     copyrequestbody = true
   app.yaml: |-
     secretkey: chaosmeta1234567
-    argoWorkflowNamespace: DEPLOYNAMESPACE
-    workflowNamespace: DEPLOYNAMESPACE
+    argoWorkflowNamespace: chaosmeta
+    workflowNamespace: chaosmeta
     db:
       name: chaosmeta
       user: root
@@ -32,7 +32,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: chaosmeta-platform
-  namespace: DEPLOYNAMESPACE
+  namespace: chaosmeta
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -66,13 +66,13 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: chaosmeta-platform
-    namespace: DEPLOYNAMESPACE
+    namespace: chaosmeta
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: chaosmeta-platform
-  namespace: DEPLOYNAMESPACE
+  namespace: chaosmeta
   labels:
     release: chaosmeta-platform
     app: chaosmeta-platform
@@ -89,7 +89,7 @@ spec:
       serviceAccountName: chaosmeta-platform
       containers:
         - name: chaosmeta-platform
-          image: DEPLOYREGISTRY/chaosmeta-platform:v0.6.0
+          image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-platform:v0.6.1
           resources:
             requests:
               cpu: "1"
@@ -101,7 +101,7 @@ spec:
             - name: chaosmeta-config
               mountPath: /home/admin/conf
         - name: chaosmeta-platform-frontend
-          image: DEPLOYREGISTRY/chaosmeta-platform-frontend:v0.6.0
+          image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-platform-frontend:v0.6.1
           ports:
             - containerPort: 8000
       volumes:
@@ -118,7 +118,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: chaosmeta-mysql
-  namespace: DEPLOYNAMESPACE
+  namespace: chaosmeta
 spec:
   ports:
     - port: 3306
@@ -130,7 +130,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: chaosmeta-mysql
-  namespace: DEPLOYNAMESPACE
+  namespace: chaosmeta
 spec:
   selector:
     matchLabels:

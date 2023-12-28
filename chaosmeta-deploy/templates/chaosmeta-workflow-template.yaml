@@ -878,19 +878,19 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: argo
-  namespace: DEPLOYNAMESPACE
+  namespace: chaosmeta
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: argo-server
-  namespace: DEPLOYNAMESPACE
+  namespace: chaosmeta
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: argo-role
-  namespace: DEPLOYNAMESPACE
+  namespace: chaosmeta
 rules:
 - apiGroups:
   - coordination.k8s.io
@@ -1176,7 +1176,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: argo-binding
-  namespace: DEPLOYNAMESPACE
+  namespace: chaosmeta
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -1184,7 +1184,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: argo
-  namespace: DEPLOYNAMESPACE
+  namespace: chaosmeta
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -1197,7 +1197,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: argo
-  namespace: DEPLOYNAMESPACE
+  namespace: chaosmeta
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -1210,22 +1210,22 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: argo-server
-  namespace: DEPLOYNAMESPACE
+  namespace: chaosmeta
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: workflow-controller-configmap
-  namespace: DEPLOYNAMESPACE
+  namespace: chaosmeta
 data:
   executor: |
-    image: DEPLOYREGISTRY/argoexec:v3.4.10
+    image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/argoexec:v3.4.10
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: argo-server
-  namespace: DEPLOYNAMESPACE
+  namespace: chaosmeta
 spec:
   ports:
   - name: web
@@ -1244,7 +1244,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: argo-server
-  namespace: DEPLOYNAMESPACE
+  namespace: chaosmeta
 spec:
   selector:
     matchLabels:
@@ -1258,7 +1258,7 @@ spec:
       - args:
         - server
         env: []
-        image: DEPLOYREGISTRY/argocli:v3.4.10
+        image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/argocli:v3.4.10
         name: argo-server
         ports:
         - containerPort: 2746
@@ -1293,7 +1293,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: workflow-controller
-  namespace: DEPLOYNAMESPACE
+  namespace: chaosmeta
 spec:
   selector:
     matchLabels:
@@ -1313,7 +1313,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.name
-        image: DEPLOYREGISTRY/workflow-controller:v3.4.10
+        image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/workflow-controller:v3.4.10
         livenessProbe:
           failureThreshold: 3
           httpGet:

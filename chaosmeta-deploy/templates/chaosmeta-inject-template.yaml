@@ -11,7 +11,7 @@ spec:
       clientConfig:
         service:
           name: chaosmeta-inject-webhook-service
-          namespace: DEPLOYNAMESPACE
+          namespace: chaosmeta
           path: /convert
       conversionReviewVersions:
       - v1
@@ -96,6 +96,8 @@ spec:
                         type: string
                       type: array
                     namespace:
+                      type: string
+                    subName:
                       type: string
                   type: object
                 type: array
@@ -187,7 +189,7 @@ metadata:
     app.kubernetes.io/name: serviceaccount
     app.kubernetes.io/part-of: chaosmeta-inject-operator
   name: chaosmeta-inject-controller-manager
-  namespace: DEPLOYNAMESPACE
+  namespace: chaosmeta
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -200,7 +202,7 @@ metadata:
     app.kubernetes.io/name: role
     app.kubernetes.io/part-of: chaosmeta-inject-operator
   name: chaosmeta-inject-leader-election-role
-  namespace: DEPLOYNAMESPACE
+  namespace: chaosmeta
 rules:
 - apiGroups:
   - ""
@@ -291,6 +293,19 @@ rules:
   - services
   verbs:
   - '*'
+- apiGroups:
+    - admissionregistration.k8s.io
+  resources:
+    - mutatingwebhookconfigurations
+    - validatingwebhookconfigurations
+  verbs:
+    - '*'
+- apiGroups:
+    - '*'
+  resources:
+    - secrets
+  verbs:
+    - '*'
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -303,7 +318,7 @@ metadata:
     app.kubernetes.io/name: rolebinding
     app.kubernetes.io/part-of: chaosmeta-inject-operator
   name: chaosmeta-inject-leader-election-rolebinding
-  namespace: DEPLOYNAMESPACE
+  namespace: chaosmeta
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -311,7 +326,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: chaosmeta-inject-controller-manager
-  namespace: DEPLOYNAMESPACE
+  namespace: chaosmeta
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -331,7 +346,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: chaosmeta-inject-controller-manager
-  namespace: DEPLOYNAMESPACE
+  namespace: chaosmeta
 ---
 apiVersion: v1
 kind: Service
@@ -344,7 +359,7 @@ metadata:
     app.kubernetes.io/name: service
     app.kubernetes.io/part-of: chaosmeta-inject-operator
   name: chaosmeta-inject-webhook-service
-  namespace: DEPLOYNAMESPACE
+  namespace: chaosmeta
 spec:
   ports:
   - port: 443
@@ -366,7 +381,7 @@ metadata:
     app.kubernetes.io/part-of: chaosmeta-inject-operator
     control-plane: controller-manager
   name: chaosmeta-inject-controller-manager
-  namespace: DEPLOYNAMESPACE
+  namespace: chaosmeta
 spec:
   replicas: 1
   selector:
@@ -386,12 +401,17 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: DEPLOYREGISTRY/chaosmeta-inject-controller:v0.1.1
+        image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-inject-controller:v0.1.2
+        env:
+          - name: DEFAULTNAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
         livenessProbe:
           httpGet:
             path: /healthz
             port: 8081
-          initialDelaySeconds: 15
+          initialDelaySeconds: 30
           periodSeconds: 20
         name: manager
         ports:
@@ -402,7 +422,7 @@ spec:
           httpGet:
             path: /readyz
             port: 8081
-          initialDelaySeconds: 5
+          initialDelaySeconds: 30
           periodSeconds: 10
         resources:
           limits:
@@ -417,9 +437,6 @@ spec:
             drop:
             - ALL
         volumeMounts:
-        - mountPath: /tmp/k8s-webhook-server/serving-certs
-          name: cert
-          readOnly: true
         - mountPath: /config/chaosmeta-inject.json
           name: config-volume
           subPath: chaosmeta-inject.json
@@ -447,7 +464,7 @@ webhooks:
   clientConfig:
     service:
       name: chaosmeta-inject-webhook-service
-      namespace: DEPLOYNAMESPACE
+      namespace: chaosmeta
       path: /mutate-chaosmeta-io-v1alpha1-experiment
   failurePolicy: Fail
   name: mexperiment.kb.io
@@ -473,7 +490,7 @@ webhooks:
   clientConfig:
     service:
       name: chaosmeta-inject-webhook-service
-      namespace: DEPLOYNAMESPACE
+      namespace: chaosmeta
       path: /validate-chaosmeta-io-v1alpha1-experiment
   failurePolicy: Fail
   name: vexperiment.kb.io
@@ -494,7 +511,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: chaosmeta-inject-config
-  namespace: DEPLOYNAMESPACE
+  namespace: chaosmeta
 data:
   chaosmeta-inject.json: |-
     {
@@ -507,13 +524,13 @@ data:
       "executor": {
         "mode": "daemonset",
         "executor": "chaosmetad",
-        "version": "0.3.9",
+        "version": "0.5.1",
         "agentConfig": {
           "agentPort": 29595
         },
         "daemonsetConfig": {
           "localExecPath": "/tmp",
-          "daemonNs": "DEPLOYNAMESPACE",
+          "daemonNs": "chaosmeta",
           "daemonLabel": {
             "app.chaosmeta.io": "chaosmeta-daemon"
           }

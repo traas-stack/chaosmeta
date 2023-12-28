@@ -146,7 +146,7 @@ metadata:
     app.kubernetes.io/name: serviceaccount
     app.kubernetes.io/part-of: chaosmeta-measure-operator
   name: chaosmeta-measure-controller-manager
-  namespace: DEPLOYNAMESPACE
+  namespace: chaosmeta
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -159,7 +159,7 @@ metadata:
     app.kubernetes.io/name: role
     app.kubernetes.io/part-of: chaosmeta-measure-operator
   name: chaosmeta-measure-leader-election-role
-  namespace: DEPLOYNAMESPACE
+  namespace: chaosmeta
 rules:
 - apiGroups:
   - ""
@@ -237,7 +237,7 @@ metadata:
     app.kubernetes.io/name: rolebinding
     app.kubernetes.io/part-of: chaosmeta-measure-operator
   name: chaosmeta-measure-leader-election-rolebinding
-  namespace: DEPLOYNAMESPACE
+  namespace: chaosmeta
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -245,7 +245,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: chaosmeta-measure-controller-manager
-  namespace: DEPLOYNAMESPACE
+  namespace: chaosmeta
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -265,7 +265,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: chaosmeta-measure-controller-manager
-  namespace: DEPLOYNAMESPACE
+  namespace: chaosmeta
 ---
 apiVersion: v1
 kind: Service
@@ -278,7 +278,7 @@ metadata:
     app.kubernetes.io/name: service
     app.kubernetes.io/part-of: chaosmeta-measure-operator
   name: chaosmeta-measure-webhook-service
-  namespace: DEPLOYNAMESPACE
+  namespace: chaosmeta
 spec:
   ports:
   - port: 443
@@ -300,7 +300,7 @@ metadata:
     app.kubernetes.io/part-of: chaosmeta-measure-operator
     control-plane: controller-manager
   name: chaosmeta-measure-controller-manager
-  namespace: DEPLOYNAMESPACE
+  namespace: chaosmeta
 spec:
   replicas: 1
   selector:
@@ -320,7 +320,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: DEPLOYREGISTRY/chaosmeta-measure-controller:v0.0.6
+        image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-measure-controller:v0.0.6
         livenessProbe:
           httpGet:
             path: /healthz
@@ -381,7 +381,7 @@ webhooks:
   clientConfig:
     service:
       name: chaosmeta-measure-webhook-service
-      namespace: DEPLOYNAMESPACE
+      namespace: chaosmeta
       path: /mutate-chaosmeta-io-v1alpha1-commonmeasure
   failurePolicy: Fail
   name: mcommonmeasure.kb.io
@@ -407,7 +407,7 @@ webhooks:
   clientConfig:
     service:
       name: chaosmeta-measure-webhook-service
-      namespace: DEPLOYNAMESPACE
+      namespace: chaosmeta
       path: /validate-chaosmeta-io-v1alpha1-commonmeasure
   failurePolicy: Fail
   name: vcommonmeasure.kb.io
@@ -427,7 +427,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: chaosmeta-measure-config
-  namespace: DEPLOYNAMESPACE
+  namespace: chaosmeta
 data:
   chaosmeta-measure.json: |-
     {

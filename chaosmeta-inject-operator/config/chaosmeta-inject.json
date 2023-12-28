@@ -8,7 +8,7 @@
   "executor": {
     "mode": "daemonset",
     "executor": "chaosmetad",
-    "version": "0.3.9",
+    "version": "0.5.1",
     "agentConfig": {
       "agentPort": 29595
     },

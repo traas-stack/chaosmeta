@@ -129,6 +129,7 @@ type SelectorUnit struct {
 	Name      []string          `json:"name,omitempty"`
 	IP        []string          `json:"ip,omitempty"`
 	Label     map[string]string `json:"label,omitempty"`
+	SubName   string            `json:"subName,omitempty"`
 }
 
 //type TargetType string

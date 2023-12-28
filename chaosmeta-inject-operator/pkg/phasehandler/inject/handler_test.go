@@ -83,14 +83,16 @@ func TestInjectPhaseHandler_SolveCreated_OneToRunning(t *testing.T) {
 			},
 		}
 		reContainer = &model.PodObject{
-			Namespace:        "chaosmeta",
-			PodName:          "chaosmeta-0",
-			PodUID:           "d32tg32",
-			PodIP:            "1.2.3.4",
-			NodeName:         "node-1",
-			NodeIP:           "2.2.2.2",
-			ContainerID:      "g3g3g",
-			ContainerRuntime: "docker",
+			Namespace: "chaosmeta",
+			PodName:   "chaosmeta-0",
+			PodUID:    "d32tg32",
+			PodIP:     "1.2.3.4",
+			NodeName:  "node-1",
+			NodeIP:    "2.2.2.2",
+			Containers: []model.ContainerInfo{{
+				ContainerId:      "g3g3g",
+				ContainerRuntime: "docker",
+			}},
 		}
 		re = model.AtomicObject(reContainer)
 	)
@@ -175,24 +177,28 @@ func TestInjectPhaseHandler_SolveCreated_OneInjectFailedInTwo(t *testing.T) {
 			},
 		}
 		reContainer1 = &model.PodObject{
-			Namespace:        "chaosmeta",
-			PodName:          "chaosmeta-0",
-			PodUID:           "d32tg31",
-			PodIP:            "1.2.3.1",
-			NodeName:         "node-1",
-			NodeIP:           "2.2.2.1",
-			ContainerID:      "g3g3g1",
-			ContainerRuntime: "docker",
+			Namespace: "chaosmeta",
+			PodName:   "chaosmeta-0",
+			PodUID:    "d32tg31",
+			PodIP:     "1.2.3.1",
+			NodeName:  "node-1",
+			NodeIP:    "2.2.2.1",
+			Containers: []model.ContainerInfo{{
+				ContainerId:      "g3g3g1",
+				ContainerRuntime: "docker",
+			}},
 		}
 		reContainer2 = &model.PodObject{
-			Namespace:        "chaosmeta",
-			PodName:          "chaosmeta-1",
-			PodUID:           "d32tg32",
-			PodIP:            "1.2.3.2",
-			NodeName:         "node-2",
-			NodeIP:           "2.2.2.2",
-			ContainerID:      "g3g3g2",
-			ContainerRuntime: "docker",
+			Namespace: "chaosmeta",
+			PodName:   "chaosmeta-1",
+			PodUID:    "d32tg32",
+			PodIP:     "1.2.3.2",
+			NodeName:  "node-2",
+			NodeIP:    "2.2.2.2",
+			Containers: []model.ContainerInfo{{
+				ContainerId:      "g3g3g2",
+				ContainerRuntime: "docker",
+			}},
 		}
 		re1 = model.AtomicObject(reContainer1)
 		re2 = model.AtomicObject(reContainer2)
@@ -292,9 +298,10 @@ func TestInjectPhaseHandler_SolveRunning_TwoQueryFailedInThree(t *testing.T) {
 			PodIP:     "1.2.3.1",
 			NodeName:  "node-1",
 			NodeIP:    "2.2.2.1",
-
-			ContainerID:      "g3g3g1",
-			ContainerRuntime: "docker",
+			Containers: []model.ContainerInfo{{
+				ContainerId:      "g3g3g1",
+				ContainerRuntime: "docker",
+			}},
 		}
 		reContainer2 = &model.PodObject{
 
@@ -304,9 +311,10 @@ func TestInjectPhaseHandler_SolveRunning_TwoQueryFailedInThree(t *testing.T) {
 			PodIP:     "1.2.3.2",
 			NodeName:  "node-2",
 			NodeIP:    "2.2.2.2",
-
-			ContainerID:      "g3g3g2",
-			ContainerRuntime: "docker",
+			Containers: []model.ContainerInfo{{
+				ContainerId:      "g3g3g2",
+				ContainerRuntime: "docker",
+			}},
 		}
 		reContainer3 = &model.PodObject{
 
@@ -316,9 +324,10 @@ func TestInjectPhaseHandler_SolveRunning_TwoQueryFailedInThree(t *testing.T) {
 			PodIP:     "1.2.3.3",
 			NodeName:  "node-3",
 			NodeIP:    "2.2.2.3",
-
-			ContainerID:      "g3g3g3",
-			ContainerRuntime: "docker",
+			Containers: []model.ContainerInfo{{
+				ContainerId:      "g3g3g3",
+				ContainerRuntime: "docker",
+			}},
 		}
 		re1 = model.AtomicObject(reContainer1)
 		re2 = model.AtomicObject(reContainer2)
@@ -428,9 +437,10 @@ func TestInjectPhaseHandler_SolveRunning_TwoFailed(t *testing.T) {
 			PodIP:     "1.2.3.1",
 			NodeName:  "node-1",
 			NodeIP:    "2.2.2.1",
-
-			ContainerID:      "g3g3g1",
-			ContainerRuntime: "docker",
+			Containers: []model.ContainerInfo{{
+				ContainerId:      "g3g3g1",
+				ContainerRuntime: "docker",
+			}},
 		}
 		reContainer2 = &model.PodObject{
 
@@ -440,9 +450,10 @@ func TestInjectPhaseHandler_SolveRunning_TwoFailed(t *testing.T) {
 			PodIP:     "1.2.3.2",
 			NodeName:  "node-2",
 			NodeIP:    "2.2.2.2",
-
-			ContainerID:      "g3g3g2",
-			ContainerRuntime: "docker",
+			Containers: []model.ContainerInfo{{
+				ContainerId:      "g3g3g2",
+				ContainerRuntime: "docker",
+			}},
 		}
 		re1 = model.AtomicObject(reContainer1)
 		re2 = model.AtomicObject(reContainer2)

@@ -114,7 +114,7 @@ func writeRule(ctx context.Context, cId string, pid int, ruleBytes []byte) error
 func checkJavaCmd(ctx context.Context, cr, cId string) error {
 	cmd := "java -help"
 	if cr != "" {
-		_, err := cmdexec.ExecContainer(ctx, cr, cId, []string{namespace.MNT, namespace.ENV}, cmd, cmdexec.ExecRun)
+		_, err := cmdexec.ExecContainer(ctx, cr, cId, []string{namespace.MNT, namespace.ENV, namespace.PID}, cmd, cmdexec.ExecRun)
 		return err
 	} else {
 		return cmdexec.RunBashCmdWithoutOutput(ctx, cmd)

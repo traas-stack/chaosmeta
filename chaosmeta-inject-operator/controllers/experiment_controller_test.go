@@ -147,14 +147,18 @@ func Test_initProcess(t *testing.T) {
 
 	var reObject []model.AtomicObject
 	reObject = append(reObject, &model.PodObject{
-		Namespace:        "chaosmeta",
-		PodName:          "chaosmeta-0",
-		PodUID:           "d32tg32",
-		PodIP:            "1.2.3.4",
-		NodeName:         "node-1",
-		NodeIP:           "2.2.2.2",
-		ContainerID:      "g3g3g",
-		ContainerRuntime: "docker",
+		Namespace: "chaosmeta",
+		PodName:   "chaosmeta-0",
+		PodUID:    "d32tg32",
+		PodIP:     "1.2.3.4",
+		NodeName:  "node-1",
+		NodeIP:    "2.2.2.2",
+		Containers: []model.ContainerInfo{
+			{
+				ContainerId:      "g3g3g",
+				ContainerRuntime: "docker",
+			},
+		},
 	})
 	defer ctrl.Finish()
 	scopeHandlerMock := mockscopehandler.NewMockScopeHandler(ctrl)

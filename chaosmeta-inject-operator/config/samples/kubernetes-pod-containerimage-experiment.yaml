@@ -20,10 +20,8 @@ spec:
       - key: image
         value: "nginx"
         valueType: string
-      - key: containername
-        value: "app"
-        valueType: string
   selector:
     - namespace: default
       name:
         - frontend
+      subName: app,nsenter

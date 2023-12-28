@@ -106,9 +106,37 @@ export async function queryDeploymentNameList(
   },
   options?: { [key: string]: any },
 ) {
-  return request<any>(`/chaosmeta/api/v1/kubernetes/cluster/${envType}/namespace/${params?.namespace}/deployments`, {
-    method: 'GET',
-    params,
-    ...(options || {}),
-  });
+  return request<any>(
+    `/chaosmeta/api/v1/kubernetes/cluster/${envType}/namespace/${params?.namespace}/deployments`,
+    {
+      method: 'GET',
+      params,
+      ...(options || {}),
+    },
+  );
+}
+
+/**
+ * 获取containersName列表
+ * @param namespace
+ * @param data
+ * @param options
+ * @returns
+ */
+export async function queryContainersNameList(
+  namespace: string,
+  data?: {
+    target_label?: string;
+    target_pods?: string;
+  },
+  options?: { [key: string]: any },
+) {
+  return request<any>(
+    `/chaosmeta/api/v1/kubernetes/cluster/${envType}/namespace/${namespace}//containers`,
+    {
+      method: 'POST',
+      data: data || {},
+      ...(options || {}),
+    },
+  );
 }

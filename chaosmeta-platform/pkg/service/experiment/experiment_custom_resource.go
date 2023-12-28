@@ -230,6 +230,9 @@ func getFaultStep(experimentInstanceUUID string, node *experiment_instance.Workf
 		if node.Subtasks.TargetName != "" {
 			selector.Name = strings.Split(node.Subtasks.TargetName, ",")
 		}
+		if node.Subtasks.TargetSubName != "" {
+			selector.SubName = node.Subtasks.TargetSubName
+		}
 		if node.Subtasks.TargetIP != "" {
 			selector.IP = strings.Split(node.Subtasks.TargetIP, ",")
 		}
