@@ -24,6 +24,7 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
+	initwebhook "github.com/traas-stack/chaosmeta/chaosmeta-common/webhook"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -46,6 +47,10 @@ import (
 var (
 	scheme   = runtime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
+)
+
+const (
+	ComponentMeasure = "measure"
 )
 
 func init() {
@@ -96,7 +101,11 @@ func main() {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
-
+	err = initwebhook.InitCert(setupLog, ComponentMeasure)
+	if err != nil {
+		setupLog.Error(err, "init cert failed")
+		os.Exit(1)
+	}
 	if err = (&controllers.CommonMeasureReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),

@@ -273,6 +273,9 @@ github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/
 github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.8.0 h1:pSgiaMZlXftHpm5L7V1+rVB+AZJydKsMxsQBIJw4PKk=
 github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO+kdMU+MU=
+github.com/traas-stack/chaosmeta/chaosmeta-common v0.0.0-20231228045452-fe47129e378f h1:DUnU09S7XttoAJ1xft8nBlZjvh+O9lVUlwV+Za9fvxQ=
+github.com/traas-stack/chaosmeta/chaosmeta-common v0.0.0-20231228045452-fe47129e378f/go.mod h1:291sLBmT/cXwucSh4T3kRmLX7JRlSNq5HY66PQtt4ow=
+github.com/traas-stack/chaosmeta/chaosmeta-common v0.0.0-20231228070817-1115cf4b0201/go.mod h1:291sLBmT/cXwucSh4T3kRmLX7JRlSNq5HY66PQtt4ow=
 github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.32/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
