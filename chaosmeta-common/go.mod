@@ -1,4 +1,4 @@
-module github.com/traas-stack/chaosmeta/chaosmeta-common
+module github.com/zwk1091/chaosmeta/chaosmeta-common
 
 go 1.19
 
