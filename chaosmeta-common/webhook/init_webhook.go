@@ -22,15 +22,15 @@ import (
 )
 
 const (
-	ComponentInject  = "inject"
-	ComponentFlow    = "flow"
-	ComponentMeasure = "measure"
-	certKey          = "tls.crt"
-	keyKey           = "tls.key"
-	secretName       = "chaosmeta-%s-webhook-server-cert"
-	defaultNamespace = "chaosmeta"
-	namespaceEnv     = "DEFAULTNAMESPACE"
-	secretPath       = "/tmp/k8s-webhook-server/serving-certs/"
+	certKey                     = "tls.crt"
+	keyKey                      = "tls.key"
+	secretName                  = "chaosmeta-%s-webhook-server-cert"
+	validatingWebhookConfigName = "chaosmeta-%s-validating-webhook-configuration"
+	mutatingWebhookConfigName   = "chaosmeta-%s-mutating-webhook-configuration"
+	webhookServiceName          = "chaosmeta-%s-webhook-service.%s.svc"
+	defaultNamespace            = "chaosmeta"
+	namespaceEnv                = "DEFAULTNAMESPACE"
+	secretPath                  = "/tmp/k8s-webhook-server/serving-certs/"
 )
 
 func isExistAndValid(client client.Client, component, curNamespace string) (*v1.Secret, bool) {
@@ -106,7 +106,7 @@ func InitCert(log logr.Logger, component string) error {
 		Bytes: caBytes,
 	})
 
-	dnsNames := []string{"chaosmeta-" + component + "-webhook-service." + defaultNamespace + ".svc"}
+	dnsNames := []string{fmt.Sprintf(webhookServiceName, component, curNamespace)}
 
 	// server cert config
 	cert := &x509.Certificate{
@@ -152,7 +152,7 @@ func InitCert(log logr.Logger, component string) error {
 	secret := &v1.Secret{
 		Type: v1.SecretTypeTLS,
 		ObjectMeta: v12.ObjectMeta{
-			Name:      "chaosmeta-" + component + "-webhook-server-cert",
+			Name:      fmt.Sprintf(secretName, component),
 			Namespace: curNamespace,
 		},
 		Data: map[string][]byte{
@@ -161,7 +161,7 @@ func InitCert(log logr.Logger, component string) error {
 		}}
 	// remove first
 	oldSecret := &v1.Secret{}
-	secretIndex := types.NamespacedName{Namespace: curNamespace, Name: "chaosmeta-" + component + "-webhook-server-cert"}
+	secretIndex := types.NamespacedName{Namespace: curNamespace, Name: fmt.Sprintf(secretName, component)}
 	if err = cl.Get(context.Background(), secretIndex, oldSecret); err == nil {
 		err = cl.Delete(context.Background(), oldSecret)
 		if err != nil {
@@ -205,7 +205,7 @@ func saveSecretToFile(log logr.Logger, serverCertBytes []byte, serverPrivateKeyB
 
 func updateWebhookConfig(log logr.Logger, cl client.Client, serverCertBytes []byte, component string) error {
 	mutatingWebhookConfig := &admissionregistrationv1.MutatingWebhookConfiguration{}
-	err := cl.Get(context.Background(), types.NamespacedName{Name: "chaosmeta-" + component + "-mutating-webhook-configuration"}, mutatingWebhookConfig)
+	err := cl.Get(context.Background(), types.NamespacedName{Name: fmt.Sprintf(mutatingWebhookConfigName, component)}, mutatingWebhookConfig)
 	if err != nil {
 		log.Error(err, "failed to get mutatingWebhookConfig")
 		return err
@@ -220,7 +220,7 @@ func updateWebhookConfig(log logr.Logger, cl client.Client, serverCertBytes []by
 	}
 
 	validatingWebhookConfig := &admissionregistrationv1.ValidatingWebhookConfiguration{}
-	err = cl.Get(context.Background(), types.NamespacedName{Name: "chaosmeta-" + component + "-validating-webhook-configuration"}, validatingWebhookConfig)
+	err = cl.Get(context.Background(), types.NamespacedName{Name: fmt.Sprintf(validatingWebhookConfigName, component)}, validatingWebhookConfig)
 	if err != nil {
 		log.Error(err, "failed to get mutatingWebhookConfig")
 		return err
