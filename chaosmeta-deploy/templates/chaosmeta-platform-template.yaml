@@ -93,10 +93,10 @@ spec:
           resources:
             requests:
               cpu: "1"
-              memory: "2Gi"
+              memory: "200Mi"
             limits:
-              cpu: "2"
-              memory: "4Gi"
+              cpu: "1"
+              memory: "200Mi"
           volumeMounts:
             - name: chaosmeta-config
               mountPath: /home/admin/conf

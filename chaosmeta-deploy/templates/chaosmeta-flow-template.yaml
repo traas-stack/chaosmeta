@@ -369,7 +369,7 @@ webhooks:
       name: chaosmeta-flow-webhook-service
       namespace: chaosmeta
       path: /mutate-chaosmeta-io-v1alpha1-loadtest
-  failurePolicy: Fail
+  failurePolicy: Ignore
   name: mloadtest.kb.io
   rules:
   - apiGroups:
@@ -395,7 +395,7 @@ webhooks:
       name: chaosmeta-flow-webhook-service
       namespace: chaosmeta
       path: /validate-chaosmeta-io-v1alpha1-loadtest
-  failurePolicy: Fail
+  failurePolicy: Ignore
   name: vloadtest.kb.io
   rules:
   - apiGroups:

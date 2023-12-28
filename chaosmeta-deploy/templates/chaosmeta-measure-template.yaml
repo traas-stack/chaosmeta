@@ -394,7 +394,7 @@ webhooks:
       name: chaosmeta-measure-webhook-service
       namespace: chaosmeta
       path: /mutate-chaosmeta-io-v1alpha1-commonmeasure
-  failurePolicy: Fail
+  failurePolicy: Ignore
   name: mcommonmeasure.kb.io
   rules:
   - apiGroups:
@@ -420,7 +420,7 @@ webhooks:
       name: chaosmeta-measure-webhook-service
       namespace: chaosmeta
       path: /validate-chaosmeta-io-v1alpha1-commonmeasure
-  failurePolicy: Fail
+  failurePolicy: Ignore
   name: vcommonmeasure.kb.io
   rules:
   - apiGroups:
