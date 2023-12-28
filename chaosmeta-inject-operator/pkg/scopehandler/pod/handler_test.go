@@ -69,20 +69,24 @@ func TestPodScopeHandler_ConvertSelector(t *testing.T) {
 		}
 		podList = []*model.PodObject{
 			{
-				Namespace:        namespace,
-				PodName:          "pod1",
-				NodeName:         "node1",
-				NodeIP:           "1.1.1.1",
-				ContainerID:      "ef2g24g21",
-				ContainerRuntime: "docker",
+				Namespace: namespace,
+				PodName:   "pod1",
+				NodeName:  "node1",
+				NodeIP:    "1.1.1.1",
+				Containers: []model.ContainerInfo{{
+					ContainerId:      "ef2g24g21",
+					ContainerRuntime: "docker",
+				}},
 			},
 			{
-				Namespace:        namespace,
-				PodName:          "pod2",
-				NodeName:         "node2",
-				NodeIP:           "1.1.1.2",
-				ContainerID:      "ef2g24g22",
-				ContainerRuntime: "docker",
+				Namespace: namespace,
+				PodName:   "pod2",
+				NodeName:  "node2",
+				NodeIP:    "1.1.1.2",
+				Containers: []model.ContainerInfo{{
+					ContainerId:      "ef2g24g22",
+					ContainerRuntime: "docker",
+				}},
 			},
 		}
 	)
