@@ -144,7 +144,7 @@ spec:
     spec:
       serviceAccountName: chaosmeta-platform
       containers:
-        - image: DEPLOYREGISTRY/mysql:8.0
+        - image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/mysql:8.0
           name: chaosmeta-mysql
           env:
             - name: MYSQL_DATABASE
