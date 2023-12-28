@@ -301,7 +301,7 @@ rules:
   verbs:
     - '*'
 - apiGroups:
-    - '*'
+    - ""
   resources:
     - secrets
   verbs:
