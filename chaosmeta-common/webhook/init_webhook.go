@@ -22,17 +22,20 @@ import (
 )
 
 const (
+	ComponentInject  = "inject"
+	ComponentFlow    = "flow"
+	ComponentMeasure = "measure"
 	certKey          = "tls.crt"
 	keyKey           = "tls.key"
-	injectSecretName = "chaosmeta-inject-webhook-server-cert"
+	secretName       = "chaosmeta-%s-webhook-server-cert"
 	defaultNamespace = "chaosmeta"
 	namespaceEnv     = "DEFAULTNAMESPACE"
 	secretPath       = "/tmp/k8s-webhook-server/serving-certs/"
 )
 
-func isExistAndValid(client client.Client) (*v1.Secret, bool) {
+func isExistAndValid(client client.Client, component, curNamespace string) (*v1.Secret, bool) {
 	secret := &v1.Secret{}
-	err := client.Get(context.Background(), types.NamespacedName{Name: injectSecretName, Namespace: defaultNamespace}, secret)
+	err := client.Get(context.Background(), types.NamespacedName{Name: fmt.Sprintf(secretName, component), Namespace: curNamespace}, secret)
 	if err == nil {
 		// is it expired
 		cert, err1 := x509.ParseCertificate(secret.Data[certKey])
@@ -48,7 +51,7 @@ func isExistAndValid(client client.Client) (*v1.Secret, bool) {
 	return nil, false
 }
 
-func InitCert(log logr.Logger) error {
+func InitCert(log logr.Logger, component string) error {
 	curNamespace := os.Getenv(namespaceEnv)
 	if curNamespace == "" {
 		curNamespace = defaultNamespace
@@ -59,12 +62,12 @@ func InitCert(log logr.Logger) error {
 		return err
 	}
 
-	if oldSecret, valid := isExistAndValid(cl); valid == true {
+	if oldSecret, valid := isExistAndValid(cl, component, curNamespace); valid == true {
 		err = saveSecretToFile(log, oldSecret.Data[certKey], oldSecret.Data[keyKey])
 		if err != nil {
 			return err
 		}
-		err = updateWebhookConfig(log, cl, oldSecret.Data[certKey])
+		err = updateWebhookConfig(log, cl, oldSecret.Data[certKey], component)
 		if err != nil {
 			return err
 		}
@@ -103,7 +106,7 @@ func InitCert(log logr.Logger) error {
 		Bytes: caBytes,
 	})
 
-	dnsNames := []string{"chaosmeta-inject-webhook-service." + defaultNamespace + ".svc"}
+	dnsNames := []string{"chaosmeta-" + component + "-webhook-service." + defaultNamespace + ".svc"}
 
 	// server cert config
 	cert := &x509.Certificate{
@@ -149,7 +152,7 @@ func InitCert(log logr.Logger) error {
 	secret := &v1.Secret{
 		Type: v1.SecretTypeTLS,
 		ObjectMeta: v12.ObjectMeta{
-			Name:      "chaosmeta-inject-webhook-server-cert",
+			Name:      "chaosmeta-" + component + "-webhook-server-cert",
 			Namespace: curNamespace,
 		},
 		Data: map[string][]byte{
@@ -158,7 +161,7 @@ func InitCert(log logr.Logger) error {
 		}}
 	// remove first
 	oldSecret := &v1.Secret{}
-	secretIndex := types.NamespacedName{Namespace: curNamespace, Name: "chaosmeta-inject-webhook-server-cert"}
+	secretIndex := types.NamespacedName{Namespace: curNamespace, Name: "chaosmeta-" + component + "-webhook-server-cert"}
 	if err = cl.Get(context.Background(), secretIndex, oldSecret); err == nil {
 		err = cl.Delete(context.Background(), oldSecret)
 		if err != nil {
@@ -174,7 +177,7 @@ func InitCert(log logr.Logger) error {
 	if err != nil {
 		return err
 	}
-	err = updateWebhookConfig(log, cl, serverCertPEM.Bytes())
+	err = updateWebhookConfig(log, cl, serverCertPEM.Bytes(), component)
 	if err != nil {
 		return err
 	}
@@ -200,9 +203,9 @@ func saveSecretToFile(log logr.Logger, serverCertBytes []byte, serverPrivateKeyB
 	return nil
 }
 
-func updateWebhookConfig(log logr.Logger, cl client.Client, serverCertBytes []byte) error {
+func updateWebhookConfig(log logr.Logger, cl client.Client, serverCertBytes []byte, component string) error {
 	mutatingWebhookConfig := &admissionregistrationv1.MutatingWebhookConfiguration{}
-	err := cl.Get(context.Background(), types.NamespacedName{Name: "chaosmeta-inject-mutating-webhook-configuration"}, mutatingWebhookConfig)
+	err := cl.Get(context.Background(), types.NamespacedName{Name: "chaosmeta-" + component + "-mutating-webhook-configuration"}, mutatingWebhookConfig)
 	if err != nil {
 		log.Error(err, "failed to get mutatingWebhookConfig")
 		return err
@@ -217,7 +220,7 @@ func updateWebhookConfig(log logr.Logger, cl client.Client, serverCertBytes []by
 	}
 
 	validatingWebhookConfig := &admissionregistrationv1.ValidatingWebhookConfiguration{}
-	err = cl.Get(context.Background(), types.NamespacedName{Name: "chaosmeta-inject-validating-webhook-configuration"}, validatingWebhookConfig)
+	err = cl.Get(context.Background(), types.NamespacedName{Name: "chaosmeta-" + component + "-validating-webhook-configuration"}, validatingWebhookConfig)
 	if err != nil {
 		log.Error(err, "failed to get mutatingWebhookConfig")
 		return err
