@@ -166,6 +166,8 @@ func InitCert(log logr.Logger, component string) error {
 		log.Error(err, "approve csr failed")
 		return err
 	}
+	// wait for csr's Status.Certificate
+	time.Sleep(time.Second * 3)
 	newCsr := &certificatesv1.CertificateSigningRequest{}
 	err = cl.Get(context.Background(), types.NamespacedName{Name: fmt.Sprintf(csrName, component), Namespace: curNamespace}, newCsr)
 	if err != nil {
@@ -173,6 +175,10 @@ func InitCert(log logr.Logger, component string) error {
 		return err
 	}
 
+	if newCsr.Status.Certificate == nil || len(newCsr.Status.Certificate) == 0 {
+		log.Error(err, "csr's Status.Certificate is nil ")
+		return err
+	}
 	secret := &v1.Secret{
 		Type: v1.SecretTypeTLS,
 		ObjectMeta: v12.ObjectMeta{
