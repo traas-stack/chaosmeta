@@ -19,15 +19,15 @@ package main
 import (
 	"flag"
 	"fmt"
+	initwebhook "github.com/traas-stack/chaosmeta/chaosmeta-common/webhook"
+	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"os"
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
-
-	"k8s.io/apimachinery/pkg/runtime"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -35,6 +35,10 @@ import (
 	chaosmetaiov1alpha1 "self/chaosmeta/chaosmeta-flow-operator/api/v1alpha1"
 	"self/chaosmeta/chaosmeta-flow-operator/controllers"
 	//+kubebuilder:scaffold:imports
+)
+
+const (
+	ComponentFlow = "flow"
 )
 
 var (
@@ -109,7 +113,11 @@ func main() {
 		setupLog.Error(err, "create clientset error")
 		os.Exit(1)
 	}
-
+	err = initwebhook.InitCert(setupLog, ComponentFlow)
+	if err != nil {
+		setupLog.Error(err, "init cert failed")
+		os.Exit(1)
+	}
 	if err = (&controllers.LoadTestReconciler{
 		ClientSet: clientset,
 		Client:    mgr.GetClient(),
