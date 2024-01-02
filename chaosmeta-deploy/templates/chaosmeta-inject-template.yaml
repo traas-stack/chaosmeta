@@ -306,6 +306,33 @@ rules:
     - secrets
   verbs:
     - '*'
+- apiGroups:
+    - certificates.k8s.io
+  resources:
+    - certificatesigningrequests
+  verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - delete
+- apiGroups:
+    - certificates.k8s.io
+  resources:
+    - certificatesigningrequests/status
+    - certificatesigningrequests/approval
+  verbs:
+    - update
+- apiGroups:
+    - certificates.k8s.io
+  resources:
+    - signers
+  resourceNames:
+    - kubernetes.io/kubelet-serving # example.com/* 可用于为 “example.com” 域中的所有签名者授权
+  verbs:
+    - sign
+    - approve
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -402,6 +429,7 @@ spec:
         command:
         - /manager
         image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-inject-controller:v0.1.2
+        imagePullPolicy: Always
         env:
           - name: DEFAULTNAMESPACE
             valueFrom:
@@ -462,7 +490,7 @@ webhooks:
       name: chaosmeta-inject-webhook-service
       namespace: chaosmeta
       path: /mutate-chaosmeta-io-v1alpha1-experiment
-  failurePolicy: Ignore
+  failurePolicy: Fail
   name: mexperiment.kb.io
   rules:
   - apiGroups:
@@ -488,7 +516,7 @@ webhooks:
       name: chaosmeta-inject-webhook-service
       namespace: chaosmeta
       path: /validate-chaosmeta-io-v1alpha1-experiment
-  failurePolicy: Ignore
+  failurePolicy: Fail
   name: vexperiment.kb.io
   rules:
   - apiGroups:

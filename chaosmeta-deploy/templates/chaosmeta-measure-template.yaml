@@ -238,6 +238,33 @@ rules:
   - secrets
   verbs:
   - '*'
+- apiGroups:
+    - certificates.k8s.io
+  resources:
+    - certificatesigningrequests
+  verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - delete
+- apiGroups:
+    - certificates.k8s.io
+  resources:
+    - certificatesigningrequests/status
+    - certificatesigningrequests/approval
+  verbs:
+    - update
+- apiGroups:
+    - certificates.k8s.io
+  resources:
+    - signers
+  resourceNames:
+    - kubernetes.io/kubelet-serving # example.com/* 可用于为 “example.com” 域中的所有签名者授权
+  verbs:
+    - sign
+    - approve
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -394,7 +421,7 @@ webhooks:
       name: chaosmeta-measure-webhook-service
       namespace: chaosmeta
       path: /mutate-chaosmeta-io-v1alpha1-commonmeasure
-  failurePolicy: Ignore
+  failurePolicy: Fail
   name: mcommonmeasure.kb.io
   rules:
   - apiGroups:
@@ -420,7 +447,7 @@ webhooks:
       name: chaosmeta-measure-webhook-service
       namespace: chaosmeta
       path: /validate-chaosmeta-io-v1alpha1-commonmeasure
-  failurePolicy: Ignore
+  failurePolicy: Fail
   name: vcommonmeasure.kb.io
   rules:
   - apiGroups:
