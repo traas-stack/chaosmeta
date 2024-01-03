@@ -1,0 +1,15 @@
+apiVersion: v2
+appVersion: "0.0.1"
+description: A chaos engineering platform for supporting the complete fault drill lifecycle.
+sources:
+  - https://github.com/traas-stack/chaosmeta
+name: chaosmeta
+version: "0.6.1"
+keywords:
+  - chaos-engineering
+  - resiliency
+  - fault-injection
+  - kubernetes
+maintainers:
+  - name: KingsonKai
+    email: xiaoya.zk@antgroup.com

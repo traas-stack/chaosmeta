@@ -102,6 +102,7 @@ spec:
               mountPath: /home/admin/conf
         - name: chaosmeta-platform-frontend
           image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-platform-frontend:v0.6.1
+          imagePullPolicy: Always
           ports:
             - containerPort: 8000
       volumes:
