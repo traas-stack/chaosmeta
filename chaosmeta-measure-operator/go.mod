@@ -10,7 +10,7 @@ require (
 	github.com/prometheus/client_golang v1.14.0
 	github.com/prometheus/common v0.37.0
 	github.com/stretchr/testify v1.8.3
-	github.com/traas-stack/chaosmeta/chaosmeta-common v0.0.0-20231228070817-1115cf4b0201
+	github.com/traas-stack/chaosmeta/chaosmeta-common v0.0.0-20240102105916-8f3b8d9accc5
 	k8s.io/api v0.26.0
 	k8s.io/apimachinery v0.26.3
 	k8s.io/client-go v0.26.0

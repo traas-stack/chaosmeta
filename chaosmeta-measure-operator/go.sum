@@ -303,8 +303,8 @@ github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o
 github.com/stretchr/testify v1.8.2/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
 github.com/stretchr/testify v1.8.3 h1:RP3t2pwF7cMEbC1dqtB6poj3niw/9gnV4Cjg5oW5gtY=
 github.com/stretchr/testify v1.8.3/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
-github.com/traas-stack/chaosmeta/chaosmeta-common v0.0.0-20231228070817-1115cf4b0201 h1:d9GFYTD4efQR8QJK8esprULEkNGinw1zyttbXtIaHGI=
-github.com/traas-stack/chaosmeta/chaosmeta-common v0.0.0-20231228070817-1115cf4b0201/go.mod h1:291sLBmT/cXwucSh4T3kRmLX7JRlSNq5HY66PQtt4ow=
+github.com/traas-stack/chaosmeta/chaosmeta-common v0.0.0-20240102105916-8f3b8d9accc5 h1:1RpFVSqiERGKUq2Yc6nioKEa0VyCXu0+t9vXpmK1WQ4=
+github.com/traas-stack/chaosmeta/chaosmeta-common v0.0.0-20240102105916-8f3b8d9accc5/go.mod h1:291sLBmT/cXwucSh4T3kRmLX7JRlSNq5HY66PQtt4ow=
 github.com/twitchyliquid64/golang-asm v0.15.1 h1:SU5vSMR7hnwNxj24w34ZyCi/FmDZTkS4MhqMhdFk5YI=
 github.com/twitchyliquid64/golang-asm v0.15.1/go.mod h1:a1lVb/DtPvCB8fslRZhAngC2+aY1QWCk3Cedj/Gdt08=
 github.com/ugorji/go/codec v1.2.11 h1:BMaWp1Bb6fHwEtbplGBGJ498wD+LKlNSl25MjdZY4dU=
