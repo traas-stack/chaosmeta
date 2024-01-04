@@ -83,13 +83,45 @@ func (k KubernetesScopeHandler) QueryExperiment(ctx context.Context, injectObjec
 }
 
 func (k KubernetesScopeHandler) ExecuteInject(ctx context.Context, injectObject model.AtomicObject, UID string, expArgs *v1alpha1.ExperimentCommon) (string, error) {
-	return cloudnativeexecutor.GetCloudNativeExecutor(v1alpha1.CloudTargetType(expArgs.Target), expArgs.Fault).
-		Inject(ctx, injectObject.GetObjectName(), UID, expArgs.Duration, expArgs.Args)
+	p, ok := injectObject.(*model.PodObject)
+	if !ok {
+		return cloudnativeexecutor.GetCloudNativeExecutor(v1alpha1.CloudTargetType(expArgs.Target), expArgs.Fault).
+			Inject(ctx, injectObject.GetObjectName(), UID, expArgs.Duration, expArgs.Args)
+	}
+	// pod object convert to container object
+	subObjects := p.GetSubObjects()
+	if len(subObjects) <= 0 {
+		return "", fmt.Errorf("not found inject object")
+	}
+	var err error
+	var resStr string
+	for _, subObject := range subObjects {
+		resStr, err = cloudnativeexecutor.GetCloudNativeExecutor(v1alpha1.CloudTargetType(expArgs.Target), expArgs.Fault).
+			Inject(ctx, subObject.GetObjectName(), UID, expArgs.Duration, expArgs.Args)
+		if err != nil {
+			return resStr, err
+		}
+	}
+	return resStr, err
 }
 
 func (k KubernetesScopeHandler) ExecuteRecover(ctx context.Context, injectObject model.AtomicObject, UID, backup string, expArgs *v1alpha1.ExperimentCommon) error {
-	return cloudnativeexecutor.GetCloudNativeExecutor(v1alpha1.CloudTargetType(expArgs.Target), expArgs.Fault).
-		Recover(ctx, injectObject.GetObjectName(), UID, backup)
+	p, ok := injectObject.(*model.PodObject)
+	if !ok {
+		return cloudnativeexecutor.GetCloudNativeExecutor(v1alpha1.CloudTargetType(expArgs.Target), expArgs.Fault).
+			Recover(ctx, injectObject.GetObjectName(), UID, backup)
+	}
+	subObjects := p.GetSubObjects()
+	if len(subObjects) <= 0 {
+		return fmt.Errorf("not found inject object")
+	}
+	for _, subObject := range subObjects {
+		err := cloudnativeexecutor.GetCloudNativeExecutor(v1alpha1.CloudTargetType(expArgs.Target), expArgs.Fault).Recover(ctx, subObject.GetObjectName(), UID, backup)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (k KubernetesScopeHandler) CheckAlive(ctx context.Context, injectObject model.AtomicObject) error {
