@@ -36,7 +36,7 @@ func init() {
 type PodContainerImageExecutor struct{}
 
 func (e *PodContainerImageExecutor) Inject(ctx context.Context, injectObject, uid, timeout string, args []v1alpha1.ArgsUnit) (string, error) {
-	ns, name, containerName, err := model.ParsePodInfo(injectObject)
+	ns, name, containerName, err := model.ParseContainerInfo(injectObject)
 	if err != nil {
 		return "", fmt.Errorf("unexpected pod format: %s", err.Error())
 	}
@@ -56,7 +56,7 @@ func (e *PodContainerImageExecutor) Inject(ctx context.Context, injectObject, ui
 }
 
 func (e *PodContainerImageExecutor) Recover(ctx context.Context, injectObject, uid, backup string) error {
-	ns, name, containerName, err := model.ParsePodInfo(injectObject)
+	ns, name, containerName, err := model.ParseContainerInfo(injectObject)
 	if err != nil {
 		return fmt.Errorf("unexpected pod format: %s", err.Error())
 	}

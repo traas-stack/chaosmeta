@@ -70,12 +70,11 @@ func (h *PodScopeHandler) ConvertSelector(ctx context.Context, spec *v1alpha1.Ex
 
 func (h *PodScopeHandler) GetInjectObject(ctx context.Context, exp *v1alpha1.ExperimentCommon, objectName string) (model.AtomicObject, error) {
 	analyzer := selector.GetAnalyzer()
-	ns, podName, containerName, err := model.ParsePodInfo(objectName)
+	ns, podName, containerName, err := model.ParseContainerInfo(objectName)
 	if err != nil {
 		return nil, fmt.Errorf("unexpected pod object name: %s", objectName)
 	}
-
-	return analyzer.GetPod(ctx, ns, podName, containerName)
+	return analyzer.GetContainer(ctx, ns, podName, containerName)
 }
 
 func (h *PodScopeHandler) CheckAlive(ctx context.Context, injectObject model.AtomicObject) error {

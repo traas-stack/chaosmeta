@@ -35,7 +35,7 @@ type PodContainerKillExecutor struct{}
 
 func (e *PodContainerKillExecutor) Inject(ctx context.Context, injectObject, uid, timeout string, args []v1alpha1.ArgsUnit) (string, error) {
 	// parse experiment object info
-	ns, name, containerName, err := model.ParsePodInfo(injectObject)
+	ns, name, containerName, err := model.ParseContainerInfo(injectObject)
 	if err != nil {
 		return "", fmt.Errorf("unexpected pod format: %s", err.Error())
 	}
