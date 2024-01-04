@@ -71,6 +71,9 @@ rules:
   - deployments
   - replicasets
   - statefulsets
+  - deployments/scale
+  - statefulsets/scale
+  - replicasets/scale
   verbs:
   - '*'
 - apiGroups:
@@ -133,12 +136,7 @@ rules:
   resources:
     - certificatesigningrequests
   verbs:
-    - get
-    - list
-    - watch
-    - create
-    - update
-    - delete
+    - '*'
 - apiGroups:
     - certificates.k8s.io
   resources:
