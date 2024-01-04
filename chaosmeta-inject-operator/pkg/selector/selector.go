@@ -49,6 +49,7 @@ func GetAnalyzer() IAnalyzer {
 
 type IAnalyzer interface {
 	GetExperimentListByPhase(ctx context.Context, phase string) (*v1alpha1.ExperimentList, error)
+	GetContainer(ctx context.Context, ns, podName, containerName string) (*model.ContainerObject, error)
 
 	GetPod(ctx context.Context, ns, podName, containerName string) (*model.PodObject, error)
 	GetPodListByLabelInNode(ctx context.Context, namespace string, label map[string]string, nodeIP string) ([]*model.PodObject, error)
@@ -192,6 +193,32 @@ func (a *Analyzer) GetPodListByPodName(ctx context.Context, namespace string, po
 	}
 
 	return result, nil
+}
+
+func GetTargetContainer(containerName string, status []corev1.ContainerStatus) (container *model.ContainerInfo, err error) {
+	if len(status) == 0 {
+		err = fmt.Errorf("no container in pod")
+		return
+	}
+	if containerName == v1alpha1.FirstContainer || containerName == "" {
+		targetContainerInfo := status[0]
+		info, err := getContainerInfo(targetContainerInfo)
+		if err != nil {
+			return nil, err
+		}
+		return info, nil
+	} else {
+		for _, containerStatus := range status {
+			if containerName == containerStatus.Name {
+				info, err := getContainerInfo(containerStatus)
+				if err != nil {
+					return nil, err
+				}
+				return info, nil
+			}
+		}
+	}
+	return nil, fmt.Errorf("fail to get target container")
 }
 
 func GetTargetContainers(containerReg string, status []corev1.ContainerStatus) (containers []model.ContainerInfo, err error) {
@@ -368,30 +395,56 @@ func (a *Analyzer) GetNodeListByNodeIP(ctx context.Context, nodeIP []string, con
 	return result, nil
 }
 
-//func (a *Analyzer) GetNodeListByNodeIP(ctx context.Context, nodeIP []string, containerName string) ([]*model.NodeObject, error) {
-//	var nodeIPMap = make(map[string]bool)
-//	var result []*model.NodeObject
-//	for _, unit := range nodeIP {
-//		if !nodeIPMap[unit] {
-//			nodeIPMap[unit] = true
-//			tmpNode := &model.NodeObject{
-//				NodeInternalIP: unit,
-//			}
-//			if containerName != "" {
-//				r, id, err := model.ParseContainerID(containerName)
-//				if err != nil {
-//					return nil, fmt.Errorf("parse container info error: %s", err.Error())
+//	func (a *Analyzer) GetNodeListByNodeIP(ctx context.Context, nodeIP []string, containerName string) ([]*model.NodeObject, error) {
+//		var nodeIPMap = make(map[string]bool)
+//		var result []*model.NodeObject
+//		for _, unit := range nodeIP {
+//			if !nodeIPMap[unit] {
+//				nodeIPMap[unit] = true
+//				tmpNode := &model.NodeObject{
+//					NodeInternalIP: unit,
+//				}
+//				if containerName != "" {
+//					r, id, err := model.ParseContainerID(containerName)
+//					if err != nil {
+//						return nil, fmt.Errorf("parse container info error: %s", err.Error())
+//					}
+//
+//					tmpNode.ContainerRuntime, tmpNode.ContainerID = r, id
 //				}
 //
-//				tmpNode.ContainerRuntime, tmpNode.ContainerID = r, id
+//				result = append(result, tmpNode)
 //			}
-//
-//			result = append(result, tmpNode)
 //		}
-//	}
 //
-//	return result, nil
-//}
+//		return result, nil
+//	}
+func (a *Analyzer) GetContainer(ctx context.Context, ns, podName, containerName string) (*model.ContainerObject, error) {
+	pod := &corev1.Pod{}
+
+	if err := a.ApiServer.Get(ctx, client.ObjectKey{
+		Namespace: ns,
+		Name:      podName,
+	}, pod); err != nil {
+		return nil, fmt.Errorf("get pod error: %s", err.Error())
+	}
+	container, err := GetTargetContainer(containerName, pod.Status.ContainerStatuses)
+	if err != nil {
+		return nil, fmt.Errorf("get target container[%s] in pod[%s] error: %s", containerName, pod.Name, err.Error())
+	}
+	containerObject := &model.ContainerObject{
+		Namespace:        pod.Namespace,
+		PodName:          pod.Name,
+		PodUID:           string(pod.UID),
+		PodIP:            pod.Status.PodIP,
+		NodeName:         pod.Spec.NodeName,
+		NodeIP:           pod.Status.HostIP,
+		ContainerId:      container.ContainerId,
+		ContainerRuntime: container.ContainerRuntime,
+		ContainerName:    container.ContainerName,
+	}
+	return containerObject, nil
+}
 
 func (a *Analyzer) GetPod(ctx context.Context, ns, podName, containerName string) (*model.PodObject, error) {
 	pod := &corev1.Pod{}

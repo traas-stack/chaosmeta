@@ -32,7 +32,7 @@ func init() {
 type PodDeleteExecutor struct{}
 
 func (e *PodDeleteExecutor) Inject(ctx context.Context, injectObject, uid, timeout string, args []v1alpha1.ArgsUnit) (string, error) {
-	ns, name, _, err := model.ParsePodInfo(injectObject)
+	ns, name, err := model.ParsePodInfo(injectObject)
 	if err != nil {
 		return "", fmt.Errorf("unexpected pod format: %s", err.Error())
 	}

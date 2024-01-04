@@ -34,7 +34,7 @@ func init() {
 type PodLabelExecutor struct{}
 
 func (e *PodLabelExecutor) Inject(ctx context.Context, injectObject, uid, timeout string, args []v1alpha1.ArgsUnit) (string, error) {
-	ns, name, _, err := model.ParsePodInfo(injectObject)
+	ns, name, err := model.ParsePodInfo(injectObject)
 	if err != nil {
 		return "", fmt.Errorf("unexpected pod format: %s", err.Error())
 	}
@@ -62,7 +62,7 @@ func (e *PodLabelExecutor) Inject(ctx context.Context, injectObject, uid, timeou
 }
 
 func (e *PodLabelExecutor) Recover(ctx context.Context, injectObject, uid, backup string) error {
-	ns, name, _, err := model.ParsePodInfo(injectObject)
+	ns, name, err := model.ParsePodInfo(injectObject)
 	if err != nil {
 		return fmt.Errorf("unexpected pod format: %s", err.Error())
 	}
