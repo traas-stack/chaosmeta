@@ -46,7 +46,7 @@ const DynamicForm = (props: Props) => {
    * @returns
    */
   const renderItem = (field: any) => {
-    const { valueRule, valueType, key } = field;
+    const { valueRule, valueType, key, injectId } = field;
     // 无论valueType类型是什么，后端统一接收string
     // if (valueType === 'int') {
     //   return (
@@ -58,7 +58,16 @@ const DynamicForm = (props: Props) => {
     // }
     // key 为namespace时需要特殊渲染
     if (key === 'namespace') {
-      return <KubernetesNamespaceSelect />;
+      // 堆积pending状态的pod 堆积completed状态的job 节点展示输入框
+      return [79, 80].includes(injectId) ? (
+        <Input
+          placeholder={intl.formatMessage({
+            id: 'inputPlaceholder',
+          })}
+        />
+      ) : (
+        <KubernetesNamespaceSelect />
+      );
     }
     if (valueType === 'bool') {
       return (
