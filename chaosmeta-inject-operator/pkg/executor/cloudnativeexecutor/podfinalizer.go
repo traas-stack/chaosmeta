@@ -34,7 +34,7 @@ func init() {
 type PodFinalizerExecutor struct{}
 
 func (e *PodFinalizerExecutor) Inject(ctx context.Context, injectObject, uid, timeout string, args []v1alpha1.ArgsUnit) (string, error) {
-	ns, name, _, err := model.ParsePodInfo(injectObject)
+	ns, name, err := model.ParsePodInfo(injectObject)
 	if err != nil {
 		return "", fmt.Errorf("unexpected pod format: %s", err.Error())
 	}
@@ -57,7 +57,7 @@ func (e *PodFinalizerExecutor) Inject(ctx context.Context, injectObject, uid, ti
 }
 
 func (e *PodFinalizerExecutor) Recover(ctx context.Context, injectObject, uid, backup string) error {
-	ns, name, _, err := model.ParsePodInfo(injectObject)
+	ns, name, err := model.ParsePodInfo(injectObject)
 	if err != nil {
 		return fmt.Errorf("unexpected pod format: %s", err.Error())
 	}

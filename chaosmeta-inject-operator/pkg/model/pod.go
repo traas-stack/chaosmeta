@@ -79,11 +79,20 @@ func (p *PodObject) GetObjectName() string {
 	return podInfo
 }
 
-func ParsePodInfo(podStr string) (ns, podName, containerName string, err error) {
-	tmpArr := strings.Split(podStr, ObjectNameSplit)
+func ParseContainerInfo(containerStr string) (ns, podName, containerName string, err error) {
+	tmpArr := strings.Split(containerStr, ObjectNameSplit)
 	if len(tmpArr) == 4 {
 		ns, podName, containerName = tmpArr[1], tmpArr[2], tmpArr[3]
-	} else if len(tmpArr) == 3 {
+	} else {
+		err = fmt.Errorf("unexpected format of pod string: %s", containerStr)
+	}
+
+	return
+}
+
+func ParsePodInfo(podStr string) (ns, podName string, err error) {
+	tmpArr := strings.Split(podStr, ObjectNameSplit)
+	if len(tmpArr) == 4 || len(tmpArr) == 3 {
 		ns, podName = tmpArr[1], tmpArr[2]
 	} else {
 		err = fmt.Errorf("unexpected format of pod string: %s", podStr)

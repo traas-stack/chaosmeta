@@ -70,16 +70,15 @@ func (h *PodScopeHandler) ConvertSelector(ctx context.Context, spec *v1alpha1.Ex
 
 func (h *PodScopeHandler) GetInjectObject(ctx context.Context, exp *v1alpha1.ExperimentCommon, objectName string) (model.AtomicObject, error) {
 	analyzer := selector.GetAnalyzer()
-	ns, podName, containerName, err := model.ParsePodInfo(objectName)
+	ns, podName, containerName, err := model.ParseContainerInfo(objectName)
 	if err != nil {
 		return nil, fmt.Errorf("unexpected pod object name: %s", objectName)
 	}
-
-	return analyzer.GetPod(ctx, ns, podName, containerName)
+	return analyzer.GetContainer(ctx, ns, podName, containerName)
 }
 
 func (h *PodScopeHandler) CheckAlive(ctx context.Context, injectObject model.AtomicObject) error {
-	pod, ok := injectObject.(*model.PodObject)
+	pod, ok := injectObject.(*model.ContainerObject)
 	if !ok {
 		return fmt.Errorf("inject object change to pod error")
 	}
@@ -88,7 +87,7 @@ func (h *PodScopeHandler) CheckAlive(ctx context.Context, injectObject model.Ato
 }
 
 func (h *PodScopeHandler) QueryExperiment(ctx context.Context, injectObject model.AtomicObject, UID, backup string, expArgs *v1alpha1.ExperimentCommon, phase v1alpha1.PhaseType) (*model.SubExpInfo, error) {
-	container, ok := injectObject.(*model.PodObject)
+	container, ok := injectObject.(*model.ContainerObject)
 	if !ok {
 		return nil, fmt.Errorf("inject object change to container error")
 	}
@@ -98,25 +97,21 @@ func (h *PodScopeHandler) QueryExperiment(ctx context.Context, injectObject mode
 }
 
 func (h *PodScopeHandler) ExecuteInject(ctx context.Context, injectObject model.AtomicObject, UID string, expArgs *v1alpha1.ExperimentCommon) (string, error) {
-	p, ok := injectObject.(*model.PodObject)
+	c, ok := injectObject.(*model.ContainerObject)
 	if !ok {
 		return "", fmt.Errorf("inject object change to pod error")
 	}
 
-	if len(p.Containers) == 0 {
-		return "", fmt.Errorf("container not provide")
+	err := remoteexecutor.GetRemoteExecutor().Inject(ctx, c.NodeIP, expArgs.Target, expArgs.Fault, UID, expArgs.Duration, c.ContainerId, c.ContainerRuntime, expArgs.Args)
+	if err != nil {
+		return "", err
 	}
-	for _, container := range p.Containers {
-		err := remoteexecutor.GetRemoteExecutor().Inject(ctx, p.NodeIP, expArgs.Target, expArgs.Fault, UID, expArgs.Duration, container.ContainerId, container.ContainerRuntime, expArgs.Args)
-		if err != nil {
-			return "", err
-		}
-	}
+
 	return "", nil
 }
 
 func (h *PodScopeHandler) ExecuteRecover(ctx context.Context, injectObject model.AtomicObject, UID, backup string, expArgs *v1alpha1.ExperimentCommon) error {
-	container, ok := injectObject.(*model.PodObject)
+	container, ok := injectObject.(*model.ContainerObject)
 	if !ok {
 		return fmt.Errorf("inject object change to pod error")
 	}
