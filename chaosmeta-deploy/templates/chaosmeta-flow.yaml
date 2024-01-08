@@ -250,7 +250,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-flow-controller:v0.0.5
+        image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-flow-controller:v0.0.6
         env:
         - name: DEFAULTNAMESPACE
           valueFrom:
@@ -285,10 +285,18 @@ spec:
           capabilities:
             drop:
             - ALL
+        volumeMounts:
+          - mountPath: /workspace/config/chaosmeta-flow.json
+            name: config-volume
+            subPath: chaosmeta-flow.json
       securityContext:
         runAsNonRoot: true
       serviceAccountName: chaosmeta-flow-controller-manager
       terminationGracePeriodSeconds: 10
+      volumes:
+        - configMap:
+            name: chaosmeta-flow-config
+          name: config-volume
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
@@ -357,6 +365,7 @@ data:
         "resource": {
           "cpu": "0",
           "memory": "1Gi"
-        }
+        },
+        "namespace": "chaosmeta"
       }
     }

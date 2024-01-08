@@ -296,9 +296,6 @@ func loadConfig(ctx context.Context, ins *v1alpha1.LoadTest) string {
 
 func loadJob(ctx context.Context, ins *v1alpha1.LoadTest, configFileStr string) (*batchv1.Job, error) {
 	mainConfig := config.GetGlobalConfig()
-	logger := log.FromContext(ctx)
-	logger.Info(fmt.Sprintf("read config: image: %s, cpu: %s, mem: %s", mainConfig.Executor.Image, mainConfig.Executor.Resource.CPU, mainConfig.Executor.Resource.Memory))
-
 	yamlStr := strings.ReplaceAll(v1alpha1.JobYamlStr, "@INITIAL_CONFIG@", configFileStr)
 
 	cpuCore := strconv.Itoa(ins.Spec.Parallelism / ins.Spec.Source / 2)
@@ -318,11 +315,16 @@ func loadJob(ctx context.Context, ins *v1alpha1.LoadTest, configFileStr string) 
 		return nil, fmt.Errorf("convert yaml to job instance error: %s", err.Error())
 	}
 
+	targetNs := ins.Namespace
+	if mainConfig.Executor.Namespace != "" {
+		targetNs = mainConfig.Executor.Namespace
+	}
+
 	job.Spec.Template.Spec.Containers[0].Image = mainConfig.Executor.Image
 	job.Name = ins.Name
 	job.Spec.Template.Name = ins.Name
-	job.Namespace = ins.Namespace
-	job.Spec.Template.Namespace = ins.Namespace
+	job.Namespace = targetNs
+	job.Spec.Template.Namespace = targetNs
 	replicas := int32(ins.Spec.Source)
 	job.Spec.Completions = &replicas
 	job.Spec.Parallelism = &replicas

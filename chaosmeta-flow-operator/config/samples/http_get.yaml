@@ -2,7 +2,7 @@ apiVersion: chaosmeta.io/v1alpha1
 kind: LoadTest
 metadata:
   name: loadtest-sample1
-  namespace: chaosmeta-flow
+  namespace: chaosmeta
 spec:
   flowType: http
   duration: 1m

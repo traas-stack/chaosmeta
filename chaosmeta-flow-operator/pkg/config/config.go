@@ -58,8 +58,9 @@ type MainConfig struct {
 }
 
 type ExecutorConfig struct {
-	Image    string         `json:"image"`
-	Resource ResourceConfig `json:"resource"`
+	Image     string         `json:"image"`
+	Resource  ResourceConfig `json:"resource"`
+	Namespace string         `json:"namespace"`
 }
 
 type ResourceConfig struct {
