@@ -137,8 +137,9 @@ func getPodObjectList(ctx context.Context, selectorUnit v1alpha1.SelectorUnit) (
 
 	var result = make([]model.AtomicObject, 0)
 	for _, pod := range podList {
-		for _, subObject := range pod.GetSubObjects() {
-			result = append(result, &subObject)
+		subObjects := pod.GetSubObjects()
+		for i, _ := range subObjects {
+			result = append(result, &subObjects[i])
 		}
 	}
 

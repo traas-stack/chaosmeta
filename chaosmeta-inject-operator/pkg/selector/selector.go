@@ -29,8 +29,9 @@ import (
 )
 
 const (
-	HostIPKey = ".status.hostIP"
-	PhaseKey  = ".status.phase"
+	HostIPKey       = ".status.hostIP"
+	PhaseKey        = ".status.phase"
+	containerRegFmt = "^(%s)$"
 )
 
 var (
@@ -227,7 +228,6 @@ func GetTargetContainers(containerReg string, status []corev1.ContainerStatus) (
 		return
 	}
 	containerReg = strings.ReplaceAll(containerReg, ",", "|")
-	reg := regexp.MustCompile(containerReg)
 	containers = []model.ContainerInfo{}
 	var targetContainerInfo corev1.ContainerStatus
 	// no container setting equals to firstcontainer setting
@@ -239,6 +239,7 @@ func GetTargetContainers(containerReg string, status []corev1.ContainerStatus) (
 		}
 		containers = append(containers, *info)
 	} else {
+		reg := regexp.MustCompile(fmt.Sprintf(containerRegFmt, containerReg))
 		for _, containerStatus := range status {
 			if reg.MatchString(containerStatus.Name) {
 				info, err := getContainerInfo(containerStatus)
