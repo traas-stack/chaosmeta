@@ -1,4 +1,4 @@
-module self/chaosmeta/chaosmeta-flow-operator
+module github.com/traas-stack/chaosmeta/chaosmeta-flow-operator
 
 go 1.19
 

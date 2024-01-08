@@ -32,8 +32,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	chaosmetaiov1alpha1 "self/chaosmeta/chaosmeta-flow-operator/api/v1alpha1"
-	"self/chaosmeta/chaosmeta-flow-operator/controllers"
+	chaosmetaiov1alpha1 "github.com/traas-stack/chaosmeta/chaosmeta-flow-operator/api/v1alpha1"
+	"github.com/traas-stack/chaosmeta/chaosmeta-flow-operator/controllers"
+	_ "github.com/traas-stack/chaosmeta/chaosmeta-flow-operator/pkg/config"
 	//+kubebuilder:scaffold:imports
 )
 

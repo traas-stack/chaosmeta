@@ -18,10 +18,10 @@ spec:
           resources:
             requests:
               cpu: "@CPU_REQ@"
-              memory: 1Gi
+              memory: "@MEM_REQ@"
             limits:
               cpu: "@CPU_REQ@"
-              memory: 1Gi
+              memory: "@MEM_REQ@"
           env:
             - name: JEMETER_CONFIG
               value: |

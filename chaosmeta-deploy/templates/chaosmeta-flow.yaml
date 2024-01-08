@@ -250,7 +250,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-flow-controller:v0.0.3
+        image: registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-flow-controller:v0.0.5
         env:
         - name: DEFAULTNAMESPACE
           valueFrom:
@@ -342,3 +342,21 @@ webhooks:
     resources:
     - loadtests
   sideEffects: None
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: chaosmeta-flow-config
+  namespace: chaosmeta
+data:
+  chaosmeta-flow.json: |-
+    {
+      "executor": {
+        "image": "registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-jmeter:v1.0.0",
+        "resource": {
+          "cpu": "0",
+          "memory": "1Gi"
+        }
+      }
+    }
