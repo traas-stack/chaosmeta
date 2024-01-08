@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-flow-controller
-  newTag: v0.0.5
+  newTag: v0.0.6

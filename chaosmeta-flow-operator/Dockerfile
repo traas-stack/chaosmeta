@@ -17,6 +17,7 @@ COPY api/ api/
 COPY controllers/ controllers/
 COPY config/executor config/executor
 COPY config/chaosmeta-flow.json config/chaosmeta-flow.json
+COPY pkg/ pkg/
 
 # Build
 # the GOARCH has not a default value to allow the binary be built according to the host where the command

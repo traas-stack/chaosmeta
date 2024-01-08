@@ -4,6 +4,7 @@
     "resource": {
       "cpu": "0",
       "memory": "1Gi"
-    }
+    },
+    "namespace": "chaosmeta"
   }
 }
