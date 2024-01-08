@@ -21,6 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/traas-stack/chaosmeta/chaosmeta-flow-operator/pkg/config"
 	"io"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -37,7 +38,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	"self/chaosmeta/chaosmeta-flow-operator/api/v1alpha1"
+	"github.com/traas-stack/chaosmeta/chaosmeta-flow-operator/api/v1alpha1"
 )
 
 // LoadTestReconciler reconciles a LoadTest object
@@ -294,19 +295,30 @@ func loadConfig(ctx context.Context, ins *v1alpha1.LoadTest) string {
 }
 
 func loadJob(ctx context.Context, ins *v1alpha1.LoadTest, configFileStr string) (*batchv1.Job, error) {
+	mainConfig := config.GetGlobalConfig()
+	logger := log.FromContext(ctx)
+	logger.Info(fmt.Sprintf("read config: image: %s, cpu: %s, mem: %s", mainConfig.Executor.Image, mainConfig.Executor.Resource.CPU, mainConfig.Executor.Resource.Memory))
+
 	yamlStr := strings.ReplaceAll(v1alpha1.JobYamlStr, "@INITIAL_CONFIG@", configFileStr)
 
 	cpuCore := strconv.Itoa(ins.Spec.Parallelism / ins.Spec.Source / 2)
 	if cpuCore == "0" {
 		cpuCore = "0.5"
 	}
+
+	if mainConfig.Executor.Resource.CPU != "" && mainConfig.Executor.Resource.CPU != "0" {
+		cpuCore = mainConfig.Executor.Resource.CPU
+	}
+
 	yamlStr = strings.ReplaceAll(yamlStr, "@CPU_REQ@", cpuCore)
+	yamlStr = strings.ReplaceAll(yamlStr, "@MEM_REQ@", mainConfig.Executor.Resource.Memory)
 
 	job := &batchv1.Job{}
 	if err := yaml.Unmarshal([]byte(yamlStr), job); err != nil {
 		return nil, fmt.Errorf("convert yaml to job instance error: %s", err.Error())
 	}
 
+	job.Spec.Template.Spec.Containers[0].Image = mainConfig.Executor.Image
 	job.Name = ins.Name
 	job.Spec.Template.Name = ins.Name
 	job.Namespace = ins.Namespace

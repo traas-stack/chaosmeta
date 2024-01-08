@@ -16,6 +16,7 @@ COPY main.go main.go
 COPY api/ api/
 COPY controllers/ controllers/
 COPY config/executor config/executor
+COPY config/chaosmeta-flow.json config/chaosmeta-flow.json
 
 # Build
 # the GOARCH has not a default value to allow the binary be built according to the host where the command
@@ -30,6 +31,7 @@ FROM gcr.io/distroless/static:nonroot
 WORKDIR /
 COPY --from=builder /workspace/manager .
 COPY --from=builder /workspace/config/executor /config/executor
+COPY --from=builder /workspace/config/chaosmeta-flow.json /workspace/config/chaosmeta-flow.json
 USER 65532:65532
 
 ENTRYPOINT ["/manager"]

@@ -1,0 +1,9 @@
+{
+  "executor": {
+    "image": "registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmeta-jmeter:v1.0.0",
+    "resource": {
+      "cpu": "0",
+      "memory": "1Gi"
+    }
+  }
+}
