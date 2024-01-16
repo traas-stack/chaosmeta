@@ -1,6 +1,6 @@
 import ShowText from '@/components/ShowText';
 import { triggerTypes } from '@/constants';
-import { formatTime, getIntlLabel } from '@/utils/format';
+import { formatTime, getIntlLabel, timesStampString } from '@/utils/format';
 import { renderScheduleType, renderTags } from '@/utils/renderItem';
 import { history, useIntl } from '@umijs/max';
 import { Button, DatePicker, Drawer, Form, Input, Radio, Space } from 'antd';
@@ -56,7 +56,7 @@ const InfoDrawer: React.FC<IProps> = (props) => {
   const handleSubmit = () => {
     form.validateFields().then((values) => {
       if (values?.schedule_type === 'once') {
-        values.schedule_rule = formatTime(values?.once_time);
+        values.schedule_rule = values?.once_time.valueOf().toString()
       }
       handleConfirm({ ...values, labels: addTagList });
       setOpen(false);
@@ -75,7 +75,7 @@ const InfoDrawer: React.FC<IProps> = (props) => {
         name,
       });
       if (baseInfo?.schedule_type === 'once') {
-        form.setFieldValue('once_time', dayjs(schedule_rule));
+        form.setFieldValue('once_time', dayjs(timesStampString(schedule_rule)));
       }
       if (baseInfo?.schedule_type === 'cron') {
         form.setFieldValue('schedule_rule', schedule_rule);

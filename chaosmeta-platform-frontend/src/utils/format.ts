@@ -8,7 +8,7 @@ export function trim(str: string) {
   return str.trim();
 }
 
-export const formatTime = (time?: dayjs.Dayjs | string) => {
+export const formatTime = (time?: dayjs.Dayjs | string | number) => {
   if (time) {
     return dayjs(time)?.format('YYYY-MM-DD HH:mm:ss');
   }
@@ -335,4 +335,13 @@ export const formatFormName = (
     name = key;
   }
   return name;
+};
+
+/**
+ * 时间戳字符串转时间戳
+ * @param time 时间字符串，"1706150902050"转为1706150902050，"2024-01-12 20:02:16"则不变
+ * @returns
+ */
+export const timesStampString = (time: string) => {
+  return !time || isNaN(Number(time)) ? time : Number(time);
 };
