@@ -1,6 +1,6 @@
 import { tagColors, triggerTypes } from '@/constants';
 import { Popover, Tag } from 'antd';
-import { cronTranstionCN, formatTime, getIntlLabel } from './format';
+import { cronTranstionCN, formatTime, getIntlLabel, timesStampString } from './format';
 
 /**
  * 用于各重复组件方法的渲染
@@ -25,7 +25,7 @@ export const renderScheduleType = (baseInfo: any) => {
     return (
       <div>
         {getIntlLabel(temp)}
-        <span>{`（${formatTime(schedule_rule)}）`}</span>
+        <span>{`（${formatTime(timesStampString(schedule_rule))}）`}</span>
       </div>
     );
   }
