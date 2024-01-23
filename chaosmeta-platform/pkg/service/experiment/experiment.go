@@ -292,7 +292,7 @@ func (es *ExperimentService) UpdateExperiment(uuid string, experimentParam *Expe
 		}
 	}
 
-	if getExperiment.ScheduleType != experimentParam.ScheduleType {
+	if getExperiment.ScheduleType != experimentParam.ScheduleType || getExperiment.ScheduleRule != experimentParam.ScheduleRule {
 		getExperiment.Status = experiment.ToBeExecuted
 	}
 	getExperiment.Name = experimentParam.Name

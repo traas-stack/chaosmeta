@@ -32,6 +32,7 @@ import (
 	"github.com/robfig/cron"
 	"gopkg.in/yaml.v2"
 	"k8s.io/client-go/rest"
+	"strconv"
 	"time"
 )
 
@@ -349,8 +350,15 @@ func (e *ExperimentRoutine) DealOnceExperiment() {
 	}
 
 	for _, experimentGet := range experiments {
-		nextExec, _ := time.Parse(DefaultFormat, experimentGet.ScheduleRule)
-		timeNow, _ := time.Parse(DefaultFormat, time.Now().Format(DefaultFormat))
+		timeStamp, err := strconv.ParseInt(experimentGet.ScheduleRule, 10, 64)
+		var nextExec time.Time
+		if err != nil {
+			log.Error(err)
+			nextExec, _ = time.Parse(DefaultFormat, experimentGet.ScheduleRule)
+		} else {
+			nextExec = time.UnixMilli(timeStamp)
+		}
+		timeNow := time.Now()
 		if timeNow.After(nextExec) {
 			experimentGet.LastInstance = timeNow.Format(TimeLayout)
 			log.Info(experimentGet.UUID, "next exec time", experimentGet.NextExec)
@@ -383,7 +391,7 @@ func (e *ExperimentRoutine) DealCronExperiment() {
 		return
 	}
 	for _, experimentGet := range experiments {
-		cronExpr, err := cron.Parse(experimentGet.ScheduleRule)
+		cronExpr, err := cron.ParseStandard(experimentGet.ScheduleRule)
 		if err != nil {
 			continue
 		}
