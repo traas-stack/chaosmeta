@@ -35,7 +35,7 @@ func newDBStorage() (*dbStorage, error) {
 	// TODO: db path can be config
 	dsn := path.Join(utils.GetRunPath(), storageFile)
 
-	dsn += "?cache=shared"
+	dsn += "?cache=shared&loc=Local"
 
 	gormDB, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
