@@ -360,7 +360,7 @@ func (e *ExperimentRoutine) DealOnceExperiment() {
 		}
 		timeNow := time.Now()
 		if timeNow.After(nextExec) {
-			experimentGet.LastInstance = timeNow.Format(TimeLayout)
+			experimentGet.LastInstance = timeNow.Format(time.RFC3339)
 			log.Info(experimentGet.UUID, "next exec time", experimentGet.NextExec)
 			if err := experiment.UpdateExperiment(experimentGet); err != nil {
 				log.Error(err)
@@ -407,7 +407,7 @@ func (e *ExperimentRoutine) DealCronExperiment() {
 		if time.Now().After(experimentGet.NextExec) {
 			experimentGet.Status = experiment.Executed
 			experimentGet.NextExec = cronExpr.Next(now)
-			experimentGet.LastInstance = time.Now().Format(TimeLayout)
+			experimentGet.LastInstance = time.Now().Format(time.RFC3339)
 			log.Info(experimentGet.UUID, "next exec time", experimentGet.NextExec)
 			if err := experiment.UpdateExperiment(experimentGet); err != nil {
 				log.Error(err)
