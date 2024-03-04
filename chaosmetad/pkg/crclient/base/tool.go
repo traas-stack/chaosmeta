@@ -16,7 +16,43 @@
 
 package base
 
-type SimpleProcess struct {
-	Pid int
-	Cmd string
+import (
+	"io"
+	"os"
+)
+
+func CopyFile(src, dst string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+
+	out, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, in)
+	if err != nil {
+		return err
+	}
+
+	err = out.Sync()
+	if err != nil {
+		return err
+	}
+
+	si, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+
+	err = os.Chmod(dst, si.Mode())
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -94,7 +94,7 @@ The current version has released: user interface, fault injection scheduling eng
 #### Quickly try the single-machine injection capability
 ```shell
 # Download docker mirror and run container
-docker run --privileged -it registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmetad-demo:v0.5.1 /bin/bash
+docker run --privileged -it registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmetad-demo:v0.5.3 /bin/bash
 
 # Start the test service
 cd /tmp && python -m SimpleHTTPServer 8080 > server.log 2>&1 &

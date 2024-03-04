@@ -93,7 +93,7 @@ ChaosMeta 则会在“混沌工程生命周期”的技术基础以及“风险�
 #### 快速试用单机注入能力
 ```shell
 # 下载镜像并运行容器
-docker run --privileged -it registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmetad-demo:v0.5.1 /bin/bash
+docker run --privileged -it registry.cn-hangzhou.aliyuncs.com/chaosmeta/chaosmetad-demo:v0.5.3 /bin/bash
 
 # 启动测试服务
 cd /tmp && python -m SimpleHTTPServer 8080 > server.log 2>&1 &
