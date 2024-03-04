@@ -21,11 +21,8 @@ import (
 	"fmt"
 	"github.com/docker/docker/api/types"
 	dockerClient "github.com/docker/docker/client"
-	"github.com/docker/docker/pkg/archive"
-	"github.com/docker/docker/pkg/system"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/crclient/base"
 	"github.com/traas-stack/chaosmeta/chaosmetad/pkg/log"
-	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -206,51 +203,17 @@ func (d *Client) ListId(ctx context.Context) ([]string, error) {
 }
 
 func (d *Client) CpFile(ctx context.Context, containerID, src, dst string) error {
-	dstInfo := archive.CopyInfo{Path: dst}
-	dstStat, err := d.client.ContainerStatPath(ctx, containerID, dst)
-
-	if err == nil && dstStat.Mode&os.ModeSymlink != 0 {
-		linkTarget := dstStat.LinkTarget
-		if !system.IsAbs(linkTarget) {
-			dstParent, _ := archive.SplitPathDirEntry(dst)
-			linkTarget = filepath.Join(dstParent, linkTarget)
-		}
-
-		dstInfo.Path = linkTarget
-		dstStat, err = d.client.ContainerStatPath(ctx, containerID, linkTarget)
-	}
-
-	if err == nil {
-		dstInfo.Exists, dstInfo.IsDir = true, dstStat.Mode.IsDir()
-	}
-
-	var (
-		content         io.Reader
-		resolvedDstPath string
-	)
-
-	srcInfo, err := archive.CopyInfoSourcePath(src, true)
+	info, err := d.client.ContainerInspect(ctx, containerID)
 	if err != nil {
-		return err
+		return fmt.Errorf("get meta data of container[%s] error: %s", containerID, err.Error())
 	}
 
-	srcArchive, err := archive.TarResource(srcInfo)
-	if err != nil {
-		return err
+	containerMergedDir, ok := info.GraphDriver.Data["MergedDir"]
+	if !ok {
+		return fmt.Errorf("get containerMergedDir error: not existed")
 	}
 
-	defer srcArchive.Close()
-
-	dstDir, preparedArchive, err := archive.PrepareArchiveCopy(srcArchive, srcInfo, dstInfo)
-	if err != nil {
-		return err
-	}
-	defer preparedArchive.Close()
-
-	resolvedDstPath = dstDir
-	content = preparedArchive
-
-	return d.client.CopyToContainer(ctx, containerID, resolvedDstPath, content, types.CopyToContainerOptions{
-		AllowOverwriteDirWithFile: true,
-	})
+	dst = filepath.Join(containerMergedDir, dst)
+	log.GetLogger(ctx).Debugf("copy file from %s to container %s", dst)
+	return base.CopyFile(src, dst)
 }

@@ -257,6 +257,18 @@ func (d *Client) ListId(ctx context.Context) ([]string, error) {
 }
 
 func (d *Client) CpFile(ctx context.Context, containerID, src, dst string) error {
+	rootfs := fmt.Sprintf("/run/containerd/io.containerd.runtime.v2.task/k8s.io/%s/rootfs", containerID)
+	_, err := os.Stat(rootfs)
+	if err != nil {
+		return d.CpFileOld(ctx, containerID, src, dst)
+	}
+
+	dst = fmt.Sprintf("%s%s", rootfs, dst)
+	log.GetLogger(ctx).Debugf("target merged file: %s", dst)
+	return base.CopyFile(src, dst)
+}
+
+func (d *Client) CpFileOld(ctx context.Context, containerID, src, dst string) error {
 	task, err := d.getContainerTask(ctx, containerID)
 	if err != nil {
 		return fmt.Errorf("get task of container error: %s", err.Error())

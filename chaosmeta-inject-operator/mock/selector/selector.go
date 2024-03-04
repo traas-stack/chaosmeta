@@ -36,6 +36,21 @@ func (m *MockIAnalyzer) EXPECT() *MockIAnalyzerMockRecorder {
 	return m.recorder
 }
 
+// GetContainer mocks base method.
+func (m *MockIAnalyzer) GetContainer(ctx context.Context, ns, podName, containerName string) (*model.ContainerObject, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetContainer", ctx, ns, podName, containerName)
+	ret0, _ := ret[0].(*model.ContainerObject)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetContainer indicates an expected call of GetContainer.
+func (mr *MockIAnalyzerMockRecorder) GetContainer(ctx, ns, podName, containerName interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContainer", reflect.TypeOf((*MockIAnalyzer)(nil).GetContainer), ctx, ns, podName, containerName)
+}
+
 // GetDeploymentListByLabel mocks base method.
 func (m *MockIAnalyzer) GetDeploymentListByLabel(ctx context.Context, namespace string, label map[string]string) ([]*model.DeploymentObject, error) {
 	m.ctrl.T.Helper()

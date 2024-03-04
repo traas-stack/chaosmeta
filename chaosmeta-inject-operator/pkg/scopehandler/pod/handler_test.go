@@ -62,6 +62,7 @@ func TestPodScopeHandler_ConvertSelector(t *testing.T) {
 							"k1": "v1",
 							"k2": "v2",
 						},
+						SubName: containerName,
 					},
 				},
 				TargetPhase: v1alpha1.InjectPhaseType,

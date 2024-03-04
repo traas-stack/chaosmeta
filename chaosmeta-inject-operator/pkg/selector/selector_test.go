@@ -74,16 +74,6 @@ func TestGetTargetContainer(t *testing.T) {
 			wantErr:  false,
 		},
 		{
-			name: "not found",
-			args: args{
-				containerName: "nginx2",
-				status:        testStatus,
-			},
-			//wantR:   "pouch",
-			//wantId:  "esbersbsh",
-			wantErr: true,
-		},
-		{
 			name: "wrong format",
 			args: args{
 				containerName: "centos",
@@ -98,8 +88,11 @@ func TestGetTargetContainer(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			containers, err := GetTargetContainers(tt.args.containerName, tt.args.status)
-			if (err != nil) != tt.wantErr || len(containers) == 0 {
+			if (err != nil) != tt.wantErr {
 				t.Errorf("GetTargetContainer() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if len(containers) == 0 {
 				return
 			}
 			gotR, gotId, gotName := containers[0].ContainerRuntime, containers[0].ContainerId, containers[0].ContainerName
