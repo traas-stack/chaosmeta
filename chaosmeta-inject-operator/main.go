@@ -20,6 +20,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	initwebhook "github.com/traas-stack/chaosmeta/chaosmeta-common/webhook"
 	"github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/pkg/restclient"
 	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -138,11 +139,11 @@ func main() {
 		os.Exit(1)
 	}
 	setupLog.Info(fmt.Sprintf("set APIServer for cloud object success: %v", t))
-	//err = initwebhook.InitCert(setupLog, ComponentInject)
-	//if err != nil {
-	//	setupLog.Error(err, "init cert failed")
-	//	os.Exit(1)
-	//}
+	err = initwebhook.InitCert(setupLog, ComponentInject)
+	if err != nil {
+		setupLog.Error(err, "init cert failed")
+		os.Exit(1)
+	}
 	// set executor
 	if err = remoteexecutor.SetGlobalRemoteExecutor(&mainConfig.Executor, mgr.GetConfig(), mgr.GetScheme()); err != nil {
 		setupLog.Error(err, "set remote executor error")
@@ -158,10 +159,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	//if err = (&injectv1alpha1.Experiment{}).SetupWebhookWithManager(mgr); err != nil {
-	//	setupLog.Error(err, "unable to create webhook", "webhook", "Experiment")
-	//	os.Exit(1)
-	//}
+	if err = (&injectv1alpha1.Experiment{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "Experiment")
+		os.Exit(1)
+	}
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
