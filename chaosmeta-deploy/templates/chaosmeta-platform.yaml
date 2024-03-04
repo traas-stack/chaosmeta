@@ -162,3 +162,30 @@ spec:
         - name: mysql-storage
           hostPath:
             path: "/mnt/chaosmeta-platform-mysql"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  finalizers:
+    - service.k8s.alibaba/resources
+  labels:
+    app: chaosmeta-platform
+  name: chaosmeta-platform
+  namespace: chaosmeta
+spec:
+  allocateLoadBalancerNodePorts: true
+  externalTrafficPolicy: Cluster
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+    - name: http
+      nodePort: 32504
+      port: 8000
+      protocol: TCP
+      targetPort: 8000
+  selector:
+    app: chaosmeta-platform
+  sessionAffinity: None
+  type: LoadBalancer

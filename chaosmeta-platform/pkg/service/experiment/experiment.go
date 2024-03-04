@@ -292,7 +292,7 @@ func (es *ExperimentService) UpdateExperiment(uuid string, experimentParam *Expe
 		}
 	}
 
-	if getExperiment.ScheduleType != experimentParam.ScheduleType {
+	if getExperiment.ScheduleType != experimentParam.ScheduleType || getExperiment.ScheduleRule != experimentParam.ScheduleRule {
 		getExperiment.Status = experiment.ToBeExecuted
 	}
 	getExperiment.Name = experimentParam.Name
@@ -376,7 +376,7 @@ func (es *ExperimentService) GetExperimentByUUID(uuid string) (*ExperimentGet, e
 	}
 
 	if !experimentGet.NextExec.IsZero() {
-		experimentReturn.NextExec = experimentGet.NextExec.Format(TimeLayout)
+		experimentReturn.NextExec = experimentGet.NextExec.Format(time.RFC3339)
 	}
 
 	experimentCount, _ := experiment_instance.CountExperimentInstances(0, experimentGet.UUID, "", 0)
