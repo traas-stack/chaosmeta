@@ -21,6 +21,7 @@ import (
 	"flag"
 	"fmt"
 	initwebhook "github.com/traas-stack/chaosmeta/chaosmeta-common/webhook"
+	"github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/pkg/executor/remoteexecutor"
 	"github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/pkg/restclient"
 	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -29,7 +30,6 @@ import (
 
 	"github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/pkg/common"
 	"github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/pkg/config"
-	"github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/pkg/executor/remoteexecutor"
 	"github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/pkg/selector"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -145,8 +145,12 @@ func main() {
 		os.Exit(1)
 	}
 	// set executor
-	if err = remoteexecutor.SetGlobalRemoteExecutor(&mainConfig.Executor, mgr.GetConfig(), mgr.GetScheme()); err != nil {
-		setupLog.Error(err, "set remote executor error")
+	//if err = remoteexecutor.SetGlobalRemoteExecutor(&mainConfig.Executor, mgr.GetConfig(), mgr.GetScheme()); err != nil {
+	//	setupLog.Error(err, "set remote executor error")
+	//	os.Exit(1)
+	//}
+	if err = remoteexecutor.AutoSelectRemoteExecutor(&mainConfig.Executor, mgr.GetConfig(), mgr.GetScheme()); err != nil {
+		setupLog.Error(err, "auto select remote executor error")
 		os.Exit(1)
 	}
 	setupLog.Info(fmt.Sprintf("set remote executor success: %s", mainConfig.Executor.Mode))

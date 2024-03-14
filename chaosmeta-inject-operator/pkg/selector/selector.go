@@ -63,6 +63,8 @@ type IAnalyzer interface {
 
 	GetDeploymentListByLabel(ctx context.Context, namespace string, label map[string]string) ([]*model.DeploymentObject, error)
 	GetDeploymentListByName(ctx context.Context, namespace string, name []string) ([]*model.DeploymentObject, error)
+
+	GetDaemonSetByName(ctx context.Context, namespace string, name string) (*model.DaemonSetObject, error)
 }
 
 type Analyzer struct {
@@ -526,4 +528,15 @@ func (a *Analyzer) GetDeploymentListByName(ctx context.Context, namespace string
 	}
 
 	return result, nil
+}
+
+func (a *Analyzer) GetDaemonSetByName(ctx context.Context, namespace, name string) (*model.DaemonSetObject, error) {
+	daemonSet := &appsv1.DaemonSet{}
+	if err := a.ApiServer.Get(ctx, client.ObjectKey{Namespace: namespace, Name: name}, daemonSet); err != nil {
+		return nil, fmt.Errorf("failed to get daemonset by name: %s", name)
+	}
+	return &model.DaemonSetObject{
+		DaemonSetName: daemonSet.Name,
+		Namespace:     daemonSet.Namespace,
+	}, nil
 }

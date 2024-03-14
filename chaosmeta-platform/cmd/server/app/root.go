@@ -20,6 +20,7 @@ import (
 	"chaosmeta-platform/config"
 	"chaosmeta-platform/pkg/service/experiment"
 	"chaosmeta-platform/pkg/service/inject"
+	"chaosmeta-platform/pkg/service/kubernetes"
 	"chaosmeta-platform/pkg/service/namespace"
 	"chaosmeta-platform/pkg/service/user"
 	"chaosmeta-platform/util/log"
@@ -67,6 +68,7 @@ func initConfig() {
 		log.Panic(err)
 	}
 	experiment.Init()
+	kubernetes.Init()
 	//if err := clientset.Init(); err != nil {
 	//	log.Panic(err)
 	//}

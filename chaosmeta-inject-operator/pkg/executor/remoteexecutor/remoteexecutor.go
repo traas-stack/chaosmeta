@@ -23,6 +23,9 @@ import (
 	"github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/pkg/config"
 	"github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/pkg/executor/remoteexecutor/agentexecutor"
 	"github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/pkg/executor/remoteexecutor/daemonsetexecutor"
+	"github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/pkg/executor/remoteexecutor/middlewareexecutor"
+	"github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/pkg/executor/remoteexecutor/middlewareexecutor/tse"
+	"github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/pkg/executor/remoteexecutor/middlewareexecutor/tse/auth"
 	httpclient "github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/pkg/http"
 	"github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/pkg/model"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -33,12 +36,14 @@ import (
 type RemoteModeType string
 
 const (
-	AgentRemoteMode     RemoteModeType = "agent"
-	DaemonsetRemoteMode RemoteModeType = "daemonset"
+	AgentRemoteMode      RemoteModeType = "agent"
+	DaemonsetRemoteMode  RemoteModeType = "daemonset"
+	MiddlewareRemoteMode RemoteModeType = "middleware"
 )
 
 type RemoteExecutor interface {
-	// CheckAlive check service alive
+	CheckExecutorWay(ctx context.Context) error
+	// CheckAlive check target object service alive
 	CheckAlive(ctx context.Context, injectObject string) error
 	// Init install agent
 	Init(ctx context.Context, target string) error
@@ -49,6 +54,51 @@ type RemoteExecutor interface {
 }
 
 var globalRemoteExecutor RemoteExecutor
+
+func AutoSelectRemoteExecutor(config *config.ExecutorConfig, restConfig *rest.Config, schema *runtime.Scheme) error {
+	/**
+	 * 启动时通道自动选择
+	 */
+	ctx := context.Background()
+	daemonSetRemoteExecutor := &daemonsetexecutor.DaemonsetRemoteExecutor{
+		RESTConfig: restConfig,
+		Schema:     schema,
+
+		LocalExecPath: config.DaemonsetConfig.LocalExecPath,
+		Executor:      config.Executor,
+		Version:       config.Version,
+
+		DaemonsetNs:    config.DaemonsetConfig.DaemonNs,
+		DaemonsetLabel: config.DaemonsetConfig.DaemonLabel,
+		DaemonsetName:  config.DaemonsetConfig.DaemonName,
+	}
+	if err := daemonSetRemoteExecutor.CheckExecutorWay(ctx); err == nil {
+		globalRemoteExecutor = daemonSetRemoteExecutor
+		return nil
+	}
+	agentExecutor := &agentexecutor.AgentRemoteExecutor{
+		Client: &httpclient.HTTPClient{
+			Client: &http.Client{},
+		},
+		Version:     config.Version,
+		ServicePort: config.AgentConfig.AgentPort,
+	}
+	if err := agentExecutor.CheckExecutorWay(ctx); err == nil {
+		globalRemoteExecutor = agentExecutor
+	}
+	middlewareRemoteExecutor := &middlewareexecutor.MiddleWareExecutor{
+		Middleware: &tse.TseMiddleware{
+			Config: config.MiddlewareConfig,
+			MistClient: auth.MistClient{
+				Config: config.MiddlewareConfig.MistConfig,
+			},
+		},
+	}
+	if err := middlewareRemoteExecutor.CheckExecutorWay(ctx); err == nil {
+		globalRemoteExecutor = middlewareRemoteExecutor
+	}
+	return nil
+}
 
 func SetGlobalRemoteExecutor(config *config.ExecutorConfig, restConfig *rest.Config, schema *runtime.Scheme) error {
 	switch RemoteModeType(config.Mode) {
@@ -75,6 +125,15 @@ func SetGlobalRemoteExecutor(config *config.ExecutorConfig, restConfig *rest.Con
 
 			//AutoLabelNode:     config.DaemonsetConfig.AutoLabelNode,
 			//NodeSelectorLabel: config.DaemonsetConfig.NodeSelectorLabel,
+		}
+	case MiddlewareRemoteMode:
+		globalRemoteExecutor = &middlewareexecutor.MiddleWareExecutor{
+			Middleware: &tse.TseMiddleware{
+				Config: config.MiddlewareConfig,
+				MistClient: auth.MistClient{
+					Config: config.MiddlewareConfig.MistConfig,
+				},
+			},
 		}
 	default:
 		return fmt.Errorf("not support remote executor: %s", config.Mode)

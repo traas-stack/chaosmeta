@@ -17,6 +17,18 @@
       "daemonNs": "chaosmeta",
       "daemonLabel": {
         "app.chaosmeta.io": "chaosmeta-daemon"
+      },
+      "daemonName": "chaosmeta-daemon"
+    },
+    "middlewareConfig" : {
+      "url" : "https://shell-api.alipay.com",
+      "mistConfig" : {
+        "antVipUrl" : "antvip-pool.stable.alipay.net",
+        "bkmiUrl" : "bkmi-pool.stable.global.alipay.com",
+        "appName" : "antchaos",
+        "tenant" : "ALIPAY",
+        "mode" : "local",
+        "secretName" : "antchaos_fault_inject_offline"
       }
     }
   }

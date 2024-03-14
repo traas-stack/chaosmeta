@@ -17,10 +17,29 @@
 package kubernetes
 
 import (
+	"chaosmeta-platform/pkg/models/cluster"
+	"chaosmeta-platform/util/log"
+	"context"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
+
+func Init() {
+	ctx := context.Background()
+	defaultCluster := cluster.Cluster{}
+	if err := cluster.GetDefaultCluster(ctx, &defaultCluster); err == nil {
+		return
+	}
+
+	noKubernetes := &cluster.Cluster{
+		Name: "noKubernetes",
+	}
+	_, err := cluster.InsertCluster(ctx, noKubernetes)
+	if err != nil {
+		log.Panic(err)
+	}
+}
 
 type KubernetesParam struct {
 	Cluster          string

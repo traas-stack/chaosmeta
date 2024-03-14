@@ -50,11 +50,26 @@ type TickerConfig struct {
 }
 
 type ExecutorConfig struct {
-	Mode            string                  `json:"mode"`
-	Executor        string                  `json:"executor"`
-	Version         string                  `json:"version"`
-	AgentConfig     AgentExecutorConfig     `json:"agentConfig"`
-	DaemonsetConfig DaemonsetExecutorConfig `json:"daemonsetConfig"`
+	Mode             string                  `json:"mode"`
+	Executor         string                  `json:"executor"`
+	Version          string                  `json:"version"`
+	AgentConfig      AgentExecutorConfig     `json:"agentConfig"`
+	DaemonsetConfig  DaemonsetExecutorConfig `json:"daemonsetConfig"`
+	MiddlewareConfig MiddlewareConfig        `json:"middlewareConfig"`
+}
+
+type MiddlewareConfig struct {
+	Url        string     `json:"url"`
+	MistConfig MistConfig `json:"mistConfig"`
+}
+
+type MistConfig struct {
+	AntVipUrl  string `json:"antVipUrl"`
+	BkmiUrl    string `json:"bkmiUrl"`
+	AppName    string `json:"appName"`
+	Tenant     string `json:"tenant"`
+	Mode       string `json:"mode"`
+	SecretName string `json:"secretName"`
 }
 
 type AgentExecutorConfig struct {
@@ -64,9 +79,9 @@ type AgentExecutorConfig struct {
 type DaemonsetExecutorConfig struct {
 	LocalExecPath string `json:"localExecPath"`
 
-	DaemonNs    string            `json:"daemonNs"`
-	DaemonLabel map[string]string `json:"daemonLabel"`
-
+	DaemonNs          string            `json:"daemonNs"`
+	DaemonLabel       map[string]string `json:"daemonLabel"`
+	DaemonName        string            `json:"daemonName"`
 	AutoLabelNode     bool              `json:"autoLabelNode"`
 	NodeSelectorLabel map[string]string `json:"nodeSelectorLabel"`
 }

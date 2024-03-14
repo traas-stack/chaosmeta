@@ -45,6 +45,7 @@ type ExperimentInfo struct {
 	ScheduleType string    `json:"schedule_type"`
 	ScheduleRule string    `json:"schedule_rule"`
 	NamespaceID  int       `json:"namespace_id"`
+	ClusterID    int       `json:"cluster_id"`
 	Creator      int       `json:"creator,omitempty"`
 	CreatorName  string    `json:"creator_name,omitempty"`
 	Status       int       `json:"status"`
@@ -73,6 +74,7 @@ type ExperimentGet struct {
 	ScheduleType  string          `json:"schedule_type"`
 	ScheduleRule  string          `json:"schedule_rule"`
 	NamespaceID   int             `json:"namespace_id"`
+	ClusterID     int             `json:"cluster_id"`
 	Creator       int             `json:"creator,omitempty"`
 	NextExec      string          `json:"next_exec,omitempty"`
 	CreatorName   string          `json:"creator_name,omitempty"`
@@ -187,6 +189,7 @@ func (es *ExperimentService) CreateExperiment(experimentParam *ExperimentCreate)
 		ScheduleType: experimentParam.ScheduleType,
 		ScheduleRule: experimentParam.ScheduleRule,
 		Creator:      experimentParam.Creator,
+		ClusterID:    experimentParam.ClusterID,
 	}
 	if err := experiment.CreateExperiment(&experimentCreate); err != nil {
 		return "", err
@@ -367,6 +370,7 @@ func (es *ExperimentService) GetExperimentByUUID(uuid string) (*ExperimentGet, e
 		ScheduleType: experimentGet.ScheduleType,
 		ScheduleRule: experimentGet.ScheduleRule,
 		NamespaceID:  experimentGet.NamespaceID,
+		ClusterID:    experimentGet.ClusterID,
 		CreatorName:  userGet.Email,
 		Creator:      experimentGet.Creator,
 		Status:       int(experimentGet.Status),
