@@ -53,6 +53,7 @@ type Experiment struct {
 	Description  string           `json:"description" orm:"column(description);size(1024)"`
 	Creator      int              `json:"creator" orm:"index;column(creator)"`
 	NamespaceID  int              `json:"namespace_id" orm:"index;column(namespace_id)"`
+	ClusterID    int              `json:"cluster_id" orm:"index;column(cluster_id)"`
 	ScheduleType string           `json:"schedule_type" orm:"column(schedule_type);size(32);default(manual)"`
 	ScheduleRule string           `json:"schedule_rule" orm:"column(schedule_rule);size(64)"`
 	NextExec     time.Time        `json:"next_exec,omitempty" orm:"null;column(next_exec);type(datetime)"`

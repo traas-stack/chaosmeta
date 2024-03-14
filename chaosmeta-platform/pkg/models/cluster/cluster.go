@@ -134,3 +134,10 @@ func DeleteClustersByIdList(ctx context.Context, ids []int) error {
 	_, err = clusterQuery.Delete()
 	return err
 }
+
+func GetDefaultCluster(ctx context.Context, cluster *Cluster) error {
+	if cluster == nil {
+		return errors.New("cluster is nil")
+	}
+	return models.GetORM().QueryTable(cluster.TableName()).Filter("name", "noKubernetes").One(cluster)
+}

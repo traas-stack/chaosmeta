@@ -34,6 +34,11 @@ type AgentRemoteExecutor struct {
 	Version     string
 }
 
+func (r *AgentRemoteExecutor) CheckExecutorWay(ctx context.Context) error {
+
+	return nil
+}
+
 func (r *AgentRemoteExecutor) CheckAlive(ctx context.Context, injectObject string) error {
 	resBytes, err := r.Client.Get(ctx, fmt.Sprintf("http://%s:%d/v1/version", injectObject, r.ServicePort))
 	if err != nil {
