@@ -9,6 +9,7 @@ require (
 	github.com/onsi/gomega v1.24.1
 	github.com/stretchr/testify v1.8.0
 	github.com/traas-stack/chaosmeta/chaosmeta-common v0.0.0-20240102105916-8f3b8d9accc5
+	github.com/xhd2015/xgo/runtime v1.0.12
 	k8s.io/api v0.26.0
 	k8s.io/apimachinery v0.26.3
 	k8s.io/client-go v0.26.0

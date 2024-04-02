@@ -19,15 +19,16 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"github.com/agiledragon/gomonkey"
+	"testing"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/api/v1alpha1"
 	mockscopehandler "github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/mock/scopehandler"
 	"github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/pkg/model"
 	"github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/pkg/scopehandler"
+	"github.com/xhd2015/xgo/runtime/mock"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"testing"
 )
 
 func Test_solveRange(t *testing.T) {
@@ -164,7 +165,7 @@ func Test_initProcess(t *testing.T) {
 	scopeHandlerMock := mockscopehandler.NewMockScopeHandler(ctrl)
 	scopeHandlerMock.EXPECT().ConvertSelector(ctx, &exp.Spec).Return(reObject, nil)
 
-	gomonkey.ApplyFunc(scopehandler.GetScopeHandler, func(v1alpha1.ScopeType) scopehandler.ScopeHandler {
+	mock.Patch(scopehandler.GetScopeHandler, func(v1alpha1.ScopeType) scopehandler.ScopeHandler {
 		return scopeHandlerMock
 	})
 
