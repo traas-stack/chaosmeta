@@ -18,12 +18,13 @@ package cloudnativeexecutor
 
 import (
 	"context"
-	"github.com/agiledragon/gomonkey"
+	"testing"
+	"time"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/api/v1alpha1"
 	"github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/pkg/common"
-	"testing"
-	"time"
+	"github.com/xhd2015/xgo/runtime/mock"
 )
 
 func TestClusterPendingPodExecutor_Inject(t *testing.T) {
@@ -36,10 +37,10 @@ func TestClusterPendingPodExecutor_Inject(t *testing.T) {
 		{Key: "name", Value: podname},
 	}
 
-	gomonkey.ApplyFunc(createNs, func(ctx context.Context, name string) error {
+	mock.Patch(createNs, func(ctx context.Context, name string) error {
 		return nil
 	})
-	gomonkey.ApplyFunc(createPendingPod, func(ctx context.Context, namespace, name string) error {
+	mock.Patch(createPendingPod, func(ctx context.Context, namespace, name string) error {
 		return nil
 	})
 
@@ -49,12 +50,12 @@ func TestClusterPendingPodExecutor_Inject(t *testing.T) {
 	assert.Equal(t, err, nil)
 	assert.Equal(t, common.GetClusterCtrl().IsRunning(), false)
 
-	gomonkey.ApplyFunc(createPendingPod, func(ctx context.Context, namespace, name string) error {
+	mock.Patch(createPendingPod, func(ctx context.Context, namespace, name string) error {
 		time.Sleep(10 * time.Second)
 		return nil
 	})
 
-	gomonkey.ApplyFunc(deleteNs, func(ctx context.Context, name string) error {
+	mock.Patch(deleteNs, func(ctx context.Context, name string) error {
 		return nil
 	})
 

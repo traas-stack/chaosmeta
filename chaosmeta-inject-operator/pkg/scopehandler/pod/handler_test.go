@@ -18,6 +18,8 @@ package pod
 
 import (
 	"context"
+	"testing"
+
 	"github.com/agiledragon/gomonkey"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -25,7 +27,6 @@ import (
 	mockselector "github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/mock/selector"
 	"github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/pkg/model"
 	"github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/pkg/selector"
-	"testing"
 )
 
 func TestPodScopeHandler_ConvertSelector(t *testing.T) {

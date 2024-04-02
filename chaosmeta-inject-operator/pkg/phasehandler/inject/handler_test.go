@@ -19,7 +19,9 @@ package injecthandler
 import (
 	"context"
 	"fmt"
-	"github.com/agiledragon/gomonkey"
+	"testing"
+	"time"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/api/v1alpha1"
@@ -27,8 +29,7 @@ import (
 	"github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/pkg/common"
 	"github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/pkg/model"
 	"github.com/traas-stack/chaosmeta/chaosmeta-inject-operator/pkg/scopehandler"
-	"testing"
-	"time"
+	"github.com/xhd2015/xgo/runtime/mock"
 )
 
 func TestInjectPhaseHandler_SolveCreated_OneToRunning(t *testing.T) {
@@ -105,7 +106,7 @@ func TestInjectPhaseHandler_SolveCreated_OneToRunning(t *testing.T) {
 	scopeHandlerMock.EXPECT().GetInjectObject(ctx, exp.Spec.Experiment, reContainer.GetObjectName()).Return(re, nil)
 	scopeHandlerMock.EXPECT().ExecuteInject(ctx, re, exp.Status.Detail.Inject[0].UID, exp.Spec.Experiment).Return("", nil)
 
-	gomonkey.ApplyFunc(scopehandler.GetScopeHandler, func(v1alpha1.ScopeType) scopehandler.ScopeHandler {
+	mock.Patch(scopehandler.GetScopeHandler, func(v1alpha1.ScopeType) scopehandler.ScopeHandler {
 		return scopeHandlerMock
 	})
 
@@ -214,7 +215,7 @@ func TestInjectPhaseHandler_SolveCreated_OneInjectFailedInTwo(t *testing.T) {
 	scopeHandlerMock.EXPECT().ExecuteInject(ctx, re1, exp.Status.Detail.Inject[0].UID, exp.Spec.Experiment).Return("", fmt.Errorf("expected fail"))
 	scopeHandlerMock.EXPECT().ExecuteInject(ctx, re2, exp.Status.Detail.Inject[1].UID, exp.Spec.Experiment).Return("", nil)
 
-	gomonkey.ApplyFunc(scopehandler.GetScopeHandler, func(v1alpha1.ScopeType) scopehandler.ScopeHandler {
+	mock.Patch(scopehandler.GetScopeHandler, func(v1alpha1.ScopeType) scopehandler.ScopeHandler {
 		return scopeHandlerMock
 	})
 
@@ -355,7 +356,7 @@ func TestInjectPhaseHandler_SolveRunning_TwoQueryFailedInThree(t *testing.T) {
 		Message: "task run failed",
 	}, nil)
 
-	gomonkey.ApplyFunc(scopehandler.GetScopeHandler, func(v1alpha1.ScopeType) scopehandler.ScopeHandler {
+	mock.Patch(scopehandler.GetScopeHandler, func(v1alpha1.ScopeType) scopehandler.ScopeHandler {
 		return scopeHandlerMock
 	})
 
@@ -469,7 +470,7 @@ func TestInjectPhaseHandler_SolveRunning_TwoFailed(t *testing.T) {
 	scopeHandlerMock.EXPECT().QueryExperiment(ctx, re1, exp.Status.Detail.Inject[0].UID, "", exp.Spec.Experiment, v1alpha1.InjectPhaseType).Return(nil, fmt.Errorf("expected fail"))
 	scopeHandlerMock.EXPECT().QueryExperiment(ctx, re2, exp.Status.Detail.Inject[1].UID, "", exp.Spec.Experiment, v1alpha1.InjectPhaseType).Return(nil, fmt.Errorf("expected fail"))
 
-	gomonkey.ApplyFunc(scopehandler.GetScopeHandler, func(v1alpha1.ScopeType) scopehandler.ScopeHandler {
+	mock.Patch(scopehandler.GetScopeHandler, func(v1alpha1.ScopeType) scopehandler.ScopeHandler {
 		return scopeHandlerMock
 	})
 
